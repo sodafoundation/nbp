@@ -1,0 +1,66 @@
+hash: d932c8f3158929b0c35b8285356855bac9918bfe20041d0dff21244a003cd709
+updated: 2017-10-20T17:37:21.3123988+08:00
+imports:
+- name: github.com/container-storage-interface/spec
+  version: d68da7a7c330a88253e26c06b7c157ec8119d5d6
+  subpackages:
+  - lib/go/csi
+- name: github.com/golang/protobuf
+  version: 130e6b02ab059e7b717a096f397c5b60111cae74
+  subpackages:
+  - proto
+  - protoc-gen-go/descriptor
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
+- name: github.com/opensds/nbp
+  version: ff274fbbe635bd2aeb54079a562ac241082d97d5
+  subpackages:
+  - csi/client/proxy
+  - csi/server/plugin
+  - csi/server/plugin/opensds
+  - csi/util
+- name: golang.org/x/net
+  version: aabf50738bcdd9b207582cbe796b59ed65d56680
+  subpackages:
+  - context
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
+- name: golang.org/x/text
+  version: c01e4764d870b77f8abe5096ee19ad20d80e8075
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: f676e0f3ac6395ff1a529ae59a6670878a8371a6
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: f7bf885db0b7479a537ec317c6e48ce53145f3db
+  subpackages:
+  - balancer
+  - codes
+  - connectivity
+  - credentials
+  - grpclb/grpc_lb_v1/messages
+  - grpclog
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - reflection
+  - reflection/grpc_reflection_v1alpha
+  - resolver
+  - stats
+  - status
+  - tap
+  - transport
+testImports: []
