@@ -14,13 +14,6 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
-- name: github.com/opensds/nbp
-  version: ff274fbbe635bd2aeb54079a562ac241082d97d5
-  subpackages:
-  - csi/client/proxy
-  - csi/server/plugin
-  - csi/server/plugin/opensds
-  - csi/util
 - name: golang.org/x/net
   version: aabf50738bcdd9b207582cbe796b59ed65d56680
   subpackages:
