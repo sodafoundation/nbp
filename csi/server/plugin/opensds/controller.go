@@ -2,6 +2,7 @@ package opensds
 
 import (
 	"log"
+	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -52,8 +53,47 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest) (
 	*csi.ValidateVolumeCapabilitiesResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ValidateVolumeCapabilities")
+	defer log.Println("end to ValidateVolumeCapabilities")
+
+	volumeid := req.VolumeInfo.Handle.Id
+	if strings.TrimSpace(volumeid) == "" {
+		return &csi.ValidateVolumeCapabilitiesResponse{
+			Reply: &csi.ValidateVolumeCapabilitiesResponse_Error{
+				Error: &csi.Error{
+					Value: &csi.Error_ValidateVolumeCapabilitiesError_{
+						ValidateVolumeCapabilitiesError: &csi.Error_ValidateVolumeCapabilitiesError{
+							ErrorCode:        csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO,
+							ErrorDescription: "invalid volume id",
+						},
+					},
+				},
+			},
+		}, nil
+	}
+
+	for _, capabilities := range req.VolumeCapabilities {
+		if capabilities.GetMount() != nil {
+			return &csi.ValidateVolumeCapabilitiesResponse{
+				Reply: &csi.ValidateVolumeCapabilitiesResponse_Result_{
+					Result: &csi.ValidateVolumeCapabilitiesResponse_Result{
+						Supported: false,
+						Message:   "opensds does not support mounted volume",
+					},
+				},
+			}, nil
+		}
+	}
+
+	return &csi.ValidateVolumeCapabilitiesResponse{
+		Reply: &csi.ValidateVolumeCapabilitiesResponse_Result_{
+			Result: &csi.ValidateVolumeCapabilitiesResponse_Result{
+				Supported: true,
+				Message:   "supported",
+			},
+		},
+	}, nil
 }
 
 // ListVolumes implementation
