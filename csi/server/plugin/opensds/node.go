@@ -2,6 +2,8 @@ package opensds
 
 import (
 	"log"
+	"os"
+	"runtime"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -34,8 +36,25 @@ func (p *Plugin) GetNodeID(
 	ctx context.Context,
 	req *csi.GetNodeIDRequest) (
 	*csi.GetNodeIDResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to GetNodeID")
+	defer log.Println("end to GetNodeID")
+
+	// Get host name from os
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	return &csi.GetNodeIDResponse{
+		Reply: &csi.GetNodeIDResponse_Result_{
+			Result: &csi.GetNodeIDResponse_Result{
+				NodeId: &csi.NodeID{
+					Values: map[string]string{"hostname": hostname},
+				},
+			},
+		},
+	}, nil
 }
 
 // ProbeNode implementation
@@ -43,8 +62,33 @@ func (p *Plugin) ProbeNode(
 	ctx context.Context,
 	req *csi.ProbeNodeRequest) (
 	*csi.ProbeNodeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ProbeNode")
+	defer log.Println("end to ProbeNode")
+
+	switch runtime.GOOS {
+	case "linux":
+		return &csi.ProbeNodeResponse{
+			Reply: &csi.ProbeNodeResponse_Result_{
+				Result: &csi.ProbeNodeResponse_Result{},
+			},
+		}, nil
+	default:
+		msg := "unsupported operating system:" + runtime.GOOS
+		log.Fatalf(msg)
+		return &csi.ProbeNodeResponse{
+			Reply: &csi.ProbeNodeResponse_Error{
+				Error: &csi.Error{
+					Value: &csi.Error_ProbeNodeError_{
+						ProbeNodeError: &csi.Error_ProbeNodeError{
+							ErrorCode:        csi.Error_ProbeNodeError_MISSING_REQUIRED_HOST_DEPENDENCY,
+							ErrorDescription: msg,
+						},
+					},
+				},
+			},
+		}, nil
+	}
 }
 
 // NodeGetCapabilities implementation
