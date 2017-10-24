@@ -1,14 +1,8 @@
-package: nbp
+package: github.com/opensds/nbp
 import:
 - package: github.com/container-storage-interface/spec
   subpackages:
   - lib/go/csi
-- package: github.com/opensds/nbp
-  subpackages:
-  - csi/client/proxy
-  - csi/server/plugin
-  - csi/server/plugin/opensds
-  - csi/util
 - package: golang.org/x/net
   subpackages:
   - context
