@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: leonwanghui/wordpress:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: wordpress
+          containerPort: 8084
+        volumeMounts:
+        - mountPath: /mnt/rbd
+          name: myvol
+      volumes:
+      - name: myvol
+        rbd:
+          monitors:
+          - 100.64.128.40:6789
+          pool: rbd
+          image: OPENSDS:aaad3621-8455-4506-b20e-d67557485278:54140200-81bd-4c17-825e-4714949f55c1
+          user: admin
+          keyring: /etc/ceph/ceph.client.admin.keyring
+          fsType: ext4
+          readOnly: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  type: ClusterIP
+  ports:
+  - name: wordpress
+    port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: wordpress

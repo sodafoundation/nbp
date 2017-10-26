@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command:
+        - {{ .Values.container.command }}
+        - {{ .Values.container.argLog }}
+        - {{ .Values.container.argEndpoint }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /v2/catalog
+            port: {{ .Values.service.internalPort }}
+          periodSeconds: {{ .Values.service.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: /v2/catalog
+            port: {{ .Values.service.internalPort }}
+          periodSeconds: {{ .Values.service.periodSeconds }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
