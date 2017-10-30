@@ -13,13 +13,16 @@ const (
 )
 
 // GetClient return OpenSDS Client
-func GetClient() *client.Client {
-
-	//Get endpoint from environment
-	endpoint := os.Getenv(OpenSDSEndPoint)
-	log.Printf("current OpenSDS Client endpoint: %s", endpoint)
+func GetClient(endpoint string) *client.Client {
 
 	if endpoint == "" {
+		// Get endpoint from environment
+		endpoint = os.Getenv(OpenSDSEndPoint)
+		log.Printf("current OpenSDS Client endpoint: %s", endpoint)
+	}
+
+	if endpoint == "" {
+		// Using default endpoint
 		endpoint = ":8080"
 		log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
 	}
