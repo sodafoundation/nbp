@@ -1,5 +1,5 @@
-hash: b82e6f1d6ac9f819be58f9edba3af617115e264c185ba6b97db37a8690d57786
-updated: 2017-10-30T17:00:41.7482005+08:00
+hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
+updated: 2017-10-30T18:21:12.6865507+08:00
 imports:
 - name: github.com/astaxie/beego
   version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
@@ -12,7 +12,7 @@ imports:
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 4bd1920723d7b7c925de087aa32e2187708897f7
+  version: 130e6b02ab059e7b717a096f397c5b60111cae74
   subpackages:
   - proto
   - protoc-gen-go/descriptor
