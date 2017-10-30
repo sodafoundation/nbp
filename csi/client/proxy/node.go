@@ -38,7 +38,7 @@ func (c *Node) NodePublishVolume(
 	ctx context.Context,
 	version *csi.Version,
 	handle *csi.VolumeHandle,
-	volumeinfo *csi.PublishVolumeInfo, /*Optional*/
+	volumeinfo map[string]string, /*Optional*/
 	targetPath string,
 	capability *csi.VolumeCapability,
 	readonly bool,
