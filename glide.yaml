@@ -10,3 +10,5 @@ import:
   version: ^1.2.1
   subpackages:
   - reflection
+- package: github.com/kubernetes-incubator/service-catalog
+  version: ^0.1.1
