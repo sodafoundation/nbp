@@ -89,7 +89,7 @@ func (c *Controller) ControllerPublishVolume(
 	nodeID *csi.NodeID, /*Optional*/
 	capabilities *csi.VolumeCapability,
 	readonly bool,
-	credentials *csi.Credentials /*Optional*/) (*csi.PublishVolumeInfo, error) {
+	credentials *csi.Credentials /*Optional*/) (map[string]string, error) {
 
 	req := &csi.ControllerPublishVolumeRequest{
 		Version:          version,

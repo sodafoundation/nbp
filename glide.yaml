@@ -6,7 +6,11 @@ import:
 - package: golang.org/x/net
   subpackages:
   - context
+- package: github.com/golang/protobuf
+  version: 130e6b02ab059e7b717a096f397c5b60111cae74
 - package: google.golang.org/grpc
   version: ^1.2.1
   subpackages:
   - reflection
+- package: github.com/kubernetes-incubator/service-catalog
+  version: ^0.1.1

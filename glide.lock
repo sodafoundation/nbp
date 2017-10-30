@@ -1,10 +1,16 @@
-hash: d932c8f3158929b0c35b8285356855bac9918bfe20041d0dff21244a003cd709
-updated: 2017-10-20T17:37:21.3123988+08:00
+hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
+updated: 2017-10-30T18:21:12.6865507+08:00
 imports:
+- name: github.com/astaxie/beego
+  version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
+  subpackages:
+  - httplib
 - name: github.com/container-storage-interface/spec
-  version: d68da7a7c330a88253e26c06b7c157ec8119d5d6
+  version: 9d4ce05b42cbfc75a7e0c198ab46e6399e01fbb5
   subpackages:
   - lib/go/csi
+- name: github.com/golang/glog
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
   version: 130e6b02ab059e7b717a096f397c5b60111cae74
   subpackages:
@@ -14,8 +20,25 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
+- name: github.com/kubernetes-incubator/service-catalog
+  version: e4293d3094a16e149dc251f63ec5c33f8af2fce4
+  subpackages:
+  - contrib/pkg/broker/controller
+  - contrib/pkg/broker/server
+  - contrib/pkg/brokerapi
+  - pkg
+  - pkg/util
+- name: github.com/opensds/opensds
+  version: 549baed7361d7bc9b83d692b1def30f37e0b0df8
+  subpackages:
+  - client
+  - pkg/model
 - name: golang.org/x/net
-  version: aabf50738bcdd9b207582cbe796b59ed65d56680
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
   - http2
@@ -25,9 +48,10 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/text
-  version: c01e4764d870b77f8abe5096ee19ad20d80e8075
+  version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
   - secure/bidirule
+  - secure/precis
   - transform
   - unicode/bidi
   - unicode/norm
@@ -36,7 +60,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: f7bf885db0b7479a537ec317c6e48ce53145f3db
+  version: 61d37c5d657a47e4404fd6823bd598341a2595de
   subpackages:
   - balancer
   - codes
