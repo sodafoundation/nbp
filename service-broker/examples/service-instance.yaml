@@ -1,10 +1,12 @@
-apiVersion: servicecatalog.k8s.io/v1alpha1
-kind: Instance
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
 metadata:
   name: service-instance
   namespace: opensds
 spec:
-  serviceClassName: opensds-service
-  planName: default
+  externalClusterServiceClassName: opensds-service
+  externalClusterServicePlanName: silver
   parameters:
-    capacity: 100
+    credentials:
+      name: vol-01
+      description: This is a volume scheduled by opa scheduler

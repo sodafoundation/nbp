@@ -8,8 +8,8 @@ Please NOTICE that the installation tutorial is tested on Ubuntu17.04, and we SU
 
 ### Download and install Golang
 ```
-wget https://storage.googleapis.com/golang/go1.7.6.linux-amd64.tar.gz
-tar xvf go1.7.6.linux-amd64.tar.gz -C /usr/local/
+wget https://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz
+tar xvf go1.9.linux-amd64.tar.gz -C /usr/local/
 mkdir -p $HOME/gopath/src
 mkdir -p $HOME/gopath/bin
 echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/gopath/bin' >> /etc/profile
@@ -75,9 +75,15 @@ kubectl.sh get po
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
 chmod 700 get_helm.sh
 ./get_helm.sh
-
+helm init
 kubectl.sh get po -n kube-system (check if the till-deploy pod is running)
 ```
+
+If your kubernetes cluster has RBAC enabled, you must ensure that the tiller pod has cluster-admin access. By default, helm init installs the tiller pod into kube-system namespace, with tiller configured to use the default service account.
+```
+kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+```
+cluster-admin access is required in order for helm to work correctly in clusters with RBAC enabled. If you used the --tiller-namespace or --service-account flags when running helm init, the --serviceaccount flag in the previous command needs to be adjusted to reference the appropriate namespace and ServiceAccount name.
 
 ### Set up kube-dns service (optional)
 To avoid network barrieres, please make sure kube-dns service be set up:
@@ -91,9 +97,9 @@ kubectl.sh create -f gopath/src/github.com/leonwanghui/opensds-broker/examples/k
 ### Service Catalog download and install
 ```
 mkdir -p gopath/src/github.com/kubernetes-incubator
-wget https://github.com/kubernetes-incubator/service-catalog/archive/v0.1.0-rc1.tar.gz
-tar xvf service-catalog-0.1.0-rc1.tar.gz -C gopath/src/github.com/kubernetes-incubator
-helm install gopath/src/github.com/kubernetes-incubator/service-catalog-0.1.0-rc1/charts/catalog --name catalog --namespace catalog
+wget https://github.com/kubernetes-incubator/service-catalog/archive/v0.1.0.tar.gz
+tar xvf service-catalog-0.1.0.tar.gz -C gopath/src/github.com/kubernetes-incubator
+helm install gopath/src/github.com/kubernetes-incubator/service-catalog-0.1.0/charts/catalog --name catalog --namespace catalog
 
 kubectl.sh get po -n catalog (check if the catalog api-server and controller-manager pod are running)
 ```
@@ -155,73 +161,66 @@ mv opensds.conf /etc/opensds/
 mv ceph.yaml /etc/opensds/driver/
 ```
 
-2. Download and start opa scheduler service daemon:
-```
-go get github.com/open-policy-agent/opa
-go install gopath/src/github.com/open-policy-agent/opa
-
-opa run -s gopath/src/github.com/opensds/opensds/examples/policy/policy.rego
-```
-
+2. Download and start opensds service daemon:
 To ensure service broker connecting to OpenSDS api-service, you probably need to configure your service ip:
 ```
-docker run -d --net=host -v /var/log/opensds:/var/log/opensds -v /etc/opensds:/etc/opensds -v /etc/ceph:/etc/ceph leonwanghui/opensds-dock:v1alpha
-docker run -it --net=host -v /var/log/opensds:/var/log/opensds leonwanghui/opensds-controller:v1alpha /usr/bin/osdslet --api-endpoint=your_host_ip:50040
+docker run -d --net=host -v /var/log/opensds:/var/log/opensds -v /etc/opensds:/etc/opensds -v /etc/ceph:/etc/ceph opensds/osdsdock:v1alpha
+docker run -it --net=host -v /var/log/opensds:/var/log/opensds -v /etc/opensd:/etc/opensds opensds/osdslet:v1alpha
 
-curl -X POST "http://your_host_ip:50040/api/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "default", "description": "default policy", "extra": {"capacity": 5}}'
-curl -X POST "http://your_host_ip:50040/api/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "silver", "description": "silver policy", "extra": {"iops": 300, "bandwidth": 500, "diskType":"SAS", "capacity": 5}}'
+curl -X POST "http://your_host_ip:50040/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "default", "description": "default policy", "extra": {"capacity": 5}}'
+curl -X POST "http://your_host_ip:50040/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "silver", "description": "silver policy", "extra": {"iops": 300, "bandwidth": 500, "diskType":"SAS", "capacity": 5}}'
 ```
 
 ### OpenSDS service broker install
-Firstly, you need to modify the value of ```argEndpoint``` field in ```values.yaml```, just change it to ```your_host_ip:50040```:
+Firstly, you need to modify the value of ```argEndpoint``` field in ```broker-deployment.yaml```, just change it to ```your_host_ip:50040```:
 ```
-vim gopath/src/github.com/leonwanghui/opensds-broker/charts/opensds-broker/values.yaml (modify this file)
+vim gopath/src/github.com/opensds/nbp/service-broker/charts/deployment.yaml (modify this file)
 ```
 Then you can install service broker via helm:
 ```
-cd gopath/src/github.com/leonwanghui/opensds-broker
-helm install charts/opensds-broker --name opensds-broker --namespace opensds-broker
+cd gopath/src/github.com/nbp/service-broker
+helm install charts/ --name service-broker --namespace service-broker
 
-kubectl.sh get po -n opensds-broker (check if opensds broker pod is running)
+kubectl.sh get po -n service-broker (check if opensds broker pod is running)
 ```
 
 ### Configure Kubectl context
 ```
-kubectl.sh config set-cluster service-catalog --server=http://127.0.0.1:30080
+kubectl.sh config set-cluster service-catalog --server=https://127.0.0.1:30443 --insecure-skip-tls-verify=true
 kubectl.sh config set-context service-catalog --cluster=service-catalog
 
-kubectl.sh --context=service-catalog get brokers,instances,bindings
+kubectl.sh --context=service-catalog get clusterservicebrokers,serviceinstances,servicebindings
 ```
 
 ## Start to work
 
-1. Create opensds broker
+1. Create service broker
 
 ```
-kubectl.sh --context=service-catalog create -f examples/opensds-broker.yaml
-kubectl.sh --context=service-catalog get brokers,serviceclasses
+kubectl.sh --context=service-catalog create -f examples/service-broker.yaml
+kubectl.sh --context=service-catalog get clusterservicebrokers,clusterserviceclasses,clusterserviceplans
 ```
 
-2. Create opensds instance
+2. Create service instance
 
 ```
 kubectl.sh create ns opensds
 
-kubectl.sh --context=service-catalog create -f examples/opensds-instance.yaml -n opensds
-kubectl.sh --context=service-catalog get instances -n opensds
+kubectl.sh --context=service-catalog create -f examples/service-instance.yaml -n opensds
+kubectl.sh --context=service-catalog get serviceinstances -n opensds
 ```
 
-3. Create opensds instance binding
+3. Create service instance binding
 
 ```
-kubectl.sh --context=service-catalog create -f examples/opensds-binding.yaml -n opensds
-kubectl.sh --context=service-catalog get bindings -n opensds
+kubectl.sh --context=service-catalog create -f examples/service-binding.yaml -n opensds
+kubectl.sh --context=service-catalog get servicebindings -n opensds
 
 kubectl.sh get secrets -n opensds
-kubectl.sh get secrets opensds-instance-secret -o yaml -n opensds
+kubectl.sh get secrets opensds-secret -o yaml -n opensds
 ```
 
-4. Creat opensds wordpress for testing
+4. Creat service wordpress for testing
 From the secret ```opensds-instance-secret``` shown above, you can find a field called ```image``` in data structure, just decode it using ```encoding/base64``` package.
 
 Then update it in ```Wordpress.yaml``` file:
@@ -233,38 +232,38 @@ kubectl.sh get po -n opensds
 kubectl.sh get service -n opensds
 ```
 
-After all things done, you can visit your own blog by searching: ```http://service_cluster_ip:8004```!
+After all things done, you can visit your own blog by searching: ```http://service_cluster_ip:8084```!
 
 ## Clean it up
 
-1. Delete opensds wordpress
+1. Delete service wordpress
 
 ```
 kubectl.sh delete -f examples/Wordpress.yaml -n opensds
 ```
 
-2. Delete opensds instance binding
+2. Delete service instance binding
 
 ```
-kubectl.sh --context=service-catalog delete bindings opensds-binding -n opensds
+kubectl.sh --context=service-catalog delete servicebindings service-binding -n opensds
 ```
 
-3. Delete opensds instance
+3. Delete service instance
 
 ```
-kubectl.sh --context=service-catalog delete instances opensds-instance -n opensds
+kubectl.sh --context=service-catalog delete serviceinstances service-instance -n opensds
 ```
 
-4. Delete opensds broker
+4. Delete service broker
 
 ```
-kubectl.sh --context=service-catalog delete brokers opensds-broker
+kubectl.sh --context=service-catalog delete clusterservicebrokers service-broker
 ```
 
-5. Uninstall opensds broker pod
+5. Uninstall service broker pod
 
 ```
-helm delete --purge opensds-broker
+helm delete --purge service-broker
 ```
 
 6. Uninstall service catalog pods

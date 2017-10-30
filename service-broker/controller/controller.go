@@ -20,7 +20,7 @@ import (
 
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
-	"github.com/opensds/opensds/client"
+	sdsController "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 )
 
@@ -38,7 +38,8 @@ type openSDSServiceInstance struct {
 }
 
 type openSDSController struct {
-	cli         *client.Client
+	Endpoint string
+
 	rwMutex     sync.RWMutex
 	instanceMap map[string]*openSDSServiceInstance
 }
@@ -46,16 +47,15 @@ type openSDSController struct {
 // CreateController creates an instance of an OpenSDS service broker controller.
 func CreateController(edp string) controller.Controller {
 	var instanceMap = make(map[string]*openSDSServiceInstance)
+
 	return &openSDSController{
-		cli: client.NewClient(&client.Config{
-			Endpoint: ":8080",
-		}),
+		Endpoint:    edp,
 		instanceMap: instanceMap,
 	}
 }
 
 func (c *openSDSController) Catalog() (*brokerapi.Catalog, error) {
-	prfs, err := c.cli.ListProfiles()
+	prfs, err := sdsController.GetClient(c.Endpoint).ListProfiles()
 	if err != nil {
 		return nil, err
 	}
@@ -111,12 +111,13 @@ func (c *openSDSController) CreateServiceInstance(
 		capacity = capInterface.(int64)
 	}
 
-	vol, err := c.cli.CreateVolume(&model.VolumeSpec{
-		Name:        name,
-		Description: description,
-		Size:        capacity,
-		ProfileId:   req.PlanID,
-	})
+	vol, err := sdsController.GetClient(c.Endpoint).
+		CreateVolume(&model.VolumeSpec{
+			Name:        name,
+			Description: description,
+			Size:        capacity,
+			ProfileId:   req.PlanID,
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,10 @@ func (c *openSDSController) CreateServiceInstance(
 	return &brokerapi.CreateServiceInstanceResponse{}, nil
 }
 
-func (c *openSDSController) RemoveServiceInstance(instanceID, serviceID, planID string, acceptsIncomplete bool) (*brokerapi.DeleteServiceInstanceResponse, error) {
+func (c *openSDSController) RemoveServiceInstance(
+	instanceID, serviceID, planID string,
+	acceptsIncomplete bool,
+) (*brokerapi.DeleteServiceInstanceResponse, error) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
@@ -146,9 +150,10 @@ func (c *openSDSController) RemoveServiceInstance(instanceID, serviceID, planID 
 		}
 
 		volID := volInterface.(string)
-		if err := c.cli.DeleteVolume(volID, &model.VolumeSpec{
-			ProfileId: planID,
-		}); err != nil {
+		if err := sdsController.GetClient(c.Endpoint).
+			DeleteVolume(volID, &model.VolumeSpec{
+				ProfileId: planID,
+			}); err != nil {
 			return nil, err
 		}
 
@@ -159,8 +164,7 @@ func (c *openSDSController) RemoveServiceInstance(instanceID, serviceID, planID 
 }
 
 func (c *openSDSController) Bind(
-	instanceID,
-	bindingID string,
+	instanceID, bindingID string,
 	req *brokerapi.BindingRequest,
 ) (*brokerapi.CreateServiceBindingResponse, error) {
 	c.rwMutex.RLock()
@@ -173,7 +177,9 @@ func (c *openSDSController) Bind(
 	return &brokerapi.CreateServiceBindingResponse{Credentials: *cred}, nil
 }
 
-func (c *openSDSController) UnBind(instanceID, bindingID, serviceID, planID string) error {
+func (c *openSDSController) UnBind(
+	instanceID, bindingID, serviceID, planID string,
+) error {
 	// Since we don't persist the binding, there's nothing to do here.
 	return nil
 }
