@@ -1,14 +1,71 @@
 package iscsi
 
 import (
+	"errors"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
 //      Refer some codes from: https://github.com/j-griffith/csi-cinder       //
+//      Refer some codes from: https://github.com/kubernetes/kubernetes       //
 ////////////////////////////////////////////////////////////////////////////////
+
+const (
+	//ISCSITranslateTCP tcp
+	ISCSITranslateTCP = "tcp"
+)
+
+// statFunc define
+type statFunc func(string) (os.FileInfo, error)
+
+// globFunc define
+type globFunc func(string) ([]string, error)
+
+// waitForPathToExist scan the device path
+func waitForPathToExist(devicePath *string, maxRetries int, deviceTransport string) bool {
+	// This makes unit testing a lot easier
+	return waitForPathToExistInternal(devicePath, maxRetries, deviceTransport, os.Stat, filepath.Glob)
+}
+
+// waitForPathToExistInternal scan the device path
+func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransport string, osStat statFunc, filepathGlob globFunc) bool {
+	if devicePath == nil {
+		return false
+	}
+
+	for i := 0; i < maxRetries; i++ {
+		var err error
+		if deviceTransport == ISCSITranslateTCP {
+			_, err = osStat(*devicePath)
+		} else {
+			fpath, _ := filepathGlob(*devicePath)
+			if fpath == nil {
+				err = os.ErrNotExist
+			} else {
+				// There might be a case that fpath contains multiple device paths if
+				// multiple PCI devices connect to same iscsi target. We handle this
+				// case at subsequent logic. Pick up only first path here.
+				*devicePath = fpath[0]
+			}
+		}
+		if err == nil {
+			return true
+		}
+		if !os.IsNotExist(err) {
+			return false
+		}
+		if i == maxRetries-1 {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	return false
+}
 
 // GetInitiator returns all the ISCSI Initiator Name
 func GetInitiator() ([]string, error) {
@@ -62,6 +119,72 @@ func Logout(portal string, targetiqn string) error {
 		log.Fatalf("Received error on logout attempt: %v", err)
 		return err
 	}
+	return nil
+}
+
+// Delete ISCSI Node
+func Delete(targetiqn string) (err error) {
+	log.Printf("Delete targetiqn: %s", targetiqn)
+	_, err = exec.Command("sudo", "iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn).CombinedOutput()
+	if err != nil {
+		log.Fatalf("Received error on Delete attempt: %v", err)
+		return err
+	}
+	return nil
+}
+
+// Connect ISCSI Target
+func Connect(portal string, targetiqn string, targetlun string) (string, error) {
+	log.Printf("Connect portal: %s targetiqn: %s targetlun: %s", portal, targetiqn, targetlun)
+	devicePath := strings.Join([]string{
+		"/dev/dis/by-path/ip",
+		portal,
+		"iscsi",
+		targetiqn,
+		"lun",
+		targetlun}, "-")
+
+	isexist := waitForPathToExist(&devicePath, 1, ISCSITranslateTCP)
+	if !isexist {
+
+		// Discovery
+		err := Discovery(portal)
+		if err != nil {
+			return "", err
+		}
+
+		//Login
+		err = Login(portal, targetiqn)
+		if err != nil {
+			return "", err
+		}
+
+		isexist = waitForPathToExist(&devicePath, 10, ISCSITranslateTCP)
+
+		if !isexist {
+			return "", errors.New("Could not connect volume: Timeout after 10s")
+		}
+
+	}
+	return devicePath, nil
+}
+
+// Disconnect ISCSI Target
+func Disconnect(portal string, targetiqn string) error {
+	log.Printf("Disconnect portal: %s targetiqn: %s", portal, targetiqn)
+
+	// Logout
+	err := Logout(portal, targetiqn)
+	if err != nil {
+		return err
+	}
+
+	//Delete
+	err = Delete(targetiqn)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -121,6 +244,25 @@ func Mount(device string, mountpoint string) error {
 		log.Fatalf("failed to mount: %v", err)
 		return err
 	}
+	return nil
+}
+
+// FormatandMount device
+func FormatandMount(device string, fstype string, mountpoint string) error {
+	log.Printf("FormatandMount device: %s fstype: %s mountpoint: %s", device, fstype, mountpoint)
+
+	// Format
+	err := Format(device, fstype)
+	if err != nil {
+		return err
+	}
+
+	// Mount
+	err = Mount(device, mountpoint)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
