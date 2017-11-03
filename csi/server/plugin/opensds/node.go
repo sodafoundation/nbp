@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/opensds/nbp/client/iscsi"
 	"golang.org/x/net/context"
 )
 
@@ -18,8 +19,31 @@ func (p *Plugin) NodePublishVolume(
 	ctx context.Context,
 	req *csi.NodePublishVolumeRequest) (
 	*csi.NodePublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to NodePublishVolume")
+	defer log.Println("end to NodePublishVolume")
+
+	portal := req.PublishVolumeInfo["portal"]
+	targetiqn := req.PublishVolumeInfo["targetiqn"]
+	targetlun := req.VolumeHandle.Id
+
+	// Connect Target
+	device, err := iscsi.Connect(portal, targetiqn, targetlun)
+	if err != nil {
+		return nil, err
+	}
+
+	// Format and Mount
+	err = iscsi.FormatandMount(device, "", req.TargetPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &csi.NodePublishVolumeResponse{
+		Reply: &csi.NodePublishVolumeResponse_Result_{
+			Result: &csi.NodePublishVolumeResponse_Result{},
+		},
+	}, nil
 }
 
 // NodeUnpublishVolume implementation
@@ -27,8 +51,28 @@ func (p *Plugin) NodeUnpublishVolume(
 	ctx context.Context,
 	req *csi.NodeUnpublishVolumeRequest) (
 	*csi.NodeUnpublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to NodeUnpublishVolume")
+	defer log.Println("end to NodeUnpublishVolume")
+
+	// Umount
+	err := iscsi.Umount(req.TargetPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Disconnect
+	// TODO: get portal and targetiqn
+	err = iscsi.Disconnect("", "")
+	if err != nil {
+		return nil, err
+	}
+
+	return &csi.NodeUnpublishVolumeResponse{
+		Reply: &csi.NodeUnpublishVolumeResponse_Result_{
+			Result: &csi.NodeUnpublishVolumeResponse_Result{},
+		},
+	}, nil
 }
 
 // GetNodeID implementation
