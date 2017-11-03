@@ -24,6 +24,21 @@ var supportedVersions = []*csi.Version{
 	},
 }
 
+//CheckVersionSupport check whether api version is supported
+func (p *Plugin) CheckVersionSupport(version *csi.Version) (bool, csi.Error_GeneralError_GeneralErrorCode) {
+	if version == nil {
+		return false, csi.Error_GeneralError_UNDEFINED
+	}
+
+	for _, ver := range supportedVersions {
+		if version == ver {
+			return true, csi.Error_GeneralError_UNKNOWN
+		}
+	}
+
+	return false, csi.Error_GeneralError_UNSUPPORTED_REQUEST_VERSION
+}
+
 // GetSupportedVersions implementation
 func (p *Plugin) GetSupportedVersions(
 	ctx context.Context,
