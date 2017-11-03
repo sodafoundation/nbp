@@ -9,7 +9,6 @@ import (
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"fmt"
-	client2 "github.com/opensds/opensds/client"
 )
 
 var (
@@ -200,7 +199,7 @@ func (p *Plugin) ControllerPublishVolume(
 			Host: req.NodeId.Values["host"],
 		},
 	}
-	attachSpec, errAttach := client.CreateVolumeAttachment(client2.VolumeAttachmentBuilder(attachReq))
+	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
 		msg := fmt.Sprintf("the volume %s failed to attach to node %s.", req.VolumeHandle.Id, req.NodeId.Values["host"])
 		return newControllerPublishVolumeResponseError(csi.Error_ControllerPublishVolumeError_VOLUME_ALREADY_PUBLISHED,
