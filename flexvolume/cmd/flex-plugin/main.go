@@ -144,7 +144,7 @@ func (OpenSDSPlugin) Attach(opts interface{}) Result {
 	}
 }
 
-func (OpenSDSPlugin) Detach(device string) Result {
+func (OpenSDSPlugin) Detach(volumeId string) Result {
 	client := opensds.GetClient("")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
@@ -154,8 +154,7 @@ func (OpenSDSPlugin) Detach(device string) Result {
 	hostname, _ := os.Hostname()
 	var act *model.VolumeAttachmentSpec = nil
 	for _, value := range attachments {
-		dev := value.Metadata["device"]
-		if hostname == value.Host && dev == device {
+		if hostname == value.Host && volumeId == value.VolumeId {
 			//volume has attach to this node
 			act = value
 			break
@@ -167,10 +166,12 @@ func (OpenSDSPlugin) Detach(device string) Result {
 		}
 	}
 
-	iscsiCon := iscsi.ParseIscsiConnectInfo(act.ConnectionData)
-	err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
-	if err != nil {
-		return Fail(err.Error())
+	if act.Metadata["device"] != "" {
+		iscsiCon := iscsi.ParseIscsiConnectInfo(act.ConnectionData)
+		err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
+		if err != nil {
+			return Fail(err.Error())
+		}
 	}
 
 	act.Status = VOLUME_STATUS_DETACHED
