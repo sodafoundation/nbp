@@ -157,11 +157,14 @@ func (fc *FakeDbClient) CreateVolumeAttachment(volID string, atc *model.VolumeAt
 }
 
 func (fc *FakeDbClient) GetVolumeAttachment(volID, attachmentID string) (*model.VolumeAttachmentSpec, error) {
-	return nil, nil
+	return &sampleAttachments[0], nil
 }
 
 func (fc *FakeDbClient) ListVolumeAttachments(volID string) ([]*model.VolumeAttachmentSpec, error) {
-	return nil, nil
+	var atcs []*model.VolumeAttachmentSpec
+
+	atcs = append(atcs, &sampleAttachments[0])
+	return atcs, nil
 }
 
 func (fc *FakeDbClient) UpdateVolumeAttachment(volID, attachmentID, mountpoint string, hostInfo *model.HostInfo) (*model.VolumeAttachmentSpec, error) {
@@ -271,6 +274,28 @@ var (
 			Status:      "available",
 			PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+		},
+	}
+
+	sampleAttachments = []model.VolumeAttachmentSpec{
+		{
+			BaseModel: &model.BaseModel{
+				Id: "f2dda3d2-bf79-11e7-8665-f750b088f63e",
+			},
+			Name:        "sample-volume-attachment",
+			Description: "This is a sample volume attachment for testing",
+			Status:      "available",
+			VolumeId:    "bd5b12a8-a101-11e7-941e-d77981b584d8",
+			HostInfo:    &model.HostInfo{},
+			ConnectionInfo: &model.ConnectionInfo{
+				DriverVolumeType: "iscsi",
+				ConnectionData: map[string]interface{}{
+					"targetDiscovered": true,
+					"targetIqn":        "iqn.2017-10.io.opensds:volume:00000001",
+					"targetPortal":     "127.0.0.0.1:3260",
+					"discard":          false,
+				},
+			},
 		},
 	}
 

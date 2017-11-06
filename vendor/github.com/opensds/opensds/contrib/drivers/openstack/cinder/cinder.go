@@ -186,6 +186,8 @@ func (d *Driver) InitializeConnection(req *pb.CreateAttachmentOpts) (*model.Conn
 	}, nil
 }
 
+func (d *Driver) TerminateConnection(opt *pb.DeleteAttachmentOpts) error { return nil }
+
 func (d *Driver) CreateSnapshot(req *pb.CreateVolumeSnapshotOpts) (*model.VolumeSnapshotSpec, error) {
 	opts := &snapshotsv2.CreateOpts{
 		VolumeID:    req.GetVolumeId(),
@@ -280,4 +282,3 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 	}
 	return pols, nil
 }
-

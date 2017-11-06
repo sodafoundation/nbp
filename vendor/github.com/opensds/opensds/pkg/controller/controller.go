@@ -20,6 +20,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	log "github.com/golang/glog"
@@ -55,9 +56,6 @@ func NewControllerWithVolumeConfig(
 			return nil, err
 		}
 
-		c.volume = vol
-		c.profile = prf
-
 		// Generate CreateVolumeOpts by parsing input VolumeSpec.
 		c.createVolumeOpts = func(vol *model.VolumeSpec) *pb.CreateVolumeOpts {
 			return &pb.CreateVolumeOpts{
@@ -72,25 +70,47 @@ func NewControllerWithVolumeConfig(
 		// Generate DeleteVolumeOpts by parsing input VolumeSpec.
 		c.deleteVolumeOpts = func(vol *model.VolumeSpec) *pb.DeleteVolumeOpts {
 			return &pb.DeleteVolumeOpts{
-				Id: vol.GetId(),
+				Id:       vol.GetId(),
+				Metadata: vol.GetMetadata(),
 			}
 		}(vol)
 
 		// Initialize policy controller when profile is specified.
-		c.policyController = policy.NewController(c.profile)
+		c.policyController = policy.NewController(prf)
 	}
 	if atc != nil {
-		// Generate CreateAttachment by parsing input VolumeAttachmentSpec.
+		// Generate CreateAttachmentOpts by parsing input VolumeAttachmentSpec.
 		c.createAttachmentOpts = func(atc *model.VolumeAttachmentSpec) *pb.CreateAttachmentOpts {
 			return &pb.CreateAttachmentOpts{
 				Id:       atc.GetId(),
 				VolumeId: atc.GetVolumeId(),
+				HostInfo: &pb.HostInfo{
+					Platform:  atc.Platform,
+					OsType:    atc.OsType,
+					Ip:        atc.Ip,
+					Host:      atc.Host,
+					Initiator: atc.Initiator,
+				},
+				Metadata: atc.GetMetadata(),
+			}
+		}(atc)
+		// Generate DeleteAttachmentOpts by parsing input VolumeAttachmentSpec.
+		c.deleteAttachmentOpts = func(atc *model.VolumeAttachmentSpec) *pb.DeleteAttachmentOpts {
+			return &pb.DeleteAttachmentOpts{
+				Id:       atc.GetId(),
+				VolumeId: atc.GetVolumeId(),
+				HostInfo: &pb.HostInfo{
+					Platform:  atc.Platform,
+					OsType:    atc.OsType,
+					Ip:        atc.Ip,
+					Host:      atc.Host,
+					Initiator: atc.Initiator,
+				},
+				Metadata: atc.GetMetadata(),
 			}
 		}(atc)
 	}
 	if snp != nil {
-		c.volSnapshot = snp
-
 		// Generate CreateVolumeSnapshotOpts by parsing input VolumeSnapshotSpec.
 		c.createVolumeSnapshotOpts = func(snp *model.VolumeSnapshotSpec) *pb.CreateVolumeSnapshotOpts {
 			return &pb.CreateVolumeSnapshotOpts{
@@ -99,12 +119,15 @@ func NewControllerWithVolumeConfig(
 				Description: snp.GetDescription(),
 				Size:        snp.GetSize(),
 				VolumeId:    snp.GetVolumeId(),
+				Metadata:    snp.GetMetadata(),
 			}
 		}(snp)
 		// Generate DeleteVolumeSnapshotOpts by parsing input VolumeSnapshotSpec.
 		c.deleteVolumeSnapshotOpts = func(snp *model.VolumeSnapshotSpec) *pb.DeleteVolumeSnapshotOpts {
 			return &pb.DeleteVolumeSnapshotOpts{
-				Id: snp.GetId(),
+				Id:       snp.GetId(),
+				VolumeId: snp.GetVolumeId(),
+				Metadata: snp.GetMetadata(),
 			}
 		}(snp)
 	}
@@ -117,7 +140,9 @@ func NewControllerWithVolumeConfig(
 		c.deleteVolumeOpts,
 		c.createVolumeSnapshotOpts,
 		c.deleteVolumeSnapshotOpts,
-		c.createAttachmentOpts)
+		c.createAttachmentOpts,
+		c.deleteAttachmentOpts,
+	)
 
 	return c, nil
 }
@@ -127,14 +152,12 @@ type Controller struct {
 
 	volumeController         volume.Controller
 	policyController         policy.Controller
-	profile                  *model.ProfileSpec
-	volume                   *model.VolumeSpec
-	volSnapshot              *model.VolumeSnapshotSpec
 	createVolumeOpts         *pb.CreateVolumeOpts
 	deleteVolumeOpts         *pb.DeleteVolumeOpts
 	createVolumeSnapshotOpts *pb.CreateVolumeSnapshotOpts
 	deleteVolumeSnapshotOpts *pb.DeleteVolumeSnapshotOpts
 	createAttachmentOpts     *pb.CreateAttachmentOpts
+	deleteAttachmentOpts     *pb.DeleteAttachmentOpts
 }
 
 func (c *Controller) CreateVolume() (*model.VolumeSpec, error) {
@@ -218,21 +241,11 @@ func (c *Controller) CreateVolumeAttachment() (*model.VolumeAttachmentSpec, erro
 }
 
 func (c *Controller) UpdateVolumeAttachment() (*model.VolumeAttachmentSpec, error) {
-	dockInfo, err := c.SelectDock(c.createAttachmentOpts.GetVolumeId())
-	if err != nil {
-		log.Error("When search supported dock resource:", err)
-		return nil, err
-	}
-	c.createAttachmentOpts.DockId = dockInfo.GetId()
-	c.createAttachmentOpts.DriverName = dockInfo.GetDriverName()
-
-	c.volumeController.SetDock(dockInfo)
-
-	return c.volumeController.UpdateVolumeAttachment()
+	return nil, errors.New("Not implemented!")
 }
 
 func (c *Controller) DeleteVolumeAttachment() *model.Response {
-	dockInfo, err := c.SelectDock(c.createAttachmentOpts.GetVolumeId())
+	dockInfo, err := c.SelectDock(c.deleteAttachmentOpts.GetVolumeId())
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return &model.Response{
@@ -240,8 +253,8 @@ func (c *Controller) DeleteVolumeAttachment() *model.Response {
 			Error:  fmt.Sprint(err),
 		}
 	}
-	c.createAttachmentOpts.DockId = dockInfo.GetId()
-	c.createAttachmentOpts.DriverName = dockInfo.GetDriverName()
+	c.deleteAttachmentOpts.DockId = dockInfo.GetId()
+	c.deleteAttachmentOpts.DriverName = dockInfo.GetDriverName()
 
 	c.volumeController.SetDock(dockInfo)
 
@@ -263,7 +276,7 @@ func (c *Controller) CreateVolumeSnapshot() (*model.VolumeSnapshotSpec, error) {
 }
 
 func (c *Controller) DeleteVolumeSnapshot() *model.Response {
-	dockInfo, err := c.SelectDock(c.volSnapshot.VolumeId)
+	dockInfo, err := c.SelectDock(c.deleteVolumeSnapshotOpts.GetVolumeId())
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return &model.Response{
