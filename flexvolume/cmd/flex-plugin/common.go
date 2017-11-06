@@ -30,12 +30,6 @@ type Result struct {
 	Device  string `json:"device,omitempty"`
 }
 
-type DefaultOptions struct {
-	Action_type string `json:"action_type"`
-	MountPath   string `json:"mountPath`
-	FsType      string `json:"kubernetes.io/fsType"`
-}
-
 type FlexVolumePlugin interface {
 	NewOptions() interface{}
 	Init() Result
@@ -83,8 +77,8 @@ func RunPlugin(plugin FlexVolumePlugin) {
 		finish(plugin.Init())
 
 	case "attach":
-		if len(os.Args) != 3 {
-			finish(Fail("attach expected exactly 3 arguments; got ", os.Args))
+		if len(os.Args) != 4 {
+			finish(Fail("attach expected exactly 4 arguments; got ", os.Args))
 		}
 
 		opt := plugin.NewOptions()
