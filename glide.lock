@@ -1,12 +1,12 @@
 hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
-updated: 2017-10-30T18:21:12.6865507+08:00
+updated: 2017-11-03T18:01:13.9973434+08:00
 imports:
 - name: github.com/astaxie/beego
   version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
   subpackages:
   - httplib
 - name: github.com/container-storage-interface/spec
-  version: 9d4ce05b42cbfc75a7e0c198ab46e6399e01fbb5
+  version: 2561947ce5899bcb80e5dbaecb99afdce66e91d4
   subpackages:
   - lib/go/csi
 - name: github.com/golang/glog
@@ -21,11 +21,11 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/gorilla/context
-  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/mux
   version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/kubernetes-incubator/service-catalog
-  version: e4293d3094a16e149dc251f63ec5c33f8af2fce4
+  version: 48ecff13b1f18c7cf18798672a438b62822cda9b
   subpackages:
   - contrib/pkg/broker/controller
   - contrib/pkg/broker/server
@@ -33,7 +33,7 @@ imports:
   - pkg
   - pkg/util
 - name: github.com/opensds/opensds
-  version: 549baed7361d7bc9b83d692b1def30f37e0b0df8
+  version: 953efd55a2e8b5d9508c9107eedb90b0c24f47bb
   subpackages:
   - client
   - pkg/model
@@ -47,6 +47,10 @@ imports:
   - internal/timeseries
   - lex/httplex
   - trace
+- name: golang.org/x/sys
+  version: 46eaec7899b1dd945c25db17c78ba3f0c58a6613
+  subpackages:
+  - unix
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
@@ -56,7 +60,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: f676e0f3ac6395ff1a529ae59a6670878a8371a6
+  version: 11c7f9e547da6db876260ce49ea7536985904c9b
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc

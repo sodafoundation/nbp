@@ -23,6 +23,7 @@ package drivers
 
 import (
 	"github.com/opensds/opensds/contrib/drivers/ceph"
+	"github.com/opensds/opensds/contrib/drivers/lvm"
 	"github.com/opensds/opensds/contrib/drivers/openstack/cinder"
 	"github.com/opensds/opensds/contrib/drivers/sample"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
@@ -43,6 +44,8 @@ type VolumeDriver interface {
 
 	InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error)
 
+	TerminateConnection(opt *pb.DeleteAttachmentOpts) error
+
 	CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.VolumeSnapshotSpec, error)
 
 	PullSnapshot(snapIdentifier string) (*model.VolumeSnapshotSpec, error)
@@ -60,6 +63,10 @@ func Init(resourceType string) VolumeDriver {
 		return d
 	case "ceph":
 		return &ceph.Driver{}
+	case "lvm":
+		var d = &lvm.Driver{}
+		d.Setup()
+		return d
 	default:
 		return &sample.Driver{}
 	}
