@@ -8,11 +8,54 @@ import (
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
+	"fmt"
+)
+
+var (
+	VOLUME_ATTACH_NODES_MAX = 100
 )
 
 ////////////////////////////////////////////////////////////////////////////////
 //                            Controller Service                              //
 ////////////////////////////////////////////////////////////////////////////////
+
+func newGeneralError(
+	errCode csi.Error_GeneralError_GeneralErrorCode,
+	retry bool,
+	message string) *csi.ControllerPublishVolumeResponse {
+	return &csi.ControllerPublishVolumeResponse{
+		Reply: &csi.ControllerPublishVolumeResponse_Error{
+			Error: &csi.Error{
+				Value: &csi.Error_GeneralError_{
+					GeneralError: &csi.Error_GeneralError{
+						ErrorCode:          errCode,
+						CallerMustNotRetry: retry,
+						ErrorDescription:   message,
+					},
+				},
+			},
+		},
+	}
+}
+
+func newControllerPublishVolumeResponseError(
+	errCode csi.Error_ControllerPublishVolumeError_ControllerPublishVolumeErrorCode,
+	nodeIds []*csi.NodeID,
+	message string) *csi.ControllerPublishVolumeResponse {
+	return &csi.ControllerPublishVolumeResponse{
+		Reply: &csi.ControllerPublishVolumeResponse_Error{
+			Error: &csi.Error{
+				Value: &csi.Error_ControllerPublishVolumeError_{
+					ControllerPublishVolumeError: &csi.Error_ControllerPublishVolumeError{
+						ErrorCode:          errCode,
+						ErrorDescription:   message,
+						NodeIds: nodeIds,
+					},
+				},
+			},
+		},
+	}
+}
 
 // CreateVolume implementation
 func (p *Plugin) CreateVolume(
@@ -91,8 +134,90 @@ func (p *Plugin) ControllerPublishVolume(
 	ctx context.Context,
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ControllerPublishVolume")
+	defer log.Println("end to ControllerPublishVolume")
+
+	if support, errCode := p.CheckVersionSupport(req.Version); !support {
+		retry := false
+		if errCode == csi.Error_GeneralError_UNSUPPORTED_REQUEST_VERSION {
+			//if version not supported, caller should not try again.
+			retry = true
+		}
+		return newGeneralError(errCode, retry, "The request version is not supported."), nil
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeHandle.Id)
+	if errVol != nil || volSpec == nil {
+		return newControllerPublishVolumeResponseError(csi.Error_ControllerPublishVolumeError_VOLUME_DOES_NOT_EXIST,
+			nil, "the volume is not exist."), nil
+	}
+
+	//need to check node exist?
+
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return newGeneralError(csi.Error_GeneralError_UNDEFINED, false, "Internal error."), nil
+	}
+
+	var attachNodes []*csi.NodeID
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == req.VolumeHandle.Id {
+			node := &csi.NodeID{
+				Values: map[string]string{
+					"ip": attachSpec.HostInfo.Ip,
+					"host": attachSpec.HostInfo.Host,
+				},
+			}
+			attachNodes = append(attachNodes, node)
+		}
+	}
+
+	if len(attachNodes) != 0 {
+		if len(attachNodes) >= VOLUME_ATTACH_NODES_MAX {
+			return newControllerPublishVolumeResponseError(csi.Error_ControllerPublishVolumeError_MAX_ATTACHED_NODES,
+				attachNodes, "the node to attath has reach max."), nil
+		}
+
+		//if the volume has been published, but without MULTI_NODE capability, return error.
+		mode := req.VolumeCapability.AccessMode.Mode
+		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
+			return newControllerPublishVolumeResponseError(csi.Error_ControllerPublishVolumeError_VOLUME_ALREADY_PUBLISHED,
+				attachNodes, "the volume has been published to another node."), nil
+		}
+	}
+
+	attachReq := &model.VolumeAttachmentSpec{
+		VolumeId: req.VolumeHandle.Id,
+		HostInfo: &model.HostInfo{
+			Ip: req.NodeId.Values["ip"],
+			Host: req.NodeId.Values["host"],
+		},
+	}
+	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+	if errAttach != nil {
+		msg := fmt.Sprintf("the volume %s failed to attach to node %s.", req.VolumeHandle.Id, req.NodeId.Values["host"])
+		return newControllerPublishVolumeResponseError(csi.Error_ControllerPublishVolumeError_VOLUME_ALREADY_PUBLISHED,
+			attachNodes, msg), nil
+	}
+
+	return &csi.ControllerPublishVolumeResponse{
+		Reply: &csi.ControllerPublishVolumeResponse_Result_{
+			Result: &csi.ControllerPublishVolumeResponse_Result{
+				PublishVolumeInfo: map[string]string{
+					"ip": attachSpec.Ip,
+					"host": attachSpec.Host,
+					"attachid": attachSpec.Id,
+					"status": attachSpec.Status,
+				},
+			},
+		},
+	}, nil
 }
 
 // ControllerUnpublishVolume implementation

@@ -30,17 +30,11 @@ type Result struct {
 	Device  string `json:"device,omitempty"`
 }
 
-type DefaultOptions struct {
-	Action_type string `json:"action_type"`
-	MountPath   string `json:"mountPath`
-	FsType      string `json:"kubernetes.io/fsType"`
-}
-
 type FlexVolumePlugin interface {
 	NewOptions() interface{}
 	Init() Result
 	Attach(opt interface{}) Result
-	Detach(device string) Result
+	Detach(volumeId string) Result
 	Mount(mountDir string, device string, opt interface{}) Result
 	Unmount(mountDir string) Result
 }
@@ -83,8 +77,8 @@ func RunPlugin(plugin FlexVolumePlugin) {
 		finish(plugin.Init())
 
 	case "attach":
-		if len(os.Args) != 3 {
-			finish(Fail("attach expected exactly 3 arguments; got ", os.Args))
+		if len(os.Args) < 3 {
+			finish(Fail("attach expected at least 3 arguments; got ", os.Args))
 		}
 
 		opt := plugin.NewOptions()
@@ -95,12 +89,12 @@ func RunPlugin(plugin FlexVolumePlugin) {
 		finish(plugin.Attach(opt))
 
 	case "detach":
-		if len(os.Args) != 3 {
-			finish(Fail("detach expected exactly 3 arguments; got ", os.Args))
+		if len(os.Args) < 3 {
+			finish(Fail("detach expected at least 3 arguments; got ", os.Args))
 		}
 
-		device := os.Args[2]
-		finish(plugin.Detach(device))
+		volumeId := os.Args[2]
+		finish(plugin.Detach(volumeId))
 
 	case "mount":
 		if len(os.Args) != 5 {

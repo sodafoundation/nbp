@@ -8,7 +8,21 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"github.com/mitchellh/mapstructure"
 )
+
+type IscsiConnectorInfo struct {
+	AccessMode string `mapstructure:"access_mode"`
+	AuthUser   string `mapstructure:"auth_username"`
+	AuthPass   string `mapstructure:"auth_password"`
+	AuthMethod string `mapstructure:"auth_method"`
+	TgtDisco   bool   `mapstructure:"target_discovered"`
+	TgtIQN     string `mapstructure:"target_iqn"`
+	TgtPortal  string `mapstructure:"target_portal"`
+	VolumeID   string `mapstructure:"volume_id"`
+	TgtLun     int    `mapstructure:"target_lun"`
+	Encrypted  bool   `mapstructure:"encrypted"`
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //      Refer some codes from: https://github.com/j-griffith/csi-cinder       //
@@ -276,4 +290,12 @@ func Umount(mountpoint string) error {
 		return err
 	}
 	return nil
+}
+
+func ParseIscsiConnectInfo(connectInfo map[string]interface{}) *IscsiConnectorInfo {
+	var con IscsiConnectorInfo
+
+	mapstructure.Decode(connectInfo["data"], &con)
+
+	return &con
 }
