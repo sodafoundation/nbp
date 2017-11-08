@@ -25,7 +25,7 @@ func (p *Plugin) NodePublishVolume(
 
 	portal := req.PublishVolumeInfo["portal"]
 	targetiqn := req.PublishVolumeInfo["targetiqn"]
-	targetlun := req.VolumeHandle.Id
+	targetlun := req.VolumeId
 
 	// Connect Target
 	device, err := iscsi.Connect(portal, targetiqn, targetlun)
@@ -93,39 +93,37 @@ func (p *Plugin) GetNodeID(
 	return &csi.GetNodeIDResponse{
 		Reply: &csi.GetNodeIDResponse_Result_{
 			Result: &csi.GetNodeIDResponse_Result{
-				NodeId: &csi.NodeID{
-					Values: map[string]string{"hostname": hostname},
-				},
+				NodeId: hostname,
 			},
 		},
 	}, nil
 }
 
-// ProbeNode implementation
-func (p *Plugin) ProbeNode(
+// NodeProbe implementation
+func (p *Plugin) NodeProbe(
 	ctx context.Context,
-	req *csi.ProbeNodeRequest) (
-	*csi.ProbeNodeResponse, error) {
+	req *csi.NodeProbeRequest) (
+	*csi.NodeProbeResponse, error) {
 
-	log.Println("start to ProbeNode")
-	defer log.Println("end to ProbeNode")
+	log.Println("start to NodeProbe")
+	defer log.Println("end to NodeProbe")
 
 	switch runtime.GOOS {
 	case "linux":
-		return &csi.ProbeNodeResponse{
-			Reply: &csi.ProbeNodeResponse_Result_{
-				Result: &csi.ProbeNodeResponse_Result{},
+		return &csi.NodeProbeResponse{
+			Reply: &csi.NodeProbeResponse_Result_{
+				Result: &csi.NodeProbeResponse_Result{},
 			},
 		}, nil
 	default:
 		msg := "unsupported operating system:" + runtime.GOOS
 		log.Fatalf(msg)
-		return &csi.ProbeNodeResponse{
-			Reply: &csi.ProbeNodeResponse_Error{
+		return &csi.NodeProbeResponse{
+			Reply: &csi.NodeProbeResponse_Error{
 				Error: &csi.Error{
-					Value: &csi.Error_ProbeNodeError_{
-						ProbeNodeError: &csi.Error_ProbeNodeError{
-							ErrorCode:        csi.Error_ProbeNodeError_MISSING_REQUIRED_HOST_DEPENDENCY,
+					Value: &csi.Error_NodeProbeError_{
+						NodeProbeError: &csi.Error_NodeProbeError{
+							ErrorCode:        csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY,
 							ErrorDescription: msg,
 						},
 					},

@@ -57,17 +57,16 @@ func main() {
 
 	log.Printf("[ControllerGetCapabilities] controllercapabilities:%v", controllercapabilities)
 
-	// Test ValidateVolumeCapabilities
-	volumeinfo := &csi.VolumeInfo{
-		Handle: &csi.VolumeHandle{
-			Id: "1234567890",
-			Metadata: map[string]string{
-				"key": "value",
-			},
-		},
-		CapacityBytes: 1000,
+	// Test ControllerProbe
+	err = controller.ControllerProbe(context.Background(), versions[0])
+	if err != nil {
+		log.Fatalf("failed to ControllerProbe: %v", err)
+	} else {
+		log.Printf("[ControllerProbe] ControllerProbe:OK")
 	}
 
+	// Test ValidateVolumeCapabilities
+	volumeid := "1234567890"
 	volumecapabilities := []*csi.VolumeCapability{
 		&csi.VolumeCapability{
 			AccessMode: &csi.VolumeCapability_AccessMode{
@@ -78,8 +77,16 @@ func main() {
 			},
 		},
 	}
+	volumeattributes := map[string]string{
+		"key": "value",
+	}
 
-	validatevolumecapabilities, err := controller.ValidateVolumeCapabilities(context.Background(), versions[0], volumeinfo, volumecapabilities)
+	validatevolumecapabilities, err := controller.ValidateVolumeCapabilities(
+		context.Background(),
+		versions[0],
+		volumeid,
+		volumecapabilities,
+		volumeattributes)
 	if err != nil {
 		log.Fatalf("failed to ValidateVolumeCapabilities: %v", err)
 	}
@@ -109,11 +116,11 @@ func main() {
 
 	log.Printf("[GetNodeID] nodeid:%v", nodeid)
 
-	// Test ProbeNode
-	err = node.ProbeNode(context.Background(), versions[0])
+	// Test NodeProbe
+	err = node.NodeProbe(context.Background(), versions[0])
 	if err != nil {
-		log.Fatalf("failed to ProbeNode: %v", err)
+		log.Fatalf("failed to NodeProbe: %v", err)
 	} else {
-		log.Printf("[ProbeNode] ProbeNode:OK")
+		log.Printf("[NodeProbe] NodeProbe:OK")
 	}
 }

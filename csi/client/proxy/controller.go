@@ -64,12 +64,12 @@ func (c *Controller) CreateVolume(
 func (c *Controller) DeleteVolume(
 	ctx context.Context,
 	version *csi.Version,
-	handle *csi.VolumeHandle,
+	volumeid string,
 	credentials *csi.Credentials /*Optional*/) error {
 
 	req := &csi.DeleteVolumeRequest{
 		Version:         version,
-		VolumeHandle:    handle,
+		VolumeId:        volumeid,
 		UserCredentials: credentials,
 	}
 
@@ -85,19 +85,21 @@ func (c *Controller) DeleteVolume(
 func (c *Controller) ControllerPublishVolume(
 	ctx context.Context,
 	version *csi.Version,
-	handle *csi.VolumeHandle,
-	nodeID *csi.NodeID, /*Optional*/
+	volumeid string,
+	nodeID string, /*Optional*/
 	capabilities *csi.VolumeCapability,
 	readonly bool,
-	credentials *csi.Credentials /*Optional*/) (map[string]string, error) {
+	credentials *csi.Credentials, /*Optional*/
+	volumeattributes map[string]string /*Optional*/) (map[string]string, error) {
 
 	req := &csi.ControllerPublishVolumeRequest{
 		Version:          version,
-		VolumeHandle:     handle,
+		VolumeId:         volumeid,
 		NodeId:           nodeID,
 		VolumeCapability: capabilities,
 		Readonly:         readonly,
 		UserCredentials:  credentials,
+		VolumeAttributes: volumeattributes,
 	}
 
 	rs, err := c.client.ControllerPublishVolume(ctx, req)
@@ -112,13 +114,13 @@ func (c *Controller) ControllerPublishVolume(
 func (c *Controller) ControllerUnpublishVolume(
 	ctx context.Context,
 	version *csi.Version,
-	handle *csi.VolumeHandle,
-	nodeID *csi.NodeID, /*Optional*/
+	volumeid string,
+	nodeID string, /*Optional*/
 	credentials *csi.Credentials /*Optional*/) error {
 
 	req := &csi.ControllerUnpublishVolumeRequest{
 		Version:         version,
-		VolumeHandle:    handle,
+		VolumeId:        volumeid,
 		NodeId:          nodeID,
 		UserCredentials: credentials,
 	}
@@ -131,17 +133,36 @@ func (c *Controller) ControllerUnpublishVolume(
 	return nil
 }
 
+// ControllerProbe proxy
+func (c *Controller) ControllerProbe(
+	ctx context.Context,
+	version *csi.Version) error {
+
+	req := &csi.ControllerProbeRequest{
+		Version: version,
+	}
+
+	_, err := c.client.ControllerProbe(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ValidateVolumeCapabilities proxy
 func (c *Controller) ValidateVolumeCapabilities(
 	ctx context.Context,
 	version *csi.Version,
-	info *csi.VolumeInfo,
-	capabilities []*csi.VolumeCapability) (*csi.ValidateVolumeCapabilitiesResponse_Result, error) {
+	volumeid string,
+	capabilities []*csi.VolumeCapability,
+	volumeattributes map[string]string /*Optional*/) (*csi.ValidateVolumeCapabilitiesResponse_Result, error) {
 
 	req := &csi.ValidateVolumeCapabilitiesRequest{
 		Version:            version,
-		VolumeInfo:         info,
+		VolumeId:           volumeid,
 		VolumeCapabilities: capabilities,
+		VolumeAttributes:   volumeattributes,
 	}
 
 	rs, err := c.client.ValidateVolumeCapabilities(ctx, req)
