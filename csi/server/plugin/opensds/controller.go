@@ -2,6 +2,7 @@ package opensds
 
 import (
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -42,17 +43,15 @@ func (p *Plugin) CreateVolume(
 
 	// return volume info
 	volumeinfo := &csi.VolumeInfo{
-		Handle: &csi.VolumeHandle{
-			Id: v.Id,
-			Metadata: map[string]string{
-				"Name":             v.Name,
-				"Status":           v.Status,
-				"AvailabilityZone": v.AvailabilityZone,
-				"PoolId":           v.PoolId,
-				"ProfileId":        v.ProfileId,
-			},
-		},
 		CapacityBytes: uint64(v.Size),
+		Id:            v.Id,
+		Attributes: map[string]string{
+			"Name":             v.Name,
+			"Status":           v.Status,
+			"AvailabilityZone": v.AvailabilityZone,
+			"PoolId":           v.PoolId,
+			"ProfileId":        v.ProfileId,
+		},
 	}
 
 	return &csi.CreateVolumeResponse{
@@ -74,7 +73,7 @@ func (p *Plugin) DeleteVolume(
 	defer log.Println("end to DeleteVolume")
 
 	c := sdscontroller.GetClient("")
-	err := c.DeleteVolume(req.VolumeHandle.Id, &model.VolumeSpec{})
+	err := c.DeleteVolume(req.VolumeId, &model.VolumeSpec{})
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +112,7 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	log.Println("start to ValidateVolumeCapabilities")
 	defer log.Println("end to ValidateVolumeCapabilities")
 
-	volumeid := req.VolumeInfo.Handle.Id
-	if strings.TrimSpace(volumeid) == "" {
+	if strings.TrimSpace(req.VolumeId) == "" {
 		return &csi.ValidateVolumeCapabilitiesResponse{
 			Reply: &csi.ValidateVolumeCapabilitiesResponse_Error{
 				Error: &csi.Error{
@@ -172,18 +170,17 @@ func (p *Plugin) ListVolumes(
 	ens := []*csi.ListVolumesResponse_Result_Entry{}
 	for _, v := range volumes {
 		if v != nil {
+
 			volumeinfo := &csi.VolumeInfo{
-				Handle: &csi.VolumeHandle{
-					Id: v.Id,
-					Metadata: map[string]string{
-						"Name":             v.Name,
-						"Status":           v.Status,
-						"AvailabilityZone": v.AvailabilityZone,
-						"PoolId":           v.PoolId,
-						"ProfileId":        v.ProfileId,
-					},
-				},
 				CapacityBytes: uint64(v.Size),
+				Id:            v.Id,
+				Attributes: map[string]string{
+					"Name":             v.Name,
+					"Status":           v.Status,
+					"AvailabilityZone": v.AvailabilityZone,
+					"PoolId":           v.PoolId,
+					"ProfileId":        v.ProfileId,
+				},
 			}
 
 			ens = append(ens, &csi.ListVolumesResponse_Result_Entry{
@@ -232,6 +229,40 @@ func (p *Plugin) GetCapacity(
 			},
 		},
 	}, nil
+}
+
+// ControllerProbe implementation
+func (p *Plugin) ControllerProbe(
+	ctx context.Context,
+	req *csi.ControllerProbeRequest) (
+	*csi.ControllerProbeResponse, error) {
+
+	log.Println("start to ControllerProbe")
+	defer log.Println("end to ControllerProbe")
+
+	switch runtime.GOOS {
+	case "linux":
+		return &csi.ControllerProbeResponse{
+			Reply: &csi.ControllerProbeResponse_Result_{
+				Result: &csi.ControllerProbeResponse_Result{},
+			},
+		}, nil
+	default:
+		msg := "unsupported operating system:" + runtime.GOOS
+		log.Fatalf(msg)
+		return &csi.ControllerProbeResponse{
+			Reply: &csi.ControllerProbeResponse_Error{
+				Error: &csi.Error{
+					Value: &csi.Error_ControllerProbeError_{
+						ControllerProbeError: &csi.Error_ControllerProbeError{
+							ErrorCode:        csi.Error_ControllerProbeError_MISSING_REQUIRED_HOST_DEPENDENCY,
+							ErrorDescription: msg,
+						},
+					},
+				},
+			},
+		}, nil
+	}
 }
 
 // ControllerGetCapabilities implementation

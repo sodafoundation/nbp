@@ -99,6 +99,15 @@ func (s *server) GetCapacity(
 	return s.plugin.GetCapacity(ctx, req)
 }
 
+// ControllerProbe implementation
+func (s *server) ControllerProbe(
+	ctx context.Context,
+	req *csi.ControllerProbeRequest) (
+	*csi.ControllerProbeResponse, error) {
+	// Use plugin implementation
+	return s.plugin.ControllerProbe(ctx, req)
+}
+
 // ControllerGetCapabilities implementation
 func (s *server) ControllerGetCapabilities(
 	ctx context.Context,
@@ -139,13 +148,13 @@ func (s *server) GetNodeID(
 	return s.plugin.GetNodeID(ctx, req)
 }
 
-// ProbeNode implementation
-func (s *server) ProbeNode(
+// NodeProbe implementation
+func (s *server) NodeProbe(
 	ctx context.Context,
-	req *csi.ProbeNodeRequest) (
-	*csi.ProbeNodeResponse, error) {
+	req *csi.NodeProbeRequest) (
+	*csi.NodeProbeResponse, error) {
 	// Use plugin implementation
-	return s.plugin.ProbeNode(ctx, req)
+	return s.plugin.NodeProbe(ctx, req)
 }
 
 // NodeGetCapabilities implementation

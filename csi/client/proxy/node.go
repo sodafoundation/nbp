@@ -37,21 +37,23 @@ func GetNode() (client Node, err error) {
 func (c *Node) NodePublishVolume(
 	ctx context.Context,
 	version *csi.Version,
-	handle *csi.VolumeHandle,
+	volumeid string,
 	volumeinfo map[string]string, /*Optional*/
 	targetPath string,
 	capability *csi.VolumeCapability,
 	readonly bool,
-	credentials *csi.Credentials /*Optional*/) error {
+	credentials *csi.Credentials, /*Optional*/
+	volumeattributes map[string]string /*Optional*/) error {
 
 	req := &csi.NodePublishVolumeRequest{
 		Version:           version,
-		VolumeHandle:      handle,
+		VolumeId:          volumeid,
 		PublishVolumeInfo: volumeinfo,
 		TargetPath:        targetPath,
 		VolumeCapability:  capability,
 		Readonly:          readonly,
 		UserCredentials:   credentials,
+		VolumeAttributes:  volumeattributes,
 	}
 
 	_, err := c.client.NodePublishVolume(ctx, req)
@@ -66,13 +68,13 @@ func (c *Node) NodePublishVolume(
 func (c *Node) NodeUnpublishVolume(
 	ctx context.Context,
 	version *csi.Version,
-	handle *csi.VolumeHandle,
+	volumeid string,
 	targetPath string,
 	credentials *csi.Credentials /*Optional*/) error {
 
 	req := &csi.NodeUnpublishVolumeRequest{
 		Version:         version,
-		VolumeHandle:    handle,
+		VolumeId:        volumeid,
 		TargetPath:      targetPath,
 		UserCredentials: credentials,
 	}
@@ -88,7 +90,7 @@ func (c *Node) NodeUnpublishVolume(
 // GetNodeID proxy
 func (c *Node) GetNodeID(
 	ctx context.Context,
-	version *csi.Version) (*csi.NodeID, error) {
+	version *csi.Version) (string, error) {
 
 	req := &csi.GetNodeIDRequest{
 		Version: version,
@@ -96,22 +98,22 @@ func (c *Node) GetNodeID(
 
 	rs, err := c.client.GetNodeID(ctx, req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return rs.GetResult().NodeId, nil
 }
 
-// ProbeNode proxy
-func (c *Node) ProbeNode(
+// NodeProbe proxy
+func (c *Node) NodeProbe(
 	ctx context.Context,
 	version *csi.Version) error {
 
-	req := &csi.ProbeNodeRequest{
+	req := &csi.NodeProbeRequest{
 		Version: version,
 	}
 
-	_, err := c.client.ProbeNode(ctx, req)
+	_, err := c.client.NodeProbe(ctx, req)
 	if err != nil {
 		return err
 	}
