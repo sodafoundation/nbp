@@ -1,12 +1,12 @@
 hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
-updated: 2017-11-03T18:01:13.9973434+08:00
+updated: 2017-11-13T10:23:39.3647601+08:00
 imports:
 - name: github.com/astaxie/beego
   version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
   subpackages:
   - httplib
 - name: github.com/container-storage-interface/spec
-  version: 2561947ce5899bcb80e5dbaecb99afdce66e91d4
+  version: 51e48d38ac8a5b4bdcf41826b77dc016ad83451e
   subpackages:
   - lib/go/csi
 - name: github.com/golang/glog
@@ -33,7 +33,7 @@ imports:
   - pkg
   - pkg/util
 - name: github.com/opensds/opensds
-  version: 953efd55a2e8b5d9508c9107eedb90b0c24f47bb
+  version: 178f0b24fbda8f7bb01afda976a3155874cbf728
   subpackages:
   - client
   - pkg/model
@@ -48,7 +48,7 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sys
-  version: 46eaec7899b1dd945c25db17c78ba3f0c58a6613
+  version: 1e2299c37cc91a509f1b12369872d27be0ce98a6
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -64,7 +64,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 61d37c5d657a47e4404fd6823bd598341a2595de
+  version: 5ffe3083946d5603a0578721101dc8165b1d5b5f
   subpackages:
   - balancer
   - codes

@@ -33,11 +33,7 @@ func (p *Plugin) GetSupportedVersions(
 	log.Println("start to GetSupportedVersions")
 	defer log.Println("end to GetSupportedVersions")
 	return &csi.GetSupportedVersionsResponse{
-		Reply: &csi.GetSupportedVersionsResponse_Result_{
-			Result: &csi.GetSupportedVersionsResponse_Result{
-				SupportedVersions: supportedVersions,
-			},
-		},
+		SupportedVersions: supportedVersions,
 	}, nil
 }
 
@@ -51,12 +47,8 @@ func (p *Plugin) GetPluginInfo(
 	defer log.Println("end to GetPluginInfo")
 
 	return &csi.GetPluginInfoResponse{
-		Reply: &csi.GetPluginInfoResponse_Result_{
-			Result: &csi.GetPluginInfoResponse_Result{
-				Name:          PluginName,
-				VendorVersion: req.Version.String(),
-				Manifest:      nil,
-			},
-		},
+		Name:          PluginName,
+		VendorVersion: req.Version.String(),
+		Manifest:      nil,
 	}, nil
 }

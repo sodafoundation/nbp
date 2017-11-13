@@ -5,9 +5,12 @@ import (
 	"os"
 	"runtime"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/status"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,11 +42,7 @@ func (p *Plugin) NodePublishVolume(
 		return nil, err
 	}
 
-	return &csi.NodePublishVolumeResponse{
-		Reply: &csi.NodePublishVolumeResponse_Result_{
-			Result: &csi.NodePublishVolumeResponse_Result{},
-		},
-	}, nil
+	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 // NodeUnpublishVolume implementation
@@ -68,11 +67,7 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, err
 	}
 
-	return &csi.NodeUnpublishVolumeResponse{
-		Reply: &csi.NodeUnpublishVolumeResponse_Result_{
-			Result: &csi.NodeUnpublishVolumeResponse_Result{},
-		},
-	}, nil
+	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 // GetNodeID implementation
@@ -91,11 +86,7 @@ func (p *Plugin) GetNodeID(
 	}
 
 	return &csi.GetNodeIDResponse{
-		Reply: &csi.GetNodeIDResponse_Result_{
-			Result: &csi.GetNodeIDResponse_Result{
-				NodeId: hostname,
-			},
-		},
+		NodeId: hostname,
 	}, nil
 }
 
@@ -110,26 +101,12 @@ func (p *Plugin) NodeProbe(
 
 	switch runtime.GOOS {
 	case "linux":
-		return &csi.NodeProbeResponse{
-			Reply: &csi.NodeProbeResponse_Result_{
-				Result: &csi.NodeProbeResponse_Result{},
-			},
-		}, nil
+		return &csi.NodeProbeResponse{}, nil
 	default:
 		msg := "unsupported operating system:" + runtime.GOOS
 		log.Fatalf(msg)
-		return &csi.NodeProbeResponse{
-			Reply: &csi.NodeProbeResponse_Error{
-				Error: &csi.Error{
-					Value: &csi.Error_NodeProbeError_{
-						NodeProbeError: &csi.Error_NodeProbeError{
-							ErrorCode:        csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY,
-							ErrorDescription: msg,
-						},
-					},
-				},
-			},
-		}, nil
+		// csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 }
 
@@ -143,15 +120,11 @@ func (p *Plugin) NodeGetCapabilities(
 	defer log.Println("end to NodeGetCapabilities")
 
 	return &csi.NodeGetCapabilitiesResponse{
-		Reply: &csi.NodeGetCapabilitiesResponse_Result_{
-			Result: &csi.NodeGetCapabilitiesResponse_Result{
-				Capabilities: []*csi.NodeServiceCapability{
-					&csi.NodeServiceCapability{
-						Type: &csi.NodeServiceCapability_Rpc{
-							Rpc: &csi.NodeServiceCapability_RPC{
-								Type: csi.NodeServiceCapability_RPC_UNKNOWN,
-							},
-						},
+		Capabilities: []*csi.NodeServiceCapability{
+			&csi.NodeServiceCapability{
+				Type: &csi.NodeServiceCapability_Rpc{
+					Rpc: &csi.NodeServiceCapability_RPC{
+						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
 					},
 				},
 			},

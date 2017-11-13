@@ -44,13 +44,13 @@ func (c *Identity) GetSupportedVersions(
 		return nil, err
 	}
 
-	return rs.GetResult().SupportedVersions, nil
+	return rs.SupportedVersions, nil
 }
 
 // GetPluginInfo proxy
 func (c *Identity) GetPluginInfo(
 	ctx context.Context,
-	version *csi.Version) (*csi.GetPluginInfoResponse_Result, error) {
+	version *csi.Version) (*csi.GetPluginInfoResponse, error) {
 
 	req := &csi.GetPluginInfoRequest{
 		Version: version,
@@ -61,5 +61,5 @@ func (c *Identity) GetPluginInfo(
 		return nil, err
 	}
 
-	return rs.GetResult(), nil
+	return rs, nil
 }
