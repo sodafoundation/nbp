@@ -120,7 +120,7 @@ func TestCreateVolume(t *testing.T) {
 	fc := NewFakeController( /*&pb.DockRequest{}*/ )
 	var expected = &sampleVolume
 
-	result, err := fc.CreateVolume()
+	result, err := fc.CreateVolume(&pb.CreateVolumeOpts{})
 	if err != nil {
 		t.Errorf("Failed to create volume, err is %v\n", err)
 	}
@@ -132,12 +132,10 @@ func TestCreateVolume(t *testing.T) {
 
 func TestDeleteVolume(t *testing.T) {
 	fc := NewFakeController( /*&pb.DockRequest{}*/ )
-	var expected = &model.Response{Status: "Success"}
 
-	result := fc.DeleteVolume()
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v\n", expected, result)
+	result := fc.DeleteVolume(&pb.DeleteVolumeOpts{})
+	if result != nil {
+		t.Errorf("Expected %v, got %v\n", nil, result)
 	}
 }
 
@@ -145,7 +143,7 @@ func TestCreateVolumeAttachment(t *testing.T) {
 	fc := NewFakeController( /*&pb.DockRequest{}*/ )
 	var expected = &sampleAttachment
 
-	result, err := fc.CreateVolumeAttachment()
+	result, err := fc.CreateVolumeAttachment(&pb.CreateAttachmentOpts{})
 	if err != nil {
 		t.Errorf("Failed to create volume attachment, err is %v\n", err)
 	}
@@ -155,11 +153,20 @@ func TestCreateVolumeAttachment(t *testing.T) {
 	}
 }
 
+func TestDeleteVolumeAttachment(t *testing.T) {
+	fc := NewFakeController( /*&pb.DockRequest{}*/ )
+
+	result := fc.DeleteVolumeAttachment(&pb.DeleteAttachmentOpts{})
+	if result != nil {
+		t.Errorf("Expected %v, got %v\n", nil, result)
+	}
+}
+
 func TestCreateVolumeSnapshot(t *testing.T) {
 	fc := NewFakeController( /*&pb.DockRequest{}*/ )
 	var expected = &sampleSnapshot
 
-	result, err := fc.CreateVolumeSnapshot()
+	result, err := fc.CreateVolumeSnapshot(&pb.CreateVolumeSnapshotOpts{})
 	if err != nil {
 		t.Errorf("Failed to create volume snapshot, err is %v\n", err)
 	}
@@ -171,12 +178,10 @@ func TestCreateVolumeSnapshot(t *testing.T) {
 
 func TestDeleteVolumeSnapshot(t *testing.T) {
 	fc := NewFakeController( /*&pb.DockRequest{}*/ )
-	var expected = &model.Response{Status: "Success"}
 
-	result := fc.DeleteVolumeSnapshot()
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v\n", expected, result)
+	result := fc.DeleteVolumeSnapshot(&pb.DeleteVolumeSnapshotOpts{})
+	if result != nil {
+		t.Errorf("Expected %v, got %v\n", nil, result)
 	}
 }
 
@@ -196,18 +201,14 @@ var (
 		BaseModel: &model.BaseModel{
 			Id: "80287bf8-66de-11e7-b031-f3b0af1675ba",
 		},
-		Name:        "fake-volume-attachment",
-		Description: "fake volume attachment for testing",
-		VolumeId:    "9193c3ec-771f-11e7-8ca3-d32c0a8b2725",
+		VolumeId: "9193c3ec-771f-11e7-8ca3-d32c0a8b2725",
 	}
 
 	sampleModifiedAttachment = model.VolumeAttachmentSpec{
 		BaseModel: &model.BaseModel{
 			Id: "80287bf8-66de-11e7-b031-f3b0af1675ba",
 		},
-		Name:        "modified-fake-volume-attachment",
-		Description: "modified fake volume attachment for testing",
-		VolumeId:    "9193c3ec-771f-11e7-8ca3-d32c0a8b2725",
+		VolumeId: "9193c3ec-771f-11e7-8ca3-d32c0a8b2725",
 	}
 
 	sampleSnapshot = model.VolumeSnapshotSpec{

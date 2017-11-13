@@ -9,6 +9,8 @@ import (
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,11 +57,7 @@ func (p *Plugin) CreateVolume(
 	}
 
 	return &csi.CreateVolumeResponse{
-		Reply: &csi.CreateVolumeResponse_Result_{
-			Result: &csi.CreateVolumeResponse_Result{
-				VolumeInfo: volumeinfo,
-			},
-		},
+		VolumeInfo: volumeinfo,
 	}, nil
 }
 
@@ -78,11 +76,7 @@ func (p *Plugin) DeleteVolume(
 		return nil, err
 	}
 
-	return &csi.DeleteVolumeResponse{
-		Reply: &csi.DeleteVolumeResponse_Result_{
-			Result: &csi.DeleteVolumeResponse_Result{},
-		},
-	}, nil
+	return &csi.DeleteVolumeResponse{}, nil
 }
 
 // ControllerPublishVolume implementation
@@ -113,40 +107,22 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	defer log.Println("end to ValidateVolumeCapabilities")
 
 	if strings.TrimSpace(req.VolumeId) == "" {
-		return &csi.ValidateVolumeCapabilitiesResponse{
-			Reply: &csi.ValidateVolumeCapabilitiesResponse_Error{
-				Error: &csi.Error{
-					Value: &csi.Error_ValidateVolumeCapabilitiesError_{
-						ValidateVolumeCapabilitiesError: &csi.Error_ValidateVolumeCapabilitiesError{
-							ErrorCode:        csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO,
-							ErrorDescription: "invalid volume id",
-						},
-					},
-				},
-			},
-		}, nil
+		// csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO
+		return nil, status.Error(codes.NotFound, "invalid volume id")
 	}
 
 	for _, capabilities := range req.VolumeCapabilities {
 		if capabilities.GetMount() != nil {
 			return &csi.ValidateVolumeCapabilitiesResponse{
-				Reply: &csi.ValidateVolumeCapabilitiesResponse_Result_{
-					Result: &csi.ValidateVolumeCapabilitiesResponse_Result{
-						Supported: false,
-						Message:   "opensds does not support mounted volume",
-					},
-				},
+				Supported: false,
+				Message:   "opensds does not support mounted volume",
 			}, nil
 		}
 	}
 
 	return &csi.ValidateVolumeCapabilitiesResponse{
-		Reply: &csi.ValidateVolumeCapabilitiesResponse_Result_{
-			Result: &csi.ValidateVolumeCapabilitiesResponse_Result{
-				Supported: true,
-				Message:   "supported",
-			},
-		},
+		Supported: true,
+		Message:   "supported",
 	}, nil
 }
 
@@ -167,7 +143,7 @@ func (p *Plugin) ListVolumes(
 		return nil, err
 	}
 
-	ens := []*csi.ListVolumesResponse_Result_Entry{}
+	ens := []*csi.ListVolumesResponse_Entry{}
 	for _, v := range volumes {
 		if v != nil {
 
@@ -183,18 +159,14 @@ func (p *Plugin) ListVolumes(
 				},
 			}
 
-			ens = append(ens, &csi.ListVolumesResponse_Result_Entry{
+			ens = append(ens, &csi.ListVolumesResponse_Entry{
 				VolumeInfo: volumeinfo,
 			})
 		}
 	}
 
 	return &csi.ListVolumesResponse{
-		Reply: &csi.ListVolumesResponse_Result_{
-			Result: &csi.ListVolumesResponse_Result{
-				Entries: ens,
-			},
-		},
+		Entries: ens,
 	}, nil
 }
 
@@ -223,11 +195,7 @@ func (p *Plugin) GetCapacity(
 	}
 
 	return &csi.GetCapacityResponse{
-		Reply: &csi.GetCapacityResponse_Result_{
-			Result: &csi.GetCapacityResponse_Result{
-				AvailableCapacity: freecapacity,
-			},
-		},
+		AvailableCapacity: freecapacity,
 	}, nil
 }
 
@@ -242,26 +210,12 @@ func (p *Plugin) ControllerProbe(
 
 	switch runtime.GOOS {
 	case "linux":
-		return &csi.ControllerProbeResponse{
-			Reply: &csi.ControllerProbeResponse_Result_{
-				Result: &csi.ControllerProbeResponse_Result{},
-			},
-		}, nil
+		return &csi.ControllerProbeResponse{}, nil
 	default:
 		msg := "unsupported operating system:" + runtime.GOOS
 		log.Fatalf(msg)
-		return &csi.ControllerProbeResponse{
-			Reply: &csi.ControllerProbeResponse_Error{
-				Error: &csi.Error{
-					Value: &csi.Error_ControllerProbeError_{
-						ControllerProbeError: &csi.Error_ControllerProbeError{
-							ErrorCode:        csi.Error_ControllerProbeError_MISSING_REQUIRED_HOST_DEPENDENCY,
-							ErrorDescription: msg,
-						},
-					},
-				},
-			},
-		}, nil
+		// csi.Error_ControllerProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 }
 
@@ -275,36 +229,32 @@ func (p *Plugin) ControllerGetCapabilities(
 	defer log.Println("end to ControllerGetCapabilities")
 
 	return &csi.ControllerGetCapabilitiesResponse{
-		Reply: &csi.ControllerGetCapabilitiesResponse_Result_{
-			Result: &csi.ControllerGetCapabilitiesResponse_Result{
-				Capabilities: []*csi.ControllerServiceCapability{
-					&csi.ControllerServiceCapability{
-						Type: &csi.ControllerServiceCapability_Rpc{
-							Rpc: &csi.ControllerServiceCapability_RPC{
-								Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-							},
-						},
+		Capabilities: []*csi.ControllerServiceCapability{
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
 					},
-					&csi.ControllerServiceCapability{
-						Type: &csi.ControllerServiceCapability_Rpc{
-							Rpc: &csi.ControllerServiceCapability_RPC{
-								Type: csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
-							},
-						},
+				},
+			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
 					},
-					&csi.ControllerServiceCapability{
-						Type: &csi.ControllerServiceCapability_Rpc{
-							Rpc: &csi.ControllerServiceCapability_RPC{
-								Type: csi.ControllerServiceCapability_RPC_LIST_VOLUMES,
-							},
-						},
+				},
+			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_LIST_VOLUMES,
 					},
-					&csi.ControllerServiceCapability{
-						Type: &csi.ControllerServiceCapability_Rpc{
-							Rpc: &csi.ControllerServiceCapability_RPC{
-								Type: csi.ControllerServiceCapability_RPC_GET_CAPACITY,
-							},
-						},
+				},
+			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_GET_CAPACITY,
 					},
 				},
 			},

@@ -42,7 +42,7 @@ func (c *Node) NodePublishVolume(
 	targetPath string,
 	capability *csi.VolumeCapability,
 	readonly bool,
-	credentials *csi.Credentials, /*Optional*/
+	credentials map[string]string, /*Optional*/
 	volumeattributes map[string]string /*Optional*/) error {
 
 	req := &csi.NodePublishVolumeRequest{
@@ -70,7 +70,7 @@ func (c *Node) NodeUnpublishVolume(
 	version *csi.Version,
 	volumeid string,
 	targetPath string,
-	credentials *csi.Credentials /*Optional*/) error {
+	credentials map[string]string /*Optional*/) error {
 
 	req := &csi.NodeUnpublishVolumeRequest{
 		Version:         version,
@@ -101,7 +101,7 @@ func (c *Node) GetNodeID(
 		return "", err
 	}
 
-	return rs.GetResult().NodeId, nil
+	return rs.NodeId, nil
 }
 
 // NodeProbe proxy
@@ -135,5 +135,5 @@ func (c *Node) NodeGetCapabilities(
 		return nil, err
 	}
 
-	return rs.GetResult().Capabilities, nil
+	return rs.Capabilities, nil
 }

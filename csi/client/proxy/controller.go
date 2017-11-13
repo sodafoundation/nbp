@@ -41,7 +41,7 @@ func (c *Controller) CreateVolume(
 	capacity *csi.CapacityRange, /*Optional*/
 	capabilities []*csi.VolumeCapability,
 	params map[string]string, /*Optional*/
-	credentials *csi.Credentials /*Optional*/) (volume *csi.VolumeInfo, err error) {
+	credentials map[string]string /*Optional*/) (volume *csi.VolumeInfo, err error) {
 
 	req := &csi.CreateVolumeRequest{
 		Version:            version,
@@ -57,7 +57,7 @@ func (c *Controller) CreateVolume(
 		return nil, err
 	}
 
-	return rs.GetResult().VolumeInfo, nil
+	return rs.VolumeInfo, nil
 }
 
 // DeleteVolume proxy
@@ -65,7 +65,7 @@ func (c *Controller) DeleteVolume(
 	ctx context.Context,
 	version *csi.Version,
 	volumeid string,
-	credentials *csi.Credentials /*Optional*/) error {
+	credentials map[string]string /*Optional*/) error {
 
 	req := &csi.DeleteVolumeRequest{
 		Version:         version,
@@ -89,7 +89,7 @@ func (c *Controller) ControllerPublishVolume(
 	nodeID string, /*Optional*/
 	capabilities *csi.VolumeCapability,
 	readonly bool,
-	credentials *csi.Credentials, /*Optional*/
+	credentials map[string]string, /*Optional*/
 	volumeattributes map[string]string /*Optional*/) (map[string]string, error) {
 
 	req := &csi.ControllerPublishVolumeRequest{
@@ -107,7 +107,7 @@ func (c *Controller) ControllerPublishVolume(
 		return nil, err
 	}
 
-	return rs.GetResult().PublishVolumeInfo, nil
+	return rs.PublishVolumeInfo, nil
 }
 
 // ControllerUnpublishVolume proxy
@@ -116,7 +116,7 @@ func (c *Controller) ControllerUnpublishVolume(
 	version *csi.Version,
 	volumeid string,
 	nodeID string, /*Optional*/
-	credentials *csi.Credentials /*Optional*/) error {
+	credentials map[string]string /*Optional*/) error {
 
 	req := &csi.ControllerUnpublishVolumeRequest{
 		Version:         version,
@@ -156,7 +156,7 @@ func (c *Controller) ValidateVolumeCapabilities(
 	version *csi.Version,
 	volumeid string,
 	capabilities []*csi.VolumeCapability,
-	volumeattributes map[string]string /*Optional*/) (*csi.ValidateVolumeCapabilitiesResponse_Result, error) {
+	volumeattributes map[string]string /*Optional*/) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 
 	req := &csi.ValidateVolumeCapabilitiesRequest{
 		Version:            version,
@@ -170,7 +170,7 @@ func (c *Controller) ValidateVolumeCapabilities(
 		return nil, err
 	}
 
-	return rs.GetResult(), nil
+	return rs, nil
 }
 
 // ListVolumes proxy
@@ -178,7 +178,7 @@ func (c *Controller) ListVolumes(
 	ctx context.Context,
 	version *csi.Version,
 	maxentries uint32, /*Optional*/
-	startingtoken string /*Optional*/) (entries []*csi.ListVolumesResponse_Result_Entry, nextToken string, err error) {
+	startingtoken string /*Optional*/) (entries []*csi.ListVolumesResponse_Entry, nextToken string, err error) {
 
 	req := &csi.ListVolumesRequest{
 		Version:       version,
@@ -191,12 +191,7 @@ func (c *Controller) ListVolumes(
 		return nil, "", err
 	}
 
-	result := rs.GetResult()
-	if len(result.Entries) == 0 {
-		return nil, nextToken, nil
-	}
-
-	return result.Entries, result.NextToken, nil
+	return rs.Entries, rs.NextToken, nil
 }
 
 // GetCapacity proxy
@@ -215,7 +210,7 @@ func (c *Controller) GetCapacity(
 		return 0, err
 	}
 
-	return rs.GetResult().AvailableCapacity, nil
+	return rs.AvailableCapacity, nil
 }
 
 // ControllerGetCapabilities proxy
@@ -232,5 +227,5 @@ func (c *Controller) ControllerGetCapabilities(
 		return nil, err
 	}
 
-	return rs.GetResult().Capabilities, nil
+	return rs.Capabilities, nil
 }
