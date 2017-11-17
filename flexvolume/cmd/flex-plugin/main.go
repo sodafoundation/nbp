@@ -180,10 +180,55 @@ func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
 	return Succeed()
 }
 
-func (plugin *OpenSDSPlugin) Mount(mountDir string, device string, opts interface{}) Result {
+func (plugin *OpenSDSPlugin) MountDevice(mountDir string, device string, opts interface{}) Result {
 	opt := opts.(*OpenSDSOptions)
 
-	_, err := volume.MountVolume(mountDir, device, opt.FsType)
+	act := getAttachmentByVolumeId(opt.VolumeId)
+	if act == nil || len(act.Mountpoint) == 0 || act.Mountpoint != device {
+		return Fail(errors.New("mount device is not exist"))
+	}
+
+	_, err := volume.MountVolume("", mountDir, device, opt.FsType, opt.AccessMode)
+	if err != nil {
+		return Fail(err.Error())
+	}
+
+	//save baseMountPath for Follow-up call
+	//TODO: when unmount device, how to clean info? or select a mount path from /proc/mounts as baseMountPath?
+	act.Metadata["baseMountPath"] = mountDir
+
+	client := opensds.GetClient("")
+	_, err = client.UpdateVolumeAttachment(act.Id, act)
+	if err != nil {
+		return Fail(err.Error())
+	}
+	return Succeed()
+}
+
+func (plugin *OpenSDSPlugin) UnmountDevice(mountDir string) Result {
+	_, err := volume.UnmountVolume(mountDir)
+	if err != nil {
+		return Fail(err.Error())
+	}
+	return Succeed()
+}
+
+func (plugin *OpenSDSPlugin) Mount(mountDir string, opts interface{}) Result {
+	opt := opts.(*OpenSDSOptions)
+
+	//find mount device
+	act := getAttachmentByVolumeId(opt.VolumeId)
+	if act == nil || len(act.Mountpoint) == 0 {
+		return Fail(errors.New("mount device is not exist"))
+	}
+
+	//accord to flexvolume design, mount should exec "mount --bind" command which depends on baseMountPath,
+	//so check whether baseMountPath is valid.
+	if _, exist := act.Metadata["baseMountPath"]; !exist || len(act.Metadata["baseMountPath"]) == 0 {
+		return Fail(errors.New("mount device failed"))
+	}
+
+	_, err := volume.MountVolume(act.Metadata["baseMountPath"], mountDir, act.Mountpoint, opt.FsType, opt.AccessMode)
 	if err != nil {
 		return Fail(err.Error())
 	}
@@ -198,7 +243,83 @@ func (plugin *OpenSDSPlugin) Unmount(mountDir string) Result {
 	return Succeed()
 }
 
+func (plugin *OpenSDSPlugin) IsAttached(opts interface{}) Result {
+	opt := opts.(*OpenSDSOptions)
+	act := getAttachmentByVolumeId(opt.VolumeId)
+	if act == nil || len(act.Mountpoint) == 0 {
+		return Result{
+			Status:   "Success",
+			Attached: false,
+		}
+	}
+
+	return Result{
+		Status:   "Success",
+		Attached: true,
+	}
+}
+
+func (plugin *OpenSDSPlugin) WaitForAttach(device string, opts interface{}) Result {
+	result := plugin.Attach(opts)
+	if result.Status != "Success" {
+		return result
+	}
+
+	if len(device) != 0 && result.Device != device {
+		return Fail(errors.New("the volume has attached another device."))
+	}
+
+	return result
+}
+
+func (plugin *OpenSDSPlugin) WaitForDetach(device string) Result {
+	act := getAttachmentByDevice(device)
+	if act == nil {
+		return Succeed()
+	}
+
+	return plugin.Detach(act.VolumeId)
+}
+
+func getAttachmentByVolumeId(volumeId string) *model.VolumeAttachmentSpec {
+	client := opensds.GetClient("")
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil
+	}
+
+	hostname, _ := os.Hostname()
+	var act *model.VolumeAttachmentSpec = nil
+	for _, actValue := range attachments {
+		if actValue.VolumeId == volumeId && actValue.Host == hostname {
+			act = actValue
+			break
+		}
+	}
+
+	return act
+}
+
+func getAttachmentByDevice(device string) *model.VolumeAttachmentSpec {
+	client := opensds.GetClient("")
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil
+	}
+
+	hostname, _ := os.Hostname()
+	var act *model.VolumeAttachmentSpec = nil
+	for _, actValue := range attachments {
+		//must ensure the device used by only one volume.
+		if actValue.Mountpoint == device && actValue.Host == hostname {
+			act = actValue
+			break
+		}
+	}
+
+	return act
+}
+
 func main() {
 	RunPlugin(&OpenSDSPlugin{})
 }
-

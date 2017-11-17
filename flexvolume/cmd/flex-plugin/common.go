@@ -35,8 +35,13 @@ type FlexVolumePlugin interface {
 	NewOptions() interface{}
 	Init() Result
 	Attach(opt interface{}) Result
-	Detach(device string) Result
-	Mount(mountDir string, device string, opt interface{}) Result
+	Detach(volumeId string) Result
+	WaitForDetach(device string) Result
+	IsAttached(opt interface{}) Result
+	WaitForAttach(device string, opt interface{}) Result
+	MountDevice(mountDir string, device string, opt interface{}) Result
+	UnmountDevice(mountDir string) Result
+	Mount(mountDir string, opt interface{}) Result
 	Unmount(mountDir string) Result
 }
 
@@ -94,13 +99,46 @@ func RunPlugin(plugin FlexVolumePlugin) {
 			finish(Fail("detach expected at least 3 arguments; got ", os.Args))
 		}
 
-
 		volumeId := os.Args[2]
 		finish(plugin.Detach(volumeId))
 
-	case "mount":
+	case "waitForDetachCmd":
+		if len(os.Args) != 3 {
+			finish(Fail("waitForDetachCmd expected 3 arguments; got ", os.Args))
+		}
+
+		device := os.Args[2]
+		finish(plugin.WaitForDetach(device))
+
+	case "isattached":
+		if len(os.Args) != 4 {
+			finish(Fail("isattached expected 4 arguments; got ", os.Args))
+		}
+
+		opt := plugin.NewOptions()
+		if err := json.Unmarshal([]byte(os.Args[2]), opt); err != nil {
+			finish(Fail("Could not parse options for attach:", err))
+		}
+
+		finish(plugin.IsAttached(opt))
+
+	case "waitforattach":
+		if len(os.Args) != 4 {
+			finish(Fail("waitforattach expected 4 arguments; got ", os.Args))
+		}
+
+		device := os.Args[2]
+
+		opt := plugin.NewOptions()
+		if err := json.Unmarshal([]byte(os.Args[3]), opt); err != nil {
+			finish(Fail("Could not parse options for attach:", err))
+		}
+
+		finish(plugin.WaitForAttach(device, opt))
+
+	case "mountdevice":
 		if len(os.Args) != 5 {
-			finish(Fail("mount expected exactly 5 argument; got ", os.Args))
+			finish(Fail("mount device expected exactly 5 argument; got ", os.Args))
 		}
 
 		mountDir := os.Args[2]
@@ -108,14 +146,37 @@ func RunPlugin(plugin FlexVolumePlugin) {
 
 		opt := plugin.NewOptions()
 		if err := json.Unmarshal([]byte(os.Args[4]), opt); err != nil {
-			finish(Fail("Could not parse options for mount; got ", os.Args[4]))
+			finish(Fail("Could not parse options for mount; got ", os.Args[3]))
 		}
 
-		finish(plugin.Mount(mountDir, device, opt))
+		finish(plugin.MountDevice(mountDir, device, opt))
+
+	case "unmountdevice":
+		if len(os.Args) != 3 {
+			finish(Fail("unmount device expected exactly 3 argument; got ", os.Args))
+		}
+
+		mountDir := os.Args[2]
+
+		finish(plugin.UnmountDevice(mountDir))
+
+	case "mount":
+		if len(os.Args) != 4 {
+			finish(Fail("mount expected exactly 4 argument; got ", os.Args))
+		}
+
+		mountDir := os.Args[2]
+
+		opt := plugin.NewOptions()
+		if err := json.Unmarshal([]byte(os.Args[3]), opt); err != nil {
+			finish(Fail("Could not parse options for mount; got ", os.Args[3]))
+		}
+
+		finish(plugin.Mount(mountDir, opt))
 
 	case "unmount":
 		if len(os.Args) != 3 {
-			finish(Fail("mount expected exactly 5 argument; got ", os.Args))
+			finish(Fail("mount expected exactly 3 argument; got ", os.Args))
 		}
 
 		mountDir := os.Args[2]
