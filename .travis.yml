@@ -5,7 +5,7 @@ language: go
 go_import_path: github.com/opensds/nbp
 
 go:
-  - 1.8.x
+  - 1.9.x
   - tip
 
 env:
@@ -29,3 +29,10 @@ matrix:
     env: TARGET=386
   - go: tip
     env: TARGET=ppc64le
+
+install:
+  - make
+
+script:
+  - go test -v github.com/opensds/nbp/csi/... -cover
+
