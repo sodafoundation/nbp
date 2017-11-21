@@ -59,7 +59,7 @@ func isMounted(mountDir string) bool {
 	return findmntText == mountDir
 }
 
-func MountVolume(mountDir, device, fsType string) (string, error) {
+func MountVolume(bindMountDir, mountDir, device, fsType, mode string) (string, error) {
 	var res unix.Stat_t
 
 	if err := unix.Stat(device, &res); err != nil {
@@ -73,27 +73,36 @@ func MountVolume(mountDir, device, fsType string) (string, error) {
 	}
 
 	if isMounted(mountDir) {
-		err := errors.New("This path has been mounted!")
-		return "", err
+		return "This path has been mounted!", nil
 	}
 
-	if err := os.MkdirAll(mountDir, 0777); err != nil {
-		log.Println("Could not create directory:", err.Error())
-		return "", err
-	}
-
-	mountCmd := exec.Command("mount", device, mountDir)
-	if _, err := mountCmd.CombinedOutput(); err != nil {
-		mkfsCmd := exec.Command("mkfs", "-t", fsType, "-F", device)
-		if mkfsOut, err := mkfsCmd.CombinedOutput(); err != nil {
-			log.Println("Could not mkfs:", err.Error(), "Output:", string(mkfsOut))
+	if _, err := os.Stat(mountDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(mountDir, 0777); err != nil {
+			log.Println("Could not create directory:", err.Error())
 			return "", err
 		}
+	}
 
-		mountCmd := exec.Command("mount", device, mountDir)
+	if len(bindMountDir) > 0 {
+		mountCmd := exec.Command("mount", "--bind", bindMountDir, mountDir)
 		if mountOut, err := mountCmd.CombinedOutput(); err != nil {
 			log.Println("Could not mount:", err.Error(), "Output:", string(mountOut))
 			return "", err
+		}
+	} else {
+		mountCmd := exec.Command("mount", device, mountDir)
+		if _, err := mountCmd.CombinedOutput(); err != nil {
+			mkfsCmd := exec.Command("mkfs", "-t", fsType, "-F", device)
+			if mkfsOut, err := mkfsCmd.CombinedOutput(); err != nil {
+				log.Println("Could not mkfs:", err.Error(), "Output:", string(mkfsOut))
+				return "", err
+			}
+
+			mountCmd := exec.Command("mount", "-o", mode, device, mountDir)
+			if mountOut, err := mountCmd.CombinedOutput(); err != nil {
+				log.Println("Could not mount:", err.Error(), "Output:", string(mountOut))
+				return "", err
+			}
 		}
 	}
 
@@ -102,8 +111,7 @@ func MountVolume(mountDir, device, fsType string) (string, error) {
 
 func UnmountVolume(mountDir string) (string, error) {
 	if !isMounted(mountDir) {
-		err := errors.New("This path is not mounted!")
-		return "", err
+		return "This path is not mounted!", nil
 	}
 
 	umountCmd := exec.Command("umount", "-l", mountDir)
