@@ -8,10 +8,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-var fakePlugin = &Plugin{}
-var fakeCtx = context.Background()
-
 func TestGetSupportedVersions(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
 	fakeReq := &csi.GetSupportedVersionsRequest{}
 	rs, err := fakePlugin.GetSupportedVersions(fakeCtx, fakeReq)
 
@@ -25,6 +24,8 @@ func TestGetSupportedVersions(t *testing.T) {
 }
 
 func TestGetPluginInfo(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
 	fakeReq := &csi.GetPluginInfoRequest{
 		Version: supportedVersions[0],
 	}
