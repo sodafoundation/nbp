@@ -67,6 +67,6 @@ func TestNodeGetCapabilities(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(rs.Capabilities, expectedNodeCapabilities) {
-		t.Errorf("expected: %v, actual: %v\n", rs, expectedNodeCapabilities)
+		t.Errorf("expected: %v, actual: %v\n", rs.Capabilities, expectedNodeCapabilities)
 	}
 }
