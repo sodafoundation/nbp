@@ -1,12 +1,12 @@
 hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
-updated: 2017-11-13T10:23:39.3647601+08:00
+updated: 2017-11-23T13:23:39.3647601+08:00
 imports:
 - name: github.com/astaxie/beego
   version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
   subpackages:
   - httplib
 - name: github.com/container-storage-interface/spec
-  version: 51e48d38ac8a5b4bdcf41826b77dc016ad83451e
+  version: 4ac2d13f89360f2da40d188473d77f2ec56b9d0d
   subpackages:
   - lib/go/csi
 - name: github.com/golang/glog
