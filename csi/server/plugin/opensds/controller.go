@@ -5,12 +5,14 @@ import (
 	"runtime"
 	"strings"
 
+	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"os"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,8 +86,71 @@ func (p *Plugin) ControllerPublishVolume(
 	ctx context.Context,
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ControllerPublishVolume")
+	defer log.Println("end to ControllerPublishVolume")
+
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	//TODO: need to check if node exists?
+
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish volume.")
+	}
+
+	var attachNodes []string
+	hostname, _ := os.Hostname()
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host != hostname {
+			//TODO: node id is what? use hostname to indicate node id currently.
+			attachNodes = append(attachNodes, attachSpec.Host)
+		}
+	}
+
+	if len(attachNodes) != 0 {
+		//if the volume has been published, but without MULTI_NODE capability, return error.
+		mode := req.VolumeCapability.AccessMode.Mode
+		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
+			msg := fmt.Sprintf("the volume %s has been published to another node.", req.VolumeId)
+			return nil, status.Error(codes.AlreadyExists, msg)
+		}
+	}
+
+	attachReq := &model.VolumeAttachmentSpec{
+		VolumeId: req.VolumeId,
+		HostInfo: &model.HostInfo{
+			Host: req.NodeId,
+		},
+	}
+	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+	if errAttach != nil {
+		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
+	return &csi.ControllerPublishVolumeResponse{
+		PublishVolumeInfo: map[string]string{
+			"ip":       attachSpec.Ip,
+			"host":     attachSpec.Host,
+			"attachid": attachSpec.Id,
+			"status":   attachSpec.Status,
+		},
+	}, nil
 }
 
 // ControllerUnpublishVolume implementation
