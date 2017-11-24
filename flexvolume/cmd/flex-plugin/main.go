@@ -16,11 +16,12 @@ package main
 
 import (
 	"errors"
-
+	"fmt"
 	"github.com/opensds/nbp/client/iscsi"
 	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/flexvolume/pkg/volume"
 	"github.com/opensds/opensds/pkg/model"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -36,7 +37,7 @@ var (
 
 type OpenSDSOptions struct {
 	VolumeId   string `json:"kubernetes.io/pvOrVolumeName"`
-	AccessMode string `json:"kubernetes.io/readwrite`
+	AccessMode string `json:"kubernetes.io/readwrite"`
 	FsType     string `json:"kubernetes.io/fsType"`
 }
 
@@ -49,6 +50,23 @@ func (plugin *OpenSDSPlugin) Init() Result {
 func (plugin *OpenSDSPlugin) NewOptions() interface{} {
 	var option = &OpenSDSOptions{}
 	return option
+}
+
+func (plugin *OpenSDSPlugin) GetVolumeName(opts interface{}) Result {
+	opt := opts.(*OpenSDSOptions)
+	volId := opt.VolumeId
+
+	client := opensds.GetClient("")
+	vol, err := client.GetVolume(volId)
+
+	if err != nil {
+		return Fail(errors.New(fmt.Sprintf("volume not exist, %s", err.Error())))
+	} else {
+		return Result{
+			Status:     "Success",
+			VolumeName: vol.Name,
+		}
+	}
 }
 
 func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
@@ -81,8 +99,8 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 			}
 
 			return Result{
-				Status: "Success",
-				Device: value.Mountpoint,
+				Status:     "Success",
+				DevicePath: value.Mountpoint,
 			}
 		}
 	}
@@ -98,6 +116,12 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	if len(iqns) > 0 {
 		localIqn = iqns[0]
 	}
+
+	vol, err := client.GetVolume(volID)
+	if err != nil {
+		return Fail(errors.New(fmt.Sprintln("Get volume failed,", err)))
+	}
+
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: volID,
 		HostInfo: &model.HostInfo{
@@ -107,7 +131,8 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 			Host:      hostname,
 			Initiator: localIqn,
 		},
-		Status: VOLUME_STATUS_ATTACHING,
+		Status:   VOLUME_STATUS_ATTACHING,
+		Metadata: vol.Metadata,
 	}
 	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
@@ -137,8 +162,8 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		return Fail(err.Error())
 	} else {
 		return Result{
-			Status: "Success",
-			Device: device,
+			Status:     "Success",
+			DevicePath: device,
 		}
 	}
 }
@@ -265,7 +290,7 @@ func (plugin *OpenSDSPlugin) WaitForAttach(device string, opts interface{}) Resu
 		return result
 	}
 
-	if len(device) != 0 && result.Device != device {
+	if len(device) != 0 && result.DevicePath != device {
 		return Fail(errors.New("the volume has attached another device."))
 	}
 
@@ -321,5 +346,18 @@ func getAttachmentByDevice(device string) *model.VolumeAttachmentSpec {
 }
 
 func main() {
+	// Open OpenSDS flexvolume service log file
+	f, err := os.OpenFile("/var/log/opensds/flexvolume.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Errorf("Error opening file:%v", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
+	// assign it to the standard logger
+	log.SetOutput(f)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Println("Cmd:", os.Args)
 	RunPlugin(&OpenSDSPlugin{})
 }
+
