@@ -1,23 +1,20 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: nginx-lvm
   namespace: default
 spec:
   containers:
   - name: nginx
-    image: nginx
+    image: nginx:alpine
     volumeMounts:
-    - name: test
+    - name: "ee1918c2-aaa3-44d6-9c0e-65aedb712327"
       mountPath: /data
     ports:
     - containerPort: 80
   volumes:
-  - name: test
+  - name: "ee1918c2-aaa3-44d6-9c0e-65aedb712327"
     flexVolume:
-      driver: "kubernetes.io/lvm"
+      driver: "opensds.io/opensds"
       fsType: "ext4"
-      options:
-        volumeID: "vol1"
-        size: "1000m"
-        volumegroup: "kube_vg"
+

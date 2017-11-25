@@ -25,15 +25,32 @@ import (
 )
 
 type Result struct {
-	Status   string `json:"status"`
-	Message  string `json:"message,omitempty"`
-	Device   string `json:"device,omitempty"`
-	Attached bool   `json:"attached,omitempty"`
+	// Status of the callout. One of "Success", "Failure" or "Not supported".
+	Status string `json:"status"`
+	// Reason for success/failure.
+	Message string `json:"message,omitempty"`
+	// Path to the device attached. This field is valid only for attach calls.
+	// ie: /dev/sdx
+	DevicePath string `json:"device,omitempty"`
+	// Cluster wide unique name of the volume.
+	VolumeName string `json:"volumeName,omitempty"`
+	// Represents volume is attached on the node
+	Attached bool `json:"attached,omitempty"`
+	// Returns capabilities of the driver.
+	// By default we assume all the capabilities are supported.
+	// If the plugin does not support a capability, it can return false for that capability.
+	Capabilities *DriverCapabilities `json:",omitempty"`
+}
+
+type DriverCapabilities struct {
+	Attach         bool `json:"attach"`
+	SELinuxRelabel bool `json:"selinuxRelabel"`
 }
 
 type FlexVolumePlugin interface {
 	NewOptions() interface{}
 	Init() Result
+	GetVolumeName(opt interface{}) Result
 	Attach(opt interface{}) Result
 	Detach(volumeId string) Result
 	WaitForDetach(device string) Result
@@ -64,23 +81,54 @@ func finish(result Result) {
 	if result.Status == "Success" {
 		code = 0
 	}
+
+	var msg string
 	res, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println("{\"status\":\"Failure\",\"message\":\"JSON error\"}")
+		msg = "{\"status\":\"Failure\",\"message\":\"JSON error\"}"
+		code = 1
 	} else {
-		fmt.Println(string(res))
+		msg = string(res)
 	}
+
+	fmt.Println(msg)
+	log.Println(msg)
 	os.Exit(code)
+}
+
+func usage() {
+	cmd := os.Args[0]
+	usage := `Invalid usage. Usage:
+  %s init
+  %s attach <json params> <nodename>
+  %s detach <mount device> <nodename>
+  %s waitforattach <mount device> <json params>
+  %s mountdevice <mount dir> <mount device> <json params>
+  %s unmountdevice <mount dir>
+  %s isattached <json params> <nodename>
+`
+	fmt.Printf(usage, cmd, cmd, cmd, cmd, cmd, cmd, cmd)
+	os.Exit(1)
 }
 
 func RunPlugin(plugin FlexVolumePlugin) {
 	if len(os.Args) < 2 {
-		finish(Fail("Expected at least one argument"))
+		usage()
 	}
 
 	switch os.Args[1] {
 	case "init":
 		finish(plugin.Init())
+
+	case "getvolumename":
+		if len(os.Args) < 3 {
+			finish(Fail("attach expected at least 3 arguments; got ", os.Args))
+		}
+		opt := plugin.NewOptions()
+		if err := json.Unmarshal([]byte(os.Args[2]), opt); err != nil {
+			finish(Fail("Could not parse options for getvolumename:", err))
+		}
+		finish(plugin.GetVolumeName(opt))
 
 	case "attach":
 		if len(os.Args) < 3 {
@@ -214,3 +262,4 @@ func FindLinkPath(device string) (string, error) {
 	linkPath := "/dev/disk/by-id/" + volId
 	return linkPath, nil
 }
+
