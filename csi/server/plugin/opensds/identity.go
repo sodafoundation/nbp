@@ -5,6 +5,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,6 +23,21 @@ var supportedVersions = []*csi.Version{
 		Minor: 0,
 		Patch: 0,
 	},
+}
+
+//CheckVersionSupport check whether api version is supported
+func (p *Plugin) CheckVersionSupport(version *csi.Version) codes.Code {
+	if version == nil {
+		return codes.InvalidArgument
+	}
+
+	for _, ver := range supportedVersions {
+		if version == ver {
+			return codes.OK
+		}
+	}
+
+	return codes.InvalidArgument
 }
 
 // GetSupportedVersions implementation
