@@ -200,11 +200,13 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	if len(attachSpecs) > 0 {
-		errDetach := client.DeleteVolumeAttachment(attachSpecs[0], &model.VolumeAttachmentSpec{})
-		if errDetach != nil {
-			msg := fmt.Sprintf("the volume %s failed to unpublish to node %s.", req.VolumeId, req.NodeId)
-			log.Fatalf("failed to ControllerUnpublishVolume: %v", errDetach)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		for _, as := range attachSpecs {
+			errDetach := client.DeleteVolumeAttachment(as, &model.VolumeAttachmentSpec{})
+			if errDetach != nil {
+				msg := fmt.Sprintf("the volume %s failed to unpublish to node %s.", req.VolumeId, req.NodeId)
+				log.Fatalf("failed to ControllerUnpublishVolume: %v", errDetach)
+				return nil, status.Error(codes.FailedPrecondition, msg)
+			}
 		}
 	}
 
