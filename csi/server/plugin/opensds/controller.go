@@ -158,8 +158,45 @@ func (p *Plugin) ControllerUnpublishVolume(
 	ctx context.Context,
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ControllerUnpublishVolume")
+	defer log.Println("end to ControllerUnpublishVolume")
+
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "")
+	}
+
+	var acts []*model.VolumeAttachmentSpec
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+			acts = append(acts, attachSpec)
+		}
+	}
+
+	for _, act := range acts {
+		err = client.DeleteVolumeAttachment(act.Id, act)
+		if err != nil {
+			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+	}
+
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
 // ValidateVolumeCapabilities implementation
