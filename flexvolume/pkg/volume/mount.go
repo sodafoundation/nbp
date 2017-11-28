@@ -28,6 +28,7 @@ import (
 	"os/exec"
 
 	"golang.org/x/sys/unix"
+	"strings"
 )
 
 func isMounted(mountDir string) bool {
@@ -55,8 +56,8 @@ func isMounted(mountDir string) bool {
 			log.Println("findmnt failed:", err.Error())
 		}
 	}
-
-	return findmntText == mountDir
+	// The mountDir string that user input can be end with '/' or not, so it should handle these two situations
+	return strings.HasPrefix(mountDir, findmntText) && (len(mountDir)-len(findmntText) <= 1)
 }
 
 func MountVolume(bindMountDir, mountDir, device, fsType, mode string) (string, error) {
@@ -111,6 +112,7 @@ func MountVolume(bindMountDir, mountDir, device, fsType, mode string) (string, e
 
 func UnmountVolume(mountDir string) (string, error) {
 	if !isMounted(mountDir) {
+		log.Println("This path is not mounted!")
 		return "This path is not mounted!", nil
 	}
 
@@ -119,7 +121,6 @@ func UnmountVolume(mountDir string) (string, error) {
 		log.Println("Could not unmount:", err.Error(), "Output:", string(umountOut))
 		return "", err
 	}
-
 	return "Unmount volume success!", nil
 }
 

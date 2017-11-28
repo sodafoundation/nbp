@@ -23,7 +23,7 @@ func GetClient(endpoint string) *client.Client {
 
 	if endpoint == "" {
 		// Using default endpoint
-		endpoint = ":8080"
+		endpoint = "http://localhost:50040"
 		log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
 	}
 
@@ -32,3 +32,4 @@ func GetClient(endpoint string) *client.Client {
 			Endpoint: endpoint,
 		})
 }
+

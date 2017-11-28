@@ -2,26 +2,26 @@ package iscsi
 
 import (
 	"errors"
+	"github.com/mitchellh/mapstructure"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
-	"github.com/mitchellh/mapstructure"
-	"net"
 )
 
 type IscsiConnectorInfo struct {
-	AccessMode string `mapstructure:"access_mode"`
-	AuthUser   string `mapstructure:"auth_username"`
-	AuthPass   string `mapstructure:"auth_password"`
-	AuthMethod string `mapstructure:"auth_method"`
-	TgtDisco   bool   `mapstructure:"target_discovered"`
-	TgtIQN     string `mapstructure:"target_iqn"`
-	TgtPortal  string `mapstructure:"target_portal"`
-	VolumeID   string `mapstructure:"volume_id"`
-	TgtLun     int    `mapstructure:"target_lun"`
+	AccessMode string `mapstructure:"accessMode"`
+	AuthUser   string `mapstructure:"authUserName"`
+	AuthPass   string `mapstructure:"authPassword"`
+	AuthMethod string `mapstructure:"authMethod"`
+	TgtDisco   bool   `mapstructure:"targetDiscovered"`
+	TgtIQN     string `mapstructure:"targetIqn"`
+	TgtPortal  string `mapstructure:"targetPortal"`
+	VolumeID   string `mapstructure:"volumeId"`
+	TgtLun     int    `mapstructure:"targetLun"`
 	Encrypted  bool   `mapstructure:"encrypted"`
 }
 
@@ -152,7 +152,7 @@ func Delete(targetiqn string) (err error) {
 func Connect(portal string, targetiqn string, targetlun string) (string, error) {
 	log.Printf("Connect portal: %s targetiqn: %s targetlun: %s", portal, targetiqn, targetlun)
 	devicePath := strings.Join([]string{
-		"/dev/dis/by-path/ip",
+		"/dev/disk/by-path/ip",
 		portal,
 		"iscsi",
 		targetiqn,
@@ -295,9 +295,7 @@ func Umount(mountpoint string) error {
 
 func ParseIscsiConnectInfo(connectInfo map[string]interface{}) *IscsiConnectorInfo {
 	var con IscsiConnectorInfo
-
-	mapstructure.Decode(connectInfo["data"], &con)
-
+	mapstructure.Decode(connectInfo, &con)
 	return &con
 }
 
