@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// IscsiConnectorInfo define
 type IscsiConnectorInfo struct {
 	AccessMode string `mapstructure:"accessMode"`
 	AuthUser   string `mapstructure:"authUserName"`
@@ -294,12 +295,14 @@ func Umount(mountpoint string) error {
 	return nil
 }
 
+// ParseIscsiConnectInfo decode
 func ParseIscsiConnectInfo(connectInfo map[string]interface{}) *IscsiConnectorInfo {
 	var con IscsiConnectorInfo
 	mapstructure.Decode(connectInfo, &con)
 	return &con
 }
 
+// GetHostIp return Host IP
 func GetHostIp() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
