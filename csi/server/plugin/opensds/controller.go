@@ -196,22 +196,19 @@ func (p *Plugin) ControllerUnpublishVolume(
 		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
 	}
 
-	var attachSpecs []string
-	hostname := req.NodeId
+	var acts []*model.VolumeAttachmentSpec
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostname {
-			attachSpecs = append(attachSpecs, attachSpec.Id)
+		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+			acts = append(acts, attachSpec)
 		}
 	}
 
-	if len(attachSpecs) > 0 {
-		for _, as := range attachSpecs {
-			errDetach := client.DeleteVolumeAttachment(as, &model.VolumeAttachmentSpec{})
-			if errDetach != nil {
-				msg := fmt.Sprintf("the volume %s failed to unpublish to node %s.", req.VolumeId, req.NodeId)
-				log.Fatalf("failed to ControllerUnpublishVolume: %v", errDetach)
-				return nil, status.Error(codes.FailedPrecondition, msg)
-			}
+	for _, act := range acts {
+		err = client.DeleteVolumeAttachment(act.Id, act)
+		if err != nil {
+			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
+			log.Fatalf("failed to ControllerUnpublishVolume: %v", err)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
 
