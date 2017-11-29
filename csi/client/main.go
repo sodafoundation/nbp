@@ -147,6 +147,26 @@ func main() {
 		log.Printf("[ControllerPublishVolume] ControllerPublishVolume:%v", publishvolumeinfo)
 	}
 
+	// Test NodePublishVolume
+	targetpath := "/var/lib/kubelet/plugins/opensds/"
+	err = node.NodePublishVolume(context.Background(),
+		versions[0], volumeinfo.Id, publishvolumeinfo,
+		targetpath, nil, false, nil, nil)
+	if err != nil {
+		log.Fatalf("failed to NodePublishVolume: %v", err)
+	} else {
+		log.Printf("[NodePublishVolume] NodePublishVolume:OK")
+	}
+
+	// Test NodeUnpublishVolume
+	err = node.NodeUnpublishVolume(context.Background(),
+		versions[0], volumeinfo.Id, targetpath, nil)
+	if err != nil {
+		log.Fatalf("failed to NodeUnpublishVolume: %v", err)
+	} else {
+		log.Printf("[NodeUnpublishVolume] NodeUnpublishVolume:OK")
+	}
+
 	// Test ControllerUnpublishVolume
 	err = controller.ControllerUnpublishVolume(context.Background(), versions[0], volumeinfo.Id, nodeid, nil)
 	if err != nil {
