@@ -2,7 +2,6 @@ package iscsi
 
 import (
 	"errors"
-	"github.com/mitchellh/mapstructure"
 	"log"
 	"net"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type IscsiConnectorInfo struct {
@@ -209,7 +210,7 @@ func GetFSType(device string) string {
 	fsType := ""
 	res, err := exec.Command("blkid", device).CombinedOutput()
 	if err != nil {
-		log.Fatalf("failed to GetFSType: %v", err)
+		log.Printf("failed to GetFSType: %v", err)
 		return fsType
 	}
 
@@ -235,7 +236,7 @@ func Format(device string, fstype string) error {
 		if fstype == "" {
 			fstype = "ext4"
 		}
-		_, err := exec.Command("mkfs.", fstype, "-F", device).CombinedOutput()
+		_, err := exec.Command("mkfs", "-t", fstype, "-F", device).CombinedOutput()
 		if err != nil {
 			log.Fatalf("failed to Format: %v", err)
 			return err
@@ -250,7 +251,7 @@ func Format(device string, fstype string) error {
 func Mount(device string, mountpoint string) error {
 	log.Printf("Mount device: %s mountpoint: %s", device, mountpoint)
 
-	_, err := exec.Command("mkdir", mountpoint).CombinedOutput()
+	_, err := exec.Command("mkdir", "-p", mountpoint).CombinedOutput()
 	if err != nil {
 		log.Fatalf("failed to mkdir: %v", err)
 	}
@@ -313,4 +314,3 @@ func GetHostIp() string {
 
 	return "127.0.0.1"
 }
-
