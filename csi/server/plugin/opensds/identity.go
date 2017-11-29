@@ -2,6 +2,7 @@ package opensds
 
 import (
 	"log"
+	"reflect"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
@@ -32,7 +33,7 @@ func (p *Plugin) CheckVersionSupport(version *csi.Version) codes.Code {
 	}
 
 	for _, ver := range supportedVersions {
-		if version == ver {
+		if reflect.DeepEqual(version, ver) {
 			return codes.OK
 		}
 	}

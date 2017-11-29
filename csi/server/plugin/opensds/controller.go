@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"fmt"
+	"os"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"os"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +36,9 @@ func (p *Plugin) CreateVolume(
 	volumebody.Name = req.Name
 	if req.CapacityRange != nil {
 		volumebody.Size = int64(req.CapacityRange.RequiredBytes)
+	} else {
+		//Using default volume size
+		volumebody.Size = 1
 	}
 	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
 		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
@@ -42,6 +46,7 @@ func (p *Plugin) CreateVolume(
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {
+		log.Fatalf("failed to CreateVolume: %v", err)
 		return nil, err
 	}
 
@@ -55,6 +60,7 @@ func (p *Plugin) CreateVolume(
 			"AvailabilityZone": v.AvailabilityZone,
 			"PoolId":           v.PoolId,
 			"ProfileId":        v.ProfileId,
+			"lvPath":           v.Metadata["lvPath"],
 		},
 	}
 
@@ -134,12 +140,15 @@ func (p *Plugin) ControllerPublishVolume(
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: &model.HostInfo{
-			Host: req.NodeId,
+		// Just to Init HostInfo Struct
+		// Host: req.NodeId,
 		},
+		Metadata: req.VolumeAttributes,
 	}
 	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
 		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+		log.Fatalf("failed to ControllerPublishVolume: %v", attachReq)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
@@ -173,7 +182,7 @@ func (p *Plugin) ControllerUnpublishVolume(
 	volSpec, errVol := client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
 		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
-		return nil, status.Error(codes.FailedPrecondition, msg)
+		return nil, status.Error(codes.NotFound, msg)
 	}
 
 	attachments, err := client.ListVolumeAttachments()

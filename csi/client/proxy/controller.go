@@ -86,7 +86,7 @@ func (c *Controller) ControllerPublishVolume(
 	ctx context.Context,
 	version *csi.Version,
 	volumeid string,
-	nodeID string, /*Optional*/
+	nodeID string,
 	capabilities *csi.VolumeCapability,
 	readonly bool,
 	credentials map[string]string, /*Optional*/
