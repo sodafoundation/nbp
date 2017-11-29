@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -157,6 +159,15 @@ func main() {
 	} else {
 		log.Printf("[NodePublishVolume] NodePublishVolume:OK")
 	}
+
+	// Set SleepTime for checking the status of Volume
+	sleeptime := os.Getenv("SLEEPTIME")
+	nsleeptime := 1
+	if len(sleeptime) > 0 {
+		nsleeptime, _ = strconv.Atoi(sleeptime)
+	}
+	log.Printf("[SleepTime] %v Seconds", nsleeptime)
+	time.Sleep(time.Duration(nsleeptime) * time.Second)
 
 	// Test NodeUnpublishVolume
 	err = node.NodeUnpublishVolume(context.Background(),
