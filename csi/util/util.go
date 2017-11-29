@@ -52,6 +52,13 @@ func GetCSIEndPointListener() (net.Listener, error) {
 	}
 
 	proto, addr := getProtoandAdd(target)
+
+	log.Printf("proto: %s addr: %s", proto, addr)
+	if strings.HasPrefix(proto, "unix") {
+		os.RemoveAll(addr)
+		log.Printf("remove sock file: %s", addr)
+	}
+
 	return net.Listen(proto, addr)
 }
 

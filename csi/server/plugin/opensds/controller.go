@@ -3,12 +3,13 @@ package opensds
 import (
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"fmt"
-	"os"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -118,7 +119,7 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	var attachNodes []string
-	hostname, _ := os.Hostname()
+	hostname := req.NodeId
 	for _, attachSpec := range attachments {
 		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host != hostname {
 			//TODO: node id is what? use hostname to indicate node id currently.
@@ -140,8 +141,8 @@ func (p *Plugin) ControllerPublishVolume(
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: &model.HostInfo{
-		// Just to Init HostInfo Struct
-		// Host: req.NodeId,
+			// Just to Init HostInfo Struct
+			Host: req.NodeId,
 		},
 		Metadata: req.VolumeAttributes,
 	}
@@ -152,12 +153,17 @@ func (p *Plugin) ControllerPublishVolume(
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
+	iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
+
 	return &csi.ControllerPublishVolumeResponse{
 		PublishVolumeInfo: map[string]string{
-			"ip":       attachSpec.Ip,
-			"host":     attachSpec.Host,
-			"attachid": attachSpec.Id,
-			"status":   attachSpec.Status,
+			"ip":        attachSpec.Ip,
+			"host":      attachSpec.Host,
+			"attachid":  attachSpec.Id,
+			"status":    attachSpec.Status,
+			"portal":    iscsiCon.TgtPortal,
+			"targetiqn": iscsiCon.TgtIQN,
+			"targetlun": strconv.Itoa(iscsiCon.TgtLun),
 		},
 	}, nil
 }
@@ -191,10 +197,9 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	var attachSpecs []string
-	hostname, _ := os.Hostname()
+	hostname := req.NodeId
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host != hostname {
-			//TODO: node id is what? use hostname to indicate node id currently.
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostname {
 			attachSpecs = append(attachSpecs, attachSpec.Id)
 		}
 	}
