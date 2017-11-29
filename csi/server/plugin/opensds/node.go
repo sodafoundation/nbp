@@ -11,8 +11,10 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
+	"strings"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +30,44 @@ func (p *Plugin) NodePublishVolume(
 	log.Println("start to NodePublishVolume")
 	defer log.Println("end to NodePublishVolume")
 
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	atc, atcErr := client.GetVolumeAttachment(req.PublishVolumeInfo["atcid"])
+	if atcErr != nil || atc == nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
+	}
+
+	var targetPaths []string
+	if tps, exist := atc.Metadata["target_path"]; exist {
+		targetPaths = strings.Split(tps, ";")
+		for _, tp := range targetPaths {
+			if req.TargetPath == tp {
+				return &csi.NodePublishVolumeResponse{}, nil
+			}
+		}
+
+		// if volume don't have MULTI_NODE capability, just termination.
+		mode := req.VolumeCapability.AccessMode.Mode
+		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
+			msg := fmt.Sprintf("the volume %s has been published to this node.", req.VolumeId)
+			return nil, status.Error(codes.Aborted, msg)
+		}
+	}
+
 	portal := req.PublishVolumeInfo["portal"]
 	targetiqn := req.PublishVolumeInfo["targetiqn"]
 	targetlun := req.PublishVolumeInfo["targetlun"]
@@ -40,11 +80,38 @@ func (p *Plugin) NodePublishVolume(
 		return nil, err
 	}
 
+	// obtain attachments to decide if can format.
+	atcs, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
+	}
+	format := true
+	for _, attachSpec := range atcs {
+		if attachSpec.VolumeId == req.VolumeId {
+			if _, exist := attachSpec.Metadata["target_path"]; exist {
+				// The device is formatted, can't be reformat for shared storage.
+				format = false
+				break
+			}
+		}
+	}
+
 	// Format and Mount
 	log.Printf("[NodePublishVolume] device:%s TargetPath:%s", device, req.TargetPath)
-	err = iscsi.FormatandMount(device, "", req.TargetPath)
+	if format {
+		err = iscsi.FormatandMount(device, "", req.TargetPath)
+	} else {
+		err = iscsi.Mount(device, req.TargetPath)
+	}
 	if err != nil {
 		return nil, err
+	}
+
+	targetPaths = append(targetPaths, req.TargetPath)
+	atc.Metadata["target_path"] = strings.Join(targetPaths, ";")
+	_, err = client.UpdateVolumeAttachment(atc.Id, atc)
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -64,13 +131,6 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, status.Error(errCode, msg)
 	}
 
-	// Umount
-	log.Printf("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
-	err := iscsi.Umount(req.TargetPath)
-	if err != nil {
-		return nil, err
-	}
-
 	client := sdscontroller.GetClient("")
 
 	//check volume is exist
@@ -85,22 +145,59 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, status.Error(codes.FailedPrecondition, "Failed to NodeUnpublish volume.")
 	}
 
+	var atc *model.VolumeAttachmentSpec
 	hostname, _ := os.Hostname()
 	for _, attachSpec := range attachments {
-
-		log.Printf("[NodeUnpublishVolume] attachSpec.Host:%s hostname:%s",
-			attachSpec.Host, hostname)
-
 		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostname {
-			iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
-			// Disconnect
-			if iscsiCon != nil {
-				err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
-				if err != nil {
-					return nil, err
-				}
+			atc = attachSpec
+			break
+		}
+	}
+
+	if atc == nil {
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
+	if _, exist := atc.Metadata["target_path"]; !exist {
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
+	var modifyTargetPaths []string
+	tpExist := false
+	targetPaths := strings.Split(atc.Metadata["target_path"], ";")
+	for index, path := range targetPaths {
+		if path == req.TargetPath {
+			modifyTargetPaths = append(targetPaths[:index], targetPaths[index+1:]...)
+			tpExist = true
+			break
+		}
+	}
+	if !tpExist {
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
+	// Umount
+	log.Printf("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
+	err = iscsi.Umount(req.TargetPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(modifyTargetPaths) == 0 {
+		iscsiCon := iscsi.ParseIscsiConnectInfo(atc.ConnectionData)
+		// Disconnect
+		if iscsiCon != nil {
+			err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
+			if err != nil {
+				return nil, err
 			}
 		}
+	}
+
+	atc.Metadata["target_path"] = strings.Join(modifyTargetPaths, ";")
+	_, err = client.UpdateVolumeAttachment(atc.Id, atc)
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to NodeUnpublish volume.")
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

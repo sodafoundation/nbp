@@ -159,7 +159,7 @@ func (p *Plugin) ControllerPublishVolume(
 		PublishVolumeInfo: map[string]string{
 			"ip":        attachSpec.Ip,
 			"host":      attachSpec.Host,
-			"attachid":  attachSpec.Id,
+			"atcid":     attachSpec.Id,
 			"status":    attachSpec.Status,
 			"portal":    iscsiCon.TgtPortal,
 			"targetiqn": iscsiCon.TgtIQN,
