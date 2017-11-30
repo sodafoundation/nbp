@@ -50,7 +50,7 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	var targetPaths []string
-	if tps, exist := atc.Metadata["target_path"]; exist {
+	if tps, exist := atc.Metadata["target_path"]; exist && len(tps) != 0 {
 		targetPaths = strings.Split(tps, ";")
 		for _, tp := range targetPaths {
 			if req.TargetPath == tp {
