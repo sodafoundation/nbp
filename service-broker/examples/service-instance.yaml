@@ -4,9 +4,9 @@ metadata:
   name: service-instance
   namespace: opensds
 spec:
-  externalClusterServiceClassName: opensds-service
-  externalClusterServicePlanName: silver
+  clusterServiceClassExternalName: opensds-service
+  clusterServicePlanExternalName: default 
   parameters:
-    credentials:
-      name: vol-01
-      description: This is a volume scheduled by opa scheduler
+    name: vol-01
+    description: This is a volume scheduled by opa scheduler
+    capacity: 1

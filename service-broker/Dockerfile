@@ -1,3 +1,5 @@
 FROM bitnami/minideb:latest
-COPY service-broker /service-broker
-CMD ["/service-broker", "-logtostderr"]
+ENV PATH=$PATH:/usr/bin
+ADD service-broker opt/services/
+
+ENTRYPOINT ["/opt/services/service-broker", "-logtostderr"]
