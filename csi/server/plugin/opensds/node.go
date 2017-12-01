@@ -1,6 +1,7 @@
 package opensds
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
+	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
 )
@@ -28,15 +30,18 @@ func (p *Plugin) NodePublishVolume(
 
 	portal := req.PublishVolumeInfo["portal"]
 	targetiqn := req.PublishVolumeInfo["targetiqn"]
-	targetlun := req.VolumeId
+	targetlun := req.PublishVolumeInfo["targetlun"]
 
 	// Connect Target
+	log.Printf("[NodePublishVolume] portal:%s targetiqn:%s targetlun:%s volumeid:%s",
+		portal, targetiqn, targetlun, req.VolumeId)
 	device, err := iscsi.Connect(portal, targetiqn, targetlun)
 	if err != nil {
 		return nil, err
 	}
 
 	// Format and Mount
+	log.Printf("[NodePublishVolume] device:%s TargetPath:%s", device, req.TargetPath)
 	err = iscsi.FormatandMount(device, "", req.TargetPath)
 	if err != nil {
 		return nil, err
@@ -54,17 +59,48 @@ func (p *Plugin) NodeUnpublishVolume(
 	log.Println("start to NodeUnpublishVolume")
 	defer log.Println("end to NodeUnpublishVolume")
 
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
 	// Umount
+	log.Printf("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
 	err := iscsi.Umount(req.TargetPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Disconnect
-	// TODO: get portal and targetiqn
-	err = iscsi.Disconnect("", "")
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.FailedPrecondition, "Failed to NodeUnpublish volume.")
+	}
+
+	hostname, _ := os.Hostname()
+	for _, attachSpec := range attachments {
+
+		log.Printf("[NodeUnpublishVolume] attachSpec.Host:%s hostname:%s",
+			attachSpec.Host, hostname)
+
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostname {
+			iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
+			// Disconnect
+			if iscsiCon != nil {
+				err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

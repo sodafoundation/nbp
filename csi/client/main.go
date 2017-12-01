@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"math/rand"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/client/proxy"
@@ -122,5 +127,70 @@ func main() {
 		log.Fatalf("failed to NodeProbe: %v", err)
 	} else {
 		log.Printf("[NodeProbe] NodeProbe:OK")
+	}
+
+	// Test CreateVolume
+	rand.Seed(time.Now().Unix())
+	volumename := fmt.Sprintf("csivolume-%v", rand.Int())
+	volumeinfo, err := controller.CreateVolume(context.Background(),
+		versions[0], volumename, nil, nil, nil, nil)
+	if err != nil {
+		log.Fatalf("failed to CreateVolume: %v", err)
+	} else {
+		log.Printf("[CreateVolume] CreateVolume:%v", volumeinfo)
+	}
+
+	// Test ControllerPublishVolume
+	publishvolumeinfo, err := controller.ControllerPublishVolume(context.Background(),
+		versions[0], volumeinfo.Id, nodeid, nil, false, nil, volumeinfo.Attributes)
+	if err != nil {
+		log.Fatalf("failed to ControllerPublishVolume: %v", err)
+	} else {
+		log.Printf("[ControllerPublishVolume] ControllerPublishVolume:%v", publishvolumeinfo)
+	}
+
+	// Test NodePublishVolume
+	targetpath := "/var/lib/kubelet/plugins/opensds/"
+	err = node.NodePublishVolume(context.Background(),
+		versions[0], volumeinfo.Id, publishvolumeinfo,
+		targetpath, nil, false, nil, nil)
+	if err != nil {
+		log.Fatalf("failed to NodePublishVolume: %v", err)
+	} else {
+		log.Printf("[NodePublishVolume] NodePublishVolume:OK")
+	}
+
+	// Set SleepTime for checking the status of Volume
+	sleeptime := os.Getenv("SLEEPTIME")
+	nsleeptime := 1
+	if len(sleeptime) > 0 {
+		nsleeptime, _ = strconv.Atoi(sleeptime)
+	}
+	log.Printf("[SleepTime] %v Seconds", nsleeptime)
+	time.Sleep(time.Duration(nsleeptime) * time.Second)
+
+	// Test NodeUnpublishVolume
+	err = node.NodeUnpublishVolume(context.Background(),
+		versions[0], volumeinfo.Id, targetpath, nil)
+	if err != nil {
+		log.Fatalf("failed to NodeUnpublishVolume: %v", err)
+	} else {
+		log.Printf("[NodeUnpublishVolume] NodeUnpublishVolume:OK")
+	}
+
+	// Test ControllerUnpublishVolume
+	err = controller.ControllerUnpublishVolume(context.Background(), versions[0], volumeinfo.Id, nodeid, nil)
+	if err != nil {
+		log.Fatalf("failed to ControllerUnpublishVolume: %v", err)
+	} else {
+		log.Printf("[ControllerUnpublishVolume] ControllerUnpublishVolume:OK")
+	}
+
+	// Test DeleteVolume
+	err = controller.DeleteVolume(context.Background(), versions[0], volumeinfo.Id, nil)
+	if err != nil {
+		log.Fatalf("failed to DeleteVolume: %v", err)
+	} else {
+		log.Printf("[DeleteVolume] DeleteVolume:%v", volumeinfo)
 	}
 }

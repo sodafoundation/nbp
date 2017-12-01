@@ -3,9 +3,13 @@ package opensds
 import (
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 
+	"fmt"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -33,6 +37,9 @@ func (p *Plugin) CreateVolume(
 	volumebody.Name = req.Name
 	if req.CapacityRange != nil {
 		volumebody.Size = int64(req.CapacityRange.RequiredBytes)
+	} else {
+		//Using default volume size
+		volumebody.Size = 1
 	}
 	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
 		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
@@ -40,6 +47,7 @@ func (p *Plugin) CreateVolume(
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {
+		log.Fatalf("failed to CreateVolume: %v", err)
 		return nil, err
 	}
 
@@ -53,6 +61,7 @@ func (p *Plugin) CreateVolume(
 			"AvailabilityZone": v.AvailabilityZone,
 			"PoolId":           v.PoolId,
 			"ProfileId":        v.ProfileId,
+			"lvPath":           v.Metadata["lvPath"],
 		},
 	}
 
@@ -84,8 +93,79 @@ func (p *Plugin) ControllerPublishVolume(
 	ctx context.Context,
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ControllerPublishVolume")
+	defer log.Println("end to ControllerPublishVolume")
+
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	//TODO: need to check if node exists?
+
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish volume.")
+	}
+
+	var attachNodes []string
+	hostname := req.NodeId
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host != hostname {
+			//TODO: node id is what? use hostname to indicate node id currently.
+			attachNodes = append(attachNodes, attachSpec.Host)
+		}
+	}
+
+	if len(attachNodes) != 0 {
+		//if the volume has been published, but without MULTI_NODE capability, return error.
+		mode := req.VolumeCapability.AccessMode.Mode
+		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
+			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
+			msg := fmt.Sprintf("the volume %s has been published to another node.", req.VolumeId)
+			return nil, status.Error(codes.AlreadyExists, msg)
+		}
+	}
+
+	attachReq := &model.VolumeAttachmentSpec{
+		VolumeId: req.VolumeId,
+		HostInfo: &model.HostInfo{
+			// Just to Init HostInfo Struct
+			Host: req.NodeId,
+		},
+		Metadata: req.VolumeAttributes,
+	}
+	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+	if errAttach != nil {
+		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+		log.Fatalf("failed to ControllerPublishVolume: %v", attachReq)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
+	iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
+
+	return &csi.ControllerPublishVolumeResponse{
+		PublishVolumeInfo: map[string]string{
+			"ip":        attachSpec.Ip,
+			"host":      attachSpec.Host,
+			"attachid":  attachSpec.Id,
+			"status":    attachSpec.Status,
+			"portal":    iscsiCon.TgtPortal,
+			"targetiqn": iscsiCon.TgtIQN,
+			"targetlun": strconv.Itoa(iscsiCon.TgtLun),
+		},
+	}, nil
 }
 
 // ControllerUnpublishVolume implementation
@@ -93,8 +173,46 @@ func (p *Plugin) ControllerUnpublishVolume(
 	ctx context.Context,
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
-	// TODO
-	return nil, nil
+
+	log.Println("start to ControllerUnpublishVolume")
+	defer log.Println("end to ControllerUnpublishVolume")
+
+	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
+		msg := "the version specified in the request is not supported by the Plugin."
+		return nil, status.Error(errCode, msg)
+	}
+
+	client := sdscontroller.GetClient("")
+
+	//check volume is exist
+	volSpec, errVol := client.GetVolume(req.VolumeId)
+	if errVol != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	attachments, err := client.ListVolumeAttachments()
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
+	}
+
+	var acts []*model.VolumeAttachmentSpec
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+			acts = append(acts, attachSpec)
+		}
+	}
+
+	for _, act := range acts {
+		err = client.DeleteVolumeAttachment(act.Id, act)
+		if err != nil {
+			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
+			log.Fatalf("failed to ControllerUnpublishVolume: %v", err)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+	}
+
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
 // ValidateVolumeCapabilities implementation
