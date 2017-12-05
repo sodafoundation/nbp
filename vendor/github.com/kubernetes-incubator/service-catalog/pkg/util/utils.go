@@ -31,7 +31,6 @@ import (
 // using the 'code' as the HTTP status code
 func WriteResponse(w http.ResponseWriter, code int, object interface{}) {
 	data, err := json.Marshal(object)
-	fmt.Println("data:", string(data), " code:",code)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

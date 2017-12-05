@@ -1,16 +1,16 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements the common data structure.
@@ -32,7 +32,7 @@ type VolumeSpec struct {
 	Status           string            `json:"status,omitempty"`
 	PoolId           string            `json:"poolId,omitempty"`
 	ProfileId        string            `json:"profileId,omitempty"`
-	Metadata         map[string]string `json:"metadata, omitempty"`
+	Metadata         map[string]string `json:"metadata,omitempty"`
 }
 
 func (vol *VolumeSpec) GetName() string {
@@ -68,7 +68,7 @@ type VolumeAttachmentSpec struct {
 	VolumeId        string            `json:"volumeId,omitempty"`
 	Mountpoint      string            `json:"mountpoint,omitempty"`
 	Status          string            `json:"status,omitempty"`
-	Metadata        map[string]string `json:"metadata, omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
 	*HostInfo       `json:"hostInfo,omitempty"`
 	*ConnectionInfo `json:"connectionInfo,omitempty"`
 }
@@ -142,7 +142,7 @@ type VolumeSnapshotSpec struct {
 	Size        int64             `json:"size,omitempty"`
 	Status      string            `json:"status,omitempty"`
 	VolumeId    string            `json:"volumeId,omitempty"`
-	Metadata    map[string]string `json:"metadata, omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 func (snp *VolumeSnapshotSpec) GetName() string {

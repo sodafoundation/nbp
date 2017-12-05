@@ -1,97 +1,30 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/opensds/opensds/pkg/model"
+	fake "github.com/opensds/opensds/testutils/utils/testing"
 )
 
-const (
-	sampleUuid        = "0e9c3c68-8a0b-11e7-94a7-67f755e235cb"
-	sampleCreatedTime = "2017-08-26T11:01:09"
-	sampleUpdatedTime = "2017-08-26T11:01:55"
-)
-
-type fakeSetter struct{}
-
-func NewFakeSetter() Setter {
-	return &fakeSetter{}
-}
-
-func (fs *fakeSetter) SetUuid(m model.Modeler) error {
-	switch m.(type) {
-	case model.VolumeSpec, model.VolumeSnapshotSpec, model.VolumeAttachmentSpec,
-		model.ProfileSpec, model.DockSpec, model.StoragePoolSpec:
-		// Set uuid.
-		m.SetId(sampleUuid)
-
-		return nil
-	case *model.VolumeSpec, *model.VolumeSnapshotSpec, *model.VolumeAttachmentSpec,
-		*model.ProfileSpec, *model.DockSpec, *model.StoragePoolSpec:
-		// Set uuid.
-		m.SetId(sampleUuid)
-
-		return nil
-	default:
-		return errors.New("Unexpected input object format!")
-	}
-}
-
-func (fs *fakeSetter) SetCreatedTimeStamp(m model.Modeler) error {
-	switch m.(type) {
-	case model.VolumeSpec, model.VolumeSnapshotSpec, model.VolumeAttachmentSpec,
-		model.ProfileSpec, model.DockSpec, model.StoragePoolSpec:
-		// Set created time.
-		m.SetCreatedTime(sampleCreatedTime)
-
-		return nil
-	case *model.VolumeSpec, *model.VolumeSnapshotSpec, *model.VolumeAttachmentSpec,
-		*model.ProfileSpec, *model.DockSpec, *model.StoragePoolSpec:
-		// Set created time.
-		m.SetCreatedTime(sampleCreatedTime)
-
-		return nil
-	default:
-		return errors.New("Unexpected input object format!")
-	}
-}
-
-func (fs *fakeSetter) SetUpdatedTimeStamp(m model.Modeler) error {
-	switch m.(type) {
-	case model.VolumeSpec, model.VolumeSnapshotSpec, model.VolumeAttachmentSpec,
-		model.ProfileSpec, model.DockSpec, model.StoragePoolSpec:
-		// Set updated time.
-		m.SetUpdatedTime(sampleUpdatedTime)
-
-		return nil
-	case *model.VolumeSpec, *model.VolumeSnapshotSpec, *model.VolumeAttachmentSpec,
-		*model.ProfileSpec, *model.DockSpec, *model.StoragePoolSpec:
-		// Set updated time.
-		m.SetUpdatedTime(sampleUpdatedTime)
-
-		return nil
-	default:
-		return errors.New("Unexpected input object format!")
-	}
-}
+var fset = fake.NewFakeSetter()
 
 func InitializeModelers() []model.Modeler {
 	var (
@@ -129,10 +62,10 @@ func InitializeModelersWithSomething(uuid, createdAt, updatedAt string) []model.
 
 func TestSetUuid(t *testing.T) {
 	modelers := InitializeModelers()
-	expectedModelers := InitializeModelersWithSomething(sampleUuid, "", "")
+	expectedModelers := InitializeModelersWithSomething(fset.Uuid, "", "")
 
 	for i, model := range modelers {
-		if ok := NewFakeSetter().SetUuid(model); ok != nil {
+		if ok := fset.SetUuid(model); ok != nil {
 			t.Errorf("Failed to set uuid to model %v\n", model)
 		}
 
@@ -144,10 +77,10 @@ func TestSetUuid(t *testing.T) {
 
 func TestSetCreatedTimeStamp(t *testing.T) {
 	modelers := InitializeModelers()
-	expectedModelers := InitializeModelersWithSomething("", sampleCreatedTime, "")
+	expectedModelers := InitializeModelersWithSomething("", fset.CreatedTime, "")
 
 	for i, model := range modelers {
-		if ok := NewFakeSetter().SetCreatedTimeStamp(model); ok != nil {
+		if ok := fset.SetCreatedTimeStamp(model); ok != nil {
 			t.Errorf("Failed to set created time to model %v\n", model)
 		}
 
@@ -159,10 +92,10 @@ func TestSetCreatedTimeStamp(t *testing.T) {
 
 func TestSetUpdatedTimeStamp(t *testing.T) {
 	modelers := InitializeModelers()
-	expectedModelers := InitializeModelersWithSomething("", "", sampleUpdatedTime)
+	expectedModelers := InitializeModelersWithSomething("", "", fset.UpdatedTime)
 
 	for i, model := range modelers {
-		if ok := NewFakeSetter().SetUpdatedTimeStamp(model); ok != nil {
+		if ok := fset.SetUpdatedTimeStamp(model); ok != nil {
 			t.Errorf("Failed to set updated time to model %v\n", model)
 		}
 
@@ -190,18 +123,16 @@ func TestErrorStatus(t *testing.T) {
 }
 
 func TestValidateData(t *testing.T) {
-	fs := NewFakeSetter()
-
 	// First test.
 	var data1 = &model.StoragePoolSpec{BaseModel: &model.BaseModel{}}
 	var expected1 = &model.StoragePoolSpec{
 		BaseModel: &model.BaseModel{
-			Id:        sampleUuid,
-			CreatedAt: sampleCreatedTime,
+			Id:        fset.Uuid,
+			CreatedAt: fset.CreatedTime,
 		},
 	}
 
-	if err := ValidateData(data1, fs); err != nil {
+	if err := ValidateData(data1, fset); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(expected1, data1) {
@@ -212,12 +143,12 @@ func TestValidateData(t *testing.T) {
 	var data2 = &model.DockSpec{BaseModel: &model.BaseModel{}}
 	var expected2 = &model.DockSpec{
 		BaseModel: &model.BaseModel{
-			Id:        sampleUuid,
-			CreatedAt: sampleCreatedTime,
+			Id:        fset.Uuid,
+			CreatedAt: fset.CreatedTime,
 		},
 	}
 
-	if err := ValidateData(data2, fs); err != nil {
+	if err := ValidateData(data2, fset); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(expected2, data2) {

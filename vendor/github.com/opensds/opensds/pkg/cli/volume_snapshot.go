@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements a entry into the OpenSDS service.
@@ -92,6 +92,7 @@ func volumeSnapshotCreateAction(cmd *cobra.Command, args []string) {
 	resp, err := client.CreateVolumeSnapshot(snp)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintDict(resp, keys, FormatterList{})
@@ -107,6 +108,7 @@ func volumeSnapshotShowAction(cmd *cobra.Command, args []string) {
 	resp, err := client.GetVolumeSnapshot(args[0])
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintDict(resp, keys, FormatterList{})
@@ -122,6 +124,7 @@ func volumeSnapshotListAction(cmd *cobra.Command, args []string) {
 	resp, err := client.ListVolumeSnapshots()
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintList(resp, keys, FormatterList{})
@@ -139,6 +142,7 @@ func volumeSnapshotDeleteAction(cmd *cobra.Command, args []string) {
 	err := client.DeleteVolumeSnapshot(args[1], snp)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	fmt.Printf("Delete snapshot(%s) sucess.\n", args[1])
 }

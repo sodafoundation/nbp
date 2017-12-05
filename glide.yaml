@@ -14,3 +14,4 @@ import:
   - reflection
 - package: github.com/kubernetes-incubator/service-catalog
   version: ^0.1.1
+- package: github.com/opensds/opensds

@@ -355,8 +355,7 @@ func _TransactionOptions_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
-// Message type to initiate a read-write transaction. Currently this
-// transaction type has no options.
+// Options for read-write transactions.
 type TransactionOptions_ReadWrite struct {
 }
 
@@ -365,7 +364,7 @@ func (m *TransactionOptions_ReadWrite) String() string            { return proto
 func (*TransactionOptions_ReadWrite) ProtoMessage()               {}
 func (*TransactionOptions_ReadWrite) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0, 0} }
 
-// Message type to initiate a read-only transaction.
+// Options for read-only transactions.
 type TransactionOptions_ReadOnly struct {
 	// How to choose the timestamp for the read-only transaction.
 	//
@@ -605,9 +604,6 @@ type Transaction struct {
 	// For snapshot read-only transactions, the read timestamp chosen
 	// for the transaction. Not returned by default: see
 	// [TransactionOptions.ReadOnly.return_read_timestamp][google.spanner.v1.TransactionOptions.ReadOnly.return_read_timestamp].
-	//
-	// A timestamp in RFC3339 UTC \"Zulu\" format, accurate to nanoseconds.
-	// Example: `"2014-10-02T15:01:23.045123456Z"`.
 	ReadTimestamp *google_protobuf3.Timestamp `protobuf:"bytes,2,opt,name=read_timestamp,json=readTimestamp" json:"read_timestamp,omitempty"`
 }
 
