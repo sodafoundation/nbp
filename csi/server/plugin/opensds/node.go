@@ -11,6 +11,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/dirver"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
@@ -68,16 +69,23 @@ func (p *Plugin) NodePublishVolume(
 		}
 	}
 
-	portal := req.PublishVolumeInfo["portal"]
-	targetiqn := req.PublishVolumeInfo["targetiqn"]
-	targetlun := req.PublishVolumeInfo["targetlun"]
+	// if not attach before, attach first.
+	if len(atc.Mountpoint) == 0 {
+		volDriver := dirver.NewVolumeDriver(atc.DriverVolumeType)
+		if volDriver == nil {
+			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
+		}
 
-	// Connect Target
-	log.Printf("[NodePublishVolume] portal:%s targetiqn:%s targetlun:%s volumeid:%s",
-		portal, targetiqn, targetlun, req.VolumeId)
-	device, err := iscsi.Connect(portal, targetiqn, targetlun)
-	if err != nil {
-		return nil, err
+		device, err := volDriver.Attach(atc.ConnectionData)
+		if err != nil {
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+		}
+		atc.Mountpoint = device
+
+		_, err = client.UpdateVolumeAttachment(atc.Id, atc)
+		if err != nil {
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+		}
 	}
 
 	// obtain attachments to decide if can format.
@@ -97,11 +105,11 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	// Format and Mount
-	log.Printf("[NodePublishVolume] device:%s TargetPath:%s", device, req.TargetPath)
+	log.Printf("[NodePublishVolume] device:%s TargetPath:%s", atc.Mountpoint, req.TargetPath)
 	if format {
-		err = iscsi.FormatandMount(device, "", req.TargetPath)
+		err = iscsi.FormatandMount(atc.Mountpoint, "", req.TargetPath)
 	} else {
-		err = iscsi.Mount(device, req.TargetPath)
+		err = iscsi.Mount(atc.Mountpoint, req.TargetPath)
 	}
 	if err != nil {
 		return nil, err
@@ -184,14 +192,16 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	if len(modifyTargetPaths) == 0 {
-		iscsiCon := iscsi.ParseIscsiConnectInfo(atc.ConnectionData)
-		// Disconnect
-		if iscsiCon != nil {
-			err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
-			if err != nil {
-				return nil, err
-			}
+		volDriver := dirver.NewVolumeDriver(atc.DriverVolumeType)
+		if volDriver == nil {
+			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
 		}
+
+		err := volDriver.Detach(atc.ConnectionData)
+		if err != nil {
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+		}
+		atc.Mountpoint = ""
 	}
 
 	atc.Metadata["target_path"] = strings.Join(modifyTargetPaths, ";")
