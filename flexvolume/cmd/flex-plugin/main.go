@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/opensds/nbp/client/iscsi"
 	"github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/dirver"
+	"github.com/opensds/nbp/driver"
 	"github.com/opensds/nbp/flexvolume/pkg/volume"
 	"github.com/opensds/opensds/pkg/model"
 	"log"
@@ -140,7 +140,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		}
 	}()
 
-	volDriver := dirver.NewVolumeDriver(attachSpec.DriverVolumeType)
+	volDriver := driver.NewVolumeDriver(attachSpec.DriverVolumeType)
 	if volDriver == nil {
 		rollback = true
 		return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", attachSpec.DriverVolumeType)))
@@ -186,7 +186,7 @@ func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
 	}
 
 	if act.Mountpoint != "" {
-		volDriver := dirver.NewVolumeDriver(act.DriverVolumeType)
+		volDriver := driver.NewVolumeDriver(act.DriverVolumeType)
 		if volDriver == nil {
 			return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", act.DriverVolumeType)))
 		}

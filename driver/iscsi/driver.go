@@ -2,7 +2,7 @@ package iscsi
 
 import (
 	"github.com/opensds/nbp/client/iscsi"
-	"github.com/opensds/nbp/dirver"
+	"github.com/opensds/nbp/driver"
 	"strconv"
 )
 
@@ -13,7 +13,7 @@ var (
 type Iscsi struct{}
 
 func init() {
-	dirver.RegisterDriver(ISCSI_DRIVER, &Iscsi{})
+	driver.RegisterDriver(ISCSI_DRIVER, &Iscsi{})
 }
 
 func (isc *Iscsi) Attach(conn map[string]interface{}) (string, error) {

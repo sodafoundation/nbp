@@ -2,7 +2,7 @@ package rbd
 
 import (
 	"fmt"
-	"github.com/opensds/nbp/dirver"
+	"github.com/opensds/nbp/driver"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -22,10 +22,10 @@ var (
 
 type RBD struct{}
 
-var _ dirver.VolumeDriver = &RBD{}
+var _ driver.VolumeDriver = &RBD{}
 
 func init() {
-	dirver.RegisterDriver(RBD_DRIVER, &RBD{})
+	driver.RegisterDriver(RBD_DRIVER, &RBD{})
 }
 
 func (rbd *RBD) Attach(conn map[string]interface{}) (string, error) {
