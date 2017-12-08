@@ -11,7 +11,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/dirver"
+	"github.com/opensds/nbp/driver"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
@@ -71,7 +71,7 @@ func (p *Plugin) NodePublishVolume(
 
 	// if not attach before, attach first.
 	if len(atc.Mountpoint) == 0 {
-		volDriver := dirver.NewVolumeDriver(atc.DriverVolumeType)
+		volDriver := driver.NewVolumeDriver(atc.DriverVolumeType)
 		if volDriver == nil {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
 		}
@@ -192,7 +192,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	if len(modifyTargetPaths) == 0 {
-		volDriver := dirver.NewVolumeDriver(atc.DriverVolumeType)
+		volDriver := driver.NewVolumeDriver(atc.DriverVolumeType)
 		if volDriver == nil {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
 		}
