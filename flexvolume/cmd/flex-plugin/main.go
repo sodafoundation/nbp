@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"github.com/opensds/nbp/client/iscsi"
 	"github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/dirver"
 	"github.com/opensds/nbp/flexvolume/pkg/volume"
 	"github.com/opensds/opensds/pkg/model"
 	"log"
 	"os"
 	"runtime"
-	"strconv"
 )
 
 //TODO: if volume has status, opensds should supply the definition of status, and set status of volume.
@@ -74,7 +74,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	volID := opt.VolumeId
 
 	client := opensds.GetClient("")
-	_, errVol := client.GetVolume(volID)
+	vol, errVol := client.GetVolume(volID)
 	if errVol != nil {
 		return Fail(errors.New("volume not exist."))
 	}
@@ -117,11 +117,6 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		localIqn = iqns[0]
 	}
 
-	vol, err := client.GetVolume(volID)
-	if err != nil {
-		return Fail(errors.New(fmt.Sprintln("Get volume failed,", err)))
-	}
-
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: volID,
 		HostInfo: &model.HostInfo{
@@ -145,14 +140,16 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		}
 	}()
 
-	//as so far, only support iscsi protocol. if support multi protocols, the protocol type must be stored in volume,
-	//otherwise can't get enough info from flexvolume framework.
-	//iscsi implement as follow:
-	iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
-	device, errConnect := iscsi.Connect(iscsiCon.TgtPortal, iscsiCon.TgtIQN, strconv.Itoa(iscsiCon.TgtLun))
-	if errConnect != nil {
+	volDriver := dirver.NewVolumeDriver(attachSpec.DriverVolumeType)
+	if volDriver == nil {
 		rollback = true
-		return Fail(errConnect.Error())
+		return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", attachSpec.DriverVolumeType)))
+	}
+
+	device, errAttach := volDriver.Attach(attachSpec.ConnectionData)
+	if errAttach != nil {
+		rollback = true
+		return Fail(errAttach.Error())
 	}
 
 	attachSpec.Status = VOLUME_STATUS_ATTACHED
@@ -189,8 +186,12 @@ func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
 	}
 
 	if act.Mountpoint != "" {
-		iscsiCon := iscsi.ParseIscsiConnectInfo(act.ConnectionData)
-		err = iscsi.Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
+		volDriver := dirver.NewVolumeDriver(act.DriverVolumeType)
+		if volDriver == nil {
+			return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", act.DriverVolumeType)))
+		}
+
+		err = volDriver.Detach(act.ConnectionData)
 		if err != nil {
 			return Fail(err.Error())
 		}
@@ -360,4 +361,3 @@ func main() {
 	log.Println("Cmd:", os.Args)
 	RunPlugin(&OpenSDSPlugin{})
 }
-

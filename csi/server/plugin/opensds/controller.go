@@ -3,7 +3,6 @@ package opensds
 import (
 	"log"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"fmt"
@@ -138,11 +137,20 @@ func (p *Plugin) ControllerPublishVolume(
 		}
 	}
 
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
+
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: &model.HostInfo{
-			// Just to Init HostInfo Struct
-			Host: req.NodeId,
+			Host:      req.NodeId,
+			Platform:  runtime.GOARCH,
+			OsType:    runtime.GOOS,
+			Ip:        iscsi.GetHostIp(),
+			Initiator: localIqn,
 		},
 		Metadata: req.VolumeAttributes,
 	}
@@ -153,17 +161,12 @@ func (p *Plugin) ControllerPublishVolume(
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	iscsiCon := iscsi.ParseIscsiConnectInfo(attachSpec.ConnectionData)
-
 	return &csi.ControllerPublishVolumeResponse{
 		PublishVolumeInfo: map[string]string{
-			"ip":        attachSpec.Ip,
-			"host":      attachSpec.Host,
-			"atcid":     attachSpec.Id,
-			"status":    attachSpec.Status,
-			"portal":    iscsiCon.TgtPortal,
-			"targetiqn": iscsiCon.TgtIQN,
-			"targetlun": strconv.Itoa(iscsiCon.TgtLun),
+			"ip":     attachSpec.Ip,
+			"host":   attachSpec.Host,
+			"atcid":  attachSpec.Id,
+			"status": attachSpec.Status,
 		},
 	}, nil
 }
