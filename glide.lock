@@ -1,12 +1,13 @@
-hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
-updated: 2017-11-23T13:23:39.3647601+08:00
+hash: de1ce95797123aafd1b76ac5e767053cc0f42aedecfd43da2f2a248f16bea9f7
+updated: 2017-12-05T15:09:27.264744764+08:00
 imports:
 - name: github.com/astaxie/beego
-  version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
+  version: d96289a81bf67728cff7a19b067aaecc65a62ec6
   subpackages:
+  - context
   - httplib
 - name: github.com/container-storage-interface/spec
-  version: 4ac2d13f89360f2da40d188473d77f2ec56b9d0d
+  version: 2561947ce5899bcb80e5dbaecb99afdce66e91d4
   subpackages:
   - lib/go/csi
 - name: github.com/golang/glog
@@ -25,18 +26,23 @@ imports:
 - name: github.com/gorilla/mux
   version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/kubernetes-incubator/service-catalog
-  version: 48ecff13b1f18c7cf18798672a438b62822cda9b
+  version: bb3e4a1d2c7d88af122c6491a5ac9d5f881b5824
   subpackages:
   - contrib/pkg/broker/controller
   - contrib/pkg/broker/server
   - contrib/pkg/brokerapi
   - pkg
   - pkg/util
+- name: github.com/mitchellh/mapstructure
+  version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/opensds/opensds
-  version: 178f0b24fbda8f7bb01afda976a3155874cbf728
+  version: b848b9d61118a5cebeb785de6d21c01a3635d925
   subpackages:
   - client
   - pkg/model
+  - pkg/utils
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
@@ -48,7 +54,7 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sys
-  version: 1e2299c37cc91a509f1b12369872d27be0ce98a6
+  version: 8b4580aae2a0dd0c231a45d3ccb8434ff533b840
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -60,16 +66,18 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/genproto
-  version: 11c7f9e547da6db876260ce49ea7536985904c9b
+  version: 09f6ed296fc66555a25fe4ce95173148778dfa85
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 5ffe3083946d5603a0578721101dc8165b1d5b5f
+  version: be077907e29fdb945d351e4284eb5361e7f8924e
   subpackages:
   - balancer
+  - balancer/roundrobin
   - codes
   - connectivity
   - credentials
+  - encoding
   - grpclb/grpc_lb_v1/messages
   - grpclog
   - internal
@@ -80,6 +88,9 @@ imports:
   - reflection
   - reflection/grpc_reflection_v1alpha
   - resolver
+  - resolver/dns
+  - resolver/manual
+  - resolver/passthrough
   - stats
   - status
   - tap

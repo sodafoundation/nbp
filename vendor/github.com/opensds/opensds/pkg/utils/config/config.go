@@ -1,20 +1,21 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package config
 
 import (
+	gflag "flag"
 	"reflect"
 	"strconv"
 	"strings"
@@ -107,11 +108,14 @@ func setSlice(v reflect.Value, str string) {
 	v.Set(s)
 }
 
-func setSectionValue(section string, v reflect.Value, cfg *ini.File) {
+func parseItems(section string, v reflect.Value, cfg *ini.File) {
 	for i := 0; i < v.Type().NumField(); i++ {
 
 		field := v.Field(i)
 		tag := v.Type().Field(i).Tag.Get("conf")
+		if "" == tag {
+			parseSections(cfg, field.Type(), field)
+		}
 		tags := strings.SplitN(tag, ",", 2)
 		if !field.CanSet() {
 			continue
@@ -125,7 +129,7 @@ func setSectionValue(section string, v reflect.Value, cfg *ini.File) {
 			if err == nil {
 				strVal = key.Value()
 			}
-			log.Warningf("Get key failed, using default key.")
+			log.Warningf("Get key(%s.%s) failed, using default key(%s).", section, tags[ConfKeyName], strVal)
 		}
 		switch field.Kind() {
 		case reflect.Bool:
@@ -149,6 +153,24 @@ func setSectionValue(section string, v reflect.Value, cfg *ini.File) {
 	}
 }
 
+func parseSections(cfg *ini.File, t reflect.Type, v reflect.Value) {
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+		t = t.Elem()
+	}
+	for i := 0; i < t.NumField(); i++ {
+		field := v.Field(i)
+		section := t.Field(i).Tag.Get("conf")
+		if "FlagSet" == field.Type().Name() {
+			continue
+		}
+		if "" == section {
+			parseSections(cfg, field.Type(), field)
+		}
+		parseItems(section, field, cfg)
+	}
+}
+
 func initConf(confFile string, conf interface{}) {
 	cfg, err := ini.Load(confFile)
 	if err != nil && confFile != "" {
@@ -156,9 +178,37 @@ func initConf(confFile string, conf interface{}) {
 	}
 	t := reflect.TypeOf(conf)
 	v := reflect.ValueOf(conf)
-	for i := 0; i < t.Elem().NumField(); i++ {
-		field := v.Elem().Field(i)
-		section := t.Elem().Field(i).Tag.Get("conf")
-		setSectionValue(section, field, cfg)
-	}
+	parseSections(cfg, t, v)
+
 }
+
+// Global Configuration Variable
+var CONF *Config = GetDefaultConfig()
+
+//Create a Config and init default value.
+func GetDefaultConfig() *Config {
+	var conf *Config = new(Config)
+	initConf("", conf)
+	return conf
+}
+
+func (c *Config) Load(confFile string) {
+	gflag.StringVar(&confFile, "config-file", confFile, "The configuration file of OpenSDS")
+	c.Flag.Parse()
+	initConf(confFile, CONF)
+	c.Flag.AssignValue()
+}
+
+func GetBackendsMap() map[string]BackendProperties {
+	backendsMap := map[string]BackendProperties{}
+	v := reflect.ValueOf(CONF.Backends)
+	t := reflect.TypeOf(CONF.Backends)
+
+	for i := 0; i < t.NumField(); i++ {
+		feild := v.Field(i)
+		name := t.Field(i).Tag.Get("conf")
+		backendsMap[name] = feild.Interface().(BackendProperties)
+	}
+	return backendsMap
+}
+

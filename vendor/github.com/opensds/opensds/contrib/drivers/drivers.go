@@ -1,21 +1,21 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module defines an standard table of storage driver. The default storage
 driver is sample driver used for testing. If you want to use other storage
-plugin, just modify Init() method.
+plugin, just modify Init() and Clean() method.
 
 */
 
@@ -23,11 +23,12 @@ package drivers
 
 import (
 	"github.com/opensds/opensds/contrib/drivers/ceph"
+	"github.com/opensds/opensds/contrib/drivers/huawei/dorado"
 	"github.com/opensds/opensds/contrib/drivers/lvm"
 	"github.com/opensds/opensds/contrib/drivers/openstack/cinder"
-	"github.com/opensds/opensds/contrib/drivers/sample"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
+	sample "github.com/opensds/opensds/testutils/driver"
 )
 
 type VolumeDriver interface {
@@ -56,18 +57,45 @@ type VolumeDriver interface {
 }
 
 func Init(resourceType string) VolumeDriver {
+	var d VolumeDriver
 	switch resourceType {
 	case "cinder":
-		var d = &cinder.Driver{}
-		d.Setup()
-		return d
+		d = &cinder.Driver{}
+		break
 	case "ceph":
-		return &ceph.Driver{}
+		d = &ceph.Driver{}
+		break
 	case "lvm":
-		var d = &lvm.Driver{}
-		d.Setup()
-		return d
+		d = &lvm.Driver{}
+		break
+	case "huawei_dorado":
+		d = &dorado.Driver{}
+		break
 	default:
-		return &sample.Driver{}
+		d = &sample.Driver{}
+		break
 	}
+	d.Setup()
+	return d
 }
+
+func Clean(d VolumeDriver) VolumeDriver {
+	// Execute diffrent clean operations according to the VolumeDriver type.
+	switch d.(type) {
+	case *cinder.Driver:
+		break
+	case *ceph.Driver:
+		break
+	case *lvm.Driver:
+		break
+	case *dorado.Driver:
+		break
+	default:
+		break
+	}
+	d.Unset()
+	d = nil
+
+	return d
+}
+

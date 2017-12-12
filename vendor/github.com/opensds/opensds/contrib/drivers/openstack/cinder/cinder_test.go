@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements cinder driver for OpenSDS. Cinder driver will pass
@@ -49,7 +49,7 @@ func TestSetup(t *testing.T) {
 			return &gophercloud.ServiceClient{}, nil
 		})
 
-	config.CONF.OsdsDock.CinderConfig = "testdata/cinder.yaml"
+	config.CONF.OsdsDock.Backends.Cinder.ConfigPath = "testdata/cinder.yaml"
 	d := Driver{}
 	d.Setup()
 	if opt.IdentityEndpoint != "http://192.168.56.104/identity" {
@@ -74,24 +74,30 @@ func TestSetup(t *testing.T) {
 		t.Error("TenantName error.")
 	}
 
-	if d.config.Pool["pool1"].DiskType != "SSD" {
+	if d.conf.Pool["pool1"].DiskType != "SSD" {
 		t.Error("Test config pool1 DiskType error")
 	}
-	if d.config.Pool["pool1"].IOPS != 1000 {
+	if d.conf.Pool["pool1"].IOPS != 1000 {
 		t.Error("Test config pool1 IOPS error")
 	}
-	if d.config.Pool["pool1"].BandWidth != 1000 {
+	if d.conf.Pool["pool1"].BandWidth != 1000 {
 		t.Error("Test config pool1 BandWidth error")
 	}
+	if d.conf.Pool["pool1"].AZ != "nova-01" {
+		t.Error("Test config pool1 AZ error")
+	}
 
-	if d.config.Pool["pool2"].DiskType != "SAS" {
+	if d.conf.Pool["pool2"].DiskType != "SAS" {
 		t.Error("Test config pool2 DiskType error")
 	}
-	if d.config.Pool["pool2"].IOPS != 800 {
+	if d.conf.Pool["pool2"].IOPS != 800 {
 		t.Error("Test config pool2 IOPS error")
 	}
-	if d.config.Pool["pool2"].BandWidth != 800 {
+	if d.conf.Pool["pool2"].BandWidth != 800 {
 		t.Error("Test config pool2 BandWidth error")
+	}
+	if d.conf.Pool["pool2"].AZ != "nova-02" {
+		t.Error("Test config pool2 AZ error")
 	}
 }
 
@@ -363,7 +369,7 @@ func TestListPools(t *testing.T) {
 			}
 			return pools, nil
 		})
-	config.CONF.OsdsDock.CinderConfig = "testdata/cinder.yaml"
+	config.CONF.OsdsDock.Backends.Cinder.ConfigPath = "testdata/cinder.yaml"
 	d := Driver{}
 	d.Setup()
 	resp, err := d.ListPools()
@@ -401,4 +407,3 @@ func TestListPools(t *testing.T) {
 		t.Error("List pool number error")
 	}
 }
-
