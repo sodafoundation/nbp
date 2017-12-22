@@ -1,16 +1,16 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements a entry into the OpenSDS northbound service.
@@ -21,14 +21,17 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	log "github.com/golang/glog"
 
 	"github.com/opensds/opensds/pkg/controller/policy"
 	"github.com/opensds/opensds/pkg/controller/selector"
 	"github.com/opensds/opensds/pkg/controller/volume"
+	"github.com/opensds/opensds/pkg/db"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
+	"github.com/opensds/opensds/pkg/utils"
 )
 
 const (
@@ -42,59 +45,85 @@ var Brain *Controller
 
 func NewController() *Controller {
 	return &Controller{
-		Selector:         selector.NewSelector(),
+		selector:         selector.NewSelector(),
 		volumeController: volume.NewController(),
 	}
 }
 
 type Controller struct {
-	selector.Selector
-
+	selector         selector.Selector
 	volumeController volume.Controller
 	policyController policy.Controller
 }
 
 func (c *Controller) CreateVolume(in *model.VolumeSpec) (*model.VolumeSpec, error) {
-	var prfID = in.GetProfileId()
+	var profile *model.ProfileSpec
+	var err error
 
-	prf, err := c.SelectProfile(prfID)
+	if in.ProfileId == "" {
+		log.Warning("Use default profile when user doesn't specify profile.")
+		profile, err = db.C.GetDefaultProfile()
+	} else {
+		profile, err = db.C.GetProfile(in.ProfileId)
+	}
 	if err != nil {
-		log.Error("when search profiles in db:", err)
+		log.Error("Get profile failed: ", err)
 		return nil, err
 	}
 
-	// Select the storage tag according to the lifecycle flag.
-	c.policyController = policy.NewController(prf)
-	c.policyController.Setup(CREATE_LIFECIRCLE_FLAG)
+	if in.Size <= 0 {
+		errMsg := fmt.Sprintf("Invalid volume size: %d", in.Size)
+		log.Error(errMsg)
+		return nil, errors.New(errMsg)
+	}
 
-	polInfo, err := c.SelectSupportedPool(c.policyController.StorageTag().GetSyncTag())
+	if in.AvailabilityZone == "" {
+		log.Warning("Use default availability zone when user doesn't specify availabilityZone.")
+		in.AvailabilityZone = "default"
+	}
+
+	var filterRequest map[string]interface{}
+	if profile.Extras != nil {
+		filterRequest = profile.Extras
+	} else {
+		filterRequest = make(map[string]interface{})
+	}
+	filterRequest["size"] = in.Size
+	filterRequest["availabilityZone"] = in.AvailabilityZone
+
+	polInfo, err := c.selector.SelectSupportedPool(filterRequest)
 	if err != nil {
 		log.Error("When search supported pool resource:", err)
 		return nil, err
 	}
-	dockInfo, err := c.SelectDock(polInfo)
+	dockInfo, err := db.C.GetDock(polInfo.DockId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return nil, err
 	}
-	c.policyController.SetDock(dockInfo)
-	c.volumeController.SetDock(dockInfo)
 
+	c.volumeController.SetDock(dockInfo)
 	opt := &pb.CreateVolumeOpts{
-		Id:               in.GetId(),
-		Name:             in.GetName(),
-		Description:      in.GetDescription(),
-		Size:             in.GetSize(),
-		AvailabilityZone: in.GetAvailabilityZone(),
-		ProfileId:        prfID,
-		PoolId:           polInfo.GetId(),
-		DockId:           dockInfo.GetId(),
-		DriverName:       dockInfo.GetDriverName(),
+		Id:               in.Id,
+		Name:             in.Name,
+		Description:      in.Description,
+		Size:             in.Size,
+		AvailabilityZone: in.AvailabilityZone,
+		ProfileId:        profile.Id,
+		PoolId:           polInfo.Id,
+		PoolName:         polInfo.Name,
+		DockId:           dockInfo.Id,
+		DriverName:       dockInfo.DriverName,
 	}
 	result, err := c.volumeController.CreateVolume(opt)
 	if err != nil {
 		return nil, err
 	}
+
+	// Select the storage tag according to the lifecycle flag.
+	c.policyController = policy.NewController(profile)
+	c.policyController.Setup(CREATE_LIFECIRCLE_FLAG)
+	c.policyController.SetDock(dockInfo)
 
 	var errChan = make(chan error, 1)
 	volBody, _ := json.Marshal(result)
@@ -104,9 +133,9 @@ func (c *Controller) CreateVolume(in *model.VolumeSpec) (*model.VolumeSpec, erro
 }
 
 func (c *Controller) DeleteVolume(in *model.VolumeSpec) error {
-	prf, err := c.SelectProfile(in.GetProfileId())
+	prf, err := db.C.GetProfile(in.ProfileId)
 	if err != nil {
-		log.Error("when search profiles in db:", err)
+		log.Error("when search profile in db:", err)
 		return err
 	}
 
@@ -114,19 +143,19 @@ func (c *Controller) DeleteVolume(in *model.VolumeSpec) error {
 	c.policyController = policy.NewController(prf)
 	c.policyController.Setup(DELETE_LIFECIRCLE_FLAG)
 
-	dockInfo, err := c.SelectDock(in.GetId())
+	dockInfo, err := db.C.GetDockByPoolId(in.PoolId)
 	if err != nil {
-		log.Error("When search supported dock resource:", err)
+		log.Error("When search dock in db by pool id: ", err)
 		return err
 	}
 	c.policyController.SetDock(dockInfo)
 	c.volumeController.SetDock(dockInfo)
 
 	opt := &pb.DeleteVolumeOpts{
-		Id:         in.GetId(),
-		Metadata:   in.GetMetadata(),
-		DockId:     dockInfo.GetId(),
-		DriverName: dockInfo.GetDriverName(),
+		Id:         in.Id,
+		Metadata:   in.Metadata,
+		DockId:     dockInfo.Id,
+		DriverName: dockInfo.DriverName,
 	}
 
 	var errChan = make(chan error, 1)
@@ -141,7 +170,12 @@ func (c *Controller) DeleteVolume(in *model.VolumeSpec) error {
 }
 
 func (c *Controller) CreateVolumeAttachment(in *model.VolumeAttachmentSpec) (*model.VolumeAttachmentSpec, error) {
-	dockInfo, err := c.SelectDock(in.GetVolumeId())
+	vol, err := db.C.GetVolume(in.VolumeId)
+	if err != nil {
+		log.Error("Get volume failed in create volume attachment method: ", err)
+		return nil, err
+	}
+	dockInfo, err := db.C.GetDockByPoolId(vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return nil, err
@@ -150,18 +184,18 @@ func (c *Controller) CreateVolumeAttachment(in *model.VolumeAttachmentSpec) (*mo
 
 	return c.volumeController.CreateVolumeAttachment(
 		&pb.CreateAttachmentOpts{
-			Id:       in.GetId(),
-			VolumeId: in.GetVolumeId(),
+			Id:       in.Id,
+			VolumeId: in.VolumeId,
 			HostInfo: &pb.HostInfo{
-				Platform:  in.GetPlatform(),
-				OsType:    in.GetOsType(),
-				Ip:        in.GetIp(),
-				Host:      in.GetHost(),
-				Initiator: in.GetInitiator(),
+				Platform:  in.Platform,
+				OsType:    in.OsType,
+				Ip:        in.Ip,
+				Host:      in.Host,
+				Initiator: in.Initiator,
 			},
-			Metadata:   in.GetMetadata(),
-			DockId:     dockInfo.GetId(),
-			DriverName: dockInfo.GetDriverName(),
+			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
+			DriverName: dockInfo.DriverName,
 		},
 	)
 }
@@ -171,7 +205,12 @@ func (c *Controller) UpdateVolumeAttachment(in *model.VolumeAttachmentSpec) (*mo
 }
 
 func (c *Controller) DeleteVolumeAttachment(in *model.VolumeAttachmentSpec) error {
-	dockInfo, err := c.SelectDock(in.GetVolumeId())
+	vol, err := db.C.GetVolume(in.VolumeId)
+	if err != nil {
+		log.Error("Get volume failed in delete volume attachment method: ", err)
+		return err
+	}
+	dockInfo, err := db.C.GetDockByPoolId(vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return err
@@ -180,24 +219,30 @@ func (c *Controller) DeleteVolumeAttachment(in *model.VolumeAttachmentSpec) erro
 
 	return c.volumeController.DeleteVolumeAttachment(
 		&pb.DeleteAttachmentOpts{
-			Id:       in.GetId(),
-			VolumeId: in.GetVolumeId(),
+			Id:       in.Id,
+			VolumeId: in.VolumeId,
 			HostInfo: &pb.HostInfo{
-				Platform:  in.GetPlatform(),
-				OsType:    in.GetOsType(),
-				Ip:        in.GetIp(),
-				Host:      in.GetHost(),
-				Initiator: in.GetInitiator(),
+				Platform:  in.Platform,
+				OsType:    in.OsType,
+				Ip:        in.Ip,
+				Host:      in.Host,
+				Initiator: in.Initiator,
 			},
-			Metadata:   in.GetMetadata(),
-			DockId:     dockInfo.GetId(),
-			DriverName: dockInfo.GetDriverName(),
+			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
+			DriverName: dockInfo.DriverName,
 		},
 	)
 }
 
 func (c *Controller) CreateVolumeSnapshot(in *model.VolumeSnapshotSpec) (*model.VolumeSnapshotSpec, error) {
-	dockInfo, err := c.SelectDock(in.GetVolumeId())
+	vol, err := db.C.GetVolume(in.VolumeId)
+	if err != nil {
+		log.Error("Get volume failed in create volume snapshot method: ", err)
+		return nil, err
+	}
+
+	dockInfo, err := db.C.GetDockByPoolId(vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return nil, err
@@ -206,18 +251,25 @@ func (c *Controller) CreateVolumeSnapshot(in *model.VolumeSnapshotSpec) (*model.
 
 	return c.volumeController.CreateVolumeSnapshot(
 		&pb.CreateVolumeSnapshotOpts{
-			Id:          in.GetId(),
-			Name:        in.GetName(),
-			Description: in.GetDescription(),
-			Size:        in.GetSize(),
-			VolumeId:    in.GetVolumeId(),
-			Metadata:    in.GetMetadata(),
+			Id:          in.Id,
+			Name:        in.Name,
+			Description: in.Description,
+			VolumeId:    in.VolumeId,
+			Size:        vol.Size,
+			Metadata:    utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:      dockInfo.Id,
+			DriverName:  dockInfo.DriverName,
 		},
 	)
 }
 
 func (c *Controller) DeleteVolumeSnapshot(in *model.VolumeSnapshotSpec) error {
-	dockInfo, err := c.SelectDock(in.GetVolumeId())
+	vol, err := db.C.GetVolume(in.VolumeId)
+	if err != nil {
+		log.Error("Get volume failed in delete volume snapshot method: ", err)
+		return err
+	}
+	dockInfo, err := db.C.GetDockByPoolId(vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
 		return err
@@ -226,9 +278,11 @@ func (c *Controller) DeleteVolumeSnapshot(in *model.VolumeSnapshotSpec) error {
 
 	return c.volumeController.DeleteVolumeSnapshot(
 		&pb.DeleteVolumeSnapshotOpts{
-			Id:       in.GetId(),
-			VolumeId: in.GetVolumeId(),
-			Metadata: in.GetMetadata(),
+			Id:         in.Id,
+			VolumeId:   in.VolumeId,
+			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
+			DriverName: dockInfo.DriverName,
 		},
 	)
 }

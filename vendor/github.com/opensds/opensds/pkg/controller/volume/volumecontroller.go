@@ -1,16 +1,16 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements a entry into the OpenSDS volume controller service.
@@ -60,8 +60,8 @@ type controller struct {
 }
 
 func (c *controller) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, error) {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return nil, err
 	}
 
@@ -89,8 +89,8 @@ func (c *controller) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, 
 }
 
 func (c *controller) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return err
 	}
 
@@ -109,8 +109,8 @@ func (c *controller) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 }
 
 func (c *controller) CreateVolumeAttachment(opt *pb.CreateAttachmentOpts) (*model.VolumeAttachmentSpec, error) {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return nil, err
 	}
 
@@ -137,8 +137,8 @@ func (c *controller) CreateVolumeAttachment(opt *pb.CreateAttachmentOpts) (*mode
 }
 
 func (c *controller) DeleteVolumeAttachment(opt *pb.DeleteAttachmentOpts) error {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return err
 	}
 
@@ -157,8 +157,8 @@ func (c *controller) DeleteVolumeAttachment(opt *pb.DeleteAttachmentOpts) error 
 }
 
 func (c *controller) CreateVolumeSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.VolumeSnapshotSpec, error) {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return nil, err
 	}
 
@@ -185,8 +185,8 @@ func (c *controller) CreateVolumeSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*mo
 }
 
 func (c *controller) DeleteVolumeSnapshot(opt *pb.DeleteVolumeSnapshotOpts) error {
-	if err := c.Client.Update(c.DockInfo); err != nil {
-		log.Error("When parsing dock info:", err)
+	if err := c.Client.Connect(c.DockInfo.Endpoint); err != nil {
+		log.Error("When connecting dock client:", err)
 		return err
 	}
 

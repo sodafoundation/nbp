@@ -1,22 +1,18 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package config
-
-import (
-	gflag "flag"
-)
 
 type Default struct{}
 
@@ -24,14 +20,14 @@ type OsdsLet struct {
 	ApiEndpoint string `conf:"api_endpoint,localhost:50040"`
 	Graceful    bool   `conf:"graceful,true"`
 	SocketOrder string `conf:"socket_order"`
+	Daemon      bool   `conf:"daemon,false"`
 }
 
 type OsdsDock struct {
-	ApiEndpoint    string   `conf:"api_endpoint,localhost:50050"`
-	EnableBackends []string `conf:"enabled_backends,ceph"`
-	CinderConfig   string   `conf:"cinder_config,/etc/opensds/driver/cinder.yaml"`
-	CephConfig     string   `conf:"ceph_config,/etc/opensds/driver/ceph.yaml"`
-	LVMConfig      string   `conf:"lvm_config,/etc/opensds/driver/lvm.yaml"`
+	ApiEndpoint     string   `conf:"api_endpoint,localhost:50050"`
+	EnabledBackends []string `conf:"enabled_backends,ceph"`
+	Daemon          bool     `conf:"daemon,false"`
+	Backends
 }
 
 type Database struct {
@@ -44,37 +40,21 @@ type BackendProperties struct {
 	Name        string `conf:"name"`
 	Description string `conf:"description"`
 	DriverName  string `conf:"driver_name"`
+	ConfigPath  string `conf:"config_path"`
 }
 
-type Ceph BackendProperties
-type Cinder BackendProperties
-type Sample BackendProperties
-type LVM BackendProperties
+type Backends struct {
+	Ceph         BackendProperties `conf:"ceph"`
+	Cinder       BackendProperties `conf:"cinder"`
+	Sample       BackendProperties `conf:"sample"`
+	LVM          BackendProperties `conf:"lvm"`
+	HuaweiDorado BackendProperties `conf:"huawei_dorado"`
+}
 
 type Config struct {
 	Default  `conf:"default"`
 	OsdsLet  `conf:"osdslet"`
 	OsdsDock `conf:"osdsdock"`
 	Database `conf:"database"`
-	Ceph     `conf:"ceph"`
-	Cinder   `conf:"cinder"`
-	Sample   `conf:"sample"`
-	LVM      `conf:"lvm"`
 	Flag     FlagSet
 }
-
-//Create a Config and init default value.
-func GetDefaultConfig() *Config {
-	var conf *Config = new(Config)
-	initConf("", conf)
-	return conf
-}
-
-func (c *Config) Load(confFile string) {
-	gflag.StringVar(&confFile, "config-file", confFile, "The configuration file of OpenSDS")
-	c.Flag.Parse()
-	initConf(confFile, CONF)
-	c.Flag.AssignValue()
-}
-
-var CONF *Config = GetDefaultConfig()

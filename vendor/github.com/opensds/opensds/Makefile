@@ -2,12 +2,12 @@
 
 all:build
 
-build:osdsdock osdslet
+build:osdsdock osdslet osdsctl
 
 package:
 	go get github.com/opensds/opensds/cmd/osdslet
 	go get github.com/opensds/opensds/cmd/osdsdock
-	go get github.com/opensds/opensds/cmd/osdsctl
+	go get github.com/opensds/opensds/osdsctl
 
 osdsdock:package
 	mkdir -p  ./build/out/bin/
@@ -19,13 +19,13 @@ osdslet:package
 
 osdsctl:package
 	mkdir -p  ./build/out/bin/
-	go build -o ./build/out/bin/osdsctl github.com/opensds/opensds/cmd/osdsctl
+	go build -o ./build/out/bin/osdsctl github.com/opensds/opensds/osdsctl
 
 docker:build
 	cp ./build/out/bin/osdsdock ./cmd/osdsdock
 	cp ./build/out/bin/osdslet ./cmd/osdslet
-	docker build cmd/osdsdock -t opensds/opensds-dock:v1alpha
-	docker build cmd/osdslet -t opensds/opensds-controller:v1alpha
+	docker build cmd/osdsdock -t opensdsio/opensds-dock:v1beta
+	docker build cmd/osdslet -t opensdsio/opensds-controller:v1beta
 
 clean:
-	rm -rf ./build/out/bin/* ./cmd/osdslet/osdslet ./cmd/osdsdock/osdsdock
+	rm -rf ./build ./cmd/osdslet/osdslet ./cmd/osdsdock/osdsdock

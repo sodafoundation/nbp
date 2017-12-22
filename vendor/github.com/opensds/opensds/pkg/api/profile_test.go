@@ -26,25 +26,16 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/opensds/opensds/pkg/db"
-	dbtest "github.com/opensds/opensds/pkg/db/testing"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils"
-	mockSetter "github.com/opensds/opensds/pkg/utils/testing"
+	dbtest "github.com/opensds/opensds/testutils/db/testing"
 )
 
 func init() {
 	var profilePortal ProfilePortal
-	beego.Router("/v1alpha/profiles", &profilePortal, "post:CreateProfile;get:ListProfiles")
-	beego.Router("/v1alpha/profiles/:profileId", &profilePortal, "get:GetProfile;put:UpdateProfile;delete:DeleteProfile")
-	beego.Router("/v1alpha/profiles/:profileId/extras", &profilePortal, "post:AddExtraProperty;get:ListExtraProperties")
-	beego.Router("/v1alpha/profiles/:profileId/extras/:extraKey", &profilePortal, "delete:RemoveExtraProperty")
-	mockSetter := &mockSetter.MockSetter{
-		Uuid:        "f4a5e666-c669-4c64-a2a1-8f9ecd560c78",
-		CreatedTime: "2017-10-24T16:21:32",
-		UpdatedTime: "2017-10-25T11:01:55",
-	}
-
-	utils.S = mockSetter
+	beego.Router("/v1beta/profiles", &profilePortal, "post:CreateProfile;get:ListProfiles")
+	beego.Router("/v1beta/profiles/:profileId", &profilePortal, "get:GetProfile;put:UpdateProfile;delete:DeleteProfile")
+	beego.Router("/v1beta/profiles/:profileId/extras", &profilePortal, "post:AddExtraProperty;get:ListExtraProperties")
+	beego.Router("/v1beta/profiles/:profileId/extras/:extraKey", &profilePortal, "delete:RemoveExtraProperty")
 }
 
 var (
@@ -63,7 +54,7 @@ var (
 		},
 		Name:        "Gold",
 		Description: "Gold service",
-		Extra:       fakeExtras,
+		Extras:      fakeExtras,
 	}
 	fakeProfiles = []*model.ProfileSpec{fakeProfile}
 )
@@ -80,15 +71,18 @@ func TestCreateProfile(t *testing.T) {
 
 	mockClient := new(dbtest.MockClient)
 	mockClient.On("CreateProfile", &model.ProfileSpec{
+		BaseModel:   &model.BaseModel{},
+		Name:        "Gold",
+		Description: "Gold service"}).Return(&model.ProfileSpec{
 		BaseModel: &model.BaseModel{
 			Id:        "f4a5e666-c669-4c64-a2a1-8f9ecd560c78",
 			CreatedAt: "2017-10-24T16:21:32",
 		},
 		Name:        "Gold",
-		Description: "Gold service"}).Return(nil)
+		Description: "Gold service"}, nil)
 	db.C = mockClient
 
-	r, _ := http.NewRequest("POST", "/v1alpha/profiles", strings.NewReader(fakeBody))
+	r, _ := http.NewRequest("POST", "/v1beta/profiles", strings.NewReader(fakeBody))
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -138,7 +132,7 @@ func TestUpdateProfile(t *testing.T) {
 				}
 			}	
 		}`
-	r, _ := http.NewRequest("PUT", "/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", strings.NewReader(fakeBody))
+	r, _ := http.NewRequest("PUT", "/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", strings.NewReader(fakeBody))
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -180,7 +174,7 @@ func TestListProfiles(t *testing.T) {
 	mockClient.On("ListProfiles").Return(fakeProfiles, nil)
 	db.C = mockClient
 
-	r, _ := http.NewRequest("GET", "/v1alpha/profiles", nil)
+	r, _ := http.NewRequest("GET", "/v1beta/profiles", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -223,7 +217,7 @@ func TestListProfilesWithBadRequest(t *testing.T) {
 	mockClient.On("ListProfiles").Return(nil, errors.New("db error"))
 	db.C = mockClient
 
-	r, _ := http.NewRequest("GET", "/v1alpha/profiles", nil)
+	r, _ := http.NewRequest("GET", "/v1beta/profiles", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -238,7 +232,7 @@ func TestGetProfile(t *testing.T) {
 	mockClient.On("GetProfile", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(fakeProfile, nil)
 	db.C = mockClient
 
-	r, _ := http.NewRequest("GET", "/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
+	r, _ := http.NewRequest("GET", "/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -282,7 +276,7 @@ func TestGetProfileWithBadRequest(t *testing.T) {
 	db.C = mockClient
 
 	r, _ := http.NewRequest("GET",
-		"/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
+		"/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -294,16 +288,35 @@ func TestGetProfileWithBadRequest(t *testing.T) {
 func TestDeleteProfile(t *testing.T) {
 
 	mockClient := new(dbtest.MockClient)
+	mockClient.On("GetProfile", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(
+		fakeProfile, nil)
 	mockClient.On("DeleteProfile", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(nil)
 	db.C = mockClient
 
 	r, _ := http.NewRequest("DELETE",
-		"/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
+		"/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
 	if w.Code != 200 {
 		t.Errorf("Expected 200, actual %v", w.Code)
+	}
+}
+
+func TestDeleteProfileWithBadrequest(t *testing.T) {
+
+	mockClient := new(dbtest.MockClient)
+	mockClient.On("GetProfile", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(
+		nil, errors.New("Invalid resource uuid"))
+	db.C = mockClient
+
+	r, _ := http.NewRequest("DELETE",
+		"/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78", nil)
+	w := httptest.NewRecorder()
+	beego.BeeApp.Handlers.ServeHTTP(w, r)
+
+	if w.Code != 400 {
+		t.Errorf("Expected 400, actual %v", w.Code)
 	}
 }
 
@@ -317,7 +330,7 @@ func TestListExtraProperties(t *testing.T) {
 	mockClient.On("ListExtraProperties", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(&fakeExtras, nil)
 	db.C = mockClient
 
-	r, _ := http.NewRequest("GET", "/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", nil)
+	r, _ := http.NewRequest("GET", "/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -351,7 +364,7 @@ func TestListExtraPropertiesWithBadRequest(t *testing.T) {
 	mockClient.On("ListExtraProperties", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78").Return(nil, errors.New("db error"))
 	db.C = mockClient
 
-	r, _ := http.NewRequest("GET", "/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", nil)
+	r, _ := http.NewRequest("GET", "/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -375,7 +388,7 @@ func TestAddExtraProperty(t *testing.T) {
 					"subKey2": "subVal2"
 				}
 		}`
-	r, _ := http.NewRequest("POST", "/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", strings.NewReader(fakeBody))
+	r, _ := http.NewRequest("POST", "/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras", strings.NewReader(fakeBody))
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
@@ -411,7 +424,7 @@ func TestRemoveExtraProperty(t *testing.T) {
 	db.C = mockClient
 
 	r, _ := http.NewRequest("DELETE",
-		"/v1alpha/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras/key1", nil)
+		"/v1beta/profiles/f4a5e666-c669-4c64-a2a1-8f9ecd560c78/extras/key1", nil)
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 

@@ -1,16 +1,16 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements a entry into the OpenSDS northbound service.
@@ -23,14 +23,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/astaxie/beego"
 	log "github.com/golang/glog"
-
 	"github.com/opensds/opensds/pkg/controller"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils"
-
-	"github.com/astaxie/beego"
 )
 
 type VolumePortal struct {
@@ -45,8 +42,8 @@ func (this *VolumePortal) CreateVolume() {
 	// Unmarshal the request body
 	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&volume); err != nil {
 		reason := fmt.Sprintf("Parse volume request body failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -55,8 +52,8 @@ func (this *VolumePortal) CreateVolume() {
 	result, err := controller.Brain.CreateVolume(&volume)
 	if err != nil {
 		reason := fmt.Sprintf("Create volume failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -65,8 +62,8 @@ func (this *VolumePortal) CreateVolume() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume created result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -81,8 +78,8 @@ func (this *VolumePortal) ListVolumes() {
 	result, err := db.C.ListVolumes()
 	if err != nil {
 		reason := fmt.Sprintf("List volumes failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -91,8 +88,8 @@ func (this *VolumePortal) ListVolumes() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volumes listed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -109,8 +106,8 @@ func (this *VolumePortal) GetVolume() {
 	result, err := db.C.GetVolume(id)
 	if err != nil {
 		reason := fmt.Sprintf("Get volume failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -119,8 +116,8 @@ func (this *VolumePortal) GetVolume() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume showed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -131,7 +128,43 @@ func (this *VolumePortal) GetVolume() {
 }
 
 func (this *VolumePortal) UpdateVolume() {
-	this.Ctx.Output.SetStatus(StatusNotImplemented)
+	var volume = model.VolumeSpec{
+		BaseModel: &model.BaseModel{},
+	}
+
+	id := this.Ctx.Input.Param(":volumeId")
+	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&volume); err != nil {
+		reason := fmt.Sprintf("Parse volume request body failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
+		log.Error(reason)
+		return
+	}
+
+	volume.Id = id
+	result, err := db.C.UpdateVolume(id, &volume)
+
+	if err != nil {
+		reason := fmt.Sprintf("Update volume failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
+		log.Error(reason)
+		return
+	}
+
+	// Marshal the result.
+	body, err := json.Marshal(result)
+	if err != nil {
+		reason := fmt.Sprintf("Marshal volume updated result failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
+		log.Error(reason)
+		return
+	}
+
+	this.Ctx.Output.SetStatus(StatusOK)
+	this.Ctx.Output.Body(body)
+
 	return
 }
 
@@ -140,8 +173,8 @@ func (this *VolumePortal) DeleteVolume() {
 	volume, err := db.C.GetVolume(id)
 	if err != nil {
 		reason := fmt.Sprintf("Get volume failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -150,8 +183,8 @@ func (this *VolumePortal) DeleteVolume() {
 	err = controller.Brain.DeleteVolume(volume)
 	if err != nil {
 		reason := fmt.Sprintf("Delete volume failed: %v", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -171,8 +204,8 @@ func (this *VolumeAttachmentPortal) CreateVolumeAttachment() {
 
 	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&attachment); err != nil {
 		reason := fmt.Sprintf("Parse volume attachment request body failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -181,8 +214,8 @@ func (this *VolumeAttachmentPortal) CreateVolumeAttachment() {
 	result, err := controller.Brain.CreateVolumeAttachment(&attachment)
 	if err != nil {
 		reason := fmt.Sprintf("Create volume attachment failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -191,8 +224,8 @@ func (this *VolumeAttachmentPortal) CreateVolumeAttachment() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume attachment created result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -208,8 +241,8 @@ func (this *VolumeAttachmentPortal) ListVolumeAttachments() {
 	result, err := db.C.ListVolumeAttachments(volId)
 	if err != nil {
 		reason := fmt.Sprintf("List volume attachments failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -218,8 +251,8 @@ func (this *VolumeAttachmentPortal) ListVolumeAttachments() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume attachments listed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -235,8 +268,8 @@ func (this *VolumeAttachmentPortal) GetVolumeAttachment() {
 	result, err := db.C.GetVolumeAttachment(id)
 	if err != nil {
 		reason := fmt.Sprintf("Get volume attachment failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -245,8 +278,8 @@ func (this *VolumeAttachmentPortal) GetVolumeAttachment() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume attachment showed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -264,8 +297,8 @@ func (this *VolumeAttachmentPortal) UpdateVolumeAttachment() {
 
 	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&attachment); err != nil {
 		reason := fmt.Sprintf("Parse volume attachment request body failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -274,8 +307,8 @@ func (this *VolumeAttachmentPortal) UpdateVolumeAttachment() {
 	result, err := db.C.UpdateVolumeAttachment(id, &attachment)
 	if err != nil {
 		reason := fmt.Sprintf("Update volume attachment failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -283,9 +316,9 @@ func (this *VolumeAttachmentPortal) UpdateVolumeAttachment() {
 	// Marshal the result.
 	body, err := json.Marshal(result)
 	if err != nil {
-		reason := fmt.Sprintf("Marshal volume attachment showed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		reason := fmt.Sprintf("Marshal volume attachment updated result failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -300,8 +333,8 @@ func (this *VolumeAttachmentPortal) DeleteVolumeAttachment() {
 	attachment, err := db.C.GetVolumeAttachment(id)
 	if err != nil {
 		reason := fmt.Sprintf("Get volume attachment failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -310,8 +343,8 @@ func (this *VolumeAttachmentPortal) DeleteVolumeAttachment() {
 	err = controller.Brain.DeleteVolumeAttachment(attachment)
 	if err != nil {
 		reason := fmt.Sprintf("Delete volume attachment failed: %v", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -331,8 +364,8 @@ func (this *VolumeSnapshotPortal) CreateVolumeSnapshot() {
 
 	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&snapshot); err != nil {
 		reason := fmt.Sprintf("Parse volume snapshot request body failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -341,8 +374,8 @@ func (this *VolumeSnapshotPortal) CreateVolumeSnapshot() {
 	result, err := controller.Brain.CreateVolumeSnapshot(&snapshot)
 	if err != nil {
 		reason := fmt.Sprintf("Create volume snapshot failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -351,8 +384,8 @@ func (this *VolumeSnapshotPortal) CreateVolumeSnapshot() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume snapshot created result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -366,8 +399,8 @@ func (this *VolumeSnapshotPortal) ListVolumeSnapshots() {
 	result, err := db.C.ListVolumeSnapshots()
 	if err != nil {
 		reason := fmt.Sprintf("List volume snapshots failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -376,8 +409,8 @@ func (this *VolumeSnapshotPortal) ListVolumeSnapshots() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume snapshots listed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -393,8 +426,8 @@ func (this *VolumeSnapshotPortal) GetVolumeSnapshot() {
 	result, err := db.C.GetVolumeSnapshot(id)
 	if err != nil {
 		reason := fmt.Sprintf("Get volume snapshot failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -403,8 +436,8 @@ func (this *VolumeSnapshotPortal) GetVolumeSnapshot() {
 	body, err := json.Marshal(result)
 	if err != nil {
 		reason := fmt.Sprintf("Marshal volume snapshot showed result failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -415,7 +448,43 @@ func (this *VolumeSnapshotPortal) GetVolumeSnapshot() {
 }
 
 func (this *VolumeSnapshotPortal) UpdateVolumeSnapshot() {
-	this.Ctx.Output.SetStatus(StatusNotImplemented)
+	var snapshot = model.VolumeSnapshotSpec{
+		BaseModel: &model.BaseModel{},
+	}
+
+	id := this.Ctx.Input.Param(":snapshotId")
+
+	if err := json.NewDecoder(this.Ctx.Request.Body).Decode(&snapshot); err != nil {
+		reason := fmt.Sprintf("Parse volume snapshot request body failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
+		log.Error(reason)
+		return
+	}
+	snapshot.Id = id
+
+	result, err := db.C.UpdateVolumeSnapshot(id, &snapshot)
+	if err != nil {
+		reason := fmt.Sprintf("Update volume snapshot failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
+		log.Error(reason)
+		return
+	}
+
+	// Marshal the result.
+	body, err := json.Marshal(result)
+	if err != nil {
+		reason := fmt.Sprintf("Marshal volume snapshot updated result failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		this.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
+		log.Error(reason)
+		return
+	}
+
+	this.Ctx.Output.SetStatus(StatusOK)
+	this.Ctx.Output.Body(body)
+	return
 }
 
 func (this *VolumeSnapshotPortal) DeleteVolumeSnapshot() {
@@ -423,9 +492,9 @@ func (this *VolumeSnapshotPortal) DeleteVolumeSnapshot() {
 
 	snapshot, err := db.C.GetVolumeSnapshot(id)
 	if err != nil {
-		reason := fmt.Sprintf("Parse volume snapshot request body failed: %s", err.Error())
-		this.Ctx.Output.SetStatus(StatusInternalServerError)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		reason := fmt.Sprintf("Get volume snapshot failed: %s", err.Error())
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}
@@ -434,8 +503,8 @@ func (this *VolumeSnapshotPortal) DeleteVolumeSnapshot() {
 	err = controller.Brain.DeleteVolumeSnapshot(snapshot)
 	if err != nil {
 		reason := fmt.Sprintf("Delete volume snapshot failed: %v", err.Error())
-		this.Ctx.Output.SetStatus(StatusBadRequest)
-		this.Ctx.Output.Body(utils.ErrorStatus(this.Ctx.Output.Status, reason))
+		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
+		this.Ctx.Output.Body(model.ErrorBadRequestStatus(reason))
 		log.Error(reason)
 		return
 	}

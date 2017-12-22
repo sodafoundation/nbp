@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements cinder driver for OpenSDS. Cinder driver will pass
@@ -22,20 +22,25 @@ Go SDK.
 package cinder
 
 import (
-	"io/ioutil"
+	"time"
 
 	log "github.com/golang/glog"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/extensions/schedulerstats"
 	"github.com/gophercloud/gophercloud/openstack/blockstorage/extensions/volumeactions"
+	"github.com/gophercloud/gophercloud/openstack/blockstorage/noauth"
 	snapshotsv2 "github.com/gophercloud/gophercloud/openstack/blockstorage/v2/snapshots"
 	volumesv2 "github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
+	. "github.com/opensds/opensds/contrib/drivers/utils/config"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/config"
 	"github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
+)
+
+const (
+	defaultConfPath = "/etc/opensds/driver/cinder.yaml"
 )
 
 var conf = CinderConfig{}
@@ -45,10 +50,12 @@ type Driver struct {
 	blockStoragev2 *gophercloud.ServiceClient
 	blockStoragev3 *gophercloud.ServiceClient
 
-	config CinderConfig
+	conf *CinderConfig
 }
 
 type AuthOptions struct {
+	NoAuth           bool   `yaml:"noAuth,omitempty"`
+	CinderEndpoint   string `yaml:"cinderEndpoint,omitempty"`
 	IdentityEndpoint string `yaml:"endpoint,omitempty"`
 	DomainID         string `yaml:"domainId,omitempty"`
 	DomainName       string `yaml:"domainName,omitempty"`
@@ -58,12 +65,6 @@ type AuthOptions struct {
 	TenantName       string `yaml:"tenantName,omitempty"`
 }
 
-type PoolProperties struct {
-	DiskType  string `yaml:"diskType"`
-	IOPS      int64  `yaml:"iops"`
-	BandWidth int64  `yaml:"bandwidth"`
-}
-
 type CinderConfig struct {
 	AuthOptions `yaml:"authOptions"`
 	Pool        map[string]PoolProperties `yaml:"pool,flow"`
@@ -71,39 +72,51 @@ type CinderConfig struct {
 
 func (d *Driver) Setup() error {
 	// Read cinder config file
-	confYaml, err := ioutil.ReadFile(config.CONF.CinderConfig)
-	if err != nil {
-		log.Fatalf("Read cinder config yaml file (%s) failed, reason:(%v)", config.CONF.CinderConfig, err)
-		return err
+	d.conf = &CinderConfig{}
+	p := config.CONF.OsdsDock.Backends.Cinder.ConfigPath
+	if "" == p {
+		p = defaultConfPath
 	}
-	err = yaml.Unmarshal([]byte(confYaml), &conf)
-	if err != nil {
-		log.Fatal("Parse error: %v", err)
-		return err
-	}
-	d.config = conf
+	Parse(d.conf, p)
 
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: d.config.IdentityEndpoint,
-		DomainID:         d.config.DomainID,
-		DomainName:       d.config.DomainName,
-		Username:         d.config.Username,
-		Password:         d.config.Password,
-		TenantID:         d.config.TenantID,
-		TenantName:       d.config.TenantName,
+		IdentityEndpoint: d.conf.IdentityEndpoint,
+		DomainID:         d.conf.DomainID,
+		DomainName:       d.conf.DomainName,
+		Username:         d.conf.Username,
+		Password:         d.conf.Password,
+		TenantID:         d.conf.TenantID,
+		TenantName:       d.conf.TenantName,
 	}
 
-	provider, err := openstack.AuthenticatedClient(opts)
-	if err != nil {
-		log.Error("When get auth options:", err)
-		return err
+	if d.conf.NoAuth {
+		provider, err := noauth.NewClient(opts)
+		if err != nil {
+			log.Error("When get no authentication options:", err)
+			return err
+		}
+
+		d.blockStoragev2, err = noauth.NewBlockStorageV2(provider, noauth.EndpointOpts{
+			CinderEndpoint: d.conf.CinderEndpoint,
+		})
+		if err != nil {
+			log.Error("When get no authentication block storage session:", err)
+			return err
+		}
+	} else {
+		provider, err := openstack.AuthenticatedClient(opts)
+		if err != nil {
+			log.Error("When get auth options:", err)
+			return err
+		}
+
+		d.blockStoragev2, err = openstack.NewBlockStorageV2(provider, gophercloud.EndpointOpts{})
+		if err != nil {
+			log.Error("When get block storage session:", err)
+			return err
+		}
 	}
 
-	d.blockStoragev2, err = openstack.NewBlockStorageV2(provider, gophercloud.EndpointOpts{})
-	if err != nil {
-		log.Error("When get block storage session:", err)
-		return err
-	}
 	return nil
 }
 
@@ -123,6 +136,34 @@ func (d *Driver) CreateVolume(req *pb.CreateVolumeOpts) (*model.VolumeSpec, erro
 		log.Error("Cannot create volume:", err)
 		return nil, err
 	}
+
+	// Currently dock framework doesn't support sync data from storage system,
+	// therefore, it's necessary to wait for the result of resource's creation.
+	// Timout after 10s.
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(300 * time.Millisecond)
+	done := make(chan bool, 1)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				tmpVol, err := d.PullVolume(vol.ID)
+				if err != nil {
+					continue
+				}
+				if tmpVol.Status != "creating" {
+					vol.Status = tmpVol.Status
+					close(done)
+					return
+				}
+			case <-timeout:
+				close(done)
+				return
+			}
+
+		}
+	}()
+	<-done
 
 	return &model.VolumeSpec{
 		BaseModel: &model.BaseModel{
@@ -201,6 +242,34 @@ func (d *Driver) CreateSnapshot(req *pb.CreateVolumeSnapshotOpts) (*model.Volume
 		return nil, err
 	}
 
+	// Currently dock framework doesn't support sync data from storage system,
+	// therefore, it's necessary to wait for the result of resource's creation.
+	// Timout after 10s.
+	timeout := time.After(10 * time.Second)
+	ticker := time.NewTicker(300 * time.Millisecond)
+	done := make(chan bool, 1)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				tmpSnp, err := d.PullSnapshot(snp.ID)
+				if err != nil {
+					continue
+				}
+				if tmpSnp.Status != "creating" {
+					snp.Status = tmpSnp.Status
+					close(done)
+					return
+				}
+			case <-timeout:
+				close(done)
+				return
+			}
+
+		}
+	}()
+	<-done
+
 	return &model.VolumeSnapshotSpec{
 		BaseModel: &model.BaseModel{
 			Id: snp.ID,
@@ -244,12 +313,12 @@ func (d *Driver) DeleteSnapshot(req *pb.DeleteVolumeSnapshotOpts) error {
 func (d *Driver) buildPoolParam(proper PoolProperties) *map[string]interface{} {
 	param := make(map[string]interface{})
 	param["diskType"] = proper.DiskType
-	param["iops"] = proper.IOPS
-	param["bandwidth"] = proper.BandWidth
+	param["thin"] = proper.Thin
 	return &param
 }
 func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
-	opts := &schedulerstats.ListOpts{}
+	log.Info("Starting list pools in cinder drivers.")
+	opts := &schedulerstats.ListOpts{Detail: true}
 
 	pages, err := schedulerstats.List(d.blockStoragev2, opts).AllPages()
 	if err != nil {
@@ -259,24 +328,24 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 
 	polpages, err := schedulerstats.ExtractStoragePools(pages)
 	if err != nil {
-		log.Error("annot extract storage pools:", err)
+		log.Error("Cannot extract storage pools:", err)
 		return nil, err
 	}
-
 	var pols []*model.StoragePoolSpec
 	for _, page := range polpages {
-		if _, ok := d.config.Pool[page.Name]; !ok {
+		if _, ok := d.conf.Pool[page.Name]; !ok {
 			continue
 		}
-		param := d.buildPoolParam(d.config.Pool[page.Name])
+		param := d.buildPoolParam(d.conf.Pool[page.Name])
 		pol := &model.StoragePoolSpec{
 			BaseModel: &model.BaseModel{
 				Id: uuid.NewV5(uuid.NamespaceOID, page.Name).String(),
 			},
-			Name:          page.Name,
-			TotalCapacity: int64(page.Capabilities.TotalCapacityGB),
-			FreeCapacity:  int64(page.Capabilities.FreeCapacityGB),
-			Parameters:    *param,
+			Name:             page.Name,
+			TotalCapacity:    int64(page.Capabilities.TotalCapacityGB),
+			FreeCapacity:     int64(page.Capabilities.FreeCapacityGB),
+			AvailabilityZone: d.conf.Pool[page.Name].AZ,
+			Extras:           *param,
 		}
 		pols = append(pols, pol)
 	}

@@ -22,26 +22,26 @@ package ceph
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/ceph/go-ceph/rados"
 	"github.com/ceph/go-ceph/rbd"
 	log "github.com/golang/glog"
+	. "github.com/opensds/opensds/contrib/drivers/utils/config"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/config"
 	"github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
 )
 
 const (
-	opensdsPrefix string = "OPENSDS"
-	splitChar            = ":"
-	sizeShiftBit         = 20
+	opensdsPrefix   = "OPENSDS"
+	splitChar       = ":"
+	sizeShiftBit    = 20
+	defaultConfPath = "/etc/opensds/driver/ceph.yaml"
+	defaultAZ       = "default"
 )
 
 const (
@@ -66,41 +66,9 @@ const (
 	poolCrushRuleset
 )
 
-type PoolProperties struct {
-	DiskType  string `yaml:"diskType"`
-	IOPS      int64  `yaml:"iops"`
-	BandWidth int64  `yaml:"bandwidth"`
-}
-
 type CephConfig struct {
 	ConfigFile string                    `yaml:"configFile,omitempty"`
 	Pool       map[string]PoolProperties `yaml:"pool,flow"`
-}
-
-var cephConfig *CephConfig
-var once sync.Once
-
-func (c *CephConfig) Load(file string) error {
-	// Set /etc/ceph/ceph.conf as default value
-	confYaml, err := ioutil.ReadFile(file)
-	if err != nil {
-		log.Fatalf("Read ceph config yaml file (%s) failed, reason:(%v)", file, err)
-		return err
-	}
-	err = yaml.Unmarshal([]byte(confYaml), c)
-	if err != nil {
-		log.Fatal("Parse error: %v", err)
-		return err
-	}
-	return nil
-}
-
-func getConfig() *CephConfig {
-	once.Do(func() {
-		cephConfig = &CephConfig{ConfigFile: "/etc/ceph/ceph.conf"}
-		cephConfig.Load(config.CONF.OsdsDock.CephConfig)
-	})
-	return cephConfig
 }
 
 type Name struct {
@@ -152,9 +120,18 @@ func execCmd(cmd string) (string, error) {
 type Driver struct {
 	conn  *rados.Conn
 	ioctx *rados.IOContext
+	conf  *CephConfig
 }
 
-func (d *Driver) Setup() error { return nil }
+func (d *Driver) Setup() error {
+	d.conf = &CephConfig{ConfigFile: "/etc/ceph/ceph.conf"}
+	p := config.CONF.OsdsDock.Backends.Ceph.ConfigPath
+	if "" == p {
+		p = defaultConfPath
+	}
+	_, err := Parse(d.conf, p)
+	return err
+}
 
 func (d *Driver) Unset() error { return nil }
 
@@ -165,7 +142,7 @@ func (d *Driver) initConn() error {
 		return err
 	}
 
-	if err = conn.ReadConfigFile(getConfig().ConfigFile); err != nil {
+	if err = conn.ReadConfigFile(d.conf.ConfigFile); err != nil {
 		log.Error("Read config file failed:", err)
 		return err
 	}
@@ -264,7 +241,6 @@ func (d *Driver) PullVolume(volID string) (*model.VolumeSpec, error) {
 		},
 		Name:             name.GetName(),
 		Size:             d.getSize(img),
-		Description:      "",
 		AvailabilityZone: "ceph",
 	}, nil
 }
@@ -289,13 +265,7 @@ func (d *Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 }
 
 func (d *Driver) InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error) {
-	if err := d.initConn(); err != nil {
-		log.Error("Connect ceph failed.")
-		return nil, err
-	}
-	defer d.destroyConn()
-
-	vol, err := d.PullVolume(opt.GetId())
+	vol, err := d.PullVolume(opt.GetVolumeId())
 	if err != nil {
 		log.Error("When get image:", err)
 		return nil, err
@@ -324,7 +294,7 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 	}
 	defer d.destroyConn()
 
-	img, _, err := d.getImage(opt.GetId())
+	img, _, err := d.getImage(opt.GetVolumeId())
 	if err != nil {
 		log.Error("When get image:", err)
 		return nil, err
@@ -333,21 +303,25 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 		log.Error("When open image:", err)
 		return nil, err
 	}
-	defer img.Close()
 
 	fullName := NewName(opt.GetName())
 	if _, err = img.CreateSnapshot(fullName.GetFullName()); err != nil {
 		log.Error("When create snapshot:", err)
 		return nil, err
 	}
-	log.Infof("Create snapshot (name:%s, id:%s, volID:%s) success", opt.GetName(), opt.GetId(), fullName.GetUUID())
+
+	img.Close()
+
+	log.Infof("Create snapshot (name:%s, id:%s, volID:%s) success",
+		opt.GetName(), fullName.GetUUID(), opt.GetVolumeId())
+
 	return &model.VolumeSnapshotSpec{
 		BaseModel: &model.BaseModel{
 			Id: fullName.GetUUID(),
 		},
 		Name:        fullName.GetName(),
 		Description: opt.GetDescription(),
-		VolumeId:    opt.GetId(),
+		VolumeId:    opt.GetVolumeId(),
 		Size:        d.getSize(img),
 	}, nil
 }
@@ -456,33 +430,45 @@ func (d *Driver) parseCapStr(cap string) int64 {
 }
 
 func (d *Driver) getPoolsCapInfo() ([][]string, error) {
-	const poolStartLine = 5
-	output, err := execCmd("ceph df -c " + getConfig().ConfigFile)
+	output, err := execCmd("ceph df -c " + d.conf.ConfigFile)
 	if err != nil {
 		log.Error("[Error]:", err)
 		return nil, err
 	}
 	lines := strings.Split(output, "\n")
 	var poolsInfo [][]string
-	for i := poolStartLine; i < len(lines); i++ {
-		poolsInfo = append(poolsInfo, strings.Fields(lines[i]))
+	var started = false
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if started {
+			poolsInfo = append(poolsInfo, strings.Fields(line))
+		}
+		if strings.HasPrefix(line, "POOLS:") {
+			started = true
+			i++
+		}
 	}
 	return poolsInfo, nil
 }
 
 func (d *Driver) getGlobalCapInfo() ([]string, error) {
-	const globalCapInfoLine = 2
-	output, err := execCmd("ceph df -c " + getConfig().ConfigFile)
+	output, err := execCmd("ceph df -c " + d.conf.ConfigFile)
 	if err != nil {
 		log.Error("[Error]:", err)
 		return nil, err
 	}
 	lines := strings.Split(output, "\n")
+	var globalCapInfoLine int
+	for i, line := range lines {
+		if strings.HasPrefix(line, "GLOBAL:") {
+			globalCapInfoLine = i + 2
+		}
+	}
 	return strings.Fields(lines[globalCapInfoLine]), nil
 }
 
 func (d *Driver) getPoolsAttr() (map[string][]string, error) {
-	cmd := "ceph osd pool ls detail -c " + getConfig().ConfigFile + "| grep \"^pool\"| awk '{print $3, $4, $6, $10}'"
+	cmd := "ceph osd pool ls detail -c " + d.conf.ConfigFile + "| grep \"^pool\"| awk '{print $3, $4, $6, $10}'"
 	output, err := execCmd(cmd)
 	if err != nil {
 		log.Error("[Error]:", err)
@@ -505,8 +491,6 @@ func (d *Driver) getPoolsAttr() (map[string][]string, error) {
 func (d *Driver) buildPoolParam(line []string, proper PoolProperties) *map[string]interface{} {
 	param := make(map[string]interface{})
 	param["diskType"] = proper.DiskType
-	param["iops"] = proper.IOPS
-	param["bandwidth"] = proper.BandWidth
 	param["redundancyType"] = line[poolType]
 	if param["redundancyType"] == "replicated" {
 		param["replicateSize"] = line[poolTypeSize]
@@ -537,7 +521,7 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 	var pols []*model.StoragePoolSpec
 	for i := range pc {
 		name := pc[i][poolName]
-		c := getConfig()
+		c := d.conf
 		if _, ok := c.Pool[name]; !ok {
 			continue
 		}
@@ -552,9 +536,13 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 			Name: name,
 			//if redundancy type is replicate, MAX AVAIL =  AVAIL / replicate number,
 			//and if it is erasure, MAX AVAIL =  AVAIL * k / (m + k)
-			TotalCapacity: totalCap * maxAvailCap / availCap,
-			FreeCapacity:  maxAvailCap,
-			Parameters:    *param,
+			TotalCapacity:    totalCap * maxAvailCap / availCap,
+			FreeCapacity:     maxAvailCap,
+			Extras:           *param,
+			AvailabilityZone: c.Pool[name].AZ,
+		}
+		if pol.AvailabilityZone == "" {
+			pol.AvailabilityZone = defaultAZ
 		}
 		pols = append(pols, pol)
 	}
