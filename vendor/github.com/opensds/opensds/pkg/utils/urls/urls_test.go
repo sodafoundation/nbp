@@ -12,29 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mocks
+package urls
 
 import (
-	"github.com/opensds/opensds/pkg/model"
+	"testing"
 )
 
-type MockSetter struct {
-	Uuid        string
-	CreatedTime string
-	UpdatedTime string
+func TestCurrentVersion(t *testing.T) {
+	var expected = "v1beta"
+
+	if version := CurrentVersion(); version != expected {
+		t.Errorf("Expected %v, got %v\n", expected, version)
+	}
 }
 
-func (_m *MockSetter) SetCreatedTimeStamp(m model.Modeler) error {
-	m.SetCreatedTime(_m.CreatedTime)
-	return nil
-}
+func TestGenerateURL(t *testing.T) {
+	var expected = "v1beta/docks"
+	if url := generateURL("docks"); url != expected {
+		t.Errorf("Expected %v, got %v\n", expected, url)
+	}
 
-func (_m *MockSetter) SetUpdatedTimeStamp(m model.Modeler) error {
-	m.SetUpdatedTime(_m.UpdatedTime)
-	return nil
-}
-
-func (_m *MockSetter) SetUuid(m model.Modeler) error {
-	m.SetId(_m.Uuid)
-	return nil
+	expected = "v1beta/pools/8e5e92ca-d673-11e7-bca8-2ba95b86eb06"
+	if url := generateURL("pools", "8e5e92ca-d673-11e7-bca8-2ba95b86eb06"); url != expected {
+		t.Errorf("Expected %v, got %v\n", expected, url)
+	}
 }
