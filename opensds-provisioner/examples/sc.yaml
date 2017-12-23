@@ -4,4 +4,5 @@ metadata:
   name: opensds
 provisioner: opensds/nbp-provisioner
 parameters:
-  kubernetes.io/availabilityZone: local
+  kubernetes.io/availabilityZone: default
+  kubernetes.io/type: ext4
