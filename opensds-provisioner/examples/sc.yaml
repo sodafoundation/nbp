@@ -1,0 +1,7 @@
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: opensds
+provisioner: opensds/nbp-provisioner
+parameters:
+  kubernetes.io/availabilityZone: local
