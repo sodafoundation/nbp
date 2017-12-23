@@ -1,3 +1,7 @@
 /bin
 *.log
 .DS_Store
+<<<<<<< HEAD
+=======
+*.retry
+>>>>>>> upstream/master
