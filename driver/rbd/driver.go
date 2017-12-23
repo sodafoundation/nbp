@@ -39,15 +39,15 @@ func (rbd *RBD) Attach(conn map[string]interface{}) (string, error) {
 		return "", os.ErrInvalid
 	}
 
-	if _, ok := conn["hosts"].([]string); !ok {
+	if _, ok := conn["hosts"].([]interface{}); !ok {
 		return "", os.ErrInvalid
 	}
-	hosts := conn["hosts"].([]string)
+	hosts := conn["hosts"].([]interface{})
 
-	if _, ok := conn["ports"].([]string); !ok {
+	if _, ok := conn["ports"].([]interface{}); !ok {
 		return "", os.ErrInvalid
 	}
-	ports := conn["ports"].([]string)
+	ports := conn["ports"].([]interface{})
 
 	poolName, imageName := fields[0], fields[1]
 	device, err := mapDevice(poolName, imageName, hosts, ports)
@@ -79,7 +79,7 @@ func (rbd *RBD) Detach(conn map[string]interface{}) error {
 	return err
 }
 
-func mapDevice(poolName, imageName string, hosts, ports []string) (string, error) {
+func mapDevice(poolName, imageName string, hosts, ports []interface{}) (string, error) {
 	devName, err := findDevice(poolName, imageName, 1)
 	if err == nil {
 		return devName, nil
@@ -92,8 +92,7 @@ func mapDevice(poolName, imageName string, hosts, ports []string) (string, error
 	}
 
 	for i := 0; i < len(hosts); i++ {
-		host := fmt.Sprintf("%s:%s", hosts[i], ports[0])
-		_, err = exec.Command("rbd", "map", imageName, "--pool", poolName, "-m", host).CombinedOutput()
+		_, err = exec.Command("rbd", "map", imageName, "--pool", poolName).CombinedOutput()
 		if err == nil {
 			break
 		}
@@ -153,3 +152,4 @@ func findDeviceTree(poolName, imageName string) (string, error) {
 
 	return "", os.ErrNotExist
 }
+

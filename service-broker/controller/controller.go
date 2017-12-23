@@ -18,6 +18,7 @@ import (
 	"log"
 	"sync"
 
+	"errors"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
 	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
 	sdsController "github.com/opensds/nbp/client/opensds"
@@ -55,10 +56,10 @@ func (c *openSDSController) Catalog() (*brokerapi.Catalog, error) {
 	var plans = []brokerapi.ServicePlan{}
 	for _, prf := range prfs {
 		plan := brokerapi.ServicePlan{
-			Name:        prf.GetName(),
-			ID:          prf.GetId(),
-			Description: prf.GetDescription(),
-			Metadata:    prf.Extra,
+			Name:        prf.Name,
+			ID:          prf.Id,
+			Description: prf.Description,
+			Metadata:    prf.Extras,
 			Free:        true,
 		}
 		plans = append(plans, plan)
@@ -89,6 +90,7 @@ func (c *openSDSController) CreateServiceInstance(
 ) (*brokerapi.CreateServiceInstanceResponse, error) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
+	fmt.Printf("instanceId: %s, Bind req:%v", instanceID, *req)
 
 	var in = new(model.VolumeSpec)
 	if nameInterface, ok := req.Parameters["name"]; ok {
@@ -98,10 +100,15 @@ func (c *openSDSController) CreateServiceInstance(
 		in.Description = despInterface.(string)
 	}
 	if capInterface, ok := req.Parameters["capacity"]; ok {
-		in.Size = capInterface.(int64)
+		in.Size = int64(capInterface.(float64))
 	}
-	if lvInterface, ok := req.Parameters["lvPath"]; ok {
-		in.Metadata["lvPath"] = lvInterface.(string)
+
+	if instance, ok := c.instanceMap[instanceID]; ok {
+		_, ok := (*instance.Credential)["volumeId"]
+		if ok {
+			log.Printf("Instance %s already exist!", instanceID)
+			return &brokerapi.CreateServiceInstanceResponse{}, nil
+		}
 	}
 
 	vol, err := sdsController.GetClient(c.Endpoint).CreateVolume(in)
@@ -112,8 +119,8 @@ func (c *openSDSController) CreateServiceInstance(
 	c.instanceMap[instanceID] = &openSDSServiceInstance{
 		Name: instanceID,
 		Credential: &brokerapi.Credential{
-			"volumeId": vol.GetId(),
-			"image":    "OPENSDS:" + vol.GetName() + ":" + vol.GetId(),
+			"volumeId": vol.Id,
+			"image":    "OPENSDS:" + vol.Name + ":" + vol.Id,
 		},
 	}
 
@@ -131,11 +138,12 @@ func (c *openSDSController) RemoveServiceInstance(
 
 	instance, ok := c.instanceMap[instanceID]
 	if !ok {
-		return nil, fmt.Errorf("No such instance %s exited!", instanceID)
+		msg := fmt.Sprintf("No such instance %s exited!", instanceID)
+		return nil, errors.New(msg)
 	}
 	volInterface, ok := (*instance.Credential)["volumeId"]
 	if !ok {
-		return nil, fmt.Errorf("Volume id not provided in credential info!")
+		return &brokerapi.DeleteServiceInstanceResponse{}, nil
 	}
 
 	if err := sdsController.GetClient(c.Endpoint).
@@ -153,32 +161,12 @@ func (c *openSDSController) Bind(
 ) (*brokerapi.CreateServiceBindingResponse, error) {
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
-
+	fmt.Printf("instanceId: %s, bindingId: %s, Bind req:%v", instanceID, bindingID, *req)
 	instance, ok := c.instanceMap[instanceID]
 	if !ok {
 		return nil, fmt.Errorf("No such instance %s exited!", instanceID)
 	}
-	volInterface, ok := (*instance.Credential)["volumeId"]
-	if !ok {
-		return nil, fmt.Errorf("Volume id not provided in credential info!")
-	}
-
-	var in = &model.VolumeAttachmentSpec{
-		VolumeId: volInterface.(string),
-		// TODO Some fields need to be generated.
-		HostInfo: &model.HostInfo{},
-	}
-	if lvInterface, ok := req.Parameters["lvPath"]; ok {
-		in.Metadata["lvPath"] = lvInterface.(string)
-	}
-	atc, err := sdsController.GetClient(c.Endpoint).CreateVolumeAttachment(in)
-	if err != nil {
-		return nil, err
-	}
-	(*instance.Credential)["attachmentId"] = atc.GetId()
-
 	cred := instance.Credential
-	(*cred)["connectionInfo"] = atc.ConnectionInfo
 	return &brokerapi.CreateServiceBindingResponse{Credentials: *cred}, nil
 }
 
@@ -188,20 +176,6 @@ func (c *openSDSController) UnBind(
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
 
-	instance, ok := c.instanceMap[instanceID]
-	if !ok {
-		return fmt.Errorf("No such instance %s exited!", instanceID)
-	}
-	atcInterface, ok := (*instance.Credential)["attachmentId"]
-	if !ok {
-		return fmt.Errorf("Volume attachment id not provided in credential info!")
-	}
-
-	if err := sdsController.GetClient(c.Endpoint).
-		DeleteVolumeAttachment(atcInterface.(string), nil); err != nil {
-		return err
-	}
-	instance.Credential = &brokerapi.Credential{}
-
 	return nil
 }
+

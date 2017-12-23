@@ -13,6 +13,9 @@ import (
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
+
+	_ "github.com/opensds/nbp/driver/iscsi"
+	_ "github.com/opensds/nbp/driver/rbd"
 )
 
 func main() {

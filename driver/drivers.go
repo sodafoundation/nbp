@@ -9,7 +9,7 @@ type VolumeDriver interface {
 	Detach(map[string]interface{}) error
 }
 
-var drivers map[string]VolumeDriver
+var drivers = map[string]VolumeDriver{}
 
 func RegisterDriver(driverType string, driver VolumeDriver) error {
 	if _, exist := drivers[driverType]; exist {

@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// IscsiConnectorInfo define
 type IscsiConnectorInfo struct {
 	AccessMode string `mapstructure:"accessMode"`
 	AuthUser   string `mapstructure:"authUserName"`
@@ -85,7 +86,7 @@ func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransp
 
 // GetInitiator returns all the ISCSI Initiator Name
 func GetInitiator() ([]string, error) {
-	res, err := exec.Command("sudo", "cat", "/etc/iscsi/initiatorname.iscsi").CombinedOutput()
+	res, err := exec.Command("cat", "/etc/iscsi/initiatorname.iscsi").CombinedOutput()
 	log.Printf("result from cat: %s", res)
 	if err != nil {
 		log.Fatalf("Error encountered gathering initiator names: %v", err)
@@ -108,7 +109,7 @@ func GetInitiator() ([]string, error) {
 // Discovery ISCSI Target
 func Discovery(portal string) error {
 	log.Printf("Discovery portal: %s", portal)
-	_, err := exec.Command("sudo", "iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", portal).CombinedOutput()
+	_, err := exec.Command("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", portal).CombinedOutput()
 	if err != nil {
 		log.Fatalf("Error encountered in sendtargets: %v", err)
 		return err
@@ -119,7 +120,7 @@ func Discovery(portal string) error {
 // Login ISCSI Target
 func Login(portal string, targetiqn string) error {
 	log.Printf("Login portal: %s targetiqn: %s", portal, targetiqn)
-	_, err := exec.Command("sudo", "iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--login").CombinedOutput()
+	_, err := exec.Command("iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--login").CombinedOutput()
 	if err != nil {
 		log.Fatalf("Received error on login attempt: %v", err)
 		return err
@@ -130,7 +131,7 @@ func Login(portal string, targetiqn string) error {
 // Logout ISCSI Target
 func Logout(portal string, targetiqn string) error {
 	log.Printf("Logout portal: %s targetiqn: %s", portal, targetiqn)
-	_, err := exec.Command("sudo", "iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--logout").CombinedOutput()
+	_, err := exec.Command("iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--logout").CombinedOutput()
 	if err != nil {
 		log.Fatalf("Received error on logout attempt: %v", err)
 		return err
@@ -141,7 +142,7 @@ func Logout(portal string, targetiqn string) error {
 // Delete ISCSI Node
 func Delete(targetiqn string) (err error) {
 	log.Printf("Delete targetiqn: %s", targetiqn)
-	_, err = exec.Command("sudo", "iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn).CombinedOutput()
+	_, err = exec.Command("iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn).CombinedOutput()
 	if err != nil {
 		log.Fatalf("Received error on Delete attempt: %v", err)
 		return err
@@ -294,12 +295,14 @@ func Umount(mountpoint string) error {
 	return nil
 }
 
+// ParseIscsiConnectInfo decode
 func ParseIscsiConnectInfo(connectInfo map[string]interface{}) *IscsiConnectorInfo {
 	var con IscsiConnectorInfo
 	mapstructure.Decode(connectInfo, &con)
 	return &con
 }
 
+// GetHostIp return Host IP
 func GetHostIp() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
