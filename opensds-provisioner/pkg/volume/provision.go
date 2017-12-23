@@ -74,13 +74,18 @@ func (p *opensdsProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	annotations[annCreatedBy] = createdBy
 
 	annotations[annProvisionerID] = string(p.identity)
+
+	fstype := "ext4"
+	if _, exist := options.Parameters[client.KFsType]; exist {
+		fstype = options.Parameters[client.KFsType]
+	}
 	/*
 		This PV won't work since there's nothing backing it.  the flex script
 		is in flex/flex/flex  (that many layers are required for the flex volume plugin)
 	*/
 	pv := &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        options.PVName,
+			Name:        volId,
 			Labels:      map[string]string{},
 			Annotations: annotations,
 		},
@@ -93,7 +98,8 @@ func (p *opensdsProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 			PersistentVolumeSource: v1.PersistentVolumeSource{
 
 				FlexVolume: &v1.FlexVolumeSource{
-					Driver: "opensds",
+					Driver: "opensds.io/opensds",
+					FSType: fstype,
 					Options: map[string]string{
 						client.KVolumeId: volId,
 					},

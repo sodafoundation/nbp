@@ -18,6 +18,7 @@ const (
 	KVolumeSize       = "kubernetes.io/size"
 	KAvailabilityZone = "kubernetes.io/availabilityZone"
 	KVolumeId         = "volumeId"
+	KFsType           = "kubernetes.io/type"
 )
 
 type SdsClient struct {
