@@ -17,52 +17,46 @@ package lvm
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 
 	log "github.com/golang/glog"
 	"github.com/opensds/opensds/contrib/drivers/lvm/targets"
+	. "github.com/opensds/opensds/contrib/drivers/utils/config"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/config"
 	"github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
 )
 
 const (
-	vgName = "vg001"
+	defaultConfPath = "/etc/opensds/driver/lvm.yaml"
 )
 
-var conf = LVMConfig{}
+type LVMConfig struct {
+	TgtBindIp string                    `yaml:"tgtBindIp"`
+	Pool      map[string]PoolProperties `yaml:"pool,flow"`
+}
 
 type Driver struct {
-	config LVMConfig
-}
+	conf *LVMConfig
 
-type LVMConfig struct {
-	Pool map[string]PoolProperties `yaml:"pool,flow"`
-}
-
-type PoolProperties struct {
-	DiskType  string `yaml:"diskType"`
-	IOPS      int64  `yaml:"iops"`
-	BandWidth int64  `yaml:"bandwidth"`
+	handler func(script string, cmd []string) (string, error)
 }
 
 func (d *Driver) Setup() error {
 	// Read lvm config file
-	confYaml, err := ioutil.ReadFile(config.CONF.LVMConfig)
-	if err != nil {
-		log.Fatalf("Read lvm config yaml file (%s) failed, reason:(%v)", config.CONF.LVMConfig, err)
+	d.conf = &LVMConfig{TgtBindIp: "127.0.0.1"}
+	p := config.CONF.OsdsDock.Backends.LVM.ConfigPath
+	if "" == p {
+		p = defaultConfPath
+	}
+	if _, err := Parse(d.conf, p); err != nil {
 		return err
 	}
-	if err = yaml.Unmarshal(confYaml, &conf); err != nil {
-		log.Fatal("Parse error: %v", err)
-		return err
-	}
-	d.config = conf
+	d.handler = execCmd
 
 	return nil
 }
@@ -71,17 +65,21 @@ func (*Driver) Unset() error { return nil }
 
 func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, error) {
 	var size = fmt.Sprint(opt.GetSize()) + "G"
+	var polName = opt.GetPoolName()
 
-	cmd := strings.Join([]string{"lvcreate", "-n", opt.GetName(), "-L", size, vgName}, " ")
-	if _, err := d.execCmd(cmd); err != nil {
+	if _, err := d.handler("lvcreate", []string{
+		"-n", opt.GetName(),
+		"-L", size,
+		polName,
+	}); err != nil {
 		log.Error("Failed to create logic volume:", err)
 		return nil, err
 	}
 
 	var lvPath, lvStatus string
 	// Display and parse some metadata in logic volume returned.
-	lvPath = strings.Join([]string{"/dev", vgName, opt.GetName()}, "/")
-	lv, err := d.execCmd("lvdisplay " + lvPath)
+	lvPath = path.Join("/dev", polName, opt.GetName())
+	lv, err := d.handler("lvdisplay", []string{lvPath})
 	if err != nil {
 		log.Error("Failed to display logic volume:", err)
 		return nil, err
@@ -112,7 +110,7 @@ func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, erro
 
 func (d *Driver) PullVolume(volIdentifier string) (*model.VolumeSpec, error) {
 	// Display and parse some metadata in logic volume returned.
-	lv, err := d.execCmd("lvmdisplay " + volIdentifier)
+	lv, err := d.handler("lvdisplay", []string{volIdentifier})
 	if err != nil {
 		log.Error("Failed to display logic volume:", err)
 		return nil, err
@@ -136,8 +134,9 @@ func (d *Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 		log.Error(err)
 		return err
 	}
-	cmd := strings.Join([]string{"lvremove", "-f", lvPath}, " ")
-	if _, err := d.execCmd(cmd); err != nil {
+	if _, err := d.handler("lvremove", []string{
+		"-f", lvPath,
+	}); err != nil {
 		log.Error("Failed to remove logic volume:", err)
 		return err
 	}
@@ -145,7 +144,7 @@ func (d *Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 	return nil
 }
 
-func (*Driver) InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error) {
+func (d *Driver) InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error) {
 	var initiator string
 	if initiator = opt.HostInfo.GetInitiator(); initiator == "" {
 		initiator = "ALL"
@@ -158,7 +157,7 @@ func (*Driver) InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.Connec
 		return nil, err
 	}
 
-	t := targets.NewTarget()
+	t := targets.NewTarget(d.conf.TgtBindIp)
 	expt, err := t.CreateExport(lvPath, initiator)
 	if err != nil {
 		log.Error("Failed to initialize connection of logic volume:", err)
@@ -171,7 +170,7 @@ func (*Driver) InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.Connec
 	}, nil
 }
 
-func (*Driver) TerminateConnection(opt *pb.DeleteAttachmentOpts) error {
+func (d *Driver) TerminateConnection(opt *pb.DeleteAttachmentOpts) error {
 	var initiator string
 	if initiator = opt.HostInfo.GetInitiator(); initiator == "" {
 		initiator = "ALL"
@@ -184,7 +183,7 @@ func (*Driver) TerminateConnection(opt *pb.DeleteAttachmentOpts) error {
 		return err
 	}
 
-	t := targets.NewTarget()
+	t := targets.NewTarget(d.conf.TgtBindIp)
 	if err := t.RemoveExport(lvPath, initiator); err != nil {
 		log.Error("Failed to initialize connection of logic volume:", err)
 		return err
@@ -202,24 +201,27 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 		return nil, err
 	}
 
-	cmd := strings.Join([]string{"lvcreate", "-n", opt.GetName(), "-L", size, "-p r", "-s", lvPath}, " ")
-	if _, err := d.execCmd(cmd); err != nil {
+	if _, err := d.handler("lvcreate", []string{
+		"-n", opt.GetName(),
+		"-L", size,
+		"-p", "r",
+		"-s", lvPath,
+	}); err != nil {
 		log.Error("Failed to create logic volume snapshot:", err)
 		return nil, err
 	}
 
-	var lvsPath, lvStatus string
-	lvsPath = strings.Join([]string{"/dev", vgName, opt.GetName()}, "/")
+	var lvsDir, lvsPath string
+	lvsDir, _ = path.Split(lvPath)
+	lvsPath = path.Join(lvsDir, opt.GetName())
 	// Display and parse some metadata in logic volume snapshot returned.
-	lvs, err := d.execCmd("lvdisplay " + lvsPath)
+	lvs, err := d.handler("lvdisplay", []string{lvsPath})
 	if err != nil {
 		log.Error("Failed to display logic volume snapshot:", err)
 		return nil, err
 	}
+	var lvStatus string
 	for _, line := range strings.Split(lvs, "\n") {
-		if strings.Contains(line, "LV Path") {
-			lvsPath = strings.Fields(line)[2]
-		}
 		if strings.Contains(line, "LV Status") {
 			lvStatus = strings.Fields(line)[2]
 		}
@@ -242,7 +244,7 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 
 func (d *Driver) PullSnapshot(snapIdentifier string) (*model.VolumeSnapshotSpec, error) {
 	// Display and parse some metadata in logic volume snapshot returned.
-	lv, err := d.execCmd("lvmdisplay " + snapIdentifier)
+	lv, err := d.handler("lvdisplay", []string{snapIdentifier})
 	if err != nil {
 		log.Error("Failed to display logic volume snapshot:", err)
 		return nil, err
@@ -266,8 +268,9 @@ func (d *Driver) DeleteSnapshot(opt *pb.DeleteVolumeSnapshotOpts) error {
 		log.Error(err)
 		return err
 	}
-	cmd := strings.Join([]string{"lvremove", "-f", lvsPath}, " ")
-	if _, err := d.execCmd(cmd); err != nil {
+	if _, err := d.handler("lvremove", []string{
+		"-f", lvsPath,
+	}); err != nil {
 		log.Error("Failed to remove logic volume:", err)
 		return err
 	}
@@ -275,57 +278,86 @@ func (d *Driver) DeleteSnapshot(opt *pb.DeleteVolumeSnapshotOpts) error {
 	return nil
 }
 
-func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
-	vgs, err := d.execCmd("vgdisplay")
+type VolumeGroup struct {
+	Name          string
+	TotalCapacity int64
+	FreeCapacity  int64
+}
+
+func (d *Driver) getVGList() (*[]VolumeGroup, error) {
+	const vgInfoLineCount = 10
+	info, err := d.handler("vgdisplay", []string{})
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Got vgs info:", vgs)
 
-	var tCapacity, fCapacity int64
-	for _, line := range strings.Split(vgs, "\n") {
+	log.Info("Got vgs info:", info)
+	lines := strings.Split(info, "\n")
+	vgs := make([]VolumeGroup, len(lines)/vgInfoLineCount)
+
+	var vgIdx = -1
+	for _, line := range lines {
+		if strings.Contains(line, "--- Volume group ---") {
+			vgIdx++
+			continue
+		}
+		if strings.Contains(line, "VG Name") {
+			slice := strings.Fields(line)
+			vgs[vgIdx].Name = slice[2]
+		}
 		if strings.Contains(line, "VG Size") {
 			slice := strings.Fields(line)
-			cap, _ := strconv.ParseFloat(slice[2], 64)
-			tCapacity = int64(cap)
+			capa, _ := strconv.ParseFloat(slice[2], 64)
+			vgs[vgIdx].TotalCapacity = int64(capa)
 		}
 		if strings.Contains(line, "Free  PE / Size") {
 			slice := strings.Fields(line)
-			cap, _ := strconv.ParseFloat(slice[len(slice)-2], 64)
-			fCapacity = int64(cap)
+			capa, _ := strconv.ParseFloat(slice[len(slice)-2], 64)
+			vgs[vgIdx].FreeCapacity = int64(capa)
 		}
+	}
+	return &vgs, nil
+}
+
+func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
+
+	vgs, err := d.getVGList()
+	if err != nil {
+		return nil, err
 	}
 
 	var pols []*model.StoragePoolSpec
-	if _, ok := d.config.Pool[vgName]; !ok {
-		return pols, nil
+	for _, vg := range *vgs {
+		if _, ok := d.conf.Pool[vg.Name]; !ok {
+			continue
+		}
+		param := d.buildPoolParam(d.conf.Pool[vg.Name])
+		pol := &model.StoragePoolSpec{
+			BaseModel: &model.BaseModel{
+				Id: uuid.NewV5(uuid.NamespaceOID, vg.Name).String(),
+			},
+			Name:             vg.Name,
+			TotalCapacity:    vg.TotalCapacity,
+			FreeCapacity:     vg.FreeCapacity,
+			Extras:           *param,
+			AvailabilityZone: d.conf.Pool[vg.Name].AZ,
+		}
+		if pol.AvailabilityZone == "" {
+			pol.AvailabilityZone = "default"
+		}
+		pols = append(pols, pol)
 	}
-	param := d.buildPoolParam(d.config.Pool[vgName])
-	pol := &model.StoragePoolSpec{
-		BaseModel: &model.BaseModel{
-			Id: uuid.NewV5(uuid.NamespaceOID, vgName).String(),
-		},
-		Name:          vgName,
-		TotalCapacity: tCapacity,
-		FreeCapacity:  fCapacity,
-		Parameters:    *param,
-	}
-	pols = append(pols, pol)
-
 	return pols, nil
 }
 
 func (*Driver) buildPoolParam(proper PoolProperties) *map[string]interface{} {
 	var param = make(map[string]interface{})
 	param["diskType"] = proper.DiskType
-	param["iops"] = proper.IOPS
-	param["bandwidth"] = proper.BandWidth
-
 	return &param
 }
 
-func (*Driver) execCmd(cmd string) (string, error) {
-	ret, err := exec.Command("bash", "-c", cmd).Output()
+func execCmd(script string, cmd []string) (string, error) {
+	ret, err := exec.Command(script, cmd...).Output()
 	if err != nil {
 		log.Error(err.Error())
 		return "", err

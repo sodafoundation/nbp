@@ -1,25 +1,30 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package etcd
 
 import (
-	log "github.com/golang/glog"
-
-	"golang.org/x/net/context"
+	"sync"
+	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	log "github.com/golang/glog"
+	"golang.org/x/net/context"
+)
+
+var (
+	timeOut = 3 * time.Second
 )
 
 type Request struct {
@@ -32,6 +37,36 @@ type Response struct {
 	Status  string   `json:"status"`
 	Message []string `json:"message"`
 	Error   string   `json:"error"`
+}
+
+type clientInterface interface {
+	Create(req *Request) *Response
+
+	Get(req *Request) *Response
+
+	List(req *Request) *Response
+
+	Update(req *Request) *Response
+
+	Delete(req *Request) *Response
+}
+
+func Init(edps []string) *client {
+	cliv3, err := clientv3.New(clientv3.Config{
+		Endpoints:   edps,
+		DialTimeout: timeOut,
+	})
+	if err != nil {
+		cliv3.Close()
+		panic(err)
+	}
+
+	return &client{cli: cliv3}
+}
+
+type client struct {
+	cli  *clientv3.Client
+	lock sync.Mutex
 }
 
 func (c *client) Create(req *Request) *Response {
@@ -75,7 +110,7 @@ func (c *client) Get(req *Request) *Response {
 	if len(resp.Kvs) == 0 {
 		return &Response{
 			Status: "Failure",
-			Error:  "Wrong volume_id or attachment_id provided!",
+			Error:  "Wrong resource uuid provided!",
 		}
 	}
 	return &Response{

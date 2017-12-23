@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package client
 
@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/opensds/opensds/pkg/model"
+	. "github.com/opensds/opensds/testutils/collection"
 )
 
 func NewFakeDockReceiver() Receiver {
@@ -43,12 +44,12 @@ func (*fakeDockReceiver) Recv(
 
 	switch out.(type) {
 	case *model.DockSpec:
-		if err := json.Unmarshal([]byte(sampleDock), out); err != nil {
+		if err := json.Unmarshal([]byte(ByteDock), out); err != nil {
 			return err
 		}
 		break
 	case *[]*model.DockSpec:
-		if err := json.Unmarshal([]byte(sampleDocks), out); err != nil {
+		if err := json.Unmarshal([]byte(ByteDocks), out); err != nil {
 			return err
 		}
 		break
@@ -111,23 +112,3 @@ func TestListDocks(t *testing.T) {
 		return
 	}
 }
-
-var (
-	sampleDock = `{
-		"id": "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
-		"name":        "sample",
-		"description": "sample backend service",
-		"endpoint":    "localhost:50050",
-		"driverName":  "sample"
-	}`
-
-	sampleDocks = `[
-		{
-			"id": "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
-			"name":        "sample",
-			"description": "sample backend service",
-			"endpoint":    "localhost:50050",
-			"driverName":  "sample"
-		}
-	]`
-)

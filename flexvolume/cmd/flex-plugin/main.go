@@ -20,6 +20,8 @@ import (
 	"github.com/opensds/nbp/client/iscsi"
 	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/driver"
+	_ "github.com/opensds/nbp/driver/iscsi"
+	_ "github.com/opensds/nbp/driver/rbd"
 	"github.com/opensds/nbp/flexvolume/pkg/volume"
 	"github.com/opensds/opensds/pkg/model"
 	"log"
@@ -119,7 +121,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: volID,
-		HostInfo: &model.HostInfo{
+		HostInfo: model.HostInfo{
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
 			Ip:        iscsi.GetHostIp(),
@@ -221,6 +223,9 @@ func (plugin *OpenSDSPlugin) MountDevice(mountDir string, device string, opts in
 
 	//save baseMountPath for Follow-up call
 	//TODO: when unmount device, how to clean info? or select a mount path from /proc/mounts as baseMountPath?
+	if act.Metadata == nil {
+		act.Metadata = map[string]string{}
+	}
 	act.Metadata["baseMountPath"] = mountDir
 
 	client := opensds.GetClient("")
@@ -361,3 +366,4 @@ func main() {
 	log.Println("Cmd:", os.Args)
 	RunPlugin(&OpenSDSPlugin{})
 }
+

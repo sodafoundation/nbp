@@ -1,16 +1,16 @@
-// Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 This module implements the database operation of data structure
@@ -28,6 +28,7 @@ import (
 	_ "github.com/opensds/opensds/pkg/db/drivers/mysql"
 	"github.com/opensds/opensds/pkg/model"
 	. "github.com/opensds/opensds/pkg/utils/config"
+	fakedb "github.com/opensds/opensds/testutils/db"
 )
 
 var C Client
@@ -36,18 +37,21 @@ func Init(db *Database) {
 	switch db.Driver {
 	case "mysql":
 		// C = mysql.Init(db.Driver, db.Crendential)
-		fmt.Errorf("mysql is not implemented right now!")
+		fmt.Printf("mysql is not implemented right now!")
+		return
 	case "etcd":
-		C = etcd.Init(strings.Split(db.Endpoint, ","))
+		C = etcd.NewClient(strings.Split(db.Endpoint, ","))
+		return
 	case "fake":
-		C = NewFakeDbClient()
+		C = fakedb.NewFakeDbClient()
+		return
 	default:
-		fmt.Errorf("Can't find database driver %s!\n", db.Driver)
+		fmt.Printf("Can't find database driver %s!\n", db.Driver)
 	}
 }
 
 type Client interface {
-	CreateDock(dck *model.DockSpec) error
+	CreateDock(dck *model.DockSpec) (*model.DockSpec, error)
 
 	GetDock(dckID string) (*model.DockSpec, error)
 
@@ -57,7 +61,9 @@ type Client interface {
 
 	DeleteDock(dckID string) error
 
-	CreatePool(pol *model.StoragePoolSpec) error
+	GetDockByPoolId(poolId string) (*model.DockSpec, error)
+
+	CreatePool(pol *model.StoragePoolSpec) (*model.StoragePoolSpec, error)
 
 	GetPool(polID string) (*model.StoragePoolSpec, error)
 
@@ -67,9 +73,11 @@ type Client interface {
 
 	DeletePool(polID string) error
 
-	CreateProfile(prf *model.ProfileSpec) error
+	CreateProfile(prf *model.ProfileSpec) (*model.ProfileSpec, error)
 
 	GetProfile(prfID string) (*model.ProfileSpec, error)
+
+	GetDefaultProfile() (*model.ProfileSpec, error)
 
 	ListProfiles() ([]*model.ProfileSpec, error)
 
@@ -83,11 +91,13 @@ type Client interface {
 
 	RemoveExtraProperty(prfID, extraKey string) error
 
-	CreateVolume(vol *model.VolumeSpec) error
+	CreateVolume(vol *model.VolumeSpec) (*model.VolumeSpec, error)
 
 	GetVolume(volID string) (*model.VolumeSpec, error)
 
 	ListVolumes() ([]*model.VolumeSpec, error)
+
+	UpdateVolume(volID string, vol *model.VolumeSpec) (*model.VolumeSpec, error)
 
 	DeleteVolume(volID string) error
 
@@ -101,11 +111,13 @@ type Client interface {
 
 	DeleteVolumeAttachment(attachmentId string) error
 
-	CreateVolumeSnapshot(vs *model.VolumeSnapshotSpec) error
+	CreateVolumeSnapshot(vs *model.VolumeSnapshotSpec) (*model.VolumeSnapshotSpec, error)
 
 	GetVolumeSnapshot(snapshotID string) (*model.VolumeSnapshotSpec, error)
 
 	ListVolumeSnapshots() ([]*model.VolumeSnapshotSpec, error)
+
+	UpdateVolumeSnapshot(snapshotID string, vs *model.VolumeSnapshotSpec) (*model.VolumeSnapshotSpec, error)
 
 	DeleteVolumeSnapshot(snapshotID string) error
 }

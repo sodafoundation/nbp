@@ -56,10 +56,10 @@ func (c *openSDSController) Catalog() (*brokerapi.Catalog, error) {
 	var plans = []brokerapi.ServicePlan{}
 	for _, prf := range prfs {
 		plan := brokerapi.ServicePlan{
-			Name:        prf.GetName(),
-			ID:          prf.GetId(),
-			Description: prf.GetDescription(),
-			Metadata:    prf.Extra,
+			Name:        prf.Name,
+			ID:          prf.Id,
+			Description: prf.Description,
+			Metadata:    prf.Extras,
 			Free:        true,
 		}
 		plans = append(plans, plan)
@@ -119,8 +119,8 @@ func (c *openSDSController) CreateServiceInstance(
 	c.instanceMap[instanceID] = &openSDSServiceInstance{
 		Name: instanceID,
 		Credential: &brokerapi.Credential{
-			"volumeId": vol.GetId(),
-			"image":    "OPENSDS:" + vol.GetName() + ":" + vol.GetId(),
+			"volumeId": vol.Id,
+			"image":    "OPENSDS:" + vol.Name + ":" + vol.Id,
 		},
 	}
 

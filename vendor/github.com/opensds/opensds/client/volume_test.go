@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2017 The OpenSDS Authors.
 //
-//    Licensed under the Apache License, Version 2.0 (the "License"); you may
-//    not use this file except in compliance with the License. You may obtain
-//    a copy of the License at
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//         http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-//    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-//    License for the specific language governing permissions and limitations
-//    under the License.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package client
 
@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/opensds/opensds/pkg/model"
+	. "github.com/opensds/opensds/testutils/collection"
 )
 
 var fv = &VolumeMgr{
@@ -45,17 +46,17 @@ func (*fakeVolumeReceiver) Recv(
 	case "POST", "PUT":
 		switch out.(type) {
 		case *model.VolumeSpec:
-			if err := json.Unmarshal([]byte(sampleVolume), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
 				return err
 			}
 			break
 		case *model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(sampleAttachment), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteAttachment), out); err != nil {
 				return err
 			}
 			break
 		case *model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(sampleSnapshot), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
 				return err
 			}
 			break
@@ -66,32 +67,32 @@ func (*fakeVolumeReceiver) Recv(
 	case "GET":
 		switch out.(type) {
 		case *model.VolumeSpec:
-			if err := json.Unmarshal([]byte(sampleVolume), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
 				return err
 			}
 			break
 		case *[]*model.VolumeSpec:
-			if err := json.Unmarshal([]byte(sampleVolumes), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteVolumes), out); err != nil {
 				return err
 			}
 			break
 		case *model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(sampleAttachment), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteAttachment), out); err != nil {
 				return err
 			}
 			break
 		case *[]*model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(sampleAttachments), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteAttachments), out); err != nil {
 				return err
 			}
 			break
 		case *model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(sampleSnapshot), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
 				return err
 			}
 			break
 		case *[]*model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(sampleSnapshots), out); err != nil {
+			if err := json.Unmarshal([]byte(ByteSnapshots), out); err != nil {
 				return err
 			}
 			break
@@ -195,6 +196,37 @@ func TestDeleteVolume(t *testing.T) {
 	}
 }
 
+func TestUpdateVolume(t *testing.T) {
+	var volID = "bd5b12a8-a101-11e7-941e-d77981b584d8"
+	vol := model.VolumeSpec{
+		Name:        "sample-volume",
+		Description: "This is a sample volume for testing",
+	}
+
+	result, err := fv.UpdateVolume(volID, &vol)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	expected := &model.VolumeSpec{
+		BaseModel: &model.BaseModel{
+			Id: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+		},
+		Name:        "sample-volume",
+		Description: "This is a sample volume for testing",
+		Size:        int64(1),
+		Status:      "available",
+		PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
+		ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v", expected, result)
+		return
+	}
+}
+
 func TestCreateVolumeAttachment(t *testing.T) {
 	var volID = "bd5b12a8-a101-11e7-941e-d77981b584d8"
 	expected := &model.VolumeAttachmentSpec{
@@ -203,8 +235,8 @@ func TestCreateVolumeAttachment(t *testing.T) {
 		},
 		Status:   "available",
 		VolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		HostInfo: &model.HostInfo{},
-		ConnectionInfo: &model.ConnectionInfo{
+		HostInfo: model.HostInfo{},
+		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: "iscsi",
 			ConnectionData: map[string]interface{}{
 				"targetDiscovered": true,
@@ -217,7 +249,7 @@ func TestCreateVolumeAttachment(t *testing.T) {
 
 	atc, err := fv.CreateVolumeAttachment(&model.VolumeAttachmentSpec{
 		VolumeId: volID,
-		HostInfo: &model.HostInfo{},
+		HostInfo: model.HostInfo{},
 	})
 	if err != nil {
 		t.Error(err)
@@ -238,8 +270,8 @@ func TestUpdateVolumeAttachment(t *testing.T) {
 		},
 		Status:   "available",
 		VolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		HostInfo: &model.HostInfo{},
-		ConnectionInfo: &model.ConnectionInfo{
+		HostInfo: model.HostInfo{},
+		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: "iscsi",
 			ConnectionData: map[string]interface{}{
 				"targetDiscovered": true,
@@ -252,7 +284,7 @@ func TestUpdateVolumeAttachment(t *testing.T) {
 
 	atc, err := fv.UpdateVolumeAttachment("f2dda3d2-bf79-11e7-8665-f750b088f63e", &model.VolumeAttachmentSpec{
 		VolumeId: volID,
-		HostInfo: &model.HostInfo{},
+		HostInfo: model.HostInfo{},
 	})
 	if err != nil {
 		t.Error(err)
@@ -273,8 +305,8 @@ func TestGetVolumeAttachment(t *testing.T) {
 		},
 		Status:   "available",
 		VolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		HostInfo: &model.HostInfo{},
-		ConnectionInfo: &model.ConnectionInfo{
+		HostInfo: model.HostInfo{},
+		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: "iscsi",
 			ConnectionData: map[string]interface{}{
 				"targetDiscovered": true,
@@ -305,8 +337,8 @@ func TestListVolumeAttachments(t *testing.T) {
 			},
 			Status:   "available",
 			VolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			HostInfo: &model.HostInfo{},
-			ConnectionInfo: &model.ConnectionInfo{
+			HostInfo: model.HostInfo{},
+			ConnectionInfo: model.ConnectionInfo{
 				DriverVolumeType: "iscsi",
 				ConnectionData: map[string]interface{}{
 					"targetDiscovered": true,
@@ -439,92 +471,32 @@ func TestDeleteVolumeSnapshot(t *testing.T) {
 	}
 }
 
-var (
-	sampleVolume = `{
-		"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		"name": "sample-volume",
-		"description": "This is a sample volume for testing",
-		"size": 1,
-		"status": "available",
-		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
-		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
-	}`
+func TestUpdateVolumeSnapshot(t *testing.T) {
+	var snpID = "bd5b12a8-a101-11e7-941e-d77981b584d8"
+	snp := model.VolumeSnapshotSpec{
+		Name:        "sample-snapshot-01",
+		Description: "This is the first sample snapshot for testing",
+	}
 
-	sampleVolumes = `[
-		{
-			"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			"name": "sample-volume",
-			"description": "This is a sample volume for testing",
-			"size": 1,
-			"status": "available",
-			"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
-		}
-	]`
+	result, err := fv.UpdateVolumeSnapshot(snpID, &snp)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	sampleAttachment = `{
-		"id": "f2dda3d2-bf79-11e7-8665-f750b088f63e",
-		"name": "sample-volume-attachment",
-		"description": "This is a sample volume attachment for testing",
-		"status": "available",
-		"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		"hostInfo": {},
-		"connectionInfo": {
-			"driverVolumeType": "iscsi",
-			"data": {
-				"targetDiscovered": true,
-				"targetIqn": "iqn.2017-10.io.opensds:volume:00000001",
-				"targetPortal": "127.0.0.0.1:3260",
-				"discard": false
-			}
-		}
-	}`
-
-	sampleAttachments = `[
-		{
-			"id": "f2dda3d2-bf79-11e7-8665-f750b088f63e",
-			"name": "sample-volume-attachment",
-			"description": "This is a sample volume attachment for testing",
-			"status": "available",
-			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			"hostInfo": {},
-			"connectionInfo": {
-				"driverVolumeType": "iscsi",
-				"data": {
-					"targetDiscovered": true,
-					"targetIqn": "iqn.2017-10.io.opensds:volume:00000001",
-					"targetPortal": "127.0.0.0.1:3260",
-					"discard": false
-				}
-			}
-		}
-	]`
-
-	sampleSnapshot = `{
-		"id": "3769855c-a102-11e7-b772-17b880d2f537",
-		"name": "sample-snapshot-01",
-		"description": "This is the first sample snapshot for testing",
-		"size": 1,
-		"status": "created",
-		"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"		
-	}`
-
-	sampleSnapshots = `[
-		{
-			"id": "3769855c-a102-11e7-b772-17b880d2f537",
-			"name": "sample-snapshot-01",
-			"description": "This is the first sample snapshot for testing",
-			"size": 1,
-			"status": "created",
-			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"	
+	expected := &model.VolumeSnapshotSpec{
+		BaseModel: &model.BaseModel{
+			Id: "3769855c-a102-11e7-b772-17b880d2f537",
 		},
-		{
-			"id": "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
-			"name": "sample-snapshot-02",
-			"description": "This is the second sample snapshot for testing",
-			"size": 1,
-			"status": "created",
-			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"	
-		}
-	]`
-)
+		Name:        "sample-snapshot-01",
+		Description: "This is the first sample snapshot for testing",
+		Size:        1,
+		Status:      "created",
+		VolumeId:    "bd5b12a8-a101-11e7-941e-d77981b584d8",
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v", expected, result)
+		return
+	}
+}
