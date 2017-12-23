@@ -145,7 +145,7 @@ func (p *Plugin) ControllerPublishVolume(
 
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
-		HostInfo: &model.HostInfo{
+		HostInfo: model.HostInfo{
 			Host:      req.NodeId,
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
