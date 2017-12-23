@@ -19,7 +19,7 @@ package volume
 import (
 	"fmt"
 
-	//"github.com/golang/glog"
+	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
 	"k8s.io/api/core/v1"
@@ -42,7 +42,7 @@ func (p *opensdsProvisioner) Delete(volume *v1.PersistentVolume) error {
 	}
 	err = p.sdsclient.Delete(volume.Spec.PersistentVolumeSource.FlexVolume.Options[client.KVolumeId])
 	if err != nil {
-		//glog.Errorf("Failed to delete volume %s, error: %s", volume, err.Error())
+		glog.Errorf("Failed to delete volume %s, error: %s", volume, err.Error())
 		return err
 	}
 	return nil

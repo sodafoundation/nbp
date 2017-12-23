@@ -31,10 +31,10 @@ import (
 const (
 	// are we allowed to set this? else make up our own
 	annCreatedBy = "kubernetes.io/createdby"
-	createdBy    = "opensds-nbp-provisioner"
+	createdBy    = "opensds-provisioner"
 
 	// A PV annotation for the identity of the s3fsProvisioner that provisioned it
-	annProvisionerID = "Opensds-nbp"
+	annProvisionerID = "opensds-provisioner"
 )
 
 // NewProvisioner creates a new provisioner
@@ -43,7 +43,7 @@ func NewOpensdsProvisioner(client kubernetes.Interface, sdsclient client.WarpOpe
 }
 
 func newProvisionerInternal(client kubernetes.Interface, sdsclient client.WarpOpensdsClient) *opensdsProvisioner {
-	var identity types.UID = "opensds-nbp-provisioner"
+	var identity types.UID = "opensds-provisioner"
 
 	provisioner := &opensdsProvisioner{
 		client:    client,
@@ -93,7 +93,7 @@ func (p *opensdsProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 			PersistentVolumeSource: v1.PersistentVolumeSource{
 
 				FlexVolume: &v1.FlexVolumeSource{
-					Driver: "nbp",
+					Driver: "opensds",
 					Options: map[string]string{
 						client.KVolumeId: volId,
 					},
