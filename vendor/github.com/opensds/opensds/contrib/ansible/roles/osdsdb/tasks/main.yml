@@ -1,4 +1,0 @@
----
-- name: include scenarios/etcd.yml
-  include: scenarios/etcd.yml
-  when: db_driver == "etcd"
