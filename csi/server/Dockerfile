@@ -6,6 +6,9 @@ LABEL description="OpenSDS CSI Plugin"
 # Copy opensdsplugin from build directory
 COPY csi.server.opensds /csi.server.opensds
 
+# Install iscsi
+RUN yum -y install iscsi-initiator-utils
+
 # Install e4fsprogs for format
 RUN yum -y install e4fsprogs
 
