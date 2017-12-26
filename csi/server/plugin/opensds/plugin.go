@@ -2,7 +2,7 @@ package opensds
 
 const (
 	//PluginName setting
-	PluginName = "opensds"
+	PluginName = "csi-opensdsplugin"
 )
 
 // Plugin define

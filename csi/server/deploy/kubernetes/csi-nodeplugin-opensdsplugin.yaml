@@ -1,0 +1,75 @@
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects,
+# which are necessary to run csi nodeplugin for opensds.
+
+kind: DaemonSet
+apiVersion: apps/v1beta2
+metadata:
+  name: csi-nodeplugin-opensdsplugin
+spec:
+  selector:
+    matchLabels:
+      app: csi-nodeplugin-opensdsplugin
+  template:
+    metadata:
+      labels:
+        app: csi-nodeplugin-opensdsplugin
+    spec:
+      serviceAccount: csi-nodeplugin
+      hostNetwork: true
+      containers:
+        - name: driver-registrar
+          image: docker.io/k8scsi/driver-registrar
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /plugin/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+        - name: opensds
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: docker.io/k8scsi/opensdsplugin:v1beta
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsendpoint
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: "Bidirectional"
+            - name: pods-probe-dir
+              mountPath: /dev
+              mountPropagation: "HostToContainer"
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-opensdsplugin
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - name: pods-probe-dir
+          hostPath:
+            path: /dev
+            type: Directory

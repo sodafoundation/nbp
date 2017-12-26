@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"flag"
 	"log"
 	"math/rand"
 	"os"
@@ -11,10 +12,48 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/client/proxy"
+	"github.com/spf13/cobra"
 )
 
+var (
+	csiEndpoint     string
+)
+
+func init() {
+	flag.Set("logtostderr", "true")
+}
+
 func main() {
-	// GetIdentity
+
+	flag.CommandLine.Parse([]string{})
+
+	cmd := &cobra.Command{
+		Use:   "OpenSDS",
+		Short: "CSI based OpenSDS driver client",
+		Run: func(cmd *cobra.Command, args []string) {
+			handle()
+		},
+	}
+
+	cmd.Flags().AddGoFlagSet(flag.CommandLine)
+
+	cmd.PersistentFlags().StringVar(&csiEndpoint, "csiEndpoint", "", "CSI Endpoint")
+
+	cmd.ParseFlags(os.Args[1:])
+	if err := cmd.Execute(); err != nil {
+		log.Fatalf("failed to execute: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+}
+
+func handle() {
+	
+	// Set Env
+	os.Setenv("CSI_ENDPOINT", csiEndpoint)
+
+		// GetIdentity
 	log.Println("start to get identity")
 	identity, err := proxy.GetIdentity()
 	if err != nil {

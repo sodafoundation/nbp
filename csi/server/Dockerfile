@@ -1,19 +1,13 @@
-# Docker build usage: docker build . -t csi.server.opensds:0.0.1
-# Docker run usage:	docker run -it -v /var/lib/docker:/tmp/
-#                                  -e CSI_ENDPOINT=$CSI_ENDPOINT
-#                                  -e OPENSDS_ENDPOINT=$OPENSDS_ENDPOINT
-#                                  csi.server.opensds:0.0.1
+# Based on centos
+FROM centos:7.4.1708
+LABEL maintainers="Edison Xiang <xiang.edison@gmail.com>"
+LABEL description="OpenSDS CSI Plugin"
 
-FROM golang:1.9
-MAINTAINER Edison Xiang <xiang.edison@gmail.com>
+# Copy opensdsplugin from build directory
+COPY csi.server.opensds /csi.server.opensds
 
-ARG CSI_ENDPOINT
-ARG OPENSDS_ENDPOINT
+# Install e4fsprogs for format
+RUN yum -y install e4fsprogs
 
-ENV CSI_ENDPOINT $CSI_ENDPOINT
-ENV OPENSDS_ENDPOINT $OPENSDS_ENDPOINT
-
-COPY csi.server.opensds /usr/bin
-
-# Define default command.
-CMD ["/usr/bin/csi.server.opensds"]
+# Define default command
+ENTRYPOINT ["/csi.server.opensds"]

@@ -1,0 +1,63 @@
+# This YAML file contains attacher & csi driver API objects,
+# which are necessary to run external csi provisioner for opensds.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-provisioner-opensdsplugin
+  labels:
+    app: csi-provisioner-opensdsplugin
+spec:
+  selector:
+    app: csi-provisioner-opensdsplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta1
+metadata:
+  name: csi-provisioner-opensdsplugin
+spec:
+  serviceName: "csi-provisioner-opensdsplugin"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-provisioner-opensdsplugin
+    spec:
+      serviceAccount: csi-provisioner
+      containers:
+        - name: csi-provisioner
+          image: docker.io/k8scsi/csi-provisioner
+          args:
+            - "--provisioner=csi-opensdsplugin"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: opensds
+          image: docker.io/k8scsi/opensdsplugin:v1beta
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsendpoint
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir:

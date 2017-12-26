@@ -19,11 +19,6 @@ var supportedVersions = []*csi.Version{
 		Minor: 1,
 		Patch: 0,
 	},
-	&csi.Version{
-		Major: 1,
-		Minor: 0,
-		Patch: 0,
-	},
 }
 
 //CheckVersionSupport check whether api version is supported
