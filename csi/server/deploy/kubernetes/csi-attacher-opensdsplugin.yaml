@@ -1,0 +1,63 @@
+# This YAML file contains attacher & csi driver API objects,
+# which are necessary to run external csi attacher for opensds.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-attacher-opensdsplugin
+  labels:
+    app: csi-attacher-opensdsplugin
+spec:
+  selector:
+    app: csi-attacher-opensdsplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta1
+metadata:
+  name: csi-attacher-opensdsplugin
+spec:
+  serviceName: "csi-attacher-opensdsplugin"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-attacher-opensdsplugin
+    spec:
+      serviceAccount: csi-attacher
+      containers:
+        - name: csi-attacher
+          image: docker.io/k8scsi/csi-attacher
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: opensds
+          image: docker.io/k8scsi/opensdsplugin:v1beta
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://plugin/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsendpoint
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /plugin
+      volumes:
+        - name: socket-dir
+          emptyDir:

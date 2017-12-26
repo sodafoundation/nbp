@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -13,12 +14,53 @@ import (
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
+	"github.com/spf13/cobra"
 
 	_ "github.com/opensds/nbp/driver/iscsi"
 	_ "github.com/opensds/nbp/driver/rbd"
 )
 
+var (
+	csiEndpoint     string
+	opensdsEndpoint string
+)
+
+func init() {
+	flag.Set("logtostderr", "true")
+}
+
 func main() {
+
+	flag.CommandLine.Parse([]string{})
+
+	cmd := &cobra.Command{
+		Use:   "OpenSDS",
+		Short: "CSI based OpenSDS driver",
+		Run: func(cmd *cobra.Command, args []string) {
+			handle()
+		},
+	}
+
+	cmd.Flags().AddGoFlagSet(flag.CommandLine)
+
+	cmd.PersistentFlags().StringVar(&csiEndpoint, "csiEndpoint", "", "CSI Endpoint")
+	cmd.PersistentFlags().StringVar(&opensdsEndpoint, "opensdsEndpoint", "", "OpenSDS Endpoint")
+
+	cmd.ParseFlags(os.Args[1:])
+	if err := cmd.Execute(); err != nil {
+		log.Fatalf("failed to execute: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+}
+
+func handle() {
+
+	// Set Env
+	os.Setenv("CSI_ENDPOINT", csiEndpoint)
+	os.Setenv("OPENSDS_ENDPOINT", opensdsEndpoint)
+
 	// Get CSI Endpoint Listener
 	lis, err := util.GetCSIEndPointListener()
 	if err != nil {
