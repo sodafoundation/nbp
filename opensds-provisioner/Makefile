@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+IMAGE = opensdsio/opensds-provisioner
 VERSION := latest
 
 all build:
@@ -28,4 +29,5 @@ quick-container:
 
 clean:
 	rm -f opensds-provisioner
+	rm -f deploy/docker/flex-provisioner
 .PHONY: clean
