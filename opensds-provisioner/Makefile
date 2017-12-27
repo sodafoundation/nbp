@@ -12,9 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+VERSION := latest
+
 all build:
 	GOOS=linux go build -o opensds-provisioner ./cmd/provisioner/main.go
 .PHONY: all build
+
+container: build quick-container
+.PHONY: container
+
+quick-container:
+	cp opensds-provisioner deploy/docker/opensds-provisioner
+	docker build -t $(IMAGE):$(VERSION) deploy/docker
+.PHONY: quick-container
 
 clean:
 	rm -f opensds-provisioner
