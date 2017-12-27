@@ -1,5 +1,5 @@
-# Based on centos
-FROM centos:7.4.1708
+# Based on ubuntu
+FROM ubuntu
 LABEL maintainers="Edison Xiang <xiang.edison@gmail.com>"
 LABEL description="OpenSDS CSI Plugin"
 
@@ -7,10 +7,9 @@ LABEL description="OpenSDS CSI Plugin"
 COPY csi.server.opensds /csi.server.opensds
 
 # Install iscsi
-RUN yum -y install iscsi-initiator-utils
+RUN apt-get update
 
-# Install e4fsprogs for format
-RUN yum -y install e4fsprogs
+RUN apt-get -y install open-iscsi
 
 # Define default command
 ENTRYPOINT ["/csi.server.opensds"]
