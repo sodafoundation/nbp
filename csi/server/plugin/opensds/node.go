@@ -8,6 +8,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"strings"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
@@ -15,7 +17,6 @@ import (
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
-	"strings"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,14 +223,8 @@ func (p *Plugin) GetNodeID(
 	log.Println("start to GetNodeID")
 	defer log.Println("end to GetNodeID")
 
-	// Get host name from os
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
 	return &csi.GetNodeIDResponse{
-		NodeId: hostname,
+		NodeId: iscsi.GetHostIp(),
 	}, nil
 }
 

@@ -1,5 +1,5 @@
 # This YAML file contains RBAC API objects,
-# which are necessary to run external csi attacher for cinder.
+# which are necessary to run external csi attacher for opensds.
 
 apiVersion: v1
 kind: ServiceAccount

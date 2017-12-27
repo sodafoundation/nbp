@@ -35,7 +35,13 @@ func (p *Plugin) CreateVolume(
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
 	if req.CapacityRange != nil {
-		volumebody.Size = int64(req.CapacityRange.RequiredBytes)
+		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
+		allocationUnitBytes := int64(1024 * 1024 * 1024)
+		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
+		if volumebody.Size < 1 {
+			//Using default volume size
+			volumebody.Size = 1
+		}
 	} else {
 		//Using default volume size
 		volumebody.Size = 1
@@ -43,6 +49,8 @@ func (p *Plugin) CreateVolume(
 	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
 		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
 	}
+
+	log.Println("CreateVolume volumebody:%v", volumebody)
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {

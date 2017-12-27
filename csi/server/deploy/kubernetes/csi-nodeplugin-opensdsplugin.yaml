@@ -59,7 +59,7 @@ spec:
               mountPropagation: "Bidirectional"
             - name: pods-probe-dir
               mountPath: /dev
-              mountPropagation: "HostToContainer"
+              mountPropagation: "Bidirectional"
       volumes:
         - name: plugin-dir
           hostPath:

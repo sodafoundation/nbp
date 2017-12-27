@@ -1,11 +1,11 @@
 package opensds
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/opensds/nbp/client/iscsi"
 	"golang.org/x/net/context"
 )
 
@@ -15,7 +15,7 @@ func TestGetNodeID(t *testing.T) {
 	fakeReq := &csi.GetNodeIDRequest{
 		Version: supportedVersions[0],
 	}
-	expectedNodeId, _ := os.Hostname()
+	expectedNodeId := iscsi.GetHostIp()
 
 	rs, err := fakePlugin.GetNodeID(fakeCtx, fakeReq)
 	if err != nil {
