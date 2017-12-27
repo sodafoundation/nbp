@@ -1,0 +1,13 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: opensds-provisioner
+spec:
+  serviceAccount: opensds-provisioner
+  containers:
+    - name: opensds-provisioner
+      image: opensdsio/opensds-provisioner
+      securityContext:
+      args:
+        - "-endpoint=http://192.168.56.100:50040"
+      imagePullPolicy: "IfNotPresent"
