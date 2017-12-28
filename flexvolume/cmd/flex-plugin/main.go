@@ -351,7 +351,21 @@ func getAttachmentByDevice(device string) *model.VolumeAttachmentSpec {
 	return act
 }
 
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 func main() {
+	if exist, _ := pathExists("/var/log/opensds"); !exist {
+		os.MkdirAll("/var/log/opensds", 0755)
+	}
 	// Open OpenSDS flexvolume service log file
 	f, err := os.OpenFile("/var/log/opensds/flexvolume.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
