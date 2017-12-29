@@ -88,12 +88,12 @@ func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransp
 func GetInitiator() ([]string, error) {
 	res, err := exec.Command("cat", "/etc/iscsi/initiatorname.iscsi").CombinedOutput()
 	log.Printf("result from cat: %s", res)
+	iqns := []string{}
 	if err != nil {
-		log.Fatalf("Error encountered gathering initiator names: %v", err)
-		return nil, err
+		log.Printf("Error encountered gathering initiator names: %v", err)
+		return iqns, nil
 	}
 
-	iqns := []string{}
 	lines := strings.Split(string(res), "\n")
 	for _, l := range lines {
 		log.Printf("Inspect line: %s", l)
