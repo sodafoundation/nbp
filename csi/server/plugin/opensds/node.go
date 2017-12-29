@@ -3,7 +3,6 @@ package opensds
 import (
 	"fmt"
 	"log"
-	"os"
 	"runtime"
 
 	"google.golang.org/grpc/codes"
@@ -155,9 +154,15 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	var atc *model.VolumeAttachmentSpec
-	hostname, _ := os.Hostname()
+	// hostname, _ := os.Hostname()
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
+
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostname {
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == localIqn {
 			atc = attachSpec
 			break
 		}
@@ -223,8 +228,14 @@ func (p *Plugin) GetNodeID(
 	log.Println("start to GetNodeID")
 	defer log.Println("end to GetNodeID")
 
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
+
 	return &csi.GetNodeIDResponse{
-		NodeId: iscsi.GetHostIp(),
+		NodeId: localIqn,
 	}, nil
 }
 

@@ -15,7 +15,12 @@ func TestGetNodeID(t *testing.T) {
 	fakeReq := &csi.GetNodeIDRequest{
 		Version: supportedVersions[0],
 	}
-	expectedNodeId := iscsi.GetHostIp()
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
+	expectedNodeId := localIqn
 
 	rs, err := fakePlugin.GetNodeID(fakeCtx, fakeReq)
 	if err != nil {
