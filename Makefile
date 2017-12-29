@@ -24,7 +24,7 @@ flexvolume.server.opensds:package
 docker:build
 	cp ./.output/csi.server.opensds ./csi/server
 	cp ./.output/csi.client.opensds ./csi/client
-	docker build csi/server -t docker.io/k8scsi/opensdsplugin:v1beta
-	docker build csi/client -t docker.io/k8scsi/opensdspluginclient:v1beta
+	docker build csi/server -t docker.io/k8scsi/opensdsplugin
+	docker build csi/client -t docker.io/k8scsi/opensdspluginclient
 clean:
 	rm -rf ./.output/* ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds
