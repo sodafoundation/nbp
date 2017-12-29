@@ -145,11 +145,13 @@ func (p *Plugin) ControllerPublishVolume(
 		}
 	}
 
-	iqns, _ := iscsi.GetInitiator()
+	/*iqns, _ := iscsi.GetInitiator()
 	localIqn := ""
 	if len(iqns) > 0 {
 		localIqn = iqns[0]
-	}
+	}*/
+	//NodeId is Node Iqn
+	localIqn := req.NodeId
 
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
