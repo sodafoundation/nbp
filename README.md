@@ -1,13 +1,13 @@
-# NBP
+# SUSHI
 
 ## Introduction
 
-The NBP Project is an umbrella project for all the [OpenSDS Project](https://opensds.io/)
-NorthBound Plugins, for OpenStack, Kubernetes, Mesos, VMware and so forth.
+The SUSHI Project is an umbrella project for all the [OpenSDS Project](https://opensds.io/)
+NorthBound Plugins, for OpenStack, Kubernetes, Mesos, VMware and more.
 The plugins themselves could have multiple hosting location,
-however the OpenSDS NBP project repo should always have the most up-to-date version.
+however the OpenSDS Sushi Project repo should always have the most up-to-date version.
 
-The NBP project will also seek to collaborate with other upstream open source communities
+Sushi will also seek to collaborate with other upstream open source communities
 such as Cloud Native Computing Foundation, Docker, OpenStack, and Open Container Initiative.
 
 ## Community
@@ -25,8 +25,8 @@ now, please refer to the Contributing sections below.
 * slack: #[opensds](https://opensds.slack.com)
 * Ideas/Bugs: [issues](https://github.com/opensds/nbp/issues)
 
-## OpenSDS NBP Work Group
-See [COMMUNITY](COMMUNITY.md) for details on discussion of the NBP architecture design and feature development.
+## OpenSDS Sushi Work Group
+See [COMMUNITY](COMMUNITY.md) for details on discussion of the northbound architecture design and feature development.
 
 ## Contributing
 
