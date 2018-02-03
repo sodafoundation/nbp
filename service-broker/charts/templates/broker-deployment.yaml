@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: service-broker
-        image: "service-broker:v1alpha"
+        image: "opensdsio/service-broker:latest"
         imagePullPolicy: IfNotPresent
         args:
         - --port

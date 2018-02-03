@@ -6,7 +6,7 @@ spec:
   serviceAccount: opensds-provisioner
   containers:
     - name: opensds-provisioner
-      image: opensdsio/opensds-provisioner
+      image: opensdsio/opensds-provisioner:latest
       securityContext:
       args:
         - "-endpoint=http://192.168.56.100:50040"
