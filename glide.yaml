@@ -1,16 +1,51 @@
 package: github.com/opensds/nbp
 import:
 - package: github.com/container-storage-interface/spec
+  version: 716f53e230aa89be23a041cdb274c95611a19402
   subpackages:
   - lib/go/csi
+- package: github.com/golang/glog
+- package: github.com/kubernetes-incubator/service-catalog
+  version: ^0.1.1
+  subpackages:
+  - contrib/pkg/broker/controller
+  - contrib/pkg/broker/server
+  - contrib/pkg/brokerapi
+  - pkg
+- package: github.com/mitchellh/mapstructure
+- package: github.com/opensds/opensds
+  version: ^0.1.0
+  subpackages:
+  - client
+  - pkg/model
 - package: golang.org/x/net
   subpackages:
   - context
-- package: github.com/golang/protobuf
-  version: 130e6b02ab059e7b717a096f397c5b60111cae74
+- package: golang.org/x/sys
+  subpackages:
+  - unix
 - package: google.golang.org/grpc
   version: ^1.2.1
   subpackages:
+  - codes
   - reflection
-- package: github.com/kubernetes-incubator/service-catalog
-  version: ^0.1.1
+  - status
+- package: k8s.io/api
+  subpackages:
+  - core/v1
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/apis/meta/v1
+  - pkg/types
+  - pkg/util/validation
+  - pkg/util/validation/field
+  - pkg/util/wait
+- package: k8s.io/client-go
+  subpackages:
+  - kubernetes
+  - rest
+  - tools/clientcmd
+- package: k8s.io/kubernetes
+  subpackages:
+  - pkg/volume
+- package: github.com/spf13/cobra

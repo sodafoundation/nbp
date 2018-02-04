@@ -1,87 +1,62 @@
-hash: d88ce1c34dd17a933f62cb609cce0566dcf840ff7b23809d32f6cf35f8cd8b2c
-updated: 2017-11-23T13:23:39.3647601+08:00
+hash: 93797dc66da5167baa35acf64c2e5fcef4cb5a539b874e1de4f766cd914deb23
+updated: 2018-02-04T12:17:37.393841464Z
 imports:
-- name: github.com/astaxie/beego
-  version: c5118e9535f237996bae7c7baebe4ed4247cb2c6
-  subpackages:
-  - httplib
 - name: github.com/container-storage-interface/spec
-  version: 4ac2d13f89360f2da40d188473d77f2ec56b9d0d
+  version: 716f53e230aa89be23a041cdb274c95611a19402
   subpackages:
   - lib/go/csi
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
-- name: github.com/golang/protobuf
-  version: 130e6b02ab059e7b717a096f397c5b60111cae74
-  subpackages:
-  - proto
-  - protoc-gen-go/descriptor
-  - ptypes
-  - ptypes/any
-  - ptypes/duration
-  - ptypes/timestamp
-- name: github.com/gorilla/context
-  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
-- name: github.com/gorilla/mux
-  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - name: github.com/kubernetes-incubator/service-catalog
-  version: 48ecff13b1f18c7cf18798672a438b62822cda9b
+  version: 545ffdbde061c16924be9e7dc27f41b203a9e312
   subpackages:
   - contrib/pkg/broker/controller
   - contrib/pkg/broker/server
   - contrib/pkg/brokerapi
   - pkg
-  - pkg/util
+- name: github.com/mitchellh/mapstructure
+  version: a4e142e9c047c904fa2f1e144d9a84e6133024bc
 - name: github.com/opensds/opensds
-  version: 178f0b24fbda8f7bb01afda976a3155874cbf728
+  version: fabbab8d91bed730f80bd9229f01f43e842c18b8
   subpackages:
   - client
   - pkg/model
+- name: github.com/spf13/cobra
+  version: 3a7eb146bae5ebf9be598570234cde56c82d16cc
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
-  - http2
-  - http2/hpack
-  - idna
-  - internal/timeseries
-  - lex/httplex
-  - trace
 - name: golang.org/x/sys
-  version: 1e2299c37cc91a509f1b12369872d27be0ce98a6
+  version: a2e06a18b0d52d8cb2010e04b372a1965d8e3439
   subpackages:
   - unix
-- name: golang.org/x/text
-  version: b19bf474d317b857955b12035d2c5acb57ce8b01
-  subpackages:
-  - secure/bidirule
-  - secure/precis
-  - transform
-  - unicode/bidi
-  - unicode/norm
-- name: google.golang.org/genproto
-  version: 11c7f9e547da6db876260ce49ea7536985904c9b
-  subpackages:
-  - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 5ffe3083946d5603a0578721101dc8165b1d5b5f
+  version: 6b51017f791ae1cfbec89c52efdf444b13b550ef
   subpackages:
-  - balancer
   - codes
-  - connectivity
-  - credentials
-  - grpclb/grpc_lb_v1/messages
-  - grpclog
-  - internal
-  - keepalive
-  - metadata
-  - naming
-  - peer
   - reflection
-  - reflection/grpc_reflection_v1alpha
-  - resolver
-  - stats
   - status
-  - tap
-  - transport
+- name: k8s.io/api
+  version: 4df58c811fe2e65feb879227b2b245e4dc26e7ad
+  subpackages:
+  - core/v1
+- name: k8s.io/apimachinery
+  version: 019ae5ada31de202164b118aee88ee2d14075c31
+  subpackages:
+  - pkg/apis/meta/v1
+  - pkg/types
+  - pkg/util/validation
+  - pkg/util/validation/field
+  - pkg/util/wait
+- name: k8s.io/client-go
+  version: 35ccd4336052e7d73018b1382413534936f34eee
+  subpackages:
+  - kubernetes
+  - rest
+  - tools/clientcmd
+- name: k8s.io/kubernetes
+  version: bdaeafa71f6c7c04636251031f93464384d54963
+  subpackages:
+  - pkg/volume
 testImports: []

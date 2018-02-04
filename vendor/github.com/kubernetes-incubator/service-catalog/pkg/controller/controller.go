@@ -19,6 +19,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -40,6 +42,7 @@ import (
 	servicecatalogclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	informers "github.com/kubernetes-incubator/service-catalog/pkg/client/informers_generated/externalversions/servicecatalog/v1beta1"
 	listers "github.com/kubernetes-incubator/service-catalog/pkg/client/listers_generated/servicecatalog/v1beta1"
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	pretty "github.com/kubernetes-incubator/service-catalog/pkg/pretty"
 )
 
@@ -50,9 +53,8 @@ const (
 	//
 	// 5ms, 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, 640ms, 1.3s, 2.6s, 5.1s, 10.2s, 20.4s, 41s, 82s
 	maxRetries = 15
-	//
-	pollingStartInterval      = 1 * time.Second
-	pollingMaxBackoffDuration = 1 * time.Hour
+	// pollingStartInterval is the initial interval to use when polling async OSB operations.
+	pollingStartInterval = 1 * time.Second
 
 	// ContextProfilePlatformKubernetes is the platform name sent in the OSB
 	// ContextProfile for requests coming from Kubernetes.
@@ -73,6 +75,7 @@ func NewController(
 	osbAPIPreferredVersion string,
 	recorder record.EventRecorder,
 	reconciliationRetryDuration time.Duration,
+	operationPollingMaximumBackoffDuration time.Duration,
 ) (Controller, error) {
 	controller := &controller{
 		kubeClient:                  kubeClient,
@@ -87,7 +90,8 @@ func NewController(
 		servicePlanQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-plan"),
 		instanceQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-instance"),
 		bindingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "service-binding"),
-		pollingQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, pollingMaxBackoffDuration), "poller"),
+		instancePollingQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "instance-poller"),
+		bindingPollingQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(pollingStartInterval, operationPollingMaximumBackoffDuration), "binding-poller"),
 	}
 
 	controller.brokerLister = brokerInformer.Lister()
@@ -156,11 +160,8 @@ type controller struct {
 	servicePlanQueue            workqueue.RateLimitingInterface
 	instanceQueue               workqueue.RateLimitingInterface
 	bindingQueue                workqueue.RateLimitingInterface
-	// pollingQueue is separate from instanceQueue because we want
-	// it to have different backoff / timeout characteristics from
-	//  a reconciling of an instance.
-	// TODO(vaikas): get rid of two queues per instance.
-	pollingQueue workqueue.RateLimitingInterface
+	instancePollingQueue        workqueue.RateLimitingInterface
+	bindingPollingQueue         workqueue.RateLimitingInterface
 }
 
 // Run runs the controller until the given stop channel can be read from.
@@ -177,7 +178,11 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 		createWorker(c.servicePlanQueue, "ClusterServicePlan", maxRetries, true, c.reconcileClusterServicePlanKey, stopCh, &waitGroup)
 		createWorker(c.instanceQueue, "ServiceInstance", maxRetries, true, c.reconcileServiceInstanceKey, stopCh, &waitGroup)
 		createWorker(c.bindingQueue, "ServiceBinding", maxRetries, true, c.reconcileServiceBindingKey, stopCh, &waitGroup)
-		createWorker(c.pollingQueue, "Poller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
+		createWorker(c.instancePollingQueue, "InstancePoller", maxRetries, false, c.requeueServiceInstanceForPoll, stopCh, &waitGroup)
+
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+			createWorker(c.bindingPollingQueue, "BindingPoller", maxRetries, false, c.requeueServiceBindingForPoll, stopCh, &waitGroup)
+		}
 	}
 
 	<-stopCh
@@ -188,7 +193,8 @@ func (c *controller) Run(workers int, stopCh <-chan struct{}) {
 	c.servicePlanQueue.ShutDown()
 	c.instanceQueue.ShutDown()
 	c.bindingQueue.ShutDown()
-	c.pollingQueue.ShutDown()
+	c.instancePollingQueue.ShutDown()
+	c.bindingPollingQueue.ShutDown()
 
 	waitGroup.Wait()
 }
@@ -242,6 +248,15 @@ func worker(queue workqueue.RateLimitingInterface, resourceType string, maxRetri
 	}
 }
 
+// operationError is a user-facing error that can be easily embedded in a
+// resource's Condition.
+type operationError struct {
+	reason  string
+	message string
+}
+
+func (e *operationError) Error() string { return e.message }
+
 // getClusterServiceClassPlanAndClusterServiceBroker is a sequence of operations that's done in couple of
 // places so this method fetches the Service Class, Service Plan and creates
 // a brokerClient to use for that method given an ServiceInstance.
@@ -252,20 +267,13 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 	pcb := pretty.NewContextBuilder(pretty.ServiceInstance, instance.Namespace, instance.Name)
 	serviceClass, err := c.serviceClassLister.Get(instance.Spec.ClusterServiceClassRef.Name)
 	if err != nil {
-		s := fmt.Sprintf(
-			"References a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
-			instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
-		)
-		glog.Info(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorNonexistentClusterServiceClassReason,
-			"The instance references a ClusterServiceClass that does not exist. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceClassReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceClassReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent ClusterServiceClass (K8S: %q ExternalName: %q)",
+				instance.Spec.ClusterServiceClassRef.Name, instance.Spec.ClusterServiceClassExternalName,
+			),
+		}
 	}
 
 	var servicePlan *v1beta1.ClusterServicePlan
@@ -273,57 +281,41 @@ func (c *controller) getClusterServiceClassPlanAndClusterServiceBroker(instance 
 		var err error
 		servicePlan, err = c.servicePlanLister.Get(instance.Spec.ClusterServicePlanRef.Name)
 		if nil != err {
-			s := fmt.Sprintf(
-				"References a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass (K8S: %q ExternalName: %q)",
-				instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, serviceClass.Name, serviceClass.Spec.ExternalName,
-			)
-			glog.Warning(pcb.Message(s))
-			c.updateServiceInstanceCondition(
-				instance,
-				v1beta1.ServiceInstanceConditionReady,
-				v1beta1.ConditionFalse,
-				errorNonexistentClusterServicePlanReason,
-				"The instance references a ClusterServicePlan that does not exist. "+s,
-			)
-			c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServicePlanReason, s)
-			return nil, nil, "", nil, fmt.Errorf(s)
+			return nil, nil, "", nil, &operationError{
+				reason: errorNonexistentClusterServicePlanReason,
+				message: fmt.Sprintf(
+					"The instance references a non-existent ClusterServicePlan (K8S: %q ExternalName: %q) on ClusterServiceClass %v",
+					instance.Spec.ClusterServicePlanName, instance.Spec.ClusterServicePlanExternalName, pretty.ClusterServiceClassName(serviceClass),
+				),
+			}
 		}
 	}
 
 	broker, err := c.brokerLister.Get(serviceClass.Spec.ClusterServiceBrokerName)
 	if err != nil {
-		s := fmt.Sprintf("References a non-existent broker %q", serviceClass.Spec.ClusterServiceBrokerName)
-		glog.Warning(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorNonexistentClusterServiceBrokerReason,
-			"The instance references a ClusterServiceBroker that does not exist. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorNonexistentClusterServiceBrokerReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorNonexistentClusterServiceBrokerReason,
+			message: fmt.Sprintf(
+				"The instance references a non-existent broker %q",
+				serviceClass.Spec.ClusterServiceBrokerName,
+			),
+		}
+
 	}
 
 	authConfig, err := getAuthCredentialsFromClusterServiceBroker(c.kubeClient, broker)
 	if err != nil {
-		s := fmt.Sprintf("Error getting broker auth credentials for broker %q: %s", broker.Name, err)
-		glog.Info(pcb.Message(s))
-		c.updateServiceInstanceCondition(
-			instance,
-			v1beta1.ServiceInstanceConditionReady,
-			v1beta1.ConditionFalse,
-			errorAuthCredentialsReason,
-			"Error getting auth credentials. "+s,
-		)
-		c.recorder.Event(instance, corev1.EventTypeWarning, errorAuthCredentialsReason, s)
-		return nil, nil, "", nil, err
+		return nil, nil, "", nil, &operationError{
+			reason: errorAuthCredentialsReason,
+			message: fmt.Sprintf(
+				"Error getting broker auth credentials for broker %q: %s",
+				broker.Name, err,
+			),
+		}
 	}
 
 	clientConfig := NewClientConfigurationForBroker(broker, authConfig)
-
-	s := fmt.Sprintf("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL)
-	glog.V(4).Info(pcb.Message(s))
+	glog.V(4).Info(pcb.Messagef("Creating client for ClusterServiceBroker %v, URL: %v", broker.Name, broker.Spec.URL))
 	brokerClient, err := c.brokerClientCreateFunc(clientConfig)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -502,6 +494,10 @@ func convertCatalog(in *osb.CatalogResponse) ([]*v1beta1.ClusterServiceClass, []
 			},
 		}
 
+		if utilfeature.DefaultFeatureGate.Enabled(scfeatures.AsyncBindingOperations) {
+			serviceClasses[i].Spec.BindingRetrievable = svc.BindingRetrievable
+		}
+
 		if svc.Metadata != nil {
 			metadata, err := json.Marshal(svc.Metadata)
 			if err != nil {
@@ -618,3 +614,34 @@ func NewClientConfigurationForBroker(broker *v1beta1.ClusterServiceBroker, authC
 	clientConfig.CAData = broker.Spec.CABundle
 	return clientConfig
 }
+
+// reconciliationRetryDurationExceeded returns whether the given operation
+// start time has exceeded the controller's set reconciliation retry duration.
+func (c *controller) reconciliationRetryDurationExceeded(operationStartTime *metav1.Time) bool {
+	if operationStartTime == nil || time.Now().Before(operationStartTime.Time.Add(c.reconciliationRetryDuration)) {
+		return false
+	}
+	return true
+}
+
+// shouldStartOrphanMitigation returns whether an error with the given status
+// code indicates that orphan migitation should start.
+func shouldStartOrphanMitigation(statusCode int) bool {
+	is2XX := (statusCode >= 200 && statusCode < 300)
+	is5XX := (statusCode >= 500 && statusCode < 600)
+
+	return (is2XX && statusCode != http.StatusOK) ||
+		statusCode == http.StatusRequestTimeout ||
+		is5XX
+}
+
+// ReconciliationAction reprents a type of action the reconciler should take
+// for a resource.
+type ReconciliationAction string
+
+const (
+	reconcileAdd    ReconciliationAction = "Add"
+	reconcileUpdate ReconciliationAction = "Update"
+	reconcileDelete ReconciliationAction = "Delete"
+	reconcilePoll   ReconciliationAction = "Poll"
+)
