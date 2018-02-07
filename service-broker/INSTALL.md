@@ -4,19 +4,7 @@ In this tutorial, we will show how OpenSDS provide Ceph storage as a service for
 ## Pre-configuration
 
 ### Check it out about your os (very important)
-Please NOTICE that the installation tutorial is tested on Ubuntu17.04, and we SUGGEST you follow our styles and use Ubuntu16.04+.
-
-### Download and install Golang
-```
-wget https://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz
-tar xvf go1.9.linux-amd64.tar.gz -C /usr/local/
-mkdir -p $HOME/gopath/src
-mkdir -p $HOME/gopath/bin
-echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/gopath/bin' >> /etc/profile
-echo 'export GOPATH=$HOME/gopath' >> /etc/profile
-source /etc/profile
-go version (check if go has been installed)
-```
+Please NOTICE that the installation tutorial is tested on Ubuntu16.04, and we SUGGEST you follow our styles and use Ubuntu16.04+.
 
 ### Install some package dependencies
 ```
@@ -28,49 +16,36 @@ sudo service docker stop
 sudo nohup docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock &
 ```
 
-### Install containerized Ceph cluster (If your machine has already a ceph cluster installed, just skip this step)
-Since this is a test, we choose to install a simple containerized ceph single-node cluster:
-```
-sudo docker run -d --net=host -v /etc/ceph:/etc/ceph -e MON_IP=your_host_ip -e CEPH_PUBLIC_NETWORK=your_host_ip/24 ceph/demo
-```
-NOTICE that ```your_host_ip``` means the real ip address of your machine.
+### Local Kubernetes Cluster Setup
 
-After this container has been running, Add ```rbd_default_features = 1``` one line in ```/etc/ceph/ceph.conf``` file:
+* You can download and build k8s local cluster by executing commands blow:
 ```
-echo 'rbd_default_features = 1' >> /etc/ceph/ceph.conf
+cd /opt && git clone https://github.com/kubernetes/kubernetes.git -b v1.9.0
+cd kubernetes && make
 ```
 
-## Local Kubernetes Cluster Setup
-
-### Download and unpackage k8s and etcd source code
+* Modify one line in `hack/local-up-cluster.sh` to enable PodPreset by appending `PodPreset` to ADMISSION_CONTROL:
 ```
-wget https://github.com/kubernetes/kubernetes/archive/v1.6.0.tar.gz
-wget https://github.com/coreos/etcd/releases/download/v3.2.0/etcd-v3.2.0-linux-amd64.tar.gz
-tar -zxvf etcd-v3.2.0-linux-amd64.tar.gz
-cp etcd-v3.2.0-linux-amd64/etcd /usr/local/bin
-tar -zxvf v1.6.0.tar.gz
+ADMISSION_CONTROL=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount{security_admission},DefaultStorageClass,DefaultTolerationSeconds,GenericAdmissionWebhook,ResourceQuota,PodPreset
 ```
 
-### Setup your cluster (suggest run as ```root```)
+* Set up k8s cluster:
 ```
-source /etc/profile
-go get -u github.com/cloudflare/cfssl/cmd/...
-KUBE_ENABLE_CLUSTER_DNS=true kubernetes-1.6.0/hack/local-up-cluster.sh -O
-```
-The setup process may run for a while, and after it done, some tips will occur to help you configure your cluster correctly.
-
-### Check the status of cluster (open another terminal)
-Follow the tips and configure your cluster, and then add another path ```your_path_to/kubernetes-1.6.0/hack/local-up-cluster.sh``` in the ```PATH``` variable configured in ```/etc/profile``` file.
-
-After that, run ```kubectl.sh get po``` to check the status of kubernetes cluster:
-```
-source /etc/profile
-kubectl.sh get po
+echo alias kubectl='/opt/kubernetes/cluster/kubectl.sh' >> /etc/profile
+RUNTIME_CONFIG=settings.k8s.io/v1alpha1=true AUTHORIZATION_MODE=Node,RBAC hack/local-up-cluster.sh -O
+kubectl get pod (check if k8s cluster running)
 ```
 
-## Service Catalog Setup
+* Configure flexvolume plugin:
+```
+cd /opt && wget https://github.com/opensds/nbp/releases/download/v0.1.0/opensds-k8s-v0.1.0-linux-amd64.tar.gz
+tar zxvf opensds-k8s-v0.1.0-linux-amd64.tar.gz
+mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/opensds.io~opensds
+cp opensds-k8s-v0.1.0-linux-amd64/flexvolume/opensds /usr/libexec/kubernetes/kubelet-plugins/volume/exec/opensds.io~opensd
+```
 
 ### Install helm (from scipt)
+To avoid some errors, please make sure your helm version is more than v2.7.0:
 ```
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
 chmod 700 get_helm.sh
@@ -79,196 +54,207 @@ helm init
 kubectl.sh get po -n kube-system (check if the till-deploy pod is running)
 ```
 
-If your kubernetes cluster has RBAC enabled, you must ensure that the tiller pod has cluster-admin access. By default, helm init installs the tiller pod into kube-system namespace, with tiller configured to use the default service account.
-```
-kubectl create clusterrolebinding tiller-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-```
-cluster-admin access is required in order for helm to work correctly in clusters with RBAC enabled. If you used the --tiller-namespace or --service-account flags when running helm init, the --serviceaccount flag in the previous command needs to be adjusted to reference the appropriate namespace and ServiceAccount name.
+## Service Catalog Setup
 
-### Set up kube-dns service (optional)
-To avoid network barrieres, please make sure kube-dns service be set up:
-```
-mkdir -p gopath/src/github.com/leonwanghui
-git clone https://github.com/leonwanghui/opensds-broker.git gopath/src/github.com/leonwanghui
+### Tiller permissions
 
-kubectl.sh create -f gopath/src/github.com/leonwanghui/opensds-broker/examples/kube-dns.yaml
-```
+Tiller is the in-cluster server component of Helm. By default, 
+`helm init` installs the Tiller pod into the `kube-system` namespace,
+and configures Tiller to use the `default` service account.
 
-### Service Catalog download and install
-```
-mkdir -p gopath/src/github.com/kubernetes-incubator
-wget https://github.com/kubernetes-incubator/service-catalog/archive/v0.1.0.tar.gz
-tar xvf service-catalog-0.1.0.tar.gz -C gopath/src/github.com/kubernetes-incubator
-helm install gopath/src/github.com/kubernetes-incubator/service-catalog-0.1.0/charts/catalog --name catalog --namespace catalog
+Tiller will need to be configured with `cluster-admin` access to properly install
+Service Catalog:
 
-kubectl.sh get po -n catalog (check if the catalog api-server and controller-manager pod are running)
+```console
+kubectl create clusterrolebinding tiller-cluster-admin \
+    --clusterrole=cluster-admin \
+    --serviceaccount=kube-system:default
 ```
 
-## OpenSDS Service Broker Setup
+### Helm repository setup
 
-### OpenSDS cluster install
-1. Before the system starts, you should configure the pool and backend information. Here are some examples for testing:
-- OpenSDS global configuration info (stored in ```opensds.conf```):
-```conf
-[osdslet]
-api_endpoint = localhost:50040
-graceful = True
-log_file = /var/log/opensds/osdslet.log
-socket_order = inc
+Service Catalog is easily installed via a 
+[Helm chart](https://github.com/kubernetes/helm/blob/master/docs/charts.md).
 
-[osdsdock]
-api_endpoint = localhost:50050
-log_file = /var/log/opensds/osdsdock.log
+This chart is located in a
+[chart repository](https://github.com/kubernetes/helm/blob/master/docs/chart_repository.md)
+just for Service Catalog. Add this repository to your local machine:
 
-# Enabled backend types, such as sample, ceph, cinder, etc.
-enabled_backends = ceph
-
-# If backend needs config file, specify the path here.
-ceph_config = /etc/opensds/driver/ceph.yaml
-
-[sample]
-name = sample
-description = Sample backend for testing
-driver_name = default
-
-[ceph]
-name = ceph
-description = Ceph Test
-driver_name = ceph
-
-[database]
-credential = opensds:password@127.0.0.1:3306/dbname
-endpoint = localhost:2379,localhost:2380
-driver = etcd
+```console
+helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 ```
-- Ceph configuration info (stored in ```ceph.yaml```):
+
+Then, ensure that the repository was successfully added:
+
+```console
+helm search service-catalog
+```
+
+You should see the following output:
+
+```console
+NAME           	VERSION	DESCRIPTION
+svc-cat/catalog	x,y.z  	service-catalog API server and controller-manag...
+```
+
+Now that your cluster and Helm are configured properly, installing Service Catalog is simple:
+```console
+helm install svc-cat/catalog \
+    --name catalog --namespace catalog
+```
+
+## OpenSDS Service Broker Configuration
+
+* OpenSDS local cluster installation
+
+For testing purposes you can deploy OpenSDS local cluster referring to the [OpenSDS Cluster Installation through Ansible](https://github.com/opensds/opensds/wiki/OpenSDS-Cluster-Installation-through-Ansible) wiki.
+
+* Service broker
+
+Firstly, please modify the endpoint IP:
+```
+git clone https://github.com/opensds/nbp.git
+cd nbp/service-broker
+vim charts/template/broker-deployment
+```
+
+Replace `0.0.0.0` with your host ip:
 ```yaml
-configFile: /etc/ceph/ceph.conf
-pool:
-  "rbd":
-    diskType: SSD
-    iops: 1000
-    bandwidth: 1000
-  "test":
-    diskType: SAS
-    iops: 800
-    bandwidth: 800
-```
-Now put them in the right place:
-```
-mkdir -p /etc/opensds/driver && mkdir -p /var/log/opensds
-mv opensds.conf /etc/opensds/
-mv ceph.yaml /etc/opensds/driver/
+containers:
+- name: service-broker
+  image: "opensdsio/service-broker:latest"
+  imagePullPolicy: IfNotPresent
+  args:
+  - --port
+  - ":8080"
+  - --endpoint
+  - "http://0.0.0.0:50040"
 ```
 
-2. Download and start opensds service daemon:
-To ensure service broker connecting to OpenSDS api-service, you probably need to configure your service ip:
+Then install it through helm:
 ```
-docker run -d --net=host -v /var/log/opensds:/var/log/opensds -v /etc/opensds:/etc/opensds -v /etc/ceph:/etc/ceph opensds/osdsdock:v1alpha
-docker run -it --net=host -v /var/log/opensds:/var/log/opensds -v /etc/opensd:/etc/opensds opensds/osdslet:v1alpha
-
-curl -X POST "http://your_host_ip:50040/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "default", "description": "default policy", "extra": {"capacity": 5}}'
-curl -X POST "http://your_host_ip:50040/v1alpha/profiles" -H "Content-Type: application/json" -d '{"name": "silver", "description": "silver policy", "extra": {"iops": 300, "bandwidth": 500, "diskType":"SAS", "capacity": 5}}'
-```
-
-### OpenSDS service broker install
-Firstly, you need to modify the value of ```argEndpoint``` field in ```broker-deployment.yaml```, just change it to ```your_host_ip:50040```:
-```
-vim gopath/src/github.com/opensds/nbp/service-broker/charts/deployment.yaml (modify this file)
-```
-Then you can install service broker via helm:
-```
-cd gopath/src/github.com/nbp/service-broker
 helm install charts/ --name service-broker --namespace service-broker
-
-kubectl.sh get po -n service-broker (check if opensds broker pod is running)
-```
-
-### Configure Kubectl context
-```
-kubectl.sh config set-cluster service-catalog --server=https://127.0.0.1:30443 --insecure-skip-tls-verify=true
-kubectl.sh config set-context service-catalog --cluster=service-catalog
-
-kubectl.sh --context=service-catalog get clusterservicebrokers,serviceinstances,servicebindings
+kubectl get pod -n service-broker
+kubectl get clusterservicebrokers,clusterserviceclasses,serviceinstances,servicebindings
 ```
 
 ## Start to work
 
-1. Create service broker
+* Create service broker
 
 ```
-kubectl.sh --context=service-catalog create -f examples/service-broker.yaml
-kubectl.sh --context=service-catalog get clusterservicebrokers,clusterserviceclasses,clusterserviceplans
+kubectl create -f examples/service-broker.yaml
+kubectl get clusterservicebrokers,clusterserviceclasses,clusterserviceplans
 ```
 
-2. Create service instance
+* Create service instance
 
 ```
-kubectl.sh create ns opensds
-
-kubectl.sh --context=service-catalog create -f examples/service-instance.yaml -n opensds
-kubectl.sh --context=service-catalog get serviceinstances -n opensds
+kubectl create ns opensds
+kubectl create -f examples/service-instance.yaml -n opensds
+kubectl get serviceinstances -n opensds -o yaml
 ```
 
-3. Create service instance binding
+* Create service instance binding
 
 ```
-kubectl.sh --context=service-catalog create -f examples/service-binding.yaml -n opensds
-kubectl.sh --context=service-catalog get servicebindings -n opensds
-
-kubectl.sh get secrets -n opensds
-kubectl.sh get secrets opensds-secret -o yaml -n opensds
+kubectl create -f examples/service-binding.yaml -n opensds
+kubectl get servicebindings -n opensds -o yaml
+kubectl describe  servicebindings -n opensdss
+kubectl get secrets -n opensds
+kubectl get secrets service-binding -o yaml -n opensds
+kubectl get secrets service-binding -o yaml -n opensds | grep volumeId | awk  '{print $2}' | base64 -d && echo
 ```
 
-4. Creat service wordpress for testing
-From the secret ```opensds-instance-secret``` shown above, you can find a field called ```image``` in data structure, just decode it using ```encoding/base64``` package.
+* Creat service wordpress for testing
 
-Then update it in ```Wordpress.yaml``` file:
-
+Modify the volume name of podpreset:
 ```
-vim examples/Wordpress.yaml (modify image field)
-kubectl.sh create -f examples/Wordpress.yaml -n opensds
-kubectl.sh get po -n opensds
-kubectl.sh get service -n opensds
+vi examples/podpreset-preset.yaml
+kubectl create -f examples/podpreset-preset.yaml 
+kubectl get podpreset
+```
+podpreset-preset.yaml
+```yaml
+apiVersion: settings.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: allow-database
+spec:
+  selector:
+    matchLabels:
+      role: frontend
+  volumeMounts:
+    - mountPath: /mnt/wordpress
+      name: 938b481a-af44-44e4-9cc0-e13ac5c0cc5e
+  volumes:
+    - name: 938b481a-af44-44e4-9cc0-e13ac5c0cc5e
+      flexVolume:
+        driver: "opensds.io/opensds"
+        fsType: "ext4"
+```
+
+Then create ```Wordpress.yaml``` file:
+```
+kubectl create -f examples/wordpress.yaml
+
+socat tcp-listen:8084,reuseaddr,fork tcp:10.0.0.124:8084
+```
+Wordpress.yaml
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        role: frontend
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: wordpress
+          containerPort: 8084
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  type: ClusterIP
+  ports:
+  - name: wordpress
+    port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: wordpress
 ```
 
 After all things done, you can visit your own blog by searching: ```http://service_cluster_ip:8084```!
 
 ## Clean it up
 
-1. Delete service wordpress
-
 ```
-kubectl.sh delete -f examples/Wordpress.yaml -n opensds
-```
+kubectl delete -f examples/podpreset-preset.yaml 
 
-2. Delete service instance binding
+kubectl delete -f examples/wordpress.yaml
 
-```
-kubectl.sh --context=service-catalog delete servicebindings service-binding -n opensds
-```
+kubectl delete -n opensds  servicebindings service-binding
 
-3. Delete service instance
+kubectl delete -n opensds serviceinstances service-instance
 
-```
-kubectl.sh --context=service-catalog delete serviceinstances service-instance -n opensds
-```
+kubectl delete clusterservicebrokers service-broker
 
-4. Delete service broker
-
-```
-kubectl.sh --context=service-catalog delete clusterservicebrokers service-broker
-```
-
-5. Uninstall service broker pod
-
-```
 helm delete --purge service-broker
-```
 
-6. Uninstall service catalog pods
+kubectl delete ns opensds service-broker
 
-```
 helm delete --purge catalog
 ```
 

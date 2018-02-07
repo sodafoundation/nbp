@@ -28,7 +28,7 @@ spec:
         - --port
         - ":8080"
         - --endpoint
-        - "http://100.64.128.40:50040"
+        - "http://0.0.0.0:50040"
         ports:
         - containerPort: 8080
         readinessProbe:
