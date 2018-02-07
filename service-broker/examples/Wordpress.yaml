@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: wordpress
-        image: wordpress:latest
+        image: opensdsio/wordpress:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: wordpress
