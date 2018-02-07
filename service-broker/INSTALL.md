@@ -20,7 +20,8 @@ sudo nohup docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock &
 
 * You can download and build k8s local cluster by executing commands blow:
 ```
-cd /opt && git clone https://github.com/kubernetes/kubernetes.git -b v1.9.0
+mkdir -p /opt && cd /opt
+git clone https://github.com/kubernetes/kubernetes.git -b v1.9.0
 cd kubernetes && make
 ```
 
@@ -194,13 +195,13 @@ spec:
         fsType: "ext4"
 ```
 
-Then create ```Wordpress.yaml``` file:
+Then create ```wordpress.yaml``` file:
 ```
 kubectl create -f examples/wordpress.yaml
 
 socat tcp-listen:8084,reuseaddr,fork tcp:10.0.0.124:8084
 ```
-Wordpress.yaml
+wordpress.yaml
 ```yaml
 apiVersion: extensions/v1beta1
 kind: Deployment
