@@ -42,7 +42,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: opensds
-          image: docker.io/opensdsio/csiplugin
+          image: opensdsio/csiplugin:latest
           args :
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
