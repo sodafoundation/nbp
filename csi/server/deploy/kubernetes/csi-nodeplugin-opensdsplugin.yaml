@@ -60,6 +60,8 @@ spec:
             - name: pods-probe-dir
               mountPath: /dev
               mountPropagation: "Bidirectional"
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
       volumes:
         - name: plugin-dir
           hostPath:
@@ -72,4 +74,8 @@ spec:
         - name: pods-probe-dir
           hostPath:
             path: /dev
+            type: Directory
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi/
             type: Directory
