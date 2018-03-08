@@ -1,5 +1,7 @@
 /*
 Copyright 2016 The Kubernetes Authors.
+Copyright (c) 2016 Huawei Technologies Co., Ltd. All Rights Reserved.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -178,4 +180,3 @@ func (c *openSDSController) UnBind(
 
 	return nil
 }
-
