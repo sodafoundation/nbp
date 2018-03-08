@@ -41,6 +41,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
         - name: opensds
           image: opensdsio/csiplugin:latest
           args :
@@ -58,6 +60,12 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /plugin
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
       volumes:
         - name: socket-dir
           emptyDir:
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi/
+            type: Directory
