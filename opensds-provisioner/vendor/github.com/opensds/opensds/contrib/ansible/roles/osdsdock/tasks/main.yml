@@ -1,0 +1,44 @@
+---
+- name: include scenarios/lvm.yml
+  include: scenarios/lvm.yml
+  when: enabled_backend == "lvm"
+
+- name: include scenarios/ceph.yml
+  include: scenarios/ceph.yml
+  when: enabled_backend == "ceph"
+
+- name: include scenarios/cinder.yml
+  include: scenarios/cinder.yml
+  when: enabled_backend == "cinder" and use_cinder_standalone == false
+
+- name: include scenarios/cinder_standalone.yml
+  include: scenarios/cinder_standalone.yml
+  when: enabled_backend == "cinder" and use_cinder_standalone == true
+
+- name: run osdsdock daemon service
+  shell:
+    cmd: |
+      i=0
+      while
+        i="$((i+1))"
+        [ "$i" -lt 4 ]
+      do
+        nohup bin/osdsdock &>/dev/null &
+        sleep 5
+        ps aux | grep osdsdock | grep -v grep && break
+      done
+  args:
+    chdir: "{{ opensds_build_dir }}/out"
+  when: container_enabled == false
+
+- name: run osdsdock containerized service
+  docker:
+    name: osdsdock
+    image: opensdsio/opensds-dock:latest
+    state: started
+    net: host
+    privileged: true
+    volumes:
+    - "/etc/opensds/:/etc/opensds"
+    - "/etc/ceph/:/etc/ceph"
+  when: container_enabled == true
