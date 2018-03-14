@@ -29,11 +29,19 @@ import (
 // ClusterServiceClasses for use in the service catalog.
 type ClusterServiceBroker struct {
 	metav1.TypeMeta `json:",inline"`
+
 	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceBrokerSpec   `json:"spec"`
-	Status ClusterServiceBrokerStatus `json:"status"`
+	// Spec defines the behavior of the broker.
+	// +optional
+	Spec ClusterServiceBrokerSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of a broker.
+	// +optional
+	Status ClusterServiceBrokerStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -66,6 +74,7 @@ type ClusterServiceBrokerSpec struct {
 
 	// RelistBehavior specifies the type of relist behavior the catalog should
 	// exhibit when relisting ClusterServiceClasses available from a broker.
+	// +optional
 	RelistBehavior ServiceBrokerRelistBehavior `json:"relistBehavior"`
 
 	// RelistDuration is the frequency by which a controller will relist the
@@ -226,11 +235,20 @@ type ClusterServiceClassList struct {
 
 // ClusterServiceClass represents an offering in the service catalog.
 type ClusterServiceClass struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServiceClassSpec   `json:"spec"`
-	Status ClusterServiceClassStatus `json:"status"`
+	// Spec defines the behavior of the service class.
+	// +optional
+	Spec ClusterServiceClassSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of the service class.
+	// +optional
+	Status ClusterServiceClassStatus `json:"status,omitempty"`
 }
 
 // ClusterServiceClassSpec represents details about the ClusterServicePlan
@@ -258,6 +276,13 @@ type ClusterServiceClassSpec struct {
 	// has an optional field called Bindable which overrides the value of
 	// this field.
 	Bindable bool `json:"bindable"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// BindingRetrievable indicates whether fetching a binding via a GET on
+	// its endpoint is supported for all plans.
+	BindingRetrievable bool `json:"bindingRetrievable"`
 
 	// PlanUpdatable indicates whether instances provisioned from this
 	// ClusterServiceClass may change ClusterServicePlans after being
@@ -314,11 +339,20 @@ type ClusterServicePlanList struct {
 
 // ClusterServicePlan represents a tier of a ServiceClass.
 type ClusterServicePlan struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// Non-namespaced.  The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterServicePlanSpec   `json:"spec"`
-	Status ClusterServicePlanStatus `json:"status"`
+	// Spec defines the behavior of the service plan.
+	// +optional
+	Spec ClusterServicePlanSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of the service plan.
+	// +optional
+	Status ClusterServicePlanStatus `json:"status,omitempty"`
 }
 
 // ClusterServicePlanSpec represents details about a ClusterServicePlan.
@@ -421,11 +455,20 @@ type ExtraValue []string
 // the ServiceInstance should have the plan and/or parameters updated at the
 // ClusterServiceBroker.
 type ServiceInstance struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceInstanceSpec   `json:"spec"`
-	Status ServiceInstanceStatus `json:"status"`
+	// Spec defines the behavior of the service instance.
+	// +optional
+	Spec ServiceInstanceSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of a service instance.
+	// +optional
+	Status ServiceInstanceStatus `json:"status,omitempty"`
 }
 
 // PlanReference defines the user specification for the desired
@@ -504,6 +547,7 @@ type ServiceInstanceSpec struct {
 	// ExternalID is the identity of this object for use with the OSB SB API.
 	//
 	// Immutable.
+	// +optional
 	ExternalID string `json:"externalID"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -685,11 +729,20 @@ type ServiceBindingList struct {
 // ServiceBinding represents a "used by" relationship between an application and an
 // ServiceInstance.
 type ServiceBinding struct {
-	metav1.TypeMeta   `json:",inline"`
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceBindingSpec   `json:"spec"`
-	Status ServiceBindingStatus `json:"status"`
+	// Spec represents the desired state of a ServiceBinding.
+	// +optional
+	Spec ServiceBindingSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of a ServiceBinding.
+	// +optional
+	Status ServiceBindingStatus `json:"status,omitempty"`
 }
 
 // ServiceBindingSpec represents the desired state of a
@@ -731,6 +784,7 @@ type ServiceBindingSpec struct {
 	// ExternalID is the identity of this object for use with the OSB API.
 	//
 	// Immutable.
+	// +optional
 	ExternalID string `json:"externalID"`
 
 	// Currently, this field is ALPHA: it may change or disappear at any time
@@ -746,6 +800,21 @@ type ServiceBindingSpec struct {
 // ServiceBindingStatus represents the current status of a ServiceBinding.
 type ServiceBindingStatus struct {
 	Conditions []ServiceBindingCondition `json:"conditions"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// AsyncOpInProgress is set to true if there is an ongoing async operation
+	// against this ServiceBinding in progress.
+	AsyncOpInProgress bool `json:"asyncOpInProgress"`
+
+	// Currently, this field is ALPHA: it may change or disappear at any time
+	// and its data will not be migrated.
+	//
+	// LastOperation is the string that the broker may have returned when
+	// an async operation started, it should be sent back to the broker
+	// on poll requests as a query param.
+	LastOperation *string `json:"lastOperation,omitempty"`
 
 	// CurrentOperation is the operation the Controller is currently performing
 	// on the ServiceBinding.
@@ -772,6 +841,9 @@ type ServiceBindingStatus struct {
 	// OrphanMitigationInProgress is a flag that represents whether orphan
 	// mitigation is in progress.
 	OrphanMitigationInProgress bool `json:"orphanMitigationInProgress"`
+
+	// UnbindStatus describes what has been done to unbind the ServiceBinding.
+	UnbindStatus ServiceBindingUnbindStatus `json:"unbindStatus"`
 }
 
 // ServiceBindingCondition condition information for a ServiceBinding.
@@ -818,6 +890,27 @@ const (
 	// ServiceBindingOperationUnbind indicates that the
 	// ServiceBinding is being unbound.
 	ServiceBindingOperationUnbind ServiceBindingOperation = "Unbind"
+)
+
+// ServiceBindingUnbindStatus is the status of unbinding a Binding
+type ServiceBindingUnbindStatus string
+
+const (
+	// ServiceBindingUnbindStatusNotRequired indicates that a binding request
+	// has not been sent for the ServiceBinding, so no unbinding request
+	// needs to be made.
+	ServiceBindingUnbindStatusNotRequired ServiceBindingUnbindStatus = "NotRequired"
+	// ServiceBindingUnbindStatusRequired indicates that a binding request has
+	// been sent for the ServiceBinding. An unbind request must be made before
+	// deleting the ServiceBinding.
+	ServiceBindingUnbindStatusRequired ServiceBindingUnbindStatus = "Required"
+	// ServiceBindingUnbindStatusSucceeded indicates that a unbind request has
+	// been sent for the ServiceBinding, and the request was successful.
+	ServiceBindingUnbindStatusSucceeded ServiceBindingUnbindStatus = "Succeeded"
+	// ServiceBindingUnbindStatusFailed indicates that unbind requests have
+	// been sent for the ServiceBinding but they failed. The controller has
+	// given up on sending more unbind requests.
+	ServiceBindingUnbindStatusFailed ServiceBindingUnbindStatus = "Failed"
 )
 
 // These are external finalizer values to service catalog, must be qualified name.

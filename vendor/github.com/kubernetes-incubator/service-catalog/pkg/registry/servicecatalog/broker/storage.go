@@ -102,8 +102,8 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 	return labels.Set(broker.ObjectMeta.Labels), toSelectableFields(broker), broker.Initializers != nil, nil
 }
 
-// NewStorage creates a new rest.Storage responsible for accessing ServiceInstance
-// resources
+// NewStorage creates a new rest.Storage responsible for accessing
+// ClusterServiceBroker resources
 func NewStorage(opts server.Options) (brokers, brokersStatus rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
@@ -170,6 +170,6 @@ func (r *StatusREST) Get(ctx genericapirequest.Context, name string, options *me
 
 // Update alters the status subset of an object and implements the
 // rest.Updater interface.
-func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
-	return r.store.Update(ctx, name, objInfo)
+func (r *StatusREST) Update(ctx genericapirequest.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc) (runtime.Object, bool, error) {
+	return r.store.Update(ctx, name, objInfo, createValidation, updateValidation)
 }
