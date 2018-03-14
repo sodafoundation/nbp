@@ -63,16 +63,18 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 
 	It("Run walkthrough-example ", func() {
 		var (
-			brokerName              = upsbrokername
-			serviceclassName        = "user-provided-service"
-			serviceclassID          = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
-			serviceplanID           = "86064792-7ea2-467b-af93-ac9694d96d52"
-			testns                  = "test-ns"
-			instanceName            = "ups-instance"
-			bindingName             = "ups-binding"
-			instanceNameDef         = "ups-instance-def"
-			instanceNameK8sNames    = "ups-instance-k8s-names"
-			instanceNameK8sNamesDef = "ups-instance-k8s-names-def"
+			brokerName                     = upsbrokername
+			serviceclassName               = "user-provided-service"
+			serviceclassID                 = "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+			serviceplanID                  = "86064792-7ea2-467b-af93-ac9694d96d52"
+			serviceclassNameWithSinglePlan = "user-provided-service-single-plan"
+			serviceclassIDWithSinglePlan   = "5f6e6cf6-ffdd-425f-a2c7-3c9258ad2468"
+			testns                         = "test-ns"
+			instanceName                   = "ups-instance"
+			bindingName                    = "ups-binding"
+			instanceNameDef                = "ups-instance-def"
+			instanceNameK8sNames           = "ups-instance-k8s-names"
+			instanceNameK8sNamesDef        = "ups-instance-k8s-names-def"
 		)
 
 		// Broker and ClusterServiceClass should become ready
@@ -174,7 +176,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 		Expect(binding).NotTo(BeNil())
 
 		By("Waiting for ServiceBinding to be ready")
-		err = util.WaitForBindingCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
+		_, err = util.WaitForBindingCondition(f.ServiceCatalogClientSet.ServicecatalogV1beta1(),
 			testnamespace.Name,
 			bindingName,
 			v1beta1.ServiceBindingCondition{
@@ -218,7 +220,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			},
 			Spec: v1beta1.ServiceInstanceSpec{
 				PlanReference: v1beta1.PlanReference{
-					ClusterServiceClassExternalName: serviceclassName,
+					ClusterServiceClassExternalName: serviceclassNameWithSinglePlan,
 				},
 			},
 		}
@@ -291,7 +293,7 @@ var _ = framework.ServiceCatalogDescribe("walkthrough", func() {
 			},
 			Spec: v1beta1.ServiceInstanceSpec{
 				PlanReference: v1beta1.PlanReference{
-					ClusterServiceClassName: serviceclassID,
+					ClusterServiceClassName: serviceclassIDWithSinglePlan,
 				},
 			},
 		}

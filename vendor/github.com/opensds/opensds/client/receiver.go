@@ -26,12 +26,14 @@ import (
 	"github.com/opensds/opensds/pkg/model"
 )
 
-type reqFunc func(string, string, interface{}) *httplib.BeegoHTTPRequest
+type ReqFunc func(string, string, interface{}) *httplib.BeegoHTTPRequest
 
+// Receiver
 type Receiver interface {
-	Recv(reqFunc, string, string, interface{}, interface{}) error
+	Recv(ReqFunc, string, string, interface{}, interface{}) error
 }
 
+// NewReceiver
 func NewReceiver() Receiver {
 	return &receiver{}
 }
@@ -39,7 +41,7 @@ func NewReceiver() Receiver {
 type receiver struct{}
 
 func (*receiver) Recv(
-	f reqFunc,
+	f ReqFunc,
 	url string,
 	method string,
 	input interface{},
@@ -76,6 +78,7 @@ func (*receiver) Recv(
 	return nil
 }
 
+// ParamOption
 type ParamOption map[string]string
 
 func request(
@@ -91,7 +94,7 @@ func request(
 		return req
 	}
 	// If input type is a map, it means user tends to send a GET request
-	// and specifiy some parameters.
+	// and specify some parameters.
 	p, ok := input.(ParamOption)
 	if ok {
 		for k := range p {
