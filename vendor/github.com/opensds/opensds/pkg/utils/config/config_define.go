@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,15 +17,17 @@ package config
 type Default struct{}
 
 type OsdsLet struct {
-	ApiEndpoint string `conf:"api_endpoint,localhost:50040"`
-	Graceful    bool   `conf:"graceful,true"`
-	SocketOrder string `conf:"socket_order"`
-	Daemon      bool   `conf:"daemon,false"`
+	ApiEndpoint  string `conf:"api_endpoint,localhost:50040"`
+	Graceful     bool   `conf:"graceful,true"`
+	SocketOrder  string `conf:"socket_order"`
+	AuthStrategy string `conf:"auth_strategy,noauth"`
+	Daemon       bool   `conf:"daemon,false"`
+	PolicyPath   string `conf:"policy_path,/etc/opensds/policy.json"`
 }
 
 type OsdsDock struct {
 	ApiEndpoint     string   `conf:"api_endpoint,localhost:50050"`
-	EnabledBackends []string `conf:"enabled_backends,ceph"`
+	EnabledBackends []string `conf:"enabled_backends,lvm"`
 	Daemon          bool     `conf:"daemon,false"`
 	Backends
 }
@@ -51,10 +53,25 @@ type Backends struct {
 	HuaweiDorado BackendProperties `conf:"huawei_dorado"`
 }
 
+type KeystoneAuthToken struct {
+	MemcachedServers  string `conf:"memcached_servers"`
+	SigningDir        string `conf:"signing_dir"`
+	Cafile            string `conf:"cafile"`
+	AuthUri           string `conf:"auth_uri"`
+	ProjectDomainName string `conf:"project_domain_name"`
+	ProjectName       string `conf:"project_name"`
+	UserDomainName    string `conf:"user_domain_name"`
+	Password          string `conf:"password"`
+	Username          string `conf:"username"`
+	AuthUrl           string `conf:"auth_url"`
+	AuthType          string `conf:"auth_type"`
+}
+
 type Config struct {
-	Default  `conf:"default"`
-	OsdsLet  `conf:"osdslet"`
-	OsdsDock `conf:"osdsdock"`
-	Database `conf:"database"`
-	Flag     FlagSet
+	Default           `conf:"default"`
+	OsdsLet           `conf:"osdslet"`
+	OsdsDock          `conf:"osdsdock"`
+	Database          `conf:"database"`
+	KeystoneAuthToken `conf:"keystone_authtoken"`
+	Flag              FlagSet
 }

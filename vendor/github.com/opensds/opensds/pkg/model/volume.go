@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ type VolumeSpec struct {
 // VolumeAttachmentSpec is a description of volume attached resource.
 type VolumeAttachmentSpec struct {
 	*BaseModel
+
 	// The uuid of the project that the volume belongs to.
 	ProjectId string `json:"projectId,omitempty"`
 
@@ -154,4 +155,14 @@ type VolumeSnapshotSpec struct {
 	// snapshot and backend storage resouce snapshot description are clear.
 	// +optional
 	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// ExtendSpec ...
+type ExtendSpec struct {
+	NewSize int64 `json:"newSize,omitempty"`
+}
+
+// ExtendVolumeSpec ...
+type ExtendVolumeSpec struct {
+	Extend ExtendSpec `json:"extend,omitempty"`
 }

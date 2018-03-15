@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ This module implements the entry into operations of storageDock module.
 package discovery
 
 import (
+	"fmt"
 	"os"
+	"time"
 
 	log "github.com/golang/glog"
 	"github.com/opensds/opensds/contrib/drivers"
+	c "github.com/opensds/opensds/pkg/context"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/model"
 	. "github.com/opensds/opensds/pkg/utils/config"
@@ -77,18 +80,16 @@ func (dd *DockDiscoverer) Init() error {
 }
 
 // Discover
-func (dd *DockDiscoverer) Discover(d drivers.VolumeDriver) error {
-	var pols []*model.StoragePoolSpec
-	var err error
+func (dd *DockDiscoverer) Discover() error {
+	// Clear existing pool info
+	dd.pols = dd.pols[:0]
 
 	for _, dck := range dd.dcks {
-		//Call function of StorageDrivers configured by storage drivers.
-		d = drivers.Init(dck.DriverName)
-		defer drivers.Clean(d)
-		pols, err = d.ListPools()
+		// Call function of StorageDrivers configured by storage drivers.
+		pols, err := drivers.Init(dck.DriverName).ListPools()
 		if err != nil {
 			log.Error("Call driver to list pools failed:", err)
-			return err
+			continue
 		}
 
 		if len(pols) == 0 {
@@ -101,18 +102,20 @@ func (dd *DockDiscoverer) Discover(d drivers.VolumeDriver) error {
 		}
 		dd.pols = append(dd.pols, pols...)
 	}
-
-	return err
+	if len(dd.pols) == 0 {
+		return fmt.Errorf("There is no pool can be found.")
+	}
+	return nil
 }
 
 // Store
 func (dd *DockDiscoverer) Store() error {
 	var err error
-
+	ctx := c.NewAdminContext()
 	// Store dock resources in database.
 	for _, dck := range dd.dcks {
 		// Call db module to create dock resource.
-		if _, err = dd.c.CreateDock(dck); err != nil {
+		if _, err = dd.c.CreateDock(ctx, dck); err != nil {
 			log.Errorf("When create dock %s in db: %v\n", dck.Name, err)
 			return err
 		}
@@ -121,11 +124,36 @@ func (dd *DockDiscoverer) Store() error {
 	// Store pool resources in database.
 	for _, pol := range dd.pols {
 		// Call db module to create pool resource.
-		if _, err = dd.c.CreatePool(pol); err != nil {
+		if _, err = dd.c.CreatePool(ctx, pol); err != nil {
 			log.Errorf("When create pool %s in db: %v\n", pol.Name, err)
 			return err
 		}
 	}
 
 	return err
+}
+
+type Context struct {
+	StopChan chan bool
+	ErrChan  chan error
+	MetaChan chan string
+}
+
+func DiscoveryAndReport(dd *DockDiscoverer, ctx *Context) {
+	for {
+		select {
+		case <-ctx.StopChan:
+			return
+		default:
+			if err := dd.Discover(); err != nil {
+				ctx.ErrChan <- err
+			}
+
+			if err := dd.Store(); err != nil {
+				ctx.ErrChan <- err
+			}
+		}
+
+		time.Sleep(60 * time.Second)
+	}
 }

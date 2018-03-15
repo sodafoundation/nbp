@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import (
 
 	"github.com/astaxie/beego"
 	log "github.com/golang/glog"
+	"github.com/opensds/opensds/pkg/api/policy"
+	c "github.com/opensds/opensds/pkg/context"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/model"
 )
@@ -34,8 +36,11 @@ type PoolPortal struct {
 }
 
 func (this *PoolPortal) ListPools() {
+	if !policy.Authorize(this.Ctx, "pool:list") {
+		return
+	}
 	// Call db api module to handle list pools request.
-	result, err := db.C.ListPools()
+	result, err := db.C.ListPools(c.GetContext(this.Ctx))
 	if err != nil {
 		reason := fmt.Sprintf("List pools failed: %s", err.Error())
 		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
@@ -60,9 +65,11 @@ func (this *PoolPortal) ListPools() {
 }
 
 func (this *PoolPortal) GetPool() {
+	if !policy.Authorize(this.Ctx, "pool:get") {
+		return
+	}
 	id := this.Ctx.Input.Param(":poolId")
-
-	result, err := db.C.GetPool(id)
+	result, err := db.C.GetPool(c.GetContext(this.Ctx), id)
 	if err != nil {
 		reason := fmt.Sprintf("Get pool failed: %s", err.Error())
 		this.Ctx.Output.SetStatus(model.ErrorBadRequest)

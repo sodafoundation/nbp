@@ -1,4 +1,4 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License"); you may
 //    not use this file except in compliance with the License. You may obtain
@@ -32,8 +32,9 @@ func TestSetup(t *testing.T) {
 		conf: &LVMConfig{
 			Pool: map[string]PoolProperties{
 				"vg001": {
-					DiskType: "SSD",
-					AZ:       "default",
+					DiskType:       "SSD",
+					AZ:             "default",
+					AccessProtocol: "iscsi",
 				},
 			},
 			TgtBindIp: "192.168.56.105",
@@ -57,8 +58,9 @@ var fd = &Driver{
 	conf: &LVMConfig{
 		Pool: map[string]PoolProperties{
 			"vg001": {
-				DiskType: "SSD",
-				AZ:       "lvm",
+				DiskType:       "SSD",
+				AZ:             "default",
+				AccessProtocol: "iscsi",
 			},
 		},
 	},
@@ -72,6 +74,8 @@ func fakeHandler(script string, cmd []string) (string, error) {
 	case "lvdisplay":
 		return string(sampleLV), nil
 	case "lvremove":
+		return "", nil
+	case "lvresize":
 		return "", nil
 	case "vgdisplay":
 		return string(sampleVG), nil
@@ -131,6 +135,33 @@ func TestDeleteVolume(t *testing.T) {
 	}
 	if err := fd.DeleteVolume(opt); err != nil {
 		t.Error("Failed to delete volume:", err)
+	}
+}
+
+func TestExtendVolume(t *testing.T) {
+	opt := &pb.ExtendVolumeOpts{
+		Metadata: map[string]string{
+			"lvPath": "/dev/vg001/test001",
+		},
+		Size: int64(1),
+	}
+
+	vol, err := fd.ExtendVolume(opt)
+	if err != nil {
+		t.Error("Failed to extend volume:", err)
+	}
+
+	if vol.Size != 1 {
+		t.Errorf("Expected %+v, got %+v\n", 1, vol.Size)
+	}
+
+	opt = &pb.ExtendVolumeOpts{
+		Size: int64(1),
+	}
+
+	vol, err = fd.ExtendVolume(opt)
+	if err.Error() != "failed to find logic volume path in volume metadata" {
+		t.Error("Error strings is not the same as expected:", err)
 	}
 }
 
@@ -198,9 +229,10 @@ func TestListPools(t *testing.T) {
 			TotalCapacity: int64(18),
 			FreeCapacity:  int64(18),
 			Extras: model.ExtraSpec{
-				"diskType": "SSD",
+				"diskType":       "SSD",
+				"accessProtocol": "iscsi",
 			},
-			AvailabilityZone: "lvm",
+			AvailabilityZone: "default",
 		},
 	}
 	pols, err := fd.ListPools()
@@ -211,7 +243,7 @@ func TestListPools(t *testing.T) {
 		pols[i].Id = ""
 	}
 	if !reflect.DeepEqual(pols, expected) {
-		t.Errorf("Expected %+v, got %+v\n", expected, pols)
+		t.Errorf("Expected %+v, got %+v\n", expected[0], pols[0])
 	}
 }
 

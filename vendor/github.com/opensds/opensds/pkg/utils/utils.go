@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package utils
 import (
 	"os"
 	"reflect"
+
+	log "github.com/golang/glog"
 )
 
 func Contained(obj, target interface{}) bool {
@@ -67,4 +69,21 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func Retry(retryNum int, desc string, silent bool, fn func(retryIdx int, lastErr error) error) error {
+	var err error
+	for i := 0; i < retryNum; i++ {
+		if err = fn(i, err); err != nil {
+			if !silent {
+				log.Errorf("%s:%s, retry %d time(s)", desc, err, i+1)
+			}
+		} else {
+			return nil
+		}
+	}
+	if !silent {
+		log.Errorf("%s retry exceed the max retry times(%d).", desc, retryNum)
+	}
+	return err
 }

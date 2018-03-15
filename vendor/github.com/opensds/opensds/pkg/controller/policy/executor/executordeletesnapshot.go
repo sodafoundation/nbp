@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	c "github.com/opensds/opensds/pkg/context"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/dock/client"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
@@ -94,7 +95,7 @@ func CheckSnapshotDeleted(volumeId string) bool {
 
 func findRemainingSnapshot(volumeId string) ([]string, error) {
 	var remainingSnapshots = []string{}
-	snapshots, err := db.C.ListVolumeSnapshots()
+	snapshots, err := db.C.ListVolumeSnapshots(c.NewAdminContext())
 	if err != nil {
 		log.Error("When list volume snapshots:", err)
 		return remainingSnapshots, err

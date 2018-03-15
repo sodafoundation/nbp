@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ type VolumeDriver interface {
 	PullVolume(volIdentifier string) (*model.VolumeSpec, error)
 
 	DeleteVolume(opt *pb.DeleteVolumeOpts) error
+
+	ExtendVolume(opt *pb.ExtendVolumeOpts) (*model.VolumeSpec, error)
 
 	InitializeConnection(opt *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error)
 

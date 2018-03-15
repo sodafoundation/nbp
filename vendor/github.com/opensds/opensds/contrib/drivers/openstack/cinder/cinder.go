@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -214,6 +214,30 @@ func (d *Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 	return nil
 }
 
+// ExtendVolume ...
+func (d *Driver) ExtendVolume(req *pb.ExtendVolumeOpts) (*model.VolumeSpec, error) {
+	//Configure create request body.
+	opts := &volumeactions.ExtendSizeOpts{
+		NewSize: int(req.GetSize()),
+	}
+
+	err := volumeactions.ExtendSize(d.blockStoragev2, req.GetId(), opts).ExtractErr()
+	if err != nil {
+		log.Error("Cannot extend volume:", err)
+		return nil, err
+	}
+
+	return &model.VolumeSpec{
+		BaseModel: &model.BaseModel{
+			Id: req.GetId(),
+		},
+		Name:             req.GetName(),
+		Description:      req.GetDescription(),
+		Size:             int64(req.GetSize()),
+		AvailabilityZone: req.GetAvailabilityZone(),
+	}, nil
+}
+
 // InitializeConnection
 func (d *Driver) InitializeConnection(req *pb.CreateAttachmentOpts) (*model.ConnectionInfo, error) {
 	opts := &volumeactions.InitializeConnectionOpts{
@@ -324,13 +348,6 @@ func (d *Driver) DeleteSnapshot(req *pb.DeleteVolumeSnapshotOpts) error {
 	return nil
 }
 
-func (d *Driver) buildPoolParam(proper PoolProperties) *map[string]interface{} {
-	param := make(map[string]interface{})
-	param["diskType"] = proper.DiskType
-	param["thin"] = proper.Thin
-	return &param
-}
-
 // ListPools
 func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 	log.Info("Starting list pools in cinder drivers.")
@@ -352,7 +369,7 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 		if _, ok := d.conf.Pool[page.Name]; !ok {
 			continue
 		}
-		param := d.buildPoolParam(d.conf.Pool[page.Name])
+
 		pol := &model.StoragePoolSpec{
 			BaseModel: &model.BaseModel{
 				Id: uuid.NewV5(uuid.NamespaceOID, page.Name).String(),
@@ -361,7 +378,7 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 			TotalCapacity:    int64(page.Capabilities.TotalCapacityGB),
 			FreeCapacity:     int64(page.Capabilities.FreeCapacityGB),
 			AvailabilityZone: d.conf.Pool[page.Name].AZ,
-			Extras:           *param,
+			Extras:           BuildDefaultPoolParam(d.conf.Pool[page.Name]),
 		}
 		pols = append(pols, pol)
 	}

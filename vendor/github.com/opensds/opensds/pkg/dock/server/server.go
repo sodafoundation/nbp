@@ -1,4 +1,6 @@
 /*
+ * This source file has been modified by Huawei Technologies Co., Ltd.
+ * Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
  *
  * Copyright 2015, Google Inc.
  * All rights reserved.
@@ -104,6 +106,24 @@ func (ds *dockServer) DeleteVolume(ctx context.Context, opt *pb.DeleteVolumeOpts
 	}
 
 	res.Reply = GenericResponseResult("")
+	return &res, nil
+}
+
+// ExtendVolume implements opensds.DockServer
+func (ds *dockServer) ExtendVolume(ctx context.Context, opt *pb.ExtendVolumeOpts) (*pb.GenericResponse, error) {
+	var res pb.GenericResponse
+
+	log.Info("Dock server receive extend volume request, vr =", opt)
+
+	vol, err := dock.Brain.ExtendVolume(opt)
+	if err != nil {
+		log.Error("When extend volume in dock module:", err)
+
+		res.Reply = GenericResponseError("400", fmt.Sprint(err))
+		return &res, err
+	}
+
+	res.Reply = GenericResponseResult(vol)
 	return &res, nil
 }
 

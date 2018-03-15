@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/opensds/opensds/pkg/context"
 	"github.com/opensds/opensds/pkg/controller/volume"
 	"github.com/opensds/opensds/pkg/db"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
@@ -51,6 +52,10 @@ func (fvc *fakeVolumeController) CreateVolume(*pb.CreateVolumeOpts) (*model.Volu
 
 func (fvc *fakeVolumeController) DeleteVolume(*pb.DeleteVolumeOpts) error {
 	return nil
+}
+
+func (fvc *fakeVolumeController) ExtendVolume(*pb.ExtendVolumeOpts) (*model.VolumeSpec, error) {
+	return &SampleVolumes[0], nil
 }
 
 func (fvc *fakeVolumeController) CreateVolumeAttachment(*pb.CreateAttachmentOpts) (*model.VolumeAttachmentSpec, error) {
@@ -94,7 +99,7 @@ func TestCreateVolume(t *testing.T) {
 	}
 	var expected = &SampleVolumes[0]
 
-	result, err := c.CreateVolume(req)
+	result, err := c.CreateVolume(context.NewAdminContext(), req)
 	if err != nil {
 		t.Errorf("Failed to create volume, err is %v\n", err)
 	}
@@ -124,9 +129,43 @@ func TestDeleteVolume(t *testing.T) {
 		volumeController: NewFakeVolumeController(),
 	}
 
-	result := c.DeleteVolume(req)
+	result := c.DeleteVolume(context.NewAdminContext(), req)
 	if result != nil {
 		t.Errorf("Expected %v, got %v\n", nil, result)
+	}
+}
+
+func TestExtendVolume(t *testing.T) {
+	mockClient := new(dbtest.MockClient)
+	mockClient.On("GetDefaultProfile").Return(&SampleProfiles[0], nil)
+	mockClient.On("GetProfile", "1106b972-66ef-11e7-b172-db03f3689c9c").Return(&SampleProfiles[0], nil)
+	mockClient.On("GetDockByPoolId", "084bf71e-a102-11e7-88a8-e31fe6d52248").Return(&SampleDocks[0], nil)
+	mockClient.On("GetDock", "b7602e18-771e-11e7-8f38-dbd6d291f4e0").Return(&SampleDocks[0], nil)
+	db.C = mockClient
+
+	var req = &model.VolumeSpec{
+		BaseModel:   &model.BaseModel{},
+		Name:        "sample-volume",
+		Description: "This is a sample volume for testing",
+		Size:        int64(1),
+		ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+		PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
+	}
+	var c = &Controller{
+		selector: &fakeSelector{
+			res: &model.StoragePoolSpec{BaseModel: &model.BaseModel{}, DockId: "b7602e18-771e-11e7-8f38-dbd6d291f4e0"},
+			err: nil,
+		},
+		volumeController: NewFakeVolumeController(),
+	}
+	var expected = &SampleVolumes[0]
+
+	result, err := c.ExtendVolume(context.NewAdminContext(), req)
+	if err != nil {
+		t.Errorf("Failed to create volume, err is %v\n", err)
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v\n", expected, result)
 	}
 }
 
@@ -145,7 +184,7 @@ func TestCreateVolumeAttachment(t *testing.T) {
 	}
 	var expected = &SampleAttachments[0]
 
-	result, err := c.CreateVolumeAttachment(req)
+	result, err := c.CreateVolumeAttachment(context.NewAdminContext(), req)
 	if err != nil {
 		t.Errorf("Failed to create volume attachment, err is %v\n", err)
 	}
@@ -171,7 +210,7 @@ func TestDeleteVolumeAttachment(t *testing.T) {
 		volumeController: NewFakeVolumeController(),
 	}
 
-	result := c.DeleteVolumeAttachment(req)
+	result := c.DeleteVolumeAttachment(context.NewAdminContext(), req)
 	if result != nil {
 		t.Errorf("Expected %v, got %v\n", nil, result)
 	}
@@ -195,7 +234,7 @@ func TestCreateVolumeSnapshot(t *testing.T) {
 	}
 	var expected = &SampleSnapshots[0]
 
-	result, err := c.CreateVolumeSnapshot(req)
+	result, err := c.CreateVolumeSnapshot(context.NewAdminContext(), req)
 	if err != nil {
 		t.Errorf("Failed to create volume snapshot, err is %v\n", err)
 	}
@@ -220,7 +259,7 @@ func TestDeleteVolumeSnapshot(t *testing.T) {
 		volumeController: NewFakeVolumeController(),
 	}
 
-	result := c.DeleteVolumeSnapshot(req)
+	result := c.DeleteVolumeSnapshot(context.NewAdminContext(), req)
 	if result != nil {
 		t.Errorf("Expected %v, got %v\n", nil, result)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,17 @@ func (fc *fakeClient) DeleteVolume(ctx context.Context, in *pb.DeleteVolumeOpts,
 	return &pb.GenericResponse{
 		Reply: &pb.GenericResponse_Result_{
 			Result: &pb.GenericResponse_Result{},
+		},
+	}, nil
+}
+
+// Extend a volume
+func (fc *fakeClient) ExtendVolume(ctx context.Context, in *pb.ExtendVolumeOpts, opts ...grpc.CallOption) (*pb.GenericResponse, error) {
+	return &pb.GenericResponse{
+		Reply: &pb.GenericResponse_Result_{
+			Result: &pb.GenericResponse_Result{
+				Message: ByteVolume,
+			},
 		},
 	}, nil
 }
@@ -126,6 +137,20 @@ func TestDeleteVolume(t *testing.T) {
 	result := fc.DeleteVolume(&pb.DeleteVolumeOpts{})
 	if result != nil {
 		t.Errorf("Expected %v, got %v\n", nil, result)
+	}
+}
+
+func TestExtendVolume(t *testing.T) {
+	fc := NewFakeController()
+	var expected = &SampleVolumes[0]
+
+	result, err := fc.ExtendVolume(&pb.ExtendVolumeOpts{})
+	if err != nil {
+		t.Errorf("Failed to extend volume, err is %v\n", err)
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v\n", expected, result)
 	}
 }
 
