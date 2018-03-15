@@ -1,4 +1,4 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License"); you may
 //    not use this file except in compliance with the License. You may obtain
@@ -30,8 +30,16 @@ func TestParse(t *testing.T) {
 		ConfigFile: "/etc/ceph/ceph.conf",
 		Pool: map[string]PoolProperties{
 			"rbd": {
-				DiskType: "SSD",
-				AZ:       "ceph",
+				DiskType:        "SSD",
+				AZ:              "ceph",
+				AccessProtocol:  "rbd",
+				ThinProvisioned: true,
+				Compressed:      true,
+				Advanced: map[string]interface{}{
+					"recoveryTimeObjective": 0,
+					"maxIOPS":               1000,
+					"deduped":               false,
+				},
 			},
 		},
 	}

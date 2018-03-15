@@ -3,8 +3,15 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/opensds/opensds?branch=master)](https://goreportcard.com/report/github.com/opensds/opensds)
 [![Build Status](https://travis-ci.org/opensds/opensds.svg?branch=master)](https://travis-ci.org/opensds/opensds)
 [![Coverage Status](https://coveralls.io/repos/github/opensds/opensds/badge.svg?branch=master)](https://coveralls.io/github/opensds/opensds?branch=master)
+[![Releases](https://img.shields.io/github/release/opensds/opensds/all.svg?style=flat-square)](https://github.com/opensds/opensds/releases)
+[![LICENSE](https://img.shields.io/github/license/opensds/opensds.svg?style=flat-square)](https://github.com/opensds/opensds/blob/master/LICENSE)
 
 <img src="https://www.opensds.io/wp-content/uploads/sites/18/2016/11/logo_opensds.png" width="100">
+
+## Latest Release: v0.1.0 Zealand
+[OpenAPI doc](http://petstore.swagger.io/?url=https://raw.githubusercontent.com/opensds/opensds/v0.1.0/openapi-spec/swagger.yaml)
+
+[Release notes](https://github.com/opensds/opensds/releases/tag/v0.1.0)
 
 ## Introduction
 
@@ -44,7 +51,7 @@ now, please refer to the Contributing sections below.
 
 See [COMMUNITY](COMMUNITY.md) for details on discussion of the OpenSDS architecture design and feature development.
 
-* The meeting will be held on every Tuesday at 1:00 UTC. Join in at [here](https://zoom.us/j/933703258).
+* The meeting will be held on Biweekly Tuesday at 1:00 UTC. Join in at [here](https://zoom.us/j/933703258).
 * Meeting notes and agenda can be found at [here](https://docs.google.com/document/d/1OKDp7iDw_l_5kGyniqTKtrwRFAZMvItGghsxfrCqr5c/edit#).
 
 If you are interested at work trackings on the meeting, please visit [WG Planning](https://docs.google.com/spreadsheets/d/1eFZsYCqTW8-zc8K6IMFUVhmzrZQKpOeO8Br0cCraPlU/edit#gid=0).

@@ -18,6 +18,7 @@ package plan
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -44,9 +45,8 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
   svcat get plan standard800
   svcat get plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return getCmd.run(args)
-		},
+		PreRunE: command.PreRunE(getCmd),
+		RunE:    command.RunE(getCmd),
 	}
 	cmd.Flags().BoolVarP(
 		&getCmd.lookupByUUID,
@@ -58,15 +58,21 @@ func NewGetCmd(cxt *command.Context) *cobra.Command {
 	return cmd
 }
 
-func (c *getCmd) run(args []string) error {
-	if len(args) == 0 {
-		return c.getAll()
+func (c *getCmd) Validate(args []string) error {
+	if len(args) > 0 {
+		if c.lookupByUUID {
+			c.uuid = args[0]
+		} else {
+			c.name = args[0]
+		}
 	}
 
-	if c.lookupByUUID {
-		c.uuid = args[0]
-	} else {
-		c.name = args[0]
+	return nil
+}
+
+func (c *getCmd) Run() error {
+	if c.uuid == "" && c.name == "" {
+		return c.getAll()
 	}
 
 	return c.get()
@@ -93,6 +99,12 @@ func (c *getCmd) get() error {
 	var err error
 	if c.lookupByUUID {
 		plan, err = c.App.RetrievePlanByID(c.uuid)
+	} else if strings.Contains(c.name, "/") {
+		names := strings.Split(c.name, "/")
+		if len(names) != 2 {
+			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
+		}
+		plan, err = c.App.RetrievePlanByClassAndPlanNames(names[0], names[1])
 	} else {
 		plan, err = c.App.RetrievePlanByName(c.name)
 	}

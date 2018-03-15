@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -329,6 +329,20 @@ var (
 			"size": 1,
 			"status": "created",
 			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"	
+		}
+	]`
+
+	ByteVersion = `{
+		"name": "v1beta",
+		"status": "SUPPORTED",
+		"updatedAt": "2017-04-10T14:36:58.014Z"
+	}`
+
+	ByteVersions = `[
+		{
+			"name": "v1beta",
+			"status": "CURRENT",
+			"updatedAt": "2017-07-10T14:36:58.014Z"
 		}
 	]`
 )

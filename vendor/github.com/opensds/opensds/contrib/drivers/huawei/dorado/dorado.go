@@ -1,4 +1,4 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License"); you may
 //    not use this file except in compliance with the License. You may obtain
@@ -133,6 +133,27 @@ func (d *Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 	}
 	log.Info("Remove volume success, volume id =", opt.GetId())
 	return nil
+}
+
+// ExtendVolume ...
+func (d *Driver) ExtendVolume(opt *pb.ExtendVolumeOpts) (*model.VolumeSpec, error) {
+	//Convert the storage unit Giga to sector
+	err := d.client.ExtendVolume(d.gb2Sector(opt.GetSize()), opt.GetId())
+	if err != nil {
+		log.Error("Extend Volume Failed:", err)
+		return nil, err
+	}
+
+	log.Infof("Extend volume %s (%s) success.", opt.GetName(), opt.GetId())
+	return &model.VolumeSpec{
+		BaseModel: &model.BaseModel{
+			Id: opt.GetId(),
+		},
+		Name:             opt.GetName(),
+		Size:             opt.GetSize(),
+		Description:      opt.GetDescription(),
+		AvailabilityZone: opt.GetAvailabilityZone(),
+	}, nil
 }
 
 func (d *Driver) getTargetInfo() (string, string, error) {
@@ -276,15 +297,6 @@ func (d *Driver) DeleteSnapshot(opt *pb.DeleteVolumeSnapshotOpts) error {
 	return nil
 }
 
-func (d *Driver) buildPoolParam(proper PoolProperties) map[string]interface{} {
-	param := make(map[string]interface{})
-	param["diskType"] = proper.DiskType
-	param["thin"] = proper.Thin
-	param["compress"] = proper.Compress
-	param["dedupe"] = proper.Dedupe
-	return param
-}
-
 func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 	var pols []*model.StoragePoolSpec
 	sp, err := d.client.ListStoragePools()
@@ -296,7 +308,7 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 		if _, ok := c.Pool[p.Name]; !ok {
 			continue
 		}
-		param := d.buildPoolParam(c.Pool[p.Name])
+
 		pol := &model.StoragePoolSpec{
 			BaseModel: &model.BaseModel{
 				Id: p.Id,
@@ -304,7 +316,7 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 			Name:             p.Name,
 			TotalCapacity:    d.sector2Gb(p.UserTotalCapacity),
 			FreeCapacity:     d.sector2Gb(p.UserFreeCapacity),
-			Extras:           param,
+			Extras:           BuildDefaultPoolParam(c.Pool[p.Name]),
 			AvailabilityZone: c.Pool[p.Name].AZ,
 		}
 		if pol.AvailabilityZone == "" {

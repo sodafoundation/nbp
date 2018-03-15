@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ func (*Driver) PullVolume(volIdentifier string) (*model.VolumeSpec, error) {
 // DeleteVolume
 func (*Driver) DeleteVolume(opt *pb.DeleteVolumeOpts) error {
 	return nil
+}
+
+// ExtendVolume ...
+func (*Driver) ExtendVolume(opt *pb.ExtendVolumeOpts) (*model.VolumeSpec, error) {
+	return &SampleVolumes[0], nil
 }
 
 // InitializeConnection

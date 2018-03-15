@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 	. "github.com/opensds/opensds/pkg/utils/config"
 	. "github.com/opensds/opensds/testutils/collection"
 	dbtest "github.com/opensds/opensds/testutils/db/testing"
-	fakedriver "github.com/opensds/opensds/testutils/driver"
 )
 
 const (
@@ -78,7 +77,7 @@ func TestDiscover(t *testing.T) {
 	for i := range SamplePools {
 		expected = append(expected, &SamplePools[i])
 	}
-	if err := dd.Discover(&fakedriver.Driver{}); err != nil {
+	if err := dd.Discover(); err != nil {
 		t.Errorf("Failed to discoverer pools: %v\n", err)
 	}
 	for _, pol := range dd.pols {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License"); you may
 //    not use this file except in compliance with the License. You may obtain
@@ -54,11 +54,14 @@ func (t *iscsiTarget) CreateExport(path, initiator string) (map[string]interface
 		if err := t.CreateISCSITarget(); err != nil {
 			return nil, err
 		}
+		if err := t.BindInitiatorAddress("ALL"); err != nil {
+			return nil, err
+		}
 	}
 	if err := t.AddLun(globalLun, path); err != nil {
 		return nil, err
 	}
-	if err := t.BindInitiator(initiator); err != nil {
+	if err := t.BindInitiatorName(initiator); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +75,7 @@ func (t *iscsiTarget) CreateExport(path, initiator string) (map[string]interface
 }
 
 func (t *iscsiTarget) RemoveExport(path, initiator string) error {
-	if err := t.UnbindInitiator(initiator); err != nil {
+	if err := t.UnbindInitiatorName(initiator); err != nil {
 		return err
 	}
 	lun := t.GetLun(path)

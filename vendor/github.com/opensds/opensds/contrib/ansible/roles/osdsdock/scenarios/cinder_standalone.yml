@@ -16,6 +16,11 @@
   pip:
     name: docker-compose
 
+- name: copy opensds cinder backend file if specify cinder backend
+  copy:
+    src: ../../../group_vars/cinder/cinder.yaml
+    dest: "{{ cinder_config_path }}"
+
 - name: create directory to save source code and volume group file
   file:
     path: "{{ cinder_data_dir }}"
@@ -114,7 +119,7 @@
     sed -i "s/TAG ?= debian-cinder:latest/TAG ?= {{ cinder_image_tag }}:latest/g" Makefile
 
     sed -i "s/image: debian-cinder/image: {{ cinder_image_tag }}/g" docker-compose.yml
-    sed -i "s/image: lvm-debian-cinder/image: {{ cinder_image_tag }}/g" docker-compose.yml
+    sed -i "s/image: lvm-debian-cinder/image: lvm-{{ cinder_image_tag }}/g" docker-compose.yml
 
     sed -i "s/volume_group = cinder-volumes /volume_group = {{ cinder_volume_group }}/g" etc/cinder.conf
   become: true

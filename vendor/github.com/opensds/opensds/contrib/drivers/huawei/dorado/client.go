@@ -1,4 +1,4 @@
-// Copyright (c) 2017 OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License"); you may
 //    not use this file except in compliance with the License. You may obtain
@@ -229,6 +229,17 @@ func (c *DoradoClient) GetVolume(id string) (*Lun, error) {
 
 func (c *DoradoClient) DeleteVolume(id string) error {
 	err := c.request("DELETE", "/lun/"+id, nil, nil)
+	return err
+}
+
+// ExtendVolume ...
+func (c *DoradoClient) ExtendVolume(capacity int64, id string) error {
+	data := map[string]interface{}{
+		"CAPACITY": capacity,
+		"ID":       id,
+	}
+
+	err := c.request("PUT", "/lun/expand", data, nil)
 	return err
 }
 

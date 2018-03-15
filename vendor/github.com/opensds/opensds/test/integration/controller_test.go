@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,6 +52,19 @@ func TestControllerDeleteVolume(t *testing.T) {
 	if err != nil {
 		t.Error("delete volume in controller failed:", err)
 	}
+}
+
+func TestControllerExtendVolume(t *testing.T) {
+	vc.SetDock(dckInfo)
+
+	vol, err := vc.ExtendVolume(&pb.ExtendVolumeOpts{})
+	if err != nil {
+		t.Error("extend volume in controller failed:", err)
+		return
+	}
+
+	volBody, _ := json.MarshalIndent(vol, "", "	")
+	t.Log(string(volBody))
 }
 
 func TestControllerCreateVolumeAttachment(t *testing.T) {

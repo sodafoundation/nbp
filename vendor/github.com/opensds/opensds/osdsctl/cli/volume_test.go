@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,117 +15,16 @@
 package cli
 
 import (
-	"encoding/json"
-	"errors"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
 
 	c "github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/pkg/model"
-	. "github.com/opensds/opensds/testutils/collection"
 )
 
-var fv = &c.VolumeMgr{
-	Receiver: NewFakeVolumeReceiver(),
-}
-
-func NewFakeVolumeReceiver() c.Receiver {
-	return &fakeVolumeReceiver{}
-}
-
-type fakeVolumeReceiver struct{}
-
-func (*fakeVolumeReceiver) Recv(
-	f c.ReqFunc,
-	string,
-	method string,
-	in interface{},
-	out interface{},
-) error {
-	switch strings.ToUpper(method) {
-	case "POST", "PUT":
-		switch out.(type) {
-		case *model.VolumeSpec:
-			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
-				return err
-			}
-			break
-		case *model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(ByteAttachment), out); err != nil {
-				return err
-			}
-			break
-		case *model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
-				return err
-			}
-			break
-		default:
-			return errors.New("output format not supported!")
-		}
-		break
-	case "GET":
-		switch out.(type) {
-		case *model.VolumeSpec:
-			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
-				return err
-			}
-			break
-		case *[]*model.VolumeSpec:
-			if err := json.Unmarshal([]byte(ByteVolumes), out); err != nil {
-				return err
-			}
-			break
-		case *model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(ByteAttachment), out); err != nil {
-				return err
-			}
-			break
-		case *[]*model.VolumeAttachmentSpec:
-			if err := json.Unmarshal([]byte(ByteAttachments), out); err != nil {
-				return err
-			}
-			break
-		case *model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
-				return err
-			}
-			break
-		case *[]*model.VolumeSnapshotSpec:
-			if err := json.Unmarshal([]byte(ByteSnapshots), out); err != nil {
-				return err
-			}
-			break
-		default:
-			return errors.New("output format not supported!")
-		}
-		break
-	case "DELETE":
-		break
-	default:
-		return errors.New("inputed method format not supported!")
-	}
-
-	return nil
-}
-
 func init() {
-	ep, ok := os.LookupEnv("OPENSDS_ENDPOINT")
-
-	if !ok {
-		ep = "TestEndPoint"
-		os.Setenv("OPENSDS_ENDPOINT", ep)
-	}
-
-	testVolumeMgr := c.VolumeMgr{
-		Receiver: NewFakeVolumeReceiver(),
-		Endpoint: ep,
-	}
-
-	client = &c.Client{
-		VolumeMgr: &testVolumeMgr,
+	if false == IsFakeClient {
+		client = NewFakeClient(&c.Config{Endpoint: TestEp})
 	}
 }
 
@@ -178,4 +77,10 @@ func TestVolumeUpdateAction(t *testing.T) {
 	var args []string
 	args = append(args, "bd5b12a8-a101-11e7-941e-d77981b584d8")
 	volumeUpdateAction(volumeDeleteCommand, args)
+}
+func TestVolumeExtendAction(t *testing.T) {
+	var args []string
+	args = append(args, "bd5b12a8-a101-11e7-941e-d77981b584d8")
+	args = append(args, "5")
+	volumeExtendAction(volumeExtendCommand, args)
 }

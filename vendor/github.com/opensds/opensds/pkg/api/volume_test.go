@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
+	"github.com/opensds/opensds/pkg/controller"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/model"
+	. "github.com/opensds/opensds/testutils/collection"
 	dbtest "github.com/opensds/opensds/testutils/db/testing"
 )
 
@@ -34,6 +36,9 @@ func init() {
 		"post:CreateVolume;get:ListVolumes")
 	beego.Router("/v1beta/block/volumes/:volumeId", &VolumePortal{},
 		"get:GetVolume;put:UpdateVolume;delete:DeleteVolume")
+
+	beego.Router("/v1beta/volumes/:volumeId/action", &VolumePortal{},
+		"post:ExtendVolume")
 
 	beego.Router("/v1beta/block/attachments", &VolumeAttachmentPortal{},
 		"post:CreateVolumeAttachment;get:ListVolumeAttachments")
@@ -635,6 +640,44 @@ func TestUpdateVolumeAttachmentWithBadRequest(t *testing.T) {
 	mockClient.On("UpdateVolumeAttachment", "f4a5e666-c669-4c64-a2a1-8f9ecd560c78",
 		&attachment).Return(nil, errors.New("db error"))
 	db.C = mockClient
+	beego.BeeApp.Handlers.ServeHTTP(w, r)
+
+	if w.Code != 400 {
+		t.Errorf("Expected 400, actual %v", w.Code)
+	}
+}
+
+func TestExtendVolumeWithBadRequest(t *testing.T) {
+	var extendVolume = model.ExtendVolumeSpec{
+		Extend: model.ExtendSpec{NewSize: 123},
+	}
+
+	extendVolumeByte, err := json.Marshal(extendVolume)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	extendVolumeStr := string(extendVolumeByte)
+	if extendVolumeStr != "{\"extend\":{\"newSize\":123}}" {
+		t.Errorf("Expected {\"extend\":{\"newSize\":123}}, actual %v", extendVolumeStr)
+	}
+
+	var jsonStr = []byte(`{"extend":{"newSize": 0}}`)
+	r, _ := http.NewRequest("POST",
+		"/v1beta/volumes/bd5b12a8-a101-11e7-941e-d77981b584d8/action", bytes.NewBuffer(jsonStr))
+	w := httptest.NewRecorder()
+	r.Header.Set("Content-Type", "application/JSON")
+
+	var ExtendVolumeBody = model.ExtendVolumeSpec{
+		Extend: model.ExtendSpec{},
+	}
+
+	json.NewDecoder(bytes.NewBuffer(jsonStr)).Decode(&ExtendVolumeBody)
+
+	mockClient := new(dbtest.MockClient)
+	mockClient.On("GetVolume", "bd5b12a8-a101-11e7-941e-d77981b584d8").Return(&SampleVolumes[0], nil)
+	db.C = mockClient
+	controller.Brain = controller.NewController()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 
 	if w.Code != 400 {

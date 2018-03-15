@@ -18,6 +18,7 @@ package plan
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/command"
 	"github.com/kubernetes-incubator/service-catalog/cmd/svcat/output"
@@ -29,6 +30,7 @@ type describeCmd struct {
 	*command.Context
 	traverse     bool
 	lookupByUUID bool
+	showSchemas  bool
 	uuid         string
 	name         string
 }
@@ -44,9 +46,8 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
   svcat describe plan standard800
   svcat describe plan --uuid 08e4b43a-36bc-447e-a81f-8202b13e339c
 `,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return describeCmd.run(args)
-		},
+		PreRunE: command.PreRunE(describeCmd),
+		RunE:    command.RunE(describeCmd),
 	}
 	cmd.Flags().BoolVarP(
 		&describeCmd.traverse,
@@ -62,10 +63,17 @@ func NewDescribeCmd(cxt *command.Context) *cobra.Command {
 		false,
 		"Whether or not to get the class by UUID (the default is by name)",
 	)
+	cmd.Flags().BoolVarP(
+		&describeCmd.showSchemas,
+		"show-schemas",
+		"",
+		true,
+		"Whether or not to show instance and binding parameter schemas",
+	)
 	return cmd
 }
 
-func (c *describeCmd) run(args []string) error {
+func (c *describeCmd) Validate(args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("name or uuid is required")
 	}
@@ -76,6 +84,10 @@ func (c *describeCmd) run(args []string) error {
 		c.name = args[0]
 	}
 
+	return nil
+}
+
+func (c *describeCmd) Run() error {
 	return c.describe()
 }
 
@@ -84,6 +96,12 @@ func (c *describeCmd) describe() error {
 	var err error
 	if c.lookupByUUID {
 		plan, err = c.App.RetrievePlanByID(c.uuid)
+	} else if strings.Contains(c.name, "/") {
+		names := strings.Split(c.name, "/")
+		if len(names) != 2 {
+			return fmt.Errorf("failed to parse class/plan name combination '%s'", c.name)
+		}
+		plan, err = c.App.RetrievePlanByClassAndPlanNames(names[0], names[1])
 	} else {
 		plan, err = c.App.RetrievePlanByName(c.name)
 	}
@@ -112,6 +130,10 @@ func (c *describeCmd) describe() error {
 		}
 		output.WriteParentClass(c.Output, class)
 		output.WriteParentBroker(c.Output, broker)
+	}
+
+	if c.showSchemas {
+		output.WritePlanSchemas(c.Output, plan)
 	}
 
 	return nil

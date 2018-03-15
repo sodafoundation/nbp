@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import (
 
 	"github.com/astaxie/beego"
 	log "github.com/golang/glog"
+	"github.com/opensds/opensds/pkg/api/policy"
+	c "github.com/opensds/opensds/pkg/context"
 	"github.com/opensds/opensds/pkg/db"
 	"github.com/opensds/opensds/pkg/model"
 )
@@ -36,8 +38,11 @@ type DockPortal struct {
 
 // ListDocks
 func (this *DockPortal) ListDocks() {
+	if !policy.Authorize(this.Ctx, "dock:list") {
+		return
+	}
 	// Call db api module to handle list docks request.
-	result, err := db.C.ListDocks()
+	result, err := db.C.ListDocks(c.GetContext(this.Ctx))
 	if err != nil {
 		reason := fmt.Sprintf("List docks failed: %s", err.Error())
 		this.Ctx.Output.SetStatus(model.ErrorBadRequest)
@@ -63,9 +68,11 @@ func (this *DockPortal) ListDocks() {
 
 // GetDock
 func (this *DockPortal) GetDock() {
+	if !policy.Authorize(this.Ctx, "dock:get") {
+		return
+	}
 	id := this.Ctx.Input.Param(":dockId")
-
-	result, err := db.C.GetDock(id)
+	result, err := db.C.GetDock(c.GetContext(this.Ctx), id)
 	if err != nil {
 		reason := fmt.Sprintf("Get dock failed: %s", err.Error())
 		this.Ctx.Output.SetStatus(model.ErrorBadRequest)

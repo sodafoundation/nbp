@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ func NewFakeProfileReceiver() Receiver {
 type fakeProfileReceiver struct{}
 
 func (*fakeProfileReceiver) Recv(
-	f ReqFunc,
 	string,
 	method string,
 	in interface{},

@@ -1,4 +1,4 @@
-// Copyright 2017 The OpenSDS Authors.
+// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ func NewFakeVolumeReceiver() Receiver {
 type fakeVolumeReceiver struct{}
 
 func (*fakeVolumeReceiver) Recv(
-	f ReqFunc,
 	string,
 	method string,
 	in interface{},
@@ -204,6 +203,36 @@ func TestUpdateVolume(t *testing.T) {
 	}
 
 	result, err := fv.UpdateVolume(volID, &vol)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	expected := &model.VolumeSpec{
+		BaseModel: &model.BaseModel{
+			Id: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+		},
+		Name:        "sample-volume",
+		Description: "This is a sample volume for testing",
+		Size:        int64(1),
+		Status:      "available",
+		PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
+		ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v", expected, result)
+		return
+	}
+}
+
+func TestExtendVolume(t *testing.T) {
+	var volID = "bd5b12a8-a101-11e7-941e-d77981b584d8"
+	body := model.ExtendVolumeSpec{
+		Extend: model.ExtendSpec{NewSize: 1},
+	}
+
+	result, err := fv.ExtendVolume(volID, &body)
 	if err != nil {
 		t.Error(err)
 		return
