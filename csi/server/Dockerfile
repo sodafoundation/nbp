@@ -10,6 +10,8 @@ COPY csi.server.opensds /csi.server.opensds
 RUN apt-get update
 
 RUN apt-get -y install open-iscsi
+RUN apt-get -y install kmod
+RUN apt-get -y install ceph-common
 
 # Define default command
 ENTRYPOINT ["/csi.server.opensds"]

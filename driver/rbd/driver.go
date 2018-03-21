@@ -86,10 +86,7 @@ func mapDevice(poolName, imageName string, hosts, ports []interface{}) (string, 
 	}
 
 	// modprobe
-	_, err = exec.Command("modprobe", "rbd").CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("rbd: failed to load rbd kernel module:%v", err)
-	}
+	exec.Command("modprobe", "rbd").CombinedOutput()
 
 	for i := 0; i < len(hosts); i++ {
 		_, err = exec.Command("rbd", "map", imageName, "--pool", poolName).CombinedOutput()
