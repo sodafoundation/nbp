@@ -62,6 +62,8 @@ spec:
               mountPropagation: "Bidirectional"
             - name: iscsi-dir
               mountPath: /etc/iscsi/
+            - name: ceph-dir
+              mountPath: /etc/ceph/
       volumes:
         - name: plugin-dir
           hostPath:
@@ -78,4 +80,8 @@ spec:
         - name: iscsi-dir
           hostPath:
             path: /etc/iscsi/
+            type: Directory
+        - name: ceph-dir
+          hostPath:
+            path: /etc/ceph/
             type: Directory
