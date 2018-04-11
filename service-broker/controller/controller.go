@@ -28,10 +28,11 @@ import (
 )
 
 type opensdsServiceInstance struct {
-	ID        string
-	ServiceID string
-	PlanID    string
-	Params    map[string]interface{}
+	ID          string
+	ServiceID   string
+	PlanID      string
+	Params      map[string]interface{}
+	Credentials map[string]interface{}
 }
 
 type opensdsController struct {
@@ -118,7 +119,14 @@ func (c *opensdsController) Provision(
 
 	response := broker.ProvisionResponse{}
 
-	var in = new(model.VolumeSpec)
+	if _, ok := c.instanceMap[request.InstanceID]; ok {
+		glog.Infof("Instance %s already exist!\n", request.InstanceID)
+		return &response, nil
+	}
+
+	var in = &model.VolumeSpec{
+		ProfileId: request.PlanID,
+	}
 	if nameInterface, ok := request.Parameters["name"]; ok {
 		in.Name = nameInterface.(string)
 	}
@@ -127,11 +135,6 @@ func (c *opensdsController) Provision(
 	}
 	if capInterface, ok := request.Parameters["capacity"]; ok {
 		in.Size = int64(capInterface.(float64))
-	}
-
-	if _, ok := c.instanceMap[request.InstanceID]; ok {
-		glog.Infof("Instance %s already exist!\n", request.InstanceID)
-		return &response, nil
 	}
 
 	vol, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).CreateVolume(in)
@@ -178,13 +181,22 @@ func (c *opensdsController) Deprovision(
 
 	response := broker.DeprovisionResponse{}
 
-	if _, ok := c.instanceMap[request.InstanceID]; !ok {
-		return nil, fmt.Errorf("No such instance %s exited!", request.InstanceID)
+	instance, ok := c.instanceMap[request.InstanceID]
+	if !ok {
+		return &response, nil
 	}
 
+	volInterface, ok := instance.Params["volumeID"]
+	if !ok {
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode: http.StatusNotFound,
+		}
+	}
 	if err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
-		DeleteVolume(request.InstanceID, nil); err != nil {
-		return nil, err
+		DeleteVolume(volInterface.(string), nil); err != nil {
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode: http.StatusInternalServerError,
+		}
 	}
 	delete(c.instanceMap, request.InstanceID)
 
@@ -202,23 +214,8 @@ func (c *opensdsController) Bind(
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
 
-	instance, ok := c.instanceMap[request.InstanceID]
-	if !ok {
-		return nil, osb.HTTPStatusCodeError{
-			StatusCode: http.StatusNotFound,
-		}
-	}
-
-	response := broker.BindResponse{
-		BindResponse: osb.BindResponse{
-			Credentials: instance.Params,
-		},
-	}
-	if request.AcceptsIncomplete {
-		response.Async = c.async
-	}
-
-	return &response, nil
+	// Your bind business logic goes here
+	return &broker.BindResponse{}, nil
 }
 
 func (c *opensdsController) Unbind(
