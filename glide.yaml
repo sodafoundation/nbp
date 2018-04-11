@@ -5,19 +5,26 @@ import:
   subpackages:
   - lib/go/csi
 - package: github.com/golang/glog
-- package: github.com/kubernetes-incubator/service-catalog
-  version: ^0.1.1
-  subpackages:
-  - contrib/pkg/broker/controller
-  - contrib/pkg/broker/server
-  - contrib/pkg/brokerapi
-  - pkg
 - package: github.com/mitchellh/mapstructure
 - package: github.com/opensds/opensds
-  version: ^0.1.0
+  version: ^0.1.7
   subpackages:
   - client
   - pkg/model
+- package: github.com/pmorie/go-open-service-broker-client
+  subpackages:
+  - v2
+- package: github.com/pmorie/osb-broker-lib
+  subpackages:
+  - pkg/broker
+  - pkg/metrics
+  - pkg/rest
+  - pkg/server
+- package: github.com/prometheus/client_golang
+  version: ^0.8.0
+  subpackages:
+  - prometheus
+- package: github.com/spf13/cobra
 - package: golang.org/x/net
   subpackages:
   - context
@@ -30,22 +37,3 @@ import:
   - codes
   - reflection
   - status
-- package: k8s.io/api
-  subpackages:
-  - core/v1
-- package: k8s.io/apimachinery
-  subpackages:
-  - pkg/apis/meta/v1
-  - pkg/types
-  - pkg/util/validation
-  - pkg/util/validation/field
-  - pkg/util/wait
-- package: k8s.io/client-go
-  subpackages:
-  - kubernetes
-  - rest
-  - tools/clientcmd
-- package: k8s.io/kubernetes
-  subpackages:
-  - pkg/volume
-- package: github.com/spf13/cobra
