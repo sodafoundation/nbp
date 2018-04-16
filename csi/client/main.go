@@ -2,21 +2,21 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/client/proxy"
 	"github.com/spf13/cobra"
 )
 
 var (
-	csiEndpoint     string
+	csiEndpoint string
 )
 
 func init() {
@@ -49,42 +49,41 @@ func main() {
 }
 
 func handle() {
-	
+
 	// Set Env
 	os.Setenv("CSI_ENDPOINT", csiEndpoint)
 
-		// GetIdentity
+	// GetIdentity
 	log.Println("start to get identity")
 	identity, err := proxy.GetIdentity()
 	if err != nil {
 		log.Fatalf("failed to get identity: %v", err)
 	}
 
-	// Test GetSupportedVersions
-	versions, err := identity.GetSupportedVersions(context.Background())
-	if err != nil {
-		log.Fatalf("failed to GetSupportedVersions: %v", err)
-	}
-
-	// printf results
-	for _, v := range versions {
-		log.Printf("[GetSupportedVersionsResponse] version:%d.%d.%d", v.Major, v.Minor, v.Patch)
-	}
-
-	if len(versions) == 0 {
-		log.Print("versions length is 0")
-		return
-	}
-
 	// Test GetPluginInfo
-	rs, err := identity.GetPluginInfo(context.Background(), versions[0])
+	rs, err := identity.GetPluginInfo(context.Background())
 	if err != nil {
 		log.Fatalf("failed to GetPluginInfo: %v", err)
 	}
 
-	// printf results
 	log.Printf("[GetPluginInfoResponse] Name:%s VendorVersion:%s Manifest:%v",
 		rs.Name, rs.VendorVersion, rs.Manifest)
+
+	// Test GetPluginCapabilities
+	rs1, err := identity.GetPluginCapabilities(context.Background())
+	if err != nil {
+		log.Fatalf("failed to GetPluginCapabilities: %v", err)
+	}
+
+	log.Printf("[GetPluginCapabilities] capabilites:%v", rs1)
+
+	// Test Probe
+	rs2, err := identity.Probe(context.Background())
+	if err != nil {
+		log.Fatalf("failed to Probe: %v", err)
+	}
+
+	log.Printf("[Probe] response:%v", rs2)
 
 	// GetController
 	log.Println("start to get controller")
@@ -94,20 +93,12 @@ func handle() {
 	}
 
 	// Test ControllerGetCapabilities
-	controllercapabilities, err := controller.ControllerGetCapabilities(context.Background(), versions[0])
+	controllercapabilities, err := controller.ControllerGetCapabilities(context.Background())
 	if err != nil {
 		log.Fatalf("failed to ControllerGetCapabilities: %v", err)
 	}
 
 	log.Printf("[ControllerGetCapabilities] controllercapabilities:%v", controllercapabilities)
-
-	// Test ControllerProbe
-	err = controller.ControllerProbe(context.Background(), versions[0])
-	if err != nil {
-		log.Fatalf("failed to ControllerProbe: %v", err)
-	} else {
-		log.Printf("[ControllerProbe] ControllerProbe:OK")
-	}
 
 	// Test ValidateVolumeCapabilities
 	volumeid := "1234567890"
@@ -127,7 +118,6 @@ func handle() {
 
 	validatevolumecapabilities, err := controller.ValidateVolumeCapabilities(
 		context.Background(),
-		versions[0],
 		volumeid,
 		volumecapabilities,
 		volumeattributes)
@@ -145,7 +135,7 @@ func handle() {
 	}
 
 	// Test NodeGetCapabilities
-	nodecapabilities, err := node.NodeGetCapabilities(context.Background(), versions[0])
+	nodecapabilities, err := node.NodeGetCapabilities(context.Background())
 	if err != nil {
 		log.Fatalf("failed to NodeGetCapabilities: %v", err)
 	}
@@ -153,26 +143,17 @@ func handle() {
 	log.Printf("[NodeGetCapabilities] nodecapabilities:%v", nodecapabilities)
 
 	// Test GetNodeID
-	nodeid, err := node.GetNodeID(context.Background(), versions[0])
+	nodeid, err := node.NodeGetId(context.Background())
 	if err != nil {
-		log.Fatalf("failed to GetNodeID: %v", err)
+		log.Fatalf("failed to NodeGetId: %v", err)
 	}
 
-	log.Printf("[GetNodeID] nodeid:%v", nodeid)
-
-	// Test NodeProbe
-	err = node.NodeProbe(context.Background(), versions[0])
-	if err != nil {
-		log.Fatalf("failed to NodeProbe: %v", err)
-	} else {
-		log.Printf("[NodeProbe] NodeProbe:OK")
-	}
+	log.Printf("[NodeGetId] nodeid:%v", nodeid)
 
 	// Test CreateVolume
 	rand.Seed(time.Now().Unix())
 	volumename := fmt.Sprintf("csivolume-%v", rand.Int())
-	volumeinfo, err := controller.CreateVolume(context.Background(),
-		versions[0], volumename, nil, nil, nil, nil)
+	volumeinfo, err := controller.CreateVolume(context.Background(), volumename, nil, nil, nil, nil)
 	if err != nil {
 		log.Fatalf("failed to CreateVolume: %v", err)
 	} else {
@@ -181,7 +162,7 @@ func handle() {
 
 	// Test ControllerPublishVolume
 	publishvolumeinfo, err := controller.ControllerPublishVolume(context.Background(),
-		versions[0], volumeinfo.Id, nodeid, nil, false, nil, volumeinfo.Attributes)
+		volumeinfo.Id, nodeid, nil, false, nil, volumeinfo.Attributes)
 	if err != nil {
 		log.Fatalf("failed to ControllerPublishVolume: %v", err)
 	} else {
@@ -191,7 +172,7 @@ func handle() {
 	// Test NodePublishVolume
 	targetpath := "/var/lib/kubelet/plugins/opensds/"
 	err = node.NodePublishVolume(context.Background(),
-		versions[0], volumeinfo.Id, publishvolumeinfo,
+		volumeinfo.Id, publishvolumeinfo, "",
 		targetpath, nil, false, nil, nil)
 	if err != nil {
 		log.Fatalf("failed to NodePublishVolume: %v", err)
@@ -210,7 +191,7 @@ func handle() {
 
 	// Test NodeUnpublishVolume
 	err = node.NodeUnpublishVolume(context.Background(),
-		versions[0], volumeinfo.Id, targetpath, nil)
+		volumeinfo.Id, targetpath)
 	if err != nil {
 		log.Fatalf("failed to NodeUnpublishVolume: %v", err)
 	} else {
@@ -218,7 +199,7 @@ func handle() {
 	}
 
 	// Test ControllerUnpublishVolume
-	err = controller.ControllerUnpublishVolume(context.Background(), versions[0], volumeinfo.Id, nodeid, nil)
+	err = controller.ControllerUnpublishVolume(context.Background(), volumeinfo.Id, nodeid, nil)
 	if err != nil {
 		log.Fatalf("failed to ControllerUnpublishVolume: %v", err)
 	} else {
@@ -226,7 +207,7 @@ func handle() {
 	}
 
 	// Test DeleteVolume
-	err = controller.DeleteVolume(context.Background(), versions[0], volumeinfo.Id, nil)
+	err = controller.DeleteVolume(context.Background(), volumeinfo.Id, nil)
 	if err != nil {
 		log.Fatalf("failed to DeleteVolume: %v", err)
 	} else {

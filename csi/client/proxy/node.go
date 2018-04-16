@@ -3,7 +3,7 @@ package proxy
 import (
 	"log"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/util"
 	"golang.org/x/net/context"
 )
@@ -33,12 +33,58 @@ func GetNode() (client Node, err error) {
 //                            Node Client Proxy                               //
 ////////////////////////////////////////////////////////////////////////////////
 
+// NodeStageVolume proxy
+func (c *Node) NodeStageVolume(
+	ctx context.Context,
+	volumeid string,
+	publicInfo map[string]string, /*Optional*/
+	stagingTargetPath string,
+	capability *csi.VolumeCapability,
+	credentials map[string]string, /*Optional*/
+	volumeattributes map[string]string /*Optional*/) error {
+
+	req := &csi.NodeStageVolumeRequest{
+		VolumeId:          volumeid,
+		PublishInfo:       publicInfo,
+		StagingTargetPath: stagingTargetPath,
+		VolumeCapability:  capability,
+		NodeStageSecrets:  credentials,
+		VolumeAttributes:  volumeattributes,
+	}
+
+	_, err := c.client.NodeStageVolume(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// NodeUnstageVolume proxy
+func (c *Node) NodeUnstageVolume(
+	ctx context.Context,
+	volumeid string,
+	stagingTargetPath string) error {
+
+	req := &csi.NodeUnstageVolumeRequest{
+		VolumeId:          volumeid,
+		StagingTargetPath: stagingTargetPath,
+	}
+
+	_, err := c.client.NodeUnstageVolume(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // NodePublishVolume proxy
 func (c *Node) NodePublishVolume(
 	ctx context.Context,
-	version *csi.Version,
 	volumeid string,
-	volumeinfo map[string]string, /*Optional*/
+	publicInfo map[string]string, /*Optional*/
+	stagingTargetPath string, /*Optional*/
 	targetPath string,
 	capability *csi.VolumeCapability,
 	readonly bool,
@@ -46,14 +92,14 @@ func (c *Node) NodePublishVolume(
 	volumeattributes map[string]string /*Optional*/) error {
 
 	req := &csi.NodePublishVolumeRequest{
-		Version:           version,
-		VolumeId:          volumeid,
-		PublishVolumeInfo: volumeinfo,
-		TargetPath:        targetPath,
-		VolumeCapability:  capability,
-		Readonly:          readonly,
-		UserCredentials:   credentials,
-		VolumeAttributes:  volumeattributes,
+		VolumeId:           volumeid,
+		PublishInfo:        publicInfo,
+		StagingTargetPath:  stagingTargetPath,
+		TargetPath:         targetPath,
+		VolumeCapability:   capability,
+		Readonly:           readonly,
+		NodePublishSecrets: credentials,
+		VolumeAttributes:   volumeattributes,
 	}
 
 	_, err := c.client.NodePublishVolume(ctx, req)
@@ -67,16 +113,12 @@ func (c *Node) NodePublishVolume(
 // NodeUnpublishVolume proxy
 func (c *Node) NodeUnpublishVolume(
 	ctx context.Context,
-	version *csi.Version,
 	volumeid string,
-	targetPath string,
-	credentials map[string]string /*Optional*/) error {
+	targetPath string) error {
 
 	req := &csi.NodeUnpublishVolumeRequest{
-		Version:         version,
-		VolumeId:        volumeid,
-		TargetPath:      targetPath,
-		UserCredentials: credentials,
+		VolumeId:   volumeid,
+		TargetPath: targetPath,
 	}
 
 	_, err := c.client.NodeUnpublishVolume(ctx, req)
@@ -87,16 +129,13 @@ func (c *Node) NodeUnpublishVolume(
 	return nil
 }
 
-// GetNodeID proxy
-func (c *Node) GetNodeID(
-	ctx context.Context,
-	version *csi.Version) (string, error) {
+// NodeGetId proxy
+func (c *Node) NodeGetId(
+	ctx context.Context) (string, error) {
 
-	req := &csi.GetNodeIDRequest{
-		Version: version,
-	}
+	req := &csi.NodeGetIdRequest{}
 
-	rs, err := c.client.GetNodeID(ctx, req)
+	rs, err := c.client.NodeGetId(ctx, req)
 	if err != nil {
 		return "", err
 	}
@@ -104,31 +143,11 @@ func (c *Node) GetNodeID(
 	return rs.NodeId, nil
 }
 
-// NodeProbe proxy
-func (c *Node) NodeProbe(
-	ctx context.Context,
-	version *csi.Version) error {
-
-	req := &csi.NodeProbeRequest{
-		Version: version,
-	}
-
-	_, err := c.client.NodeProbe(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // NodeGetCapabilities proxy
 func (c *Node) NodeGetCapabilities(
-	ctx context.Context,
-	version *csi.Version) (capabilties []*csi.NodeServiceCapability, err error) {
+	ctx context.Context) (capabilties []*csi.NodeServiceCapability, err error) {
 
-	req := &csi.NodeGetCapabilitiesRequest{
-		Version: version,
-	}
+	req := &csi.NodeGetCapabilitiesRequest{}
 
 	rs, err := c.client.NodeGetCapabilities(ctx, req)
 	if err != nil {

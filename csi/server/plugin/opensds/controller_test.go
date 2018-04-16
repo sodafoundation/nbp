@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"golang.org/x/net/context"
 )
 
@@ -12,7 +12,6 @@ func TestValidateVolumeCapabilities(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
 	fakeReq := &csi.ValidateVolumeCapabilitiesRequest{
-		Version:  supportedVersions[0],
 		VolumeId: "1234567890",
 		VolumeCapabilities: []*csi.VolumeCapability{
 			&csi.VolumeCapability{
@@ -41,30 +40,10 @@ func TestValidateVolumeCapabilities(t *testing.T) {
 	}
 }
 
-func TestControllerProbe(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
-	fakeReq := &csi.ControllerProbeRequest{
-		Version: supportedVersions[0],
-	}
-	expectedControllerProbe := &csi.ControllerProbeResponse{}
-
-	rs, err := fakePlugin.ControllerProbe(fakeCtx, fakeReq)
-	if err != nil {
-		t.Errorf("failed to ControllerProbe: %v\n", err)
-	}
-
-	if !reflect.DeepEqual(rs, expectedControllerProbe) {
-		t.Errorf("expected: %v, actual: %v\n", rs, expectedControllerProbe)
-	}
-}
-
 func TestControllerGetCapabilities(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
-	fakeReq := &csi.ControllerGetCapabilitiesRequest{
-		Version: supportedVersions[0],
-	}
+	fakeReq := &csi.ControllerGetCapabilitiesRequest{}
 	expectedControllerCapabilities := []*csi.ControllerServiceCapability{
 		&csi.ControllerServiceCapability{
 			Type: &csi.ControllerServiceCapability_Rpc{
