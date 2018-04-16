@@ -22,13 +22,13 @@ spec:
     spec:
       containers:
       - name: service-broker
-        image: "opensdsio/service-broker:latest"
-        imagePullPolicy: IfNotPresent
+        image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
         - --port
-        - ":8080"
+        - "8080"
         - --endpoint
-        - "http://0.0.0.0:50040"
+        - {{ .Values.opensdsEndpoint }}
         ports:
         - containerPort: 8080
         readinessProbe:
