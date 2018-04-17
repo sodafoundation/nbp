@@ -6,3 +6,5 @@ metadata:
 spec:
   instanceRef:
     name: service-instance
+  parameters:
+    volumeID: xxxx-xxxx-xxxx-xxxx

@@ -1,0 +1,7 @@
+# Default values for OpenSDS Service Broker
+# Image to use
+image: opensdsio/service-broker:latest
+# ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
+imagePullPolicy: IfNotPresent
+# Please modify opensdsEndpoint field in real environment
+opensdsEndpoint: http://0.0.0.0:50040
