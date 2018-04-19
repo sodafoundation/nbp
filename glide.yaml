@@ -1,9 +1,9 @@
 package: github.com/opensds/nbp
 import:
 - package: github.com/container-storage-interface/spec
-  version: 716f53e230aa89be23a041cdb274c95611a19402
+  version: 35d9f9d77954980e449e52c3f3e43c21bd8171f5
   subpackages:
-  - lib/go/csi
+  - lib/go/csi/v0
 - package: github.com/golang/glog
 - package: github.com/kubernetes-incubator/service-catalog
   version: ^0.1.1

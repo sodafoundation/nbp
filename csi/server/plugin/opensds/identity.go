@@ -2,51 +2,36 @@ package opensds
 
 import (
 	"log"
-	"reflect"
+	"runtime"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
 //                            Identity Service                                //
 ////////////////////////////////////////////////////////////////////////////////
 
-var supportedVersions = []*csi.Version{
-	&csi.Version{
-		Major: 0,
-		Minor: 1,
-		Patch: 0,
-	},
-}
-
-//CheckVersionSupport check whether api version is supported
-func (p *Plugin) CheckVersionSupport(version *csi.Version) codes.Code {
-	if version == nil {
-		return codes.InvalidArgument
-	}
-
-	for _, ver := range supportedVersions {
-		if reflect.DeepEqual(version, ver) {
-			return codes.OK
-		}
-	}
-
-	return codes.InvalidArgument
-}
-
-// GetSupportedVersions implementation
-func (p *Plugin) GetSupportedVersions(
+// Probe implementation
+func (p *Plugin) Probe(
 	ctx context.Context,
-	req *csi.GetSupportedVersionsRequest) (
-	*csi.GetSupportedVersionsResponse, error) {
+	req *csi.ProbeRequest) (
+	*csi.ProbeResponse, error) {
 
-	log.Println("start to GetSupportedVersions")
-	defer log.Println("end to GetSupportedVersions")
-	return &csi.GetSupportedVersionsResponse{
-		SupportedVersions: supportedVersions,
-	}, nil
+	log.Println("start to Probe")
+	defer log.Println("end to Probe")
+
+	switch runtime.GOOS {
+	case "linux":
+		return &csi.ProbeResponse{}, nil
+	default:
+		msg := "unsupported operating system:" + runtime.GOOS
+		log.Fatalf(msg)
+		// csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
 }
 
 // GetPluginInfo implementation
@@ -60,7 +45,25 @@ func (p *Plugin) GetPluginInfo(
 
 	return &csi.GetPluginInfoResponse{
 		Name:          PluginName,
-		VendorVersion: req.Version.String(),
+		VendorVersion: "",
 		Manifest:      nil,
+	}, nil
+}
+
+// GetPluginInfo implementation
+func (p *Plugin) GetPluginCapabilities(
+	ctx context.Context,
+	req *csi.GetPluginCapabilitiesRequest) (
+	*csi.GetPluginCapabilitiesResponse, error) {
+	return &csi.GetPluginCapabilitiesResponse{
+		Capabilities: []*csi.PluginCapability{
+			&csi.PluginCapability{
+				Type: &csi.PluginCapability_Service_{
+					Service: &csi.PluginCapability_Service{
+						Type: csi.PluginCapability_Service_CONTROLLER_SERVICE,
+					},
+				},
+			},
+		},
 	}, nil
 }

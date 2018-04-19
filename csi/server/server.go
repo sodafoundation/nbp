@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"golang.org/x/net/context"
 )
@@ -15,12 +15,12 @@ type server struct {
 ////////////////////////////////////////////////////////////////////////////////
 
 // GetSupportedVersions
-func (s *server) GetSupportedVersions(
+func (s *server) Probe(
 	ctx context.Context,
-	req *csi.GetSupportedVersionsRequest) (
-	*csi.GetSupportedVersionsResponse, error) {
+	req *csi.ProbeRequest) (
+	*csi.ProbeResponse, error) {
 	// Use plugin implementation
-	return s.plugin.GetSupportedVersions(ctx, req)
+	return s.plugin.Probe(ctx, req)
 }
 
 // GetPluginInfo
@@ -30,6 +30,13 @@ func (s *server) GetPluginInfo(
 	*csi.GetPluginInfoResponse, error) {
 	// Use plugin implementation
 	return s.plugin.GetPluginInfo(ctx, req)
+}
+
+func (s *server) GetPluginCapabilities(
+	ctx context.Context,
+	req *csi.GetPluginCapabilitiesRequest) (
+	*csi.GetPluginCapabilitiesResponse, error) {
+	return s.plugin.GetPluginCapabilities(ctx, req)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -99,15 +106,6 @@ func (s *server) GetCapacity(
 	return s.plugin.GetCapacity(ctx, req)
 }
 
-// ControllerProbe implementation
-func (s *server) ControllerProbe(
-	ctx context.Context,
-	req *csi.ControllerProbeRequest) (
-	*csi.ControllerProbeResponse, error) {
-	// Use plugin implementation
-	return s.plugin.ControllerProbe(ctx, req)
-}
-
 // ControllerGetCapabilities implementation
 func (s *server) ControllerGetCapabilities(
 	ctx context.Context,
@@ -120,6 +118,19 @@ func (s *server) ControllerGetCapabilities(
 ////////////////////////////////////////////////////////////////////////////////
 //                            Node Service                                    //
 ////////////////////////////////////////////////////////////////////////////////
+
+func (s *server) NodeStageVolume(
+	ctx context.Context,
+	req *csi.NodeStageVolumeRequest) (
+	*csi.NodeStageVolumeResponse, error) {
+	return s.plugin.NodeStageVolume(ctx, req)
+}
+func (s *server) NodeUnstageVolume(
+	ctx context.Context,
+	req *csi.NodeUnstageVolumeRequest) (
+	*csi.NodeUnstageVolumeResponse, error) {
+	return s.plugin.NodeUnstageVolume(ctx, req)
+}
 
 // NodePublishVolume implementation
 func (s *server) NodePublishVolume(
@@ -140,21 +151,12 @@ func (s *server) NodeUnpublishVolume(
 }
 
 // GetNodeID implementation
-func (s *server) GetNodeID(
+func (s *server) NodeGetId(
 	ctx context.Context,
-	req *csi.GetNodeIDRequest) (
-	*csi.GetNodeIDResponse, error) {
+	req *csi.NodeGetIdRequest) (
+	*csi.NodeGetIdResponse, error) {
 	// Use plugin implementation
-	return s.plugin.GetNodeID(ctx, req)
-}
-
-// NodeProbe implementation
-func (s *server) NodeProbe(
-	ctx context.Context,
-	req *csi.NodeProbeRequest) (
-	*csi.NodeProbeResponse, error) {
-	// Use plugin implementation
-	return s.plugin.NodeProbe(ctx, req)
+	return s.plugin.NodeGetId(ctx, req)
 }
 
 // NodeGetCapabilities implementation

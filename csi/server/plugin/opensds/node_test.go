@@ -4,17 +4,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/client/iscsi"
 	"golang.org/x/net/context"
 )
 
-func TestGetNodeID(t *testing.T) {
+func TestNodeGetId(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
-	fakeReq := &csi.GetNodeIDRequest{
-		Version: supportedVersions[0],
-	}
+	fakeReq := &csi.NodeGetIdRequest{}
 	iqns, _ := iscsi.GetInitiator()
 	localIqn := ""
 	if len(iqns) > 0 {
@@ -22,7 +20,7 @@ func TestGetNodeID(t *testing.T) {
 	}
 	expectedNodeId := localIqn
 
-	rs, err := fakePlugin.GetNodeID(fakeCtx, fakeReq)
+	rs, err := fakePlugin.NodeGetId(fakeCtx, fakeReq)
 	if err != nil {
 		t.Errorf("failed to GetNodeID: %v\n", err)
 	}
@@ -32,30 +30,10 @@ func TestGetNodeID(t *testing.T) {
 	}
 }
 
-func TestNodeProbe(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
-	fakeReq := &csi.NodeProbeRequest{
-		Version: supportedVersions[0],
-	}
-	expectedNodeProbe := &csi.NodeProbeResponse{}
-
-	rs, err := fakePlugin.NodeProbe(fakeCtx, fakeReq)
-	if err != nil {
-		t.Errorf("failed to NodeProbe: %v\n", err)
-	}
-
-	if !reflect.DeepEqual(rs, expectedNodeProbe) {
-		t.Errorf("expected: %v, actual: %v\n", rs, expectedNodeProbe)
-	}
-}
-
 func TestNodeGetCapabilities(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
-	fakeReq := &csi.NodeGetCapabilitiesRequest{
-		Version: supportedVersions[0],
-	}
+	fakeReq := &csi.NodeGetCapabilitiesRequest{}
 	expectedNodeCapabilities := []*csi.NodeServiceCapability{
 		&csi.NodeServiceCapability{
 			Type: &csi.NodeServiceCapability_Rpc{

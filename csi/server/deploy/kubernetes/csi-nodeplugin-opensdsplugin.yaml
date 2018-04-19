@@ -18,20 +18,20 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: docker.io/k8scsi/driver-registrar
+          image: quay.io/k8scsi/driver-registrar:v0.2.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
           env:
             - name: ADDRESS
-              value: /plugin/csi.sock
+              value: /csi/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
           volumeMounts:
-            - name: plugin-dir
-              mountPath: /plugin
+            - name: socket-dir
+              mountPath: /csi
         - name: opensds
           securityContext:
             privileged: true
@@ -44,7 +44,7 @@ spec:
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
           env:
             - name: CSI_ENDPOINT
-              value: unix://plugin/csi.sock
+              value: unix://csi/csi.sock
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
@@ -52,8 +52,8 @@ spec:
                   key: opensdsendpoint
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
-            - name: plugin-dir
-              mountPath: /plugin
+            - name: socket-dir
+              mountPath: /csi
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
@@ -65,10 +65,10 @@ spec:
             - name: ceph-dir
               mountPath: /etc/ceph/
       volumes:
-        - name: plugin-dir
+        - name: socket-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-opensdsplugin
-            type: DirectoryOrCreate
+            path: /csi
+            type: DirectoryOrCreate		
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/pods

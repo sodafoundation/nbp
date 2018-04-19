@@ -7,7 +7,7 @@ import (
 
 	"fmt"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
@@ -46,8 +46,17 @@ func (p *Plugin) CreateVolume(
 		//Using default volume size
 		volumebody.Size = 1
 	}
-	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
-		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
+	//	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
+	//		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
+	//	}
+
+	for k, v := range req.GetParameters() {
+		switch strings.ToLower(k) {
+		case "profile":
+			volumebody.ProfileId = v
+		case "availabilityzone":
+			volumebody.AvailabilityZone = v
+		}
 	}
 
 	log.Println("CreateVolume volumebody:%v", volumebody)
@@ -59,8 +68,8 @@ func (p *Plugin) CreateVolume(
 	}
 
 	// return volume info
-	volumeinfo := &csi.VolumeInfo{
-		CapacityBytes: uint64(v.Size),
+	volumeinfo := &csi.Volume{
+		CapacityBytes: v.Size,
 		Id:            v.Id,
 		Attributes: map[string]string{
 			"Name":             v.Name,
@@ -73,7 +82,7 @@ func (p *Plugin) CreateVolume(
 	}
 
 	return &csi.CreateVolumeResponse{
-		VolumeInfo: volumeinfo,
+		Volume: volumeinfo,
 	}, nil
 }
 
@@ -103,11 +112,6 @@ func (p *Plugin) ControllerPublishVolume(
 
 	log.Println("start to ControllerPublishVolume")
 	defer log.Println("end to ControllerPublishVolume")
-
-	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
-		msg := "the version specified in the request is not supported by the Plugin."
-		return nil, status.Error(errCode, msg)
-	}
 
 	client := sdscontroller.GetClient("")
 
@@ -172,7 +176,7 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	return &csi.ControllerPublishVolumeResponse{
-		PublishVolumeInfo: map[string]string{
+		PublishInfo: map[string]string{
 			"ip":     attachSpec.Ip,
 			"host":   attachSpec.Host,
 			"atcid":  attachSpec.Id,
@@ -189,11 +193,6 @@ func (p *Plugin) ControllerUnpublishVolume(
 
 	log.Println("start to ControllerUnpublishVolume")
 	defer log.Println("end to ControllerUnpublishVolume")
-
-	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
-		msg := "the version specified in the request is not supported by the Plugin."
-		return nil, status.Error(errCode, msg)
-	}
 
 	client := sdscontroller.GetClient("")
 
@@ -278,8 +277,8 @@ func (p *Plugin) ListVolumes(
 	for _, v := range volumes {
 		if v != nil {
 
-			volumeinfo := &csi.VolumeInfo{
-				CapacityBytes: uint64(v.Size),
+			volumeinfo := &csi.Volume{
+				CapacityBytes: v.Size,
 				Id:            v.Id,
 				Attributes: map[string]string{
 					"Name":             v.Name,
@@ -291,7 +290,7 @@ func (p *Plugin) ListVolumes(
 			}
 
 			ens = append(ens, &csi.ListVolumesResponse_Entry{
-				VolumeInfo: volumeinfo,
+				Volume: volumeinfo,
 			})
 		}
 	}
@@ -318,36 +317,16 @@ func (p *Plugin) GetCapacity(
 	}
 
 	// calculate all the free capacity of pools
-	freecapacity := uint64(0)
+	freecapacity := int64(0)
 	for _, p := range pools {
 		if p != nil {
-			freecapacity += uint64(p.FreeCapacity)
+			freecapacity += int64(p.FreeCapacity)
 		}
 	}
 
 	return &csi.GetCapacityResponse{
 		AvailableCapacity: freecapacity,
 	}, nil
-}
-
-// ControllerProbe implementation
-func (p *Plugin) ControllerProbe(
-	ctx context.Context,
-	req *csi.ControllerProbeRequest) (
-	*csi.ControllerProbeResponse, error) {
-
-	log.Println("start to ControllerProbe")
-	defer log.Println("end to ControllerProbe")
-
-	switch runtime.GOOS {
-	case "linux":
-		return &csi.ControllerProbeResponse{}, nil
-	default:
-		msg := "unsupported operating system:" + runtime.GOOS
-		log.Fatalf(msg)
-		// csi.Error_ControllerProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
-		return nil, status.Error(codes.FailedPrecondition, msg)
-	}
 }
 
 // ControllerGetCapabilities implementation

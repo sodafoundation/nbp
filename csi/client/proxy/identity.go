@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/util"
 )
 
@@ -33,30 +33,41 @@ func GetIdentity() (client Identity, err error) {
 //                            Identity Client Proxy                           //
 ////////////////////////////////////////////////////////////////////////////////
 
-// GetSupportedVersions proxy
-func (c *Identity) GetSupportedVersions(
-	ctx context.Context) ([]*csi.Version, error) {
+// GetPluginInfo proxy
+func (c *Identity) GetPluginInfo(
+	ctx context.Context) (*csi.GetPluginInfoResponse, error) {
 
-	req := &csi.GetSupportedVersionsRequest{}
+	req := &csi.GetPluginInfoRequest{}
 
-	rs, err := c.client.GetSupportedVersions(ctx, req)
+	rs, err := c.client.GetPluginInfo(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return rs.SupportedVersions, nil
+	return rs, nil
 }
 
-// GetPluginInfo proxy
-func (c *Identity) GetPluginInfo(
-	ctx context.Context,
-	version *csi.Version) (*csi.GetPluginInfoResponse, error) {
+// GetPluginCapabilities proxy
+func (c *Identity) GetPluginCapabilities(
+	ctx context.Context) (*csi.GetPluginCapabilitiesResponse, error) {
 
-	req := &csi.GetPluginInfoRequest{
-		Version: version,
+	req := &csi.GetPluginCapabilitiesRequest{}
+
+	rs, err := c.client.GetPluginCapabilities(ctx, req)
+	if err != nil {
+		return nil, err
 	}
 
-	rs, err := c.client.GetPluginInfo(ctx, req)
+	return rs, nil
+}
+
+// Probe proxy
+func (c *Identity) Probe(
+	ctx context.Context) (*csi.ProbeResponse, error) {
+
+	req := &csi.ProbeRequest{}
+
+	rs, err := c.client.Probe(ctx, req)
 	if err != nil {
 		return nil, err
 	}

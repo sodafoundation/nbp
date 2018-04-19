@@ -3,13 +3,12 @@ package opensds
 import (
 	"fmt"
 	"log"
-	"runtime"
 
 	"google.golang.org/grpc/codes"
 
 	"strings"
 
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/driver"
@@ -22,6 +21,13 @@ import (
 //                            Node Service                                    //
 ////////////////////////////////////////////////////////////////////////////////
 
+func (p *Plugin) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+func (p *Plugin) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
 // NodePublishVolume implementation
 func (p *Plugin) NodePublishVolume(
 	ctx context.Context,
@@ -30,11 +36,6 @@ func (p *Plugin) NodePublishVolume(
 
 	log.Println("start to NodePublishVolume")
 	defer log.Println("end to NodePublishVolume")
-
-	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
-		msg := "the version specified in the request is not supported by the Plugin."
-		return nil, status.Error(errCode, msg)
-	}
 
 	client := sdscontroller.GetClient("")
 
@@ -45,7 +46,7 @@ func (p *Plugin) NodePublishVolume(
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	atc, atcErr := client.GetVolumeAttachment(req.PublishVolumeInfo["atcid"])
+	atc, atcErr := client.GetVolumeAttachment(req.PublishInfo["atcid"])
 	if atcErr != nil || atc == nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
 	}
@@ -134,11 +135,6 @@ func (p *Plugin) NodeUnpublishVolume(
 	log.Println("start to NodeUnpublishVolume")
 	defer log.Println("end to NodeUnpublishVolume")
 
-	if errCode := p.CheckVersionSupport(req.Version); errCode != codes.OK {
-		msg := "the version specified in the request is not supported by the Plugin."
-		return nil, status.Error(errCode, msg)
-	}
-
 	client := sdscontroller.GetClient("")
 
 	//check volume is exist
@@ -220,10 +216,10 @@ func (p *Plugin) NodeUnpublishVolume(
 }
 
 // GetNodeID implementation
-func (p *Plugin) GetNodeID(
+func (p *Plugin) NodeGetId(
 	ctx context.Context,
-	req *csi.GetNodeIDRequest) (
-	*csi.GetNodeIDResponse, error) {
+	req *csi.NodeGetIdRequest) (
+	*csi.NodeGetIdResponse, error) {
 
 	log.Println("start to GetNodeID")
 	defer log.Println("end to GetNodeID")
@@ -234,29 +230,9 @@ func (p *Plugin) GetNodeID(
 		localIqn = iqns[0]
 	}
 
-	return &csi.GetNodeIDResponse{
+	return &csi.NodeGetIdResponse{
 		NodeId: localIqn,
 	}, nil
-}
-
-// NodeProbe implementation
-func (p *Plugin) NodeProbe(
-	ctx context.Context,
-	req *csi.NodeProbeRequest) (
-	*csi.NodeProbeResponse, error) {
-
-	log.Println("start to NodeProbe")
-	defer log.Println("end to NodeProbe")
-
-	switch runtime.GOOS {
-	case "linux":
-		return &csi.NodeProbeResponse{}, nil
-	default:
-		msg := "unsupported operating system:" + runtime.GOOS
-		log.Fatalf(msg)
-		// csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
-		return nil, status.Error(codes.FailedPrecondition, msg)
-	}
 }
 
 // NodeGetCapabilities implementation
