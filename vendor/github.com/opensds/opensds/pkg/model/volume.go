@@ -29,7 +29,7 @@ type VolumeSpec struct {
 	*BaseModel
 
 	// The uuid of the project that the volume belongs to.
-	ProjectId string `json:"projectId,omitempty"`
+	TenantId string `json:"tenantId,omitempty"`
 
 	// The uuid of the user that the volume belongs to.
 	// +optional
@@ -71,7 +71,7 @@ type VolumeAttachmentSpec struct {
 	*BaseModel
 
 	// The uuid of the project that the volume belongs to.
-	ProjectId string `json:"projectId,omitempty"`
+	TenantId string `json:"tenantId,omitempty"`
 
 	// The uuid of the user that the volume belongs to.
 	// +optional
@@ -127,7 +127,7 @@ type VolumeSnapshotSpec struct {
 	*BaseModel
 
 	// The uuid of the project that the volume snapshot belongs to.
-	ProjectId string `json:"projectId,omitempty"`
+	TenantId string `json:"tenantId,omitempty"`
 
 	// The uuid of the user that the volume snapshot belongs to.
 	// +optional
@@ -166,3 +166,28 @@ type ExtendSpec struct {
 type ExtendVolumeSpec struct {
 	Extend ExtendSpec `json:"extend,omitempty"`
 }
+
+//volume status
+const (
+	VOLUME_CREATING           = "creating"
+	VOLUME_AVAILABLE          = "available"
+	VOLUME_RESERVED           = "reserved"
+	VOLUME_ATTACHING          = "attaching"
+	VOLUME_DETACHING          = "detaching"
+	VOLUME_IN_USE             = "inUse"
+	VOLUME_DELETING           = "deleting"
+	VOLUME_ERROR              = "error"
+	VOLUEM_ERROR_DELETING     = "errorDeleting"
+	VOLUME_ERROR_EXTENDING    = "errorExtending"
+	VOLUME_EXTENDING          = "extending"
+	VOLUMESNAP_CREATING       = "creating"
+	VOLUMESNAP_AVAILABLE      = "available"
+	VOLUMESNAP_DELETING       = "deleting"
+	VOLUMESNAP_ERROR          = "error"
+	VOLUMESNAP_ERROR_DELETING = "errorDeleting"
+	VOLUMESNAP_DELETED        = "deleted"
+	VOLUMEATM_CREATING        = "creating"
+	VOLUMEATM_AVAILABLE       = "available"
+	VOLUMEATM_ERROR_DELETING  = "errorDeleting"
+	VOLUMEATM_ERROR           = "error"
+)

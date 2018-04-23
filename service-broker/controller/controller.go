@@ -17,166 +17,218 @@ package controller
 
 import (
 	"fmt"
-	"log"
+	"net/http"
 	"sync"
 
-	"errors"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/broker/controller"
-	"github.com/kubernetes-incubator/service-catalog/contrib/pkg/brokerapi"
-	sdsController "github.com/opensds/nbp/client/opensds"
+	"github.com/golang/glog"
+	sdsClient "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"github.com/pmorie/osb-broker-lib/pkg/broker"
 )
 
-type openSDSServiceInstance struct {
-	Name       string
-	Credential *brokerapi.Credential
+type opensdsServiceInstance struct {
+	ID          string
+	ServiceID   string
+	PlanID      string
+	Params      map[string]interface{}
+	Credentials map[string]interface{}
 }
 
-type openSDSController struct {
-	Endpoint string
-
+type opensdsController struct {
+	Endpoint    string
+	async       bool
 	rwMutex     sync.RWMutex
-	instanceMap map[string]*openSDSServiceInstance
+	instanceMap map[string]*opensdsServiceInstance
 }
 
-// CreateController creates an instance of an OpenSDS service broker controller.
-func CreateController(edp string) controller.Controller {
-	var instanceMap = make(map[string]*openSDSServiceInstance)
+// NewController creates an instance of an OpenSDS service broker controller.
+func NewController(edp string) *opensdsController {
+	var instanceMap = make(map[string]*opensdsServiceInstance)
 
-	return &openSDSController{
+	return &opensdsController{
 		Endpoint:    edp,
 		instanceMap: instanceMap,
 	}
 }
 
-func (c *openSDSController) Catalog() (*brokerapi.Catalog, error) {
-	prfs, err := sdsController.GetClient(c.Endpoint).ListProfiles()
+func truePtr() *bool {
+	a := true
+	return &a
+}
+
+func falsePtr() *bool {
+	b := false
+	return &b
+}
+
+func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.CatalogResponse, error) {
+	// Your catalog business logic goes here
+	response := &broker.CatalogResponse{}
+
+	prfs, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).ListProfiles()
 	if err != nil {
 		return nil, err
 	}
 
-	var plans = []brokerapi.ServicePlan{}
+	var plans = []osb.Plan{}
 	for _, prf := range prfs {
-		plan := brokerapi.ServicePlan{
+		plan := osb.Plan{
 			Name:        prf.Name,
 			ID:          prf.Id,
 			Description: prf.Description,
 			Metadata:    prf.Extras,
-			Free:        true,
+			Free:        truePtr(),
 		}
 		plans = append(plans, plan)
 	}
 
-	return &brokerapi.Catalog{
-		Services: []*brokerapi.Service{
+	osbResponse := &osb.CatalogResponse{
+		Services: []osb.Service{
 			{
-				Name:        "opensds-service",
-				ID:          "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
-				Description: "Policy based storage service",
-				Plans:       plans,
-				Bindable:    true,
+				Name:          "opensds-service",
+				ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
+				Description:   "Policy based storage service",
+				Bindable:      true,
+				PlanUpdatable: falsePtr(),
+				Plans:         plans,
 			},
 		},
-	}, nil
+	}
+
+	glog.Infof("catalog response: %#+v", osbResponse)
+
+	response.CatalogResponse = *osbResponse
+
+	return response, nil
 }
 
-func (c *openSDSController) GetServiceInstanceLastOperation(
-	instanceID, serviceID, planID, operation string,
-) (*brokerapi.LastOperationResponse, error) {
+func (c *opensdsController) LastOperation(
+	request *osb.LastOperationRequest,
+	ctx *broker.RequestContext,
+) (*broker.LastOperationResponse, error) {
 	return nil, fmt.Errorf("Not implemented!")
 }
 
-func (c *openSDSController) CreateServiceInstance(
-	instanceID string,
-	req *brokerapi.CreateServiceInstanceRequest,
-) (*brokerapi.CreateServiceInstanceResponse, error) {
+func (c *opensdsController) Provision(
+	request *osb.ProvisionRequest,
+	ctx *broker.RequestContext,
+) (*broker.ProvisionResponse, error) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
-	fmt.Printf("instanceId: %s, Bind req:%v", instanceID, *req)
 
-	var in = new(model.VolumeSpec)
-	if nameInterface, ok := req.Parameters["name"]; ok {
+	response := broker.ProvisionResponse{}
+
+	if _, ok := c.instanceMap[request.InstanceID]; ok {
+		glog.Infof("Instance %s already exist!\n", request.InstanceID)
+		return &response, nil
+	}
+
+	var in = &model.VolumeSpec{
+		ProfileId: request.PlanID,
+	}
+	if nameInterface, ok := request.Parameters["name"]; ok {
 		in.Name = nameInterface.(string)
 	}
-	if despInterface, ok := req.Parameters["description"]; ok {
+	if despInterface, ok := request.Parameters["description"]; ok {
 		in.Description = despInterface.(string)
 	}
-	if capInterface, ok := req.Parameters["capacity"]; ok {
+	if capInterface, ok := request.Parameters["capacity"]; ok {
 		in.Size = int64(capInterface.(float64))
 	}
 
-	if instance, ok := c.instanceMap[instanceID]; ok {
-		_, ok := (*instance.Credential)["volumeId"]
-		if ok {
-			log.Printf("Instance %s already exist!", instanceID)
-			return &brokerapi.CreateServiceInstanceResponse{}, nil
-		}
-	}
-
-	vol, err := sdsController.GetClient(c.Endpoint).CreateVolume(in)
+	vol, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).CreateVolume(in)
 	if err != nil {
 		return nil, err
 	}
 
-	c.instanceMap[instanceID] = &openSDSServiceInstance{
-		Name: instanceID,
-		Credential: &brokerapi.Credential{
-			"volumeId": vol.Id,
-			"image":    "OPENSDS:" + vol.Name + ":" + vol.Id,
-		},
+	c.instanceMap[request.InstanceID] = &opensdsServiceInstance{
+		ID:        request.InstanceID,
+		ServiceID: request.ServiceID,
+		PlanID:    request.PlanID,
+		Params:    request.Parameters,
+	}
+	c.instanceMap[request.InstanceID].Params["volumeID"] = vol.Id
+
+	glog.Infof("Created OpenSDS Service Instance:\n%v\n",
+		c.instanceMap[request.InstanceID])
+
+	if request.AcceptsIncomplete {
+		response.Async = c.async
 	}
 
-	log.Printf("Created User Provided Service Instance:\n%v\n",
-		c.instanceMap[instanceID])
-	return &brokerapi.CreateServiceInstanceResponse{}, nil
+	return &response, nil
 }
 
-func (c *openSDSController) RemoveServiceInstance(
-	instanceID, serviceID, planID string,
-	acceptsIncomplete bool,
-) (*brokerapi.DeleteServiceInstanceResponse, error) {
+func (c *opensdsController) Update(
+	request *osb.UpdateInstanceRequest,
+	ctx *broker.RequestContext,
+) (*broker.UpdateInstanceResponse, error) {
+	response := broker.UpdateInstanceResponse{}
+	if request.AcceptsIncomplete {
+		response.Async = c.async
+	}
+
+	return &response, nil
+}
+
+func (c *opensdsController) Deprovision(
+	request *osb.DeprovisionRequest,
+	ctx *broker.RequestContext,
+) (*broker.DeprovisionResponse, error) {
 	c.rwMutex.Lock()
 	defer c.rwMutex.Unlock()
 
-	instance, ok := c.instanceMap[instanceID]
+	response := broker.DeprovisionResponse{}
+
+	instance, ok := c.instanceMap[request.InstanceID]
 	if !ok {
-		msg := fmt.Sprintf("No such instance %s exited!", instanceID)
-		return nil, errors.New(msg)
-	}
-	volInterface, ok := (*instance.Credential)["volumeId"]
-	if !ok {
-		return &brokerapi.DeleteServiceInstanceResponse{}, nil
+		return &response, nil
 	}
 
-	if err := sdsController.GetClient(c.Endpoint).
+	volInterface, ok := instance.Params["volumeID"]
+	if !ok {
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode: http.StatusNotFound,
+		}
+	}
+	if err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
 		DeleteVolume(volInterface.(string), nil); err != nil {
-		return nil, err
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode: http.StatusInternalServerError,
+		}
 	}
-	delete(c.instanceMap, instanceID)
+	delete(c.instanceMap, request.InstanceID)
 
-	return &brokerapi.DeleteServiceInstanceResponse{}, nil
+	if request.AcceptsIncomplete {
+		response.Async = c.async
+	}
+
+	return &response, nil
 }
 
-func (c *openSDSController) Bind(
-	instanceID, bindingID string,
-	req *brokerapi.BindingRequest,
-) (*brokerapi.CreateServiceBindingResponse, error) {
-	c.rwMutex.RLock()
-	defer c.rwMutex.RUnlock()
-	fmt.Printf("instanceId: %s, bindingId: %s, Bind req:%v", instanceID, bindingID, *req)
-	instance, ok := c.instanceMap[instanceID]
-	if !ok {
-		return nil, fmt.Errorf("No such instance %s exited!", instanceID)
-	}
-	cred := instance.Credential
-	return &brokerapi.CreateServiceBindingResponse{Credentials: *cred}, nil
-}
-
-func (c *openSDSController) UnBind(
-	instanceID, bindingID, serviceID, planID string,
-) error {
+func (c *opensdsController) Bind(
+	request *osb.BindRequest,
+	ctx *broker.RequestContext,
+) (*broker.BindResponse, error) {
 	c.rwMutex.RLock()
 	defer c.rwMutex.RUnlock()
 
+	// Your bind business logic goes here
+	return &broker.BindResponse{}, nil
+}
+
+func (c *opensdsController) Unbind(
+	request *osb.UnbindRequest,
+	ctx *broker.RequestContext,
+) (*broker.UnbindResponse, error) {
+	c.rwMutex.RLock()
+	defer c.rwMutex.RUnlock()
+
+	// Your unbind business logic goes here
+	return &broker.UnbindResponse{}, nil
+}
+
+func (c *opensdsController) ValidateBrokerAPIVersion(version string) error {
 	return nil
 }
