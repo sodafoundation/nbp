@@ -25,18 +25,34 @@ import (
 	"github.com/opensds/opensds/pkg/utils/config"
 )
 
+var fp = map[string]PoolProperties{
+	"vg001": {
+		StorageType:      "block",
+		AvailabilityZone: "default",
+		Extras: model.StoragePoolExtraSpec{
+			DataStorage: model.DataStorageLoS{
+				ProvisioningPolicy: "Thin",
+				IsSpaceEfficient:   false,
+			},
+			IOConnectivity: model.IOConnectivityLoS{
+				AccessProtocol: "iscsi",
+				MaxIOPS:        7000000,
+				MaxBWS:         600,
+			},
+			Advanced: map[string]interface{}{
+				"diskType": "SSD",
+				"latency":  "5ms",
+			},
+		},
+	},
+}
+
 func TestSetup(t *testing.T) {
 	var d = &Driver{}
 	config.CONF.OsdsDock.Backends.LVM.ConfigPath = "testdata/lvm.yaml"
 	var expectedDriver = &Driver{
 		conf: &LVMConfig{
-			Pool: map[string]PoolProperties{
-				"vg001": {
-					DiskType:       "SSD",
-					AZ:             "default",
-					AccessProtocol: "iscsi",
-				},
-			},
+			Pool:      fp,
 			TgtBindIp: "192.168.56.105",
 		},
 		handler: execCmd,
@@ -56,13 +72,7 @@ func TestSetup(t *testing.T) {
 
 var fd = &Driver{
 	conf: &LVMConfig{
-		Pool: map[string]PoolProperties{
-			"vg001": {
-				DiskType:       "SSD",
-				AZ:             "default",
-				AccessProtocol: "iscsi",
-			},
-		},
+		Pool: fp,
 	},
 	handler: fakeHandler,
 }
@@ -100,7 +110,7 @@ func TestCreateVolume(t *testing.T) {
 		Size:        int64(1),
 		Status:      "available",
 		Metadata: map[string]string{
-			"lvPath": "/dev/vg001/test001",
+			"lvPath": "/dev/vg001/volume-e1bb066c-5ce7-46eb-9336-25508cee9f71",
 		},
 	}
 	vol, err := fd.CreateVolume(opt)
@@ -183,7 +193,7 @@ func TestCreateSnapshot(t *testing.T) {
 		Status:      "available",
 		VolumeId:    "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		Metadata: map[string]string{
-			"lvsPath": "/dev/vg001/snap001",
+			"lvsPath": "/dev/vg001/_snapshot-d1916c49-3088-4a40-b6fb-0fda18d074c3",
 		},
 	}
 	snp, err := fd.CreateSnapshot(opt)
@@ -191,6 +201,7 @@ func TestCreateSnapshot(t *testing.T) {
 		t.Error("Failed to create volume snapshot:", err)
 	}
 	snp.Id = ""
+	snp.Metadata["lvsPath"] = "/dev/vg001/_snapshot-d1916c49-3088-4a40-b6fb-0fda18d074c3"
 	if !reflect.DeepEqual(snp, expected) {
 		t.Errorf("Expected %+v, got %+v\n", expected, snp)
 	}
@@ -224,15 +235,27 @@ func TestDeleteSnapshot(t *testing.T) {
 func TestListPools(t *testing.T) {
 	var expected = []*model.StoragePoolSpec{
 		{
-			BaseModel:     &model.BaseModel{},
-			Name:          "vg001",
-			TotalCapacity: int64(18),
-			FreeCapacity:  int64(18),
-			Extras: model.ExtraSpec{
-				"diskType":       "SSD",
-				"accessProtocol": "iscsi",
-			},
+			BaseModel:        &model.BaseModel{},
+			Name:             "vg001",
+			TotalCapacity:    int64(18),
+			FreeCapacity:     int64(18),
 			AvailabilityZone: "default",
+			StorageType:      "block",
+			Extras: model.StoragePoolExtraSpec{
+				DataStorage: model.DataStorageLoS{
+					ProvisioningPolicy: "Thin",
+					IsSpaceEfficient:   false,
+				},
+				IOConnectivity: model.IOConnectivityLoS{
+					AccessProtocol: "iscsi",
+					MaxIOPS:        7000000,
+					MaxBWS:         600,
+				},
+				Advanced: map[string]interface{}{
+					"diskType": "SSD",
+					"latency":  "5ms",
+				},
+			},
 		},
 	}
 	pols, err := fd.ListPools()
@@ -250,7 +273,7 @@ func TestListPools(t *testing.T) {
 var (
 	sampleLV = `
 		--- Logical volume ---
-		LV Path                /dev/vg001/test001
+		LV Path                /dev/vg001/volume-e1bb066c-5ce7-46eb-9336-25508cee9f71
 		LV Name                test001
 		VG Name                vg001
 		LV UUID                mFdrHm-uiQS-TRK2-Iwua-jdQr-7sYd-ReayKW
@@ -311,7 +334,7 @@ var (
 	`
 	sampleLVS = `
 		--- Logical volume ---
-		LV Path                /dev/vg001/snap001
+		LV Path                /dev/vg001/_snapshot-d1916c49-3088-4a40-b6fb-0fda18d074c3
 		LV Name                snap001
 		VG Name                vg001
 		LV UUID                We6GmQ-H675-mfQv-iQkO-rVUI-LuBx-YBIBwr

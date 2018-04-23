@@ -40,9 +40,28 @@ var (
 			Name:        "silver",
 			Description: "silver policy",
 			Extras: model.ExtraSpec{
-				"diskType": "SAS",
-				"thin":     true,
+				"dataStorage": map[string]interface{}{
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true,
+				},
+				"ioConnectivity": map[string]interface{}{
+					"accessProtocol": "rbd",
+					"maxIOPS":        float64(5000000),
+					"maxBWS":         float64(500),
+				},
 			},
+		},
+	}
+
+	SampleExtras = model.ExtraSpec{
+		"dataStorage": map[string]interface{}{
+			"provisioningPolicy": "Thin",
+			"isSpaceEfficient":   true,
+		},
+		"ioConnectivity": map[string]interface{}{
+			"accessProtocol": "rbd",
+			"maxIOPS":        float64(5000000),
+			"maxBWS":         float64(500),
 		},
 	}
 
@@ -69,9 +88,20 @@ var (
 			FreeCapacity:     int64(90),
 			DockId:           "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 			AvailabilityZone: "default",
-			Extras: model.ExtraSpec{
-				"diskType": "SSD",
-				"thin":     true,
+			Extras: model.StoragePoolExtraSpec{
+				DataStorage: model.DataStorageLoS{
+					ProvisioningPolicy: "Thin",
+					IsSpaceEfficient:   true,
+				},
+				IOConnectivity: model.IOConnectivityLoS{
+					AccessProtocol: "rbd",
+					MaxIOPS:        8000000,
+					MaxBWS:         700,
+				},
+				Advanced: map[string]interface{}{
+					"diskType": "SSD",
+					"latency":  "3ms",
+				},
 			},
 		},
 		{
@@ -84,9 +114,20 @@ var (
 			FreeCapacity:     int64(170),
 			AvailabilityZone: "default",
 			DockId:           "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
-			Extras: model.ExtraSpec{
-				"diskType": "SAS",
-				"thin":     true,
+			Extras: model.StoragePoolExtraSpec{
+				DataStorage: model.DataStorageLoS{
+					ProvisioningPolicy: "Thin",
+					IsSpaceEfficient:   true,
+				},
+				IOConnectivity: model.IOConnectivityLoS{
+					AccessProtocol: "rbd",
+					MaxIOPS:        3000000,
+					MaxBWS:         350,
+				},
+				Advanced: map[string]interface{}{
+					"diskType": "SAS",
+					"latency":  "500ms",
+				},
 			},
 		},
 	}
@@ -143,7 +184,7 @@ var (
 			Name:        "sample-snapshot-01",
 			Description: "This is the first sample snapshot for testing",
 			Size:        int64(1),
-			Status:      "created",
+			Status:      "available",
 			VolumeId:    "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		},
 		{
@@ -153,7 +194,7 @@ var (
 			Name:        "sample-snapshot-02",
 			Description: "This is the second sample snapshot for testing",
 			Size:        int64(1),
-			Status:      "created",
+			Status:      "available",
 			VolumeId:    "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		},
 	}
@@ -180,13 +221,29 @@ var (
 			"name": "silver",
 			"description": "silver policy",
 			"extras": {
-				"diskType":"SAS"
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        5000000,
+					"maxBWS":         500
+				}
 			}
 		}
 	]`
 
 	ByteExtras = `{
-		"diskType":"SAS"
+		"dataStorage": {
+			"provisioningPolicy": "Thin",
+			"isSpaceEfficient":   true
+		},
+		"ioConnectivity": {
+			"accessProtocol": "rbd",
+			"maxIOPS":        5000000,
+			"maxBWS":         500
+		}
 	}`
 
 	ByteDock = `{
@@ -215,7 +272,18 @@ var (
 		"freeCapacity": 90,
 		"dockId": "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 		"extras": {
-			"diskType": "SSD"
+			"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+			"ioConnectivity": {
+				"accessProtocol": "rbd",
+				"maxIOPS":        1000
+			},
+			"advanced": {
+				"diskType":   "SSD",
+				"throughput": 1000
+			}
 		}
 	}`
 
@@ -228,7 +296,19 @@ var (
 			"freeCapacity": 90,
 			"dockId": "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 			"extras": {
-				"diskType": "SSD"
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        8000000,
+					"maxBWS": 	      700
+				},
+				"advanced": {
+					"diskType": "SSD",
+					"latency":  "3ms"
+				}
 			}
 		},
 		{
@@ -239,7 +319,19 @@ var (
 			"freeCapacity": 170,
 			"dockId": "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 			"extras": {
-				"diskType": "SAS"
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        3000000,
+					"maxBWS": 	      350
+				},
+				"advanced": {
+					"diskType": "SAS",
+					"latency":  "500ms"
+				}
 			}
 		}
 	]`
@@ -309,7 +401,7 @@ var (
 		"name": "sample-snapshot-01",
 		"description": "This is the first sample snapshot for testing",
 		"size": 1,
-		"status": "created",
+		"status": "available",
 		"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"		
 	}`
 
@@ -319,7 +411,7 @@ var (
 			"name": "sample-snapshot-01",
 			"description": "This is the first sample snapshot for testing",
 			"size": 1,
-			"status": "created",
+			"status": "available",
 			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"	
 		},
 		{
@@ -327,7 +419,7 @@ var (
 			"name": "sample-snapshot-02",
 			"description": "This is the second sample snapshot for testing",
 			"size": 1,
-			"status": "created",
+			"status": "available",
 			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"	
 		}
 	]`
@@ -363,8 +455,15 @@ var (
 			"name":        "silver",
 			"description": "silver policy",
 			"extras": {
-				"diskType": "SAS",
-				"thin":     true
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        5000000,
+					"maxBWS":         500
+				}
 			}
 		}`,
 	}
@@ -389,8 +488,19 @@ var (
 			"dockId":           "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 			"availabilityZone": "default",
 			"extras": {
-				"diskType": "SSD",
-				"thin":     true
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        8000000,
+					"maxBWS": 	      700
+				},
+				"advanced": {
+					"diskType": "SSD",
+					"latency":  "3ms"
+				}
 			}
 		}`,
 		`{
@@ -402,8 +512,19 @@ var (
 			"availabilityZone": "default",
 			"dockId":           "b7602e18-771e-11e7-8f38-dbd6d291f4e0",
 			"extras": {
-				"diskType": "SAS",
-				"thin":     true
+				"dataStorage": {
+					"provisioningPolicy": "Thin",
+					"isSpaceEfficient":   true
+				},
+				"ioConnectivity": {
+					"accessProtocol": "rbd",
+					"maxIOPS":        3000000,
+					"maxBWS": 	      350
+				},
+				"advanced": {
+					"diskType": "SAS",
+					"latency":  "500ms"
+				}
 			}
 		}`,
 	}
@@ -444,7 +565,7 @@ var (
 			"name":        "sample-snapshot-01",
 			"description": "This is the first sample snapshot for testing",
 			"size":        1,
-			"status":      "created",
+			"status":      "available",
 			"volumeId":    "bd5b12a8-a101-11e7-941e-d77981b584d8"
 		}`,
 		`{
@@ -452,7 +573,7 @@ var (
 			"name":        "sample-snapshot-02",
 			"description": "This is the second sample snapshot for testing",
 			"size":        1,
-			"status":      "created",
+			"status":      "available",
 			"volumeId":    "bd5b12a8-a101-11e7-941e-d77981b584d8"
 		}`,
 	}
