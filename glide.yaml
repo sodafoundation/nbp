@@ -6,11 +6,6 @@ import:
   - lib/go/csi/v0
 - package: github.com/golang/glog
 - package: github.com/mitchellh/mapstructure
-- package: github.com/opensds/opensds
-  version: ^0.1.0
-  subpackages:
-  - client
-  - pkg/model
 - package: github.com/pmorie/go-open-service-broker-client
   version: 0.0.10
   subpackages:
@@ -39,3 +34,5 @@ import:
   - codes
   - reflection
   - status
+- package: github.com/opensds/opensds
+  version: 0.1.7
