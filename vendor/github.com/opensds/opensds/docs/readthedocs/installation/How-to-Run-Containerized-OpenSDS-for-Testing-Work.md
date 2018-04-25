@@ -1,5 +1,3 @@
-# How-to-Run-Containerized-OpenSDS-for-Testing-Work
-
 ## Pre-configuration
 Before you start, some configurations are required:
 ```shell

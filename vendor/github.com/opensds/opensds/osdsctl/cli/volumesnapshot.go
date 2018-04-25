@@ -86,7 +86,12 @@ func volumeSnapshotAction(cmd *cobra.Command, args []string) {
 }
 
 func volumeSnapshotCreateAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	snp := &model.VolumeSnapshotSpec{
 		Name:        volSnapshotName,
 		Description: volSnapshotDesp,
@@ -94,57 +99,77 @@ func volumeSnapshotCreateAction(cmd *cobra.Command, args []string) {
 	}
 
 	resp, err := client.CreateVolumeSnapshot(snp)
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintDict(resp, keys, FormatterList{})
 }
 
 func volumeSnapshotShowAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	resp, err := client.GetVolumeSnapshot(args[0])
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintDict(resp, keys, FormatterList{})
 }
 
 func volumeSnapshotListAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 0)
+	if len(args) != 0 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	resp, err := client.ListVolumeSnapshots()
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintList(resp, keys, FormatterList{})
 }
 
 func volumeSnapshotDeleteAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
 	snapID := args[0]
 	err := client.DeleteVolumeSnapshot(snapID, nil)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	fmt.Printf("Delete snapshot(%s) success.\n", snapID)
 }
 
 func volumeSnapshotUpdateAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	snp := &model.VolumeSnapshotSpec{
 		Name:        volSnapshotName,
 		Description: volSnapshotDesp,
 	}
 
 	resp, err := client.UpdateVolumeSnapshot(args[0], snp)
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Size", "Status", "VolumeId"}
 	PrintDict(resp, keys, FormatterList{})

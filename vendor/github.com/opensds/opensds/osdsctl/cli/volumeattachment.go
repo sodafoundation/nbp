@@ -77,76 +77,101 @@ func volumeAttachmentAction(cmd *cobra.Command, args []string) {
 	os.Exit(1)
 }
 
-var attachmentFormatters = FormatterList{"HostInfo": JsonFormatter, "ConnectionInfo": JsonFormatter}
-
 func volumeAttachmentCreateAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
-	attachment := &model.VolumeAttachmentSpec{}
-	if err := json.Unmarshal([]byte(args[0]), attachment); err != nil {
-		Errorln(err)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
 		cmd.Usage()
 		os.Exit(1)
 	}
-	resp, err := client.CreateVolumeAttachment(attachment)
-	PrintResponse(resp)
-	if err != nil {
-		Fatalln(HttpErrStrip(err))
+
+	attachment := &model.VolumeAttachmentSpec{}
+	if err := json.Unmarshal([]byte(args[0]), attachment); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		cmd.Usage()
+		os.Exit(1)
 	}
-	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "TenantId", "UserId", "HostInfo", "ConnectionInfo",
+
+	resp, err := client.CreateVolumeAttachment(attachment)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "ProjectId", "UserId", "HostInfo", "ConnectionInfo",
 		"Mountpoint", "Status", "VolumeId"}
-	PrintDict(resp, keys, attachmentFormatters)
+	PrintDict(resp, keys, FormatterList{})
 }
 
 func volumeAttachmentShowAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
-	resp, err := client.GetVolumeAttachment(args[0])
-	PrintResponse(resp)
-	if err != nil {
-		Fatalln(HttpErrStrip(err))
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
 	}
-	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "TenantId", "UserId", "HostInfo", "ConnectionInfo",
+
+	resp, err := client.GetVolumeAttachment(args[0])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "ProjectId", "UserId", "HostInfo", "ConnectionInfo",
 		"Mountpoint", "Status", "VolumeId"}
-	PrintDict(resp, keys, attachmentFormatters)
+	PrintDict(resp, keys, FormatterList{})
 }
 
 func volumeAttachmentListAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 0)
-	resp, err := client.ListVolumeAttachments()
-	PrintResponse(resp)
-	if err != nil {
-		Fatalln(HttpErrStrip(err))
+	if len(args) != 0 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
 	}
-	keys := KeyList{"Id", "TenantId", "UserId", "Mountpoint", "Status", "VolumeId"}
-	PrintList(resp, keys, attachmentFormatters)
+
+	resp, err := client.ListVolumeAttachments()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	keys := KeyList{"Id", "ProjectId", "UserId", "HostInfo", "ConnectionInfo",
+		"Mountpoint", "Status", "VolumeId"}
+	PrintList(resp, keys, FormatterList{})
 }
 
 func volumeAttachmentDeleteAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 2)
+	if len(args) != 2 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
 	attachment := &model.VolumeAttachmentSpec{
 		VolumeId: args[0],
 	}
 	err := client.DeleteVolumeAttachment(args[1], attachment)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	fmt.Printf("Delete attachment(%s) success.\n", args[1])
 }
 
 func volumeAttachmentUpdateAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 2)
+	if len(args) != 2 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	attachment := &model.VolumeAttachmentSpec{}
 	if err := json.Unmarshal([]byte(args[1]), attachment); err != nil {
-		Errorln(err)
+		fmt.Fprintln(os.Stderr, err)
 		cmd.Usage()
 		os.Exit(1)
 	}
 
 	resp, err := client.UpdateVolumeAttachment(args[0], attachment)
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "TenantId", "UserId", "HostInfo", "ConnectionInfo",
+	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "ProjectId", "UserId", "HostInfo", "ConnectionInfo",
 		"Mountpoint", "Status", "VolumeId"}
-	PrintDict(resp, keys, attachmentFormatters)
+	PrintDict(resp, keys, FormatterList{})
 }

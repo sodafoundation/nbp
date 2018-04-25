@@ -1,5 +1,3 @@
-# OpenSDS-Integration-with-Kubernetes-Flexvolume
-
 ## Prerequisite ##
 ### ubuntu
 * Version information

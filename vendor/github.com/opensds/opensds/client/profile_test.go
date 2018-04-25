@@ -147,15 +147,7 @@ func TestListProfiles(t *testing.T) {
 			Name:        "silver",
 			Description: "silver policy",
 			Extras: model.ExtraSpec{
-				"dataStorage": map[string]interface{}{
-					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true,
-				},
-				"ioConnectivity": map[string]interface{}{
-					"accessProtocol": "rbd",
-					"maxIOPS":        float64(5000000),
-					"maxBWS":         float64(500),
-				},
+				"diskType": "SAS",
 			},
 		},
 	}
@@ -167,7 +159,7 @@ func TestListProfiles(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(prfs, expected) {
-		t.Errorf("Expected %v, got %v", expected[1], prfs[1])
+		t.Errorf("Expected %v, got %v", expected, prfs)
 		return
 	}
 }
@@ -183,7 +175,9 @@ func TestDeleteProfile(t *testing.T) {
 
 func TestAddExtraProperty(t *testing.T) {
 	var prfID = "2f9c0a04-66ef-11e7-ade2-43158893e017"
-	expected := &SampleExtras
+	expected := &model.ExtraSpec{
+		"diskType": "SAS",
+	}
 
 	exts, err := fpr.AddExtraProperty(prfID, &model.ExtraSpec{})
 	if err != nil {
@@ -199,7 +193,9 @@ func TestAddExtraProperty(t *testing.T) {
 
 func TestListExtraProperties(t *testing.T) {
 	var prfID = "2f9c0a04-66ef-11e7-ade2-43158893e017"
-	expected := &SampleExtras
+	expected := &model.ExtraSpec{
+		"diskType": "SAS",
+	}
 
 	exts, err := fpr.ListExtraProperties(prfID)
 	if err != nil {

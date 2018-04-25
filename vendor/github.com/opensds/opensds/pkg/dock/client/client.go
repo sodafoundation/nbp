@@ -25,8 +25,7 @@ import (
 // Client also exposes two methods: Connect() and Close(), for which callers
 // can easily open and close gRPC connection.
 type Client interface {
-	pb.ProvisionDockClient
-	pb.AttachDockClient
+	pb.DockClient
 
 	Connect(edp string) error
 
@@ -37,8 +36,7 @@ type Client interface {
 // called in real environment. There would be more other kind of connection
 // in the long run.
 type client struct {
-	pb.ProvisionDockClient
-	pb.AttachDockClient
+	pb.DockClient
 	*grpc.ClientConn
 }
 
@@ -51,11 +49,10 @@ func (c *client) Connect(edp string) error {
 		log.Errorf("did not connect: %+v\n", err)
 		return err
 	}
-	// Create dock client via the connection.
-	pdc := pb.NewProvisionDockClient(conn)
-	adc := pb.NewAttachDockClient(conn)
+	// Create a dock client via the connection.
+	dc := pb.NewDockClient(conn)
 
-	c.ProvisionDockClient, c.AttachDockClient = pdc, adc
+	c.DockClient = dc
 	c.ClientConn = conn
 
 	return nil

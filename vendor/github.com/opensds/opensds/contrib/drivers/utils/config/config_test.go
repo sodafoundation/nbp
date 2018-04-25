@@ -17,8 +17,6 @@ package config
 import (
 	"reflect"
 	"testing"
-
-	"github.com/opensds/opensds/pkg/model"
 )
 
 type Config struct {
@@ -32,22 +30,15 @@ func TestParse(t *testing.T) {
 		ConfigFile: "/etc/ceph/ceph.conf",
 		Pool: map[string]PoolProperties{
 			"rbd": {
-				StorageType:      "block",
-				AvailabilityZone: "default",
-				Extras: model.StoragePoolExtraSpec{
-					DataStorage: model.DataStorageLoS{
-						ProvisioningPolicy: "Thin",
-						IsSpaceEfficient:   true,
-					},
-					IOConnectivity: model.IOConnectivityLoS{
-						AccessProtocol: "rbd",
-						MaxIOPS:        8000000,
-						MaxBWS:         700,
-					},
-					Advanced: map[string]interface{}{
-						"diskType": "SSD",
-						"latency":  "3ms",
-					},
+				DiskType:        "SSD",
+				AZ:              "ceph",
+				AccessProtocol:  "rbd",
+				ThinProvisioned: true,
+				Compressed:      true,
+				Advanced: map[string]interface{}{
+					"recoveryTimeObjective": 0,
+					"maxIOPS":               1000,
+					"deduped":               false,
 				},
 			},
 		},

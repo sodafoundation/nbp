@@ -19,6 +19,7 @@ This module implements a entry into the OpenSDS service.
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -53,21 +54,31 @@ func poolAction(cmd *cobra.Command, args []string) {
 }
 
 func poolShowAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
 	pols, err := client.GetPool(args[0])
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Status", "DockId",
 		"AvailabilityZone", "TotalCapacity", "FreeCapacity", "StorageType", "Extras"}
-	PrintDict(pols, keys, FormatterList{"Extras": JsonFormatter})
+	PrintDict(pols, keys, FormatterList{})
 }
 
 func poolListAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 0)
+	if len(args) != 0 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
 	pols, err := client.ListPools()
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "Name", "Description", "Status", "AvailabilityZone", "TotalCapacity", "FreeCapacity"}
 	PrintList(pols, keys, FormatterList{})

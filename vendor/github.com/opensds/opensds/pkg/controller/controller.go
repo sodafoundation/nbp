@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
 	log "github.com/golang/glog"
 	c "github.com/opensds/opensds/pkg/context"
@@ -58,9 +57,9 @@ type Controller struct {
 	policyController policy.Controller
 }
 
-func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec, errchanVolume chan error) {
-	var err error
+func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec) (*model.VolumeSpec, error) {
 	var profile *model.ProfileSpec
+	var err error
 
 	if in.ProfileId == "" {
 		log.Warning("Use default profile when user doesn't specify profile.")
@@ -70,8 +69,18 @@ func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec, errchanV
 	}
 	if err != nil {
 		log.Error("Get profile failed: ", err)
-		errchanVolume <- err
-		return
+		return nil, err
+	}
+
+	if in.Size <= 0 {
+		errMsg := fmt.Sprintf("Invalid volume size: %d", in.Size)
+		log.Error(errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	if in.AvailabilityZone == "" {
+		log.Warning("Use default availability zone when user doesn't specify availabilityZone.")
+		in.AvailabilityZone = "default"
 	}
 
 	var filterRequest map[string]interface{}
@@ -80,21 +89,20 @@ func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec, errchanV
 	} else {
 		filterRequest = make(map[string]interface{})
 	}
-	filterRequest["freeCapacity"] = ">= " + strconv.Itoa(int(in.Size))
+	filterRequest["size"] = in.Size
 	filterRequest["availabilityZone"] = in.AvailabilityZone
 
 	polInfo, err := c.selector.SelectSupportedPool(filterRequest)
 	if err != nil {
-		errchanVolume <- err
-		return
+		log.Error("When search supported pool resource:", err)
+		return nil, err
 	}
-
 	dockInfo, err := db.C.GetDock(ctx, polInfo.DockId)
 	if err != nil {
-		log.Error("When search supported dock resource:", err.Error())
-		errchanVolume <- err
-		return
+		log.Error("When search supported dock resource:", err)
+		return nil, err
 	}
+
 	c.volumeController.SetDock(dockInfo)
 	opt := &pb.CreateVolumeOpts{
 		Id:               in.Id,
@@ -105,28 +113,13 @@ func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec, errchanV
 		ProfileId:        profile.Id,
 		PoolId:           polInfo.Id,
 		PoolName:         polInfo.Name,
+		DockId:           dockInfo.Id,
 		DriverName:       dockInfo.DriverName,
 		Context:          ctx.ToJson(),
 	}
-
 	result, err := c.volumeController.CreateVolume(opt)
 	if err != nil {
-		//Change the status of the volume to error when the creation faild
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUME_ERROR); errUpdate != nil {
-			errchanVolume <- errUpdate
-			return
-		}
-		log.Error("When create volume:", err.Error())
-		errchanVolume <- err
-		return
-	}
-
-	result.PoolId, result.ProfileId = opt.GetPoolId(), opt.GetProfileId()
-
-	// Update the volume data in database.
-	if err = c.UpdateStatus(ctx, result, model.VOLUME_AVAILABLE); err != nil {
-		errchanVolume <- err
-		return
+		return nil, err
 	}
 
 	// Select the storage tag according to the lifecycle flag.
@@ -134,24 +127,18 @@ func (c *Controller) CreateVolume(ctx *c.Context, in *model.VolumeSpec, errchanV
 	c.policyController.Setup(CREATE_LIFECIRCLE_FLAG)
 	c.policyController.SetDock(dockInfo)
 
-	var errChanPolicy = make(chan error, 1)
-	defer close(errChanPolicy)
+	var errChan = make(chan error, 1)
 	volBody, _ := json.Marshal(result)
-	go c.policyController.ExecuteAsyncPolicy(opt, string(volBody), errChanPolicy)
-	if err := <-errChanPolicy; err != nil {
-		log.Error("When execute async policy:", err)
-		errchanVolume <- err
-		return
-	}
-	errchanVolume <- nil
+	go c.policyController.ExecuteAsyncPolicy(opt, string(volBody), errChan)
+
+	return result, nil
 }
 
-func (c *Controller) DeleteVolume(ctx *c.Context, in *model.VolumeSpec, errchanvol chan error) {
+func (c *Controller) DeleteVolume(ctx *c.Context, in *model.VolumeSpec) error {
 	prf, err := db.C.GetProfile(ctx, in.ProfileId)
 	if err != nil {
 		log.Error("when search profile in db:", err)
-		errchanvol <- err
-		return
+		return err
 	}
 
 	// Select the storage tag according to the lifecycle flag.
@@ -161,8 +148,7 @@ func (c *Controller) DeleteVolume(ctx *c.Context, in *model.VolumeSpec, errchanv
 	dockInfo, err := db.C.GetDockByPoolId(ctx, in.PoolId)
 	if err != nil {
 		log.Error("When search dock in db by pool id: ", err)
-		errchanvol <- err
-		return
+		return err
 	}
 	c.policyController.SetDock(dockInfo)
 	c.volumeController.SetDock(dockInfo)
@@ -170,195 +156,118 @@ func (c *Controller) DeleteVolume(ctx *c.Context, in *model.VolumeSpec, errchanv
 	opt := &pb.DeleteVolumeOpts{
 		Id:         in.Id,
 		Metadata:   in.Metadata,
+		DockId:     dockInfo.Id,
 		DriverName: dockInfo.DriverName,
 		Context:    ctx.ToJson(),
 	}
 
 	var errChan = make(chan error, 1)
-	defer close(errChan)
 	go c.policyController.ExecuteAsyncPolicy(opt, "", errChan)
 
 	if err := <-errChan; err != nil {
 		log.Error("When execute async policy:", err)
-		errchanvol <- err
-		return
+		return err
 	}
 
-	err = c.volumeController.DeleteVolume(opt)
-	if err != nil {
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUEM_ERROR_DELETING); errUpdate != nil {
-			errchanvol <- errUpdate
-			return
-		}
-		errchanvol <- err
-		return
-	}
-	if err = db.C.DeleteVolume(ctx, opt.GetId()); err != nil {
-		log.Error("Error occurred in dock module when delete volume in db:", err.Error())
-		errchanvol <- err
-		return
-	}
-	errchanvol <- nil
+	return c.volumeController.DeleteVolume(opt)
 }
 
 // ExtendVolume ...
-func (c *Controller) ExtendVolume(ctx *c.Context, volID string, newSize int64, errchanVolume chan error) {
-	vol, err := db.C.GetVolume(ctx, volID)
-	var volumeSize = vol.Size
-	if err != nil {
-		log.Error("Get volume failed in extend volume method: ", err.Error())
-		errchanVolume <- err
-		return
-	}
-
-	if newSize > vol.Size {
-		pool, err := db.C.GetPool(ctx, vol.PoolId)
-		if nil != err {
-			log.Error("Get pool failed in extend volume method: ", err.Error())
-			errchanVolume <- err
-			return
-		}
-
-		if pool.FreeCapacity >= (newSize - vol.Size) {
-			vol.Size = newSize
-		} else {
-			reason := fmt.Sprintf("pool free capacity(%d) < new size(%d) - old size(%d)",
-				pool.FreeCapacity, newSize, vol.Size)
-			errchanVolume <- errors.New(reason)
-			return
-		}
-	} else {
-		reason := fmt.Sprintf("new size(%d) <= old size(%d)", newSize, vol.Size)
-		errchanVolume <- errors.New(reason)
-		log.Error(reason)
-		return
-	}
-
-	prf, err := db.C.GetProfile(ctx, vol.ProfileId)
+func (c *Controller) ExtendVolume(ctx *c.Context, in *model.VolumeSpec) (*model.VolumeSpec, error) {
+	prf, err := db.C.GetProfile(ctx, in.ProfileId)
 	if err != nil {
 		log.Error("when search profile in db:", err)
-		errchanVolume <- err
-		return
+		return nil, err
 	}
 
 	// Select the storage tag according to the lifecycle flag.
 	c.policyController = policy.NewController(prf)
 	c.policyController.Setup(EXTEND_LIFECIRCLE_FLAG)
 
-	dockInfo, err := db.C.GetDockByPoolId(ctx, vol.PoolId)
+	dockInfo, err := db.C.GetDockByPoolId(ctx, in.PoolId)
 	if err != nil {
-		log.Error("When search dock in db by pool id: ", err.Error())
-		errchanVolume <- err
-		return
-
+		log.Error("When search dock in db by pool id: ", err)
+		return nil, err
 	}
 	c.policyController.SetDock(dockInfo)
 	c.volumeController.SetDock(dockInfo)
 
 	opt := &pb.ExtendVolumeOpts{
-		Id:         vol.Id,
-		Size:       vol.Size,
-		Metadata:   vol.Metadata,
+		Id:         in.Id,
+		Size:       in.Size,
+		Metadata:   in.Metadata,
+		DockId:     dockInfo.Id,
 		DriverName: dockInfo.DriverName,
 		Context:    ctx.ToJson(),
 	}
 
 	result, err := c.volumeController.ExtendVolume(opt)
 	if err != nil {
-		vol.Size = volumeSize
-		if errUpdate := c.UpdateStatus(ctx, vol, model.VOLUME_ERROR); errUpdate != nil {
-			errchanVolume <- errUpdate
-			return
-		}
-		errchanVolume <- err
-		return
-	}
-	result.PoolId, result.ProfileId = opt.GetPoolId(), opt.GetProfileId()
-
-	// Update the volume data in database.
-	if errUpdate := c.UpdateStatus(ctx, result, model.VOLUME_AVAILABLE); errUpdate != nil {
-		errchanVolume <- errUpdate
-		return
+		return nil, err
 	}
 
 	volBody, _ := json.Marshal(result)
 	var errChan = make(chan error, 1)
-	defer close(errChan)
 	go c.policyController.ExecuteAsyncPolicy(opt, string(volBody), errChan)
 
 	if err := <-errChan; err != nil {
-		log.Error("When execute async policy:", err.Error())
-		errchanVolume <- err
-		return
+		log.Error("When execute async policy:", err)
+		return nil, err
 	}
 
-	errchanVolume <- nil
+	return result, nil
 }
 
-func (c *Controller) CreateVolumeAttachment(ctx *c.Context, in *model.VolumeAttachmentSpec, errchanVolAtm chan error) {
+func (c *Controller) CreateVolumeAttachment(ctx *c.Context, in *model.VolumeAttachmentSpec) (*model.VolumeAttachmentSpec, error) {
 	vol, err := db.C.GetVolume(ctx, in.VolumeId)
 	if err != nil {
 		log.Error("Get volume failed in create volume attachment method: ", err)
-		errchanVolAtm <- err
-		return
+		return nil, err
 	}
 	dockInfo, err := db.C.GetDockByPoolId(ctx, vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
-		errchanVolAtm <- err
-		return
+		return nil, err
 	}
 	c.volumeController.SetDock(dockInfo)
-	var atm = &pb.CreateAttachmentOpts{
-		Id:       in.Id,
-		VolumeId: in.VolumeId,
-		HostInfo: &pb.HostInfo{
-			Platform:  in.Platform,
-			OsType:    in.OsType,
-			Ip:        in.Ip,
-			Host:      in.Host,
-			Initiator: in.Initiator,
+
+	return c.volumeController.CreateVolumeAttachment(
+		&pb.CreateAttachmentOpts{
+			Id:       in.Id,
+			VolumeId: in.VolumeId,
+			HostInfo: &pb.HostInfo{
+				Platform:  in.Platform,
+				OsType:    in.OsType,
+				Ip:        in.Ip,
+				Host:      in.Host,
+				Initiator: in.Initiator,
+			},
+			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
+			DriverName: dockInfo.DriverName,
+			Context:    ctx.ToJson(),
 		},
-		Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
-		DriverName: dockInfo.DriverName,
-		Context:    ctx.ToJson(),
-	}
-	result, err := c.volumeController.CreateVolumeAttachment(atm)
-	if err != nil {
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUMEATM_ERROR); errUpdate != nil {
-			errchanVolAtm <- errUpdate
-			return
-		}
-		errchanVolAtm <- err
-		return
-	}
-	if err = c.UpdateStatus(ctx, result, model.VOLUMEATM_AVAILABLE); err != nil {
-		errchanVolAtm <- err
-		return
-	}
-	errchanVolAtm <- nil
+	)
 }
 
 func (c *Controller) UpdateVolumeAttachment(in *model.VolumeAttachmentSpec) (*model.VolumeAttachmentSpec, error) {
 	return nil, errors.New("Not implemented!")
 }
 
-func (c *Controller) DeleteVolumeAttachment(ctx *c.Context, in *model.VolumeAttachmentSpec, errchan chan error) {
+func (c *Controller) DeleteVolumeAttachment(ctx *c.Context, in *model.VolumeAttachmentSpec) error {
 	vol, err := db.C.GetVolume(ctx, in.VolumeId)
 	if err != nil {
 		log.Error("Get volume failed in delete volume attachment method: ", err)
-		errchan <- err
-		return
+		return err
 	}
 	dockInfo, err := db.C.GetDockByPoolId(ctx, vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
-		errchan <- err
-		return
+		return err
 	}
 	c.volumeController.SetDock(dockInfo)
 
-	err = c.volumeController.DeleteVolumeAttachment(
+	return c.volumeController.DeleteVolumeAttachment(
 		&pb.DeleteAttachmentOpts{
 			Id:       in.Id,
 			VolumeId: in.VolumeId,
@@ -370,45 +279,28 @@ func (c *Controller) DeleteVolumeAttachment(ctx *c.Context, in *model.VolumeAtta
 				Initiator: in.Initiator,
 			},
 			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
 			DriverName: dockInfo.DriverName,
 			Context:    ctx.ToJson(),
 		},
 	)
-
-	if err != nil {
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUMEATM_ERROR_DELETING); errUpdate != nil {
-			errchan <- errUpdate
-			return
-		}
-		errchan <- err
-		return
-	}
-	if err := db.C.DeleteVolumeAttachment(ctx, in.Id); err != nil {
-		log.Error("Error occurred in dock module when delete volume attachment in db:", err)
-		errchan <- err
-		return
-	}
-
-	errchan <- nil
 }
 
-func (c *Controller) CreateVolumeSnapshot(ctx *c.Context, in *model.VolumeSnapshotSpec, errchan chan error) {
+func (c *Controller) CreateVolumeSnapshot(ctx *c.Context, in *model.VolumeSnapshotSpec) (*model.VolumeSnapshotSpec, error) {
 	vol, err := db.C.GetVolume(ctx, in.VolumeId)
 	if err != nil {
 		log.Error("Get volume failed in create volume snapshot method: ", err)
-		errchan <- err
-		return
+		return nil, err
 	}
 
 	dockInfo, err := db.C.GetDockByPoolId(ctx, vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
-		errchan <- err
-		return
+		return nil, err
 	}
 	c.volumeController.SetDock(dockInfo)
 
-	snp, err := c.volumeController.CreateVolumeSnapshot(
+	return c.volumeController.CreateVolumeSnapshot(
 		&pb.CreateVolumeSnapshotOpts{
 			Id:          in.Id,
 			Name:        in.Name,
@@ -416,92 +308,34 @@ func (c *Controller) CreateVolumeSnapshot(ctx *c.Context, in *model.VolumeSnapsh
 			VolumeId:    in.VolumeId,
 			Size:        vol.Size,
 			Metadata:    utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:      dockInfo.Id,
 			DriverName:  dockInfo.DriverName,
 			Context:     ctx.ToJson(),
 		},
 	)
-	if err != nil {
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUMESNAP_ERROR); errUpdate != nil {
-			errchan <- errUpdate
-			return
-		}
-		errchan <- err
-		return
-	}
-	if errUpdate := c.UpdateStatus(ctx, snp, model.VOLUMESNAP_AVAILABLE); errUpdate != nil {
-		errchan <- errUpdate
-		return
-	}
-	errchan <- nil
 }
 
-func (c *Controller) DeleteVolumeSnapshot(ctx *c.Context, in *model.VolumeSnapshotSpec, errchan chan error) {
+func (c *Controller) DeleteVolumeSnapshot(ctx *c.Context, in *model.VolumeSnapshotSpec) error {
 	vol, err := db.C.GetVolume(ctx, in.VolumeId)
 	if err != nil {
 		log.Error("Get volume failed in delete volume snapshot method: ", err)
-		errchan <- err
-		return
+		return err
 	}
 	dockInfo, err := db.C.GetDockByPoolId(ctx, vol.PoolId)
 	if err != nil {
 		log.Error("When search supported dock resource:", err)
-		errchan <- err
-		return
+		return err
 	}
 	c.volumeController.SetDock(dockInfo)
 
-	err = c.volumeController.DeleteVolumeSnapshot(
+	return c.volumeController.DeleteVolumeSnapshot(
 		&pb.DeleteVolumeSnapshotOpts{
 			Id:         in.Id,
 			VolumeId:   in.VolumeId,
 			Metadata:   utils.MergeStringMaps(in.Metadata, vol.Metadata),
+			DockId:     dockInfo.Id,
 			DriverName: dockInfo.DriverName,
 			Context:    ctx.ToJson(),
 		},
 	)
-	if err != nil {
-		if errUpdate := c.UpdateStatus(ctx, in, model.VOLUMESNAP_ERROR_DELETING); errUpdate != nil {
-			errchan <- errUpdate
-			return
-		}
-		log.Error("Error occurred in dock module when delete volume snapshot in driver:", err)
-		errchan <- err
-		return
-	}
-	if err = db.C.DeleteVolumeSnapshot(ctx, in.Id); err != nil {
-		log.Error("Error occurred in dock module when delete volume snapshot in db:", err)
-		errchan <- err
-		return
-	}
-	errchan <- nil
-}
-
-func (c *Controller) UpdateStatus(ctx *c.Context, in interface{}, status string) error {
-	switch in.(type) {
-
-	case *model.VolumeSnapshotSpec:
-		snap := in.(*model.VolumeSnapshotSpec)
-		snap.Status = status
-		if _, errUpdate := db.C.UpdateVolumeSnapshot(ctx, snap.Id, snap); errUpdate != nil {
-			log.Error("Error occurs when update volume snapshot status in db:", errUpdate.Error())
-			return errUpdate
-		}
-
-	case *model.VolumeAttachmentSpec:
-		attm := in.(*model.VolumeAttachmentSpec)
-		attm.Status = status
-		if _, errUpdate := db.C.UpdateVolumeAttachment(ctx, attm.Id, attm); errUpdate != nil {
-			log.Error("Error occurred in dock module when update volume attachment status in db:", errUpdate)
-			return errUpdate
-		}
-
-	case *model.VolumeSpec:
-		vol := in.(*model.VolumeSpec)
-		vol.Status = status
-		if _, errUpdate := db.C.UpdateVolume(ctx, vol); errUpdate != nil {
-			log.Error("When update volume status in db:", errUpdate.Error())
-			return errUpdate
-		}
-	}
-	return nil
 }
