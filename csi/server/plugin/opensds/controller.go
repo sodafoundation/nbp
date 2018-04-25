@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
-	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -163,7 +162,6 @@ func (p *Plugin) ControllerPublishVolume(
 			Host:      req.NodeId,
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
-			Ip:        iscsi.GetHostIp(),
 			Initiator: localIqn,
 		},
 		Metadata: req.VolumeAttributes,
