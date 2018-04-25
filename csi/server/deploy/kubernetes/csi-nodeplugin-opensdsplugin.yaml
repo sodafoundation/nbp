@@ -24,14 +24,14 @@ spec:
             - "--csi-address=$(ADDRESS)"
           env:
             - name: ADDRESS
-              value: /csi/csi.sock
+              value: /var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
           volumeMounts:
             - name: socket-dir
-              mountPath: /csi
+              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
         - name: opensds
           securityContext:
             privileged: true
@@ -44,7 +44,7 @@ spec:
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
           env:
             - name: CSI_ENDPOINT
-              value: unix://csi/csi.sock
+              value: unix://var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
@@ -53,7 +53,7 @@ spec:
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
-              mountPath: /csi
+              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
@@ -67,7 +67,7 @@ spec:
       volumes:
         - name: socket-dir
           hostPath:
-            path: /csi
+            path: /var/lib/kubelet/plugins/csi-opensdsplugin
             type: DirectoryOrCreate		
         - name: pods-mount-dir
           hostPath:
