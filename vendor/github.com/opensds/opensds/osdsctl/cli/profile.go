@@ -70,53 +70,72 @@ func profileAction(cmd *cobra.Command, args []string) {
 	os.Exit(1)
 }
 
-var profileFormatters = FormatterList{"Extras": JsonFormatter}
-
 func profileCreateAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	prf := &model.ProfileSpec{}
 	if err := json.Unmarshal([]byte(args[0]), prf); err != nil {
-		Errorln(err)
+		fmt.Fprintln(os.Stderr, err)
 		cmd.Usage()
 		os.Exit(1)
 	}
 
 	resp, err := client.CreateProfile(prf)
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Extras"}
-	PrintDict(resp, keys, profileFormatters)
+	PrintDict(resp, keys, FormatterList{})
 }
 
 func profileShowAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	resp, err := client.GetProfile(args[0])
-	PrintResponse(resp)
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	keys := KeyList{"Id", "CreatedAt", "UpdatedAt", "Name", "Description", "Extras"}
-	PrintDict(resp, keys, profileFormatters)
+	PrintDict(resp, keys, FormatterList{})
 }
 
 func profileListAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 0)
-	resp, err := client.ListProfiles()
-	PrintResponse(resp)
-	if err != nil {
-		Fatalln(HttpErrStrip(err))
+	if len(args) != 0 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
 	}
-	keys := KeyList{"Id", "Name", "Description"}
+
+	resp, err := client.ListProfiles()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	keys := KeyList{"Id", "Name", "Description", "Extras"}
 	PrintList(resp, keys, FormatterList{})
 }
 
 func profileDeleteAction(cmd *cobra.Command, args []string) {
-	ArgsNumCheck(cmd, args, 1)
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "The number of args is not correct!")
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	err := client.DeleteProfile(args[0])
 	if err != nil {
-		Fatalln(HttpErrStrip(err))
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 	fmt.Printf("Delete profile(%s) success.\n", args[0])
 }

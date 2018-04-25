@@ -19,21 +19,15 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	_ "reflect"
-	"runtime"
 	"testing"
 
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 )
 
-var (
-	c = client.NewClient(&client.Config{"http://localhost:50040", nil})
-
-	localIqn = "iqn.2017-10.io.opensds:volume:00000001"
-)
+var c = client.NewClient(&client.Config{"http://localhost:50040", nil})
 
 func init() {
 	fmt.Println("Start creating profile...")
@@ -209,11 +203,7 @@ func TestCreateVolumeAttachment(t *testing.T) {
 	var body = &model.VolumeAttachmentSpec{
 		VolumeId: vol.Id,
 		HostInfo: model.HostInfo{
-			Host:      host,
-			Platform:  runtime.GOARCH,
-			OsType:    runtime.GOOS,
-			Ip:        getHostIp(),
-			Initiator: localIqn,
+			Host: host,
 		},
 	}
 	atc, err := c.CreateVolumeAttachment(body)
@@ -432,11 +422,7 @@ func prepareVolumeAttachment(t *testing.T) (*model.VolumeAttachmentSpec, error) 
 	var body = &model.VolumeAttachmentSpec{
 		VolumeId: vol.Id,
 		HostInfo: model.HostInfo{
-			Host:      host,
-			Platform:  runtime.GOARCH,
-			OsType:    runtime.GOOS,
-			Ip:        getHostIp(),
-			Initiator: localIqn,
+			Host: host,
 		},
 	}
 	atc, err := c.CreateVolumeAttachment(body)
@@ -516,20 +502,4 @@ func cleanVolumeAndSnapshotIfFailedOrFinished(t *testing.T, volID, snpID string)
 	}
 	t.Log("End cleaning volume...")
 	return nil
-}
-
-// getHostIp return Host IP
-func getHostIp() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return "127.0.0.1"
-	}
-
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			return ipnet.IP.String()
-		}
-	}
-
-	return "127.0.0.1"
 }

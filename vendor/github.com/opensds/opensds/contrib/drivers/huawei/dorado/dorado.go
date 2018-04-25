@@ -100,7 +100,7 @@ func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, erro
 	log.Infof("Create volume %s (%s) success.", opt.GetName(), lun.Id)
 	return &model.VolumeSpec{
 		BaseModel: &model.BaseModel{
-			Id: opt.GetId(),
+			Id: lun.Id,
 		},
 		Name:             lun.Name,
 		Size:             d.sector2Gb(lun.Capacity),
@@ -316,9 +316,8 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 			Name:             p.Name,
 			TotalCapacity:    d.sector2Gb(p.UserTotalCapacity),
 			FreeCapacity:     d.sector2Gb(p.UserFreeCapacity),
-			StorageType:      c.Pool[p.Name].StorageType,
-			Extras:           c.Pool[p.Name].Extras,
-			AvailabilityZone: c.Pool[p.Name].AvailabilityZone,
+			Extras:           BuildDefaultPoolParam(c.Pool[p.Name]),
+			AvailabilityZone: c.Pool[p.Name].AZ,
 		}
 		if pol.AvailabilityZone == "" {
 			pol.AvailabilityZone = defaultAZ

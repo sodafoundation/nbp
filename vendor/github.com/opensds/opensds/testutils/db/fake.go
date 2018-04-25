@@ -61,14 +61,6 @@ func (fc *FakeDbClient) GetDockByPoolId(ctx *c.Context, poolId string) (*model.D
 }
 
 // ListDocks
-func (fc *FakeDbClient) ListDocksWithFilter(ctx *c.Context, m map[string][]string) ([]*model.DockSpec, error) {
-	var dcks []*model.DockSpec
-
-	for i := range SampleDocks {
-		dcks = append(dcks, &SampleDocks[i])
-	}
-	return dcks, nil
-}
 func (fc *FakeDbClient) ListDocks(ctx *c.Context) ([]*model.DockSpec, error) {
 	var dcks []*model.DockSpec
 
@@ -104,14 +96,6 @@ func (fc *FakeDbClient) GetPool(ctx *c.Context, polID string) (*model.StoragePoo
 }
 
 // ListPools
-func (fc *FakeDbClient) ListPoolsWithFilter(ctx *c.Context, m map[string][]string) ([]*model.StoragePoolSpec, error) {
-	var pols []*model.StoragePoolSpec
-
-	for i := range SamplePools {
-		pols = append(pols, &SamplePools[i])
-	}
-	return pols, nil
-}
 func (fc *FakeDbClient) ListPools(ctx *c.Context) ([]*model.StoragePoolSpec, error) {
 	var pols []*model.StoragePoolSpec
 
@@ -159,14 +143,6 @@ func (fc *FakeDbClient) GetDefaultProfile(ctx *c.Context) (*model.ProfileSpec, e
 }
 
 // ListProfiles
-func (fc *FakeDbClient) ListProfilesWithFilter(ctx *c.Context, m map[string][]string) ([]*model.ProfileSpec, error) {
-	var prfs []*model.ProfileSpec
-
-	for i := range SampleProfiles {
-		prfs = append(prfs, &SampleProfiles[i])
-	}
-	return prfs, nil
-}
 func (fc *FakeDbClient) ListProfiles(ctx *c.Context) ([]*model.ProfileSpec, error) {
 	var prfs []*model.ProfileSpec
 
@@ -205,22 +181,15 @@ func (fc *FakeDbClient) RemoveExtraProperty(ctx *c.Context, prfID, extraKey stri
 
 // CreateVolume
 func (fc *FakeDbClient) CreateVolume(ctx *c.Context, vol *model.VolumeSpec) (*model.VolumeSpec, error) {
-	return vol, nil
+	return &SampleVolumes[0], nil
 }
 
 // GetVolume
 func (fc *FakeDbClient) GetVolume(ctx *c.Context, volID string) (*model.VolumeSpec, error) {
-	vol := SampleVolumes[0]
-	return &vol, nil
+	return &SampleVolumes[0], nil
 }
 
 // ListVolumes
-func (fc *FakeDbClient) ListVolumesWithFilter(ctx *c.Context, m map[string][]string) ([]*model.VolumeSpec, error) {
-	var vols []*model.VolumeSpec
-
-	vols = append(vols, &SampleVolumes[0])
-	return vols, nil
-}
 func (fc *FakeDbClient) ListVolumes(ctx *c.Context) ([]*model.VolumeSpec, error) {
 	var vols []*model.VolumeSpec
 
@@ -245,22 +214,15 @@ func (fc *FakeDbClient) ExtendVolume(ctx *c.Context, vol *model.VolumeSpec) (*mo
 
 // CreateVolumeAttachment
 func (fc *FakeDbClient) CreateVolumeAttachment(ctx *c.Context, attachment *model.VolumeAttachmentSpec) (*model.VolumeAttachmentSpec, error) {
-	return attachment, nil
+	return &SampleAttachments[0], nil
 }
 
 // GetVolumeAttachment
 func (fc *FakeDbClient) GetVolumeAttachment(ctx *c.Context, attachmentId string) (*model.VolumeAttachmentSpec, error) {
-	attach := SampleAttachments[0]
-	return &attach, nil
+	return &SampleAttachments[0], nil
 }
 
 // ListVolumeAttachments
-func (fc *FakeDbClient) ListVolumeAttachmentsWithFilter(ctx *c.Context, m map[string][]string) ([]*model.VolumeAttachmentSpec, error) {
-	var atcs []*model.VolumeAttachmentSpec
-
-	atcs = append(atcs, &SampleAttachments[0])
-	return atcs, nil
-}
 func (fc *FakeDbClient) ListVolumeAttachments(ctx *c.Context, volumeId string) ([]*model.VolumeAttachmentSpec, error) {
 	var atcs []*model.VolumeAttachmentSpec
 
@@ -280,22 +242,15 @@ func (fc *FakeDbClient) DeleteVolumeAttachment(ctx *c.Context, attachmentId stri
 
 // CreateVolumeSnapshot
 func (fc *FakeDbClient) CreateVolumeSnapshot(ctx *c.Context, vs *model.VolumeSnapshotSpec) (*model.VolumeSnapshotSpec, error) {
-	return vs, nil
+	return &SampleSnapshots[0], nil
 }
 
 // GetVolumeSnapshot
 func (fc *FakeDbClient) GetVolumeSnapshot(ctx *c.Context, snapshotID string) (*model.VolumeSnapshotSpec, error) {
-	snap := SampleSnapshots[0]
-	return &snap, nil
+	return &SampleSnapshots[0], nil
 }
 
 // ListVolumeSnapshots
-func (fc *FakeDbClient) ListVolumeSnapshotsWithFilter(ctx *c.Context, m map[string][]string) ([]*model.VolumeSnapshotSpec, error) {
-	var snps []*model.VolumeSnapshotSpec
-
-	snps = append(snps, &SampleSnapshots[0], &SampleSnapshots[1])
-	return snps, nil
-}
 func (fc *FakeDbClient) ListVolumeSnapshots(ctx *c.Context) ([]*model.VolumeSnapshotSpec, error) {
 	var snps []*model.VolumeSnapshotSpec
 

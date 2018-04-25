@@ -26,7 +26,7 @@ type StoragePoolSpec struct {
 	*BaseModel
 	// The uuid of project
 	// + readOnly
-	TenantId string `json:"tenantId"`
+	ProjectId string `json:"projectId"`
 
 	// The name of the pool.
 	Name string `json:"name,omitempty"`
@@ -53,27 +53,12 @@ type StoragePoolSpec struct {
 	// Default unit of FreeCapacity is GB.
 	FreeCapacity int64 `json:"freeCapacity,omitempty"`
 
-	// The storage type of the storage pool.
+	// The storage type of the dock.
 	// One of: "block", "file" or "object".
 	StorageType string `json:"storageType,omitempty"`
 
-	// Map of keys and StoragePoolExtraSpec object that represents the properties
+	// Map of keys and json object that represents the extra epecs
 	// of the pool, such as supported capabilities.
 	// +optional
-	Extras StoragePoolExtraSpec `json:"extras,omitempty"`
-}
-
-type StoragePoolExtraSpec struct {
-	// DataStorage represents suggested some data storage capabilities.
-	DataStorage DataStorageLoS `json:"dataStorage,omitempty" yaml:"dataStorage,omitempty"`
-	// IOConnectivity represents some suggested IO connectivity capabilities.
-	IOConnectivity IOConnectivityLoS `json:"ioConnectivity,omitempty" yaml:"ioConnectivity,omitempty"`
-	// DataProtection represents some suggested data protection capabilities.
-	DataProtection DataProtectionLos `json:"dataProtection,omitempty" yaml:"dataProtection,omitempty"`
-
-	// Besides those basic suggested pool properties above, vendors can configure
-	// some advanced features (diskType, IOPS, throughout, latency, etc)
-	// themselves, all these properties can be exposed to controller scheduler
-	// and filtered by selector in a extensible way.
-	Advanced map[string]interface{} `json:"advanced,omitempty" yaml:"advanced,omitempty"`
+	Extras ExtraSpec `json:"extras,omitempty"`
 }

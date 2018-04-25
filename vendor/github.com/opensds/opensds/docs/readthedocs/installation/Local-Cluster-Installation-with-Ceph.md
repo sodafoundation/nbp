@@ -1,5 +1,3 @@
-# Local-Cluster-Installation-with-Ceph
-
 This installation document assumes that you use [CEPH](https://github.com/ceph/ceph) as the default driver, and please make sure your ceph cluster deployed.
 
 ## Pre-configuration

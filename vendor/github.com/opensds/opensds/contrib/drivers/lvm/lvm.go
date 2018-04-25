@@ -33,8 +33,6 @@ import (
 
 const (
 	defaultConfPath = "/etc/opensds/driver/lvm.yaml"
-	volumePrefix    = "volume-"
-	snapshotPrefix  = "_snapshot-"
 )
 
 type LVMConfig struct {
@@ -68,12 +66,10 @@ func (*Driver) Unset() error { return nil }
 func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, error) {
 	var size = fmt.Sprint(opt.GetSize()) + "G"
 	var polName = opt.GetPoolName()
-	var id = opt.GetId()
-	var name = volumePrefix + id
 
 	if _, err := d.handler("lvcreate", []string{
 		"-Z", "n",
-		"-n", name, // use uuid instead of name.
+		"-n", opt.GetName(),
 		"-L", size,
 		polName,
 	}); err != nil {
@@ -83,7 +79,7 @@ func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, erro
 
 	var lvPath, lvStatus string
 	// Display and parse some metadata in logic volume returned.
-	lvPath = path.Join("/dev", polName, name)
+	lvPath = path.Join("/dev", polName, opt.GetName())
 	lv, err := d.handler("lvdisplay", []string{lvPath})
 	if err != nil {
 		log.Error("Failed to display logic volume:", err)
@@ -101,7 +97,7 @@ func (d *Driver) CreateVolume(opt *pb.CreateVolumeOpts) (*model.VolumeSpec, erro
 
 	return &model.VolumeSpec{
 		BaseModel: &model.BaseModel{
-			Id: opt.GetId(),
+			Id: uuid.NewV4().String(),
 		},
 		Name:        opt.GetName(),
 		Size:        opt.GetSize(),
@@ -229,8 +225,6 @@ func (d *Driver) TerminateConnection(opt *pb.DeleteAttachmentOpts) error {
 
 func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.VolumeSnapshotSpec, error) {
 	var size = fmt.Sprint(opt.GetSize()) + "G"
-	var id = opt.GetId()
-	var snapName = snapshotPrefix + id
 	lvPath, ok := opt.GetMetadata()["lvPath"]
 	if !ok {
 		err := errors.New("Failed to find logic volume path in volume snapshot metadata!")
@@ -239,7 +233,7 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 	}
 
 	if _, err := d.handler("lvcreate", []string{
-		"-n", snapName,
+		"-n", opt.GetName(),
 		"-L", size,
 		"-p", "r",
 		"-s", lvPath,
@@ -250,7 +244,7 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 
 	var lvsDir, lvsPath string
 	lvsDir, _ = path.Split(lvPath)
-	lvsPath = path.Join(lvsDir, snapName)
+	lvsPath = path.Join(lvsDir, opt.GetName())
 	// Display and parse some metadata in logic volume snapshot returned.
 	lvs, err := d.handler("lvdisplay", []string{lvsPath})
 	if err != nil {
@@ -266,7 +260,7 @@ func (d *Driver) CreateSnapshot(opt *pb.CreateVolumeSnapshotOpts) (*model.Volume
 
 	return &model.VolumeSnapshotSpec{
 		BaseModel: &model.BaseModel{
-			Id: id,
+			Id: uuid.NewV4().String(),
 		},
 		Name:        opt.GetName(),
 		Size:        opt.GetSize(),
@@ -375,9 +369,8 @@ func (d *Driver) ListPools() ([]*model.StoragePoolSpec, error) {
 			Name:             vg.Name,
 			TotalCapacity:    vg.TotalCapacity,
 			FreeCapacity:     vg.FreeCapacity,
-			StorageType:      d.conf.Pool[vg.Name].StorageType,
-			Extras:           d.conf.Pool[vg.Name].Extras,
-			AvailabilityZone: d.conf.Pool[vg.Name].AvailabilityZone,
+			Extras:           BuildDefaultPoolParam(d.conf.Pool[vg.Name]),
+			AvailabilityZone: d.conf.Pool[vg.Name].AZ,
 		}
 		if pol.AvailabilityZone == "" {
 			pol.AvailabilityZone = "default"

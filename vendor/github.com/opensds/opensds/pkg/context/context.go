@@ -41,6 +41,7 @@ func NewInternalTenantContext(tenantId, userId string) *Context {
 func NewContextFormJson(s string) *Context {
 	ctx := &Context{}
 	err := json.Unmarshal([]byte(s), ctx)
+	glog.Errorf(s)
 	if err != nil {
 		glog.Errorf("Unmarshal json to context failed, reason:%v", err)
 	}
@@ -55,6 +56,7 @@ func GetContext(httpCtx *context.Context) *Context {
 type Context struct {
 	AuthToken                string   `policy:"true" json:"auth_token"`
 	UserId                   string   `policy:"true" json:"user_id"`
+	ProjectId                string   `policy:"true" json:"project_id"`
 	TenantId                 string   `policy:"true" json:"tenant_id"`
 	DomainId                 string   `policy:"true" json:"domain_id"`
 	UserDomainId             string   `policy:"true" json:"user_domain_id"`

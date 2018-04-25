@@ -25,361 +25,343 @@ import (
 	"testing"
 
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils"
-	. "github.com/opensds/opensds/testutils/collection"
 )
 
-type FilterCaseSpec struct {
-	request  map[string]interface{}
-	expected []*model.StoragePoolSpec
-}
-
-var (
-	FakePools = []*model.StoragePoolSpec{
-		&SamplePools[0],
-		&SamplePools[1],
+func TestCapacityFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			FreeCapacity: int64(100),
+		},
+		&model.StoragePoolSpec{
+			FreeCapacity: int64(50),
+		},
+		&model.StoragePoolSpec{
+			FreeCapacity: int64(66),
+		},
 	}
-)
-
-func TestSimplifyPoolCapabilityMap(t *testing.T) {
-	input := make(map[string]interface{})
-	input["name"] = "sample-pool-02"
-	input["extras.advanced"] = map[string]interface{}{
-		"diskType": "SAS",
-	}
-	simpleMap, unSimpleMap := simplifyPoolCapabilityMap(input)
-
-	if 2 != len(simpleMap) {
-		t.Errorf("Expected %v, get %v", 2, len(simpleMap))
-	}
-
-	if 0 != len(unSimpleMap) {
-		t.Errorf("Expected %v, get %v", 0, len(simpleMap))
-	}
-
-	name, ok := simpleMap["name"].(string)
-	if (!ok) || (input["name"] != name) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, input["name"], ok, name)
-	}
-
-	diskType, ok := simpleMap["extras.advanced.diskType"].(string)
-	if (!ok) || ("SAS" != diskType) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, "SAS", ok, diskType)
-	}
-}
-
-func TestGetPoolCapabilityMap(t *testing.T) {
-	Pool := SamplePools[0]
-	result, err := GetPoolCapabilityMap(&Pool)
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	id, ok := result["id"].(string)
-	if (!ok) || (Pool.Id != id) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, Pool.Id, ok, id)
-	}
-
-	FreeCapacity, ok := result["freeCapacity"].(float64)
-	if (!ok) || (!utils.IsFloatEqual(FreeCapacity, float64(Pool.FreeCapacity))) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, float64(Pool.FreeCapacity), ok, FreeCapacity)
-	}
-
-	IsSpaceEfficient, ok := result["extras.dataStorage.isSpaceEfficient"].(bool)
-	if (!ok) || (Pool.Extras.DataStorage.IsSpaceEfficient != IsSpaceEfficient) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, Pool.Extras.DataStorage.IsSpaceEfficient, ok, IsSpaceEfficient)
-	}
-
-	latency, ok := result["extras.advanced.latency"].(string)
-	if (!ok) || (Pool.Extras.Advanced["latency"] != latency) {
-		t.Errorf("Expected %v/%v, get %v/%v", true, Pool.Extras.Advanced["latency"], ok, latency)
-	}
-}
-
-func TestIsAvailablePool(t *testing.T) {
-	filterReq := make(map[string]interface{})
-	filterReq["totalCapacity"] = "<= 100"
-	isAvailable, err := IsAvailablePool(filterReq, &SamplePools[0])
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != isAvailable {
-		t.Errorf("Expected %v, get %v", true, isAvailable)
-	}
-
-	filterReq["totalCapacity"] = "!= 200"
-	isAvailable, err = IsAvailablePool(filterReq, &SamplePools[1])
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != isAvailable {
-		t.Errorf("Expected %v, get %v", false, isAvailable)
-	}
-
-}
-
-func TestMatch(t *testing.T) {
-
-	isMatch, err := match("availabilityZone", "default", "<in> defau")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != isMatch {
-		t.Errorf("Expected %v, get %v", true, isMatch)
-	}
-
-	isMatch, err = match("availabilityZone", "default", "<in> defau1")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != isMatch {
-		t.Errorf("Expected %v, get %v", false, isMatch)
-	}
-}
-
-func TestInOperator(t *testing.T) {
-
-	result, err := InOperator("availabilityZone", "fau", "default")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-
-	result, err = InOperator("availabilityZone", "default1", "default")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != result {
-		t.Errorf("Expected %v, get %v", false, result)
-	}
-}
-
-func TestCompareOperator(t *testing.T) {
-
-	result, err := CompareOperator("s<", "dockId", "123", "122")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-
-	result, err = CompareOperator("s<", "dockId", "123", "124")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != result {
-		t.Errorf("Expected %v, get %v", false, result)
-	}
-}
-
-func TestStringCompare(t *testing.T) {
-
-	result, err := StringCompare("s<", "dockId", "123", "122")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != result {
-		t.Errorf("Expected %v, get %v", false, result)
-	}
-
-	result, err = StringCompare("s<", "dockId", "123", "124")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-}
-
-func TestParseBoolAndCompare(t *testing.T) {
-
-	result, err := ParseBoolAndCompare("isSpaceEfficient", true, "T")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-
-	result, err = ParseBoolAndCompare("isSpaceEfficient", true, "0")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != result {
-		t.Errorf("Expected %v, get %v", false, result)
-	}
-}
-
-func TestParseFloat64AndCompare(t *testing.T) {
-
-	result, err := ParseFloat64AndCompare("==", "freeCapacity", 60.0, "60")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-
-	result, err = ParseFloat64AndCompare("!=", "freeCapacity", 61.0, "60")
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-}
-
-func TestOrOperator(t *testing.T) {
-	words := []string{"<or>", "10", "<or>", "20"}
-	result, err := OrOperator("freeCapacity", words, 20.0)
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if true != result {
-		t.Errorf("Expected %v, get %v", true, result)
-	}
-
-	result, err = OrOperator("freeCapacity", words, 30.0)
-	if nil != err {
-		t.Errorf("Expected %v, get %v", nil, err)
-	}
-
-	if false != result {
-		t.Errorf("Expected %v, get %v", false, result)
-	}
-}
-
-func TestIdFilter(t *testing.T) {
-	testCases := []FilterCaseSpec{
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
 		{
 			request: map[string]interface{}{
-				"id": "084bf71e-a102-11e7-88a8-e31fe6d52248",
+				"size": int64(66),
 			},
+			pools: fakePools,
 			expected: []*model.StoragePoolSpec{
-				&SamplePools[0],
+				&model.StoragePoolSpec{
+					FreeCapacity: int64(100),
+				},
+				&model.StoragePoolSpec{
+					FreeCapacity: int64(66),
+				},
 			},
 		},
 		{
 			request: map[string]interface{}{
-				"id": "s== a594b8ac-a103-11e7-985f-d723bcf01b5f",
+				"size": 101,
 			},
-			expected: []*model.StoragePoolSpec{
-				&SamplePools[1],
-			},
-		},
-	}
-
-	for _, testCase := range testCases {
-		result, _ := SelectSupportedPools(len(FakePools), testCase.request,
-			FakePools)
-
-		if !reflect.DeepEqual(result, testCase.expected) {
-			t.Errorf("Expected %v, get %v", testCase.expected, result)
-		}
-	}
-}
-
-func TestFreeCapacityFilter(t *testing.T) {
-	testCases := []FilterCaseSpec{
-		{
-			request: map[string]interface{}{
-				"freeCapacity": ">= 170",
-			},
-			expected: []*model.StoragePoolSpec{
-				&SamplePools[1],
-			},
-		},
-		{
-			request: map[string]interface{}{
-				"freeCapacity": "== 90",
-			},
-			expected: []*model.StoragePoolSpec{
-				&SamplePools[0],
-			},
-		},
-	}
-
-	for _, testCase := range testCases {
-		result, _ := SelectSupportedPools(len(FakePools), testCase.request,
-			FakePools)
-
-		if !reflect.DeepEqual(result, testCase.expected) {
-			t.Errorf("Expected %v, get %v", testCase.expected, result)
-		}
-	}
-}
-
-func TestIsSpaceEfficientFilter(t *testing.T) {
-	testCases := []FilterCaseSpec{
-		{
-			request: map[string]interface{}{
-				"extras.dataStorage.isSpaceEfficient": "<is> true",
-			},
-			expected: []*model.StoragePoolSpec{
-				&SamplePools[0],
-				&SamplePools[1],
-			},
-		},
-		{
-			request: map[string]interface{}{
-				"extras.dataStorage.isSpaceEfficient": "<is> false",
-			},
+			pools:    fakePools,
 			expected: nil,
 		},
 	}
-
+	filter := &CapacityFilter{}
 	for _, testCase := range testCases {
-		result, _ := SelectSupportedPools(len(FakePools), testCase.request,
-			FakePools)
-
+		result, _ := filter.Handle(testCase.request, testCase.pools)
 		if !reflect.DeepEqual(result, testCase.expected) {
 			t.Errorf("Expected %v, get %v", testCase.expected, result)
 		}
 	}
 }
 
-func TestAdvancedFilter(t *testing.T) {
-	testCases := []FilterCaseSpec{
+func TestAZFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			AvailabilityZone: "az1",
+		},
+		&model.StoragePoolSpec{
+			AvailabilityZone: "az2",
+		},
+		&model.StoragePoolSpec{
+			AvailabilityZone: "az1",
+		},
+	}
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
 		{
 			request: map[string]interface{}{
-				"extras.advanced.diskType": "SAS",
+				"availabilityZone": "az1",
 			},
+			pools: fakePools,
 			expected: []*model.StoragePoolSpec{
-				&SamplePools[1],
+				&model.StoragePoolSpec{
+					AvailabilityZone: "az1",
+				},
+				&model.StoragePoolSpec{
+					AvailabilityZone: "az1",
+				},
 			},
 		},
 		{
 			request: map[string]interface{}{
-				"extras.advanced.diskType": "s>= SSD",
+				"availabilityZone": "az3",
 			},
-			expected: []*model.StoragePoolSpec{
-				&SamplePools[0],
+			pools:    fakePools,
+			expected: nil,
+		},
+	}
+	filter := &AZFilter{}
+	for _, testCase := range testCases {
+		result, _ := filter.Handle(testCase.request, testCase.pools)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %v, get %v", testCase.expected, result)
+		}
+	}
+}
+
+func TestThinFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"thin": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"thin": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"thin": false,
 			},
 		},
 	}
-
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
+		{
+			request: map[string]interface{}{
+				"thin": true,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"thin": true,
+					},
+				},
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"thin": true,
+					},
+				},
+			},
+		},
+		{
+			request: map[string]interface{}{
+				"thin": false,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"thin": false,
+					},
+				},
+			},
+		},
+	}
+	filter := &ThinFilter{}
 	for _, testCase := range testCases {
-		result, _ := SelectSupportedPools(len(FakePools), testCase.request,
-			FakePools)
+		result, _ := filter.Handle(testCase.request, testCase.pools)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %v, get %v", testCase.expected, result)
+		}
+	}
+}
 
+func TestDedupeFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"dedupe": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"dedupe": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"dedupe": false,
+			},
+		},
+	}
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
+		{
+			request: map[string]interface{}{
+				"dedupe": true,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"dedupe": true,
+					},
+				},
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"dedupe": true,
+					},
+				},
+			},
+		},
+		{
+			request: map[string]interface{}{
+				"dedupe": false,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"dedupe": false,
+					},
+				},
+			},
+		},
+	}
+	filter := &DedupeFilter{}
+	for _, testCase := range testCases {
+		result, _ := filter.Handle(testCase.request, testCase.pools)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %v, get %v", testCase.expected, result)
+		}
+	}
+}
+
+func TestCompressFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"compress": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"compress": true,
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"compress": false,
+			},
+		},
+	}
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
+		{
+			request: map[string]interface{}{
+				"compress": true,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"compress": true,
+					},
+				},
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"compress": true,
+					},
+				},
+			},
+		},
+		{
+			request: map[string]interface{}{
+				"compress": false,
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"compress": false,
+					},
+				},
+			},
+		},
+	}
+	filter := &CompressFilter{}
+	for _, testCase := range testCases {
+		result, _ := filter.Handle(testCase.request, testCase.pools)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %v, get %v", testCase.expected, result)
+		}
+	}
+}
+
+func TestDiskTypeFilter(t *testing.T) {
+	fakePools := []*model.StoragePoolSpec{
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"diskType": "SSD",
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"diskType": "SAS",
+			},
+		},
+		&model.StoragePoolSpec{
+			Extras: model.ExtraSpec{
+				"diskType": "SATA",
+			},
+		},
+	}
+	testCases := []struct {
+		request  map[string]interface{}
+		pools    []*model.StoragePoolSpec
+		expected []*model.StoragePoolSpec
+	}{
+		{
+			request: map[string]interface{}{
+				"diskType": "SSD",
+			},
+			pools: fakePools,
+			expected: []*model.StoragePoolSpec{
+				&model.StoragePoolSpec{
+					Extras: model.ExtraSpec{
+						"diskType": "SSD",
+					},
+				},
+			},
+		},
+		{
+			request: map[string]interface{}{
+				"diskType": "NVMe SSD",
+			},
+			pools:    fakePools,
+			expected: nil,
+		},
+	}
+	filter := &DiskTypeFilter{}
+	for _, testCase := range testCases {
+		result, _ := filter.Handle(testCase.request, testCase.pools)
 		if !reflect.DeepEqual(result, testCase.expected) {
 			t.Errorf("Expected %v, get %v", testCase.expected, result)
 		}
