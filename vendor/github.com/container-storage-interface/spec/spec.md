@@ -663,15 +663,15 @@ message VolumeCapability {
 }
 
 // The capacity of the storage space in bytes. To specify an exact size,
-// `required_bytes` and `limit_bytes` SHALL be set to the same value. At
+// `required_bytes` and `limit_bytes` can be set to the same value. At
 // least one of the these fields MUST be specified.
 message CapacityRange {
-  // Volume MUST be at least this big. This field is OPTIONAL.
+  // Volume must be at least this big. This field is OPTIONAL.
   // A value of 0 is equal to an unspecified field value.
   // The value of this field MUST NOT be negative. 
   int64 required_bytes = 1;
 
-  // Volume MUST not be bigger than this. This field is OPTIONAL.
+  // Volume must not be bigger than this. This field is OPTIONAL.
   // A value of 0 is equal to an unspecified field value.
   // The value of this field MUST NOT be negative. 
   int64 limit_bytes = 2;
@@ -698,7 +698,7 @@ message Volume {
   // a volume. A volume uniquely identified by `id` SHALL always report
   // the same attributes. This field is OPTIONAL and when present MUST
   // be passed to volume validation and publishing calls.
-  map<string, string> attributes = 3;
+  map<string,string> attributes = 3;
 }
 ```
 
@@ -823,7 +823,7 @@ message ControllerPublishVolumeRequest {
   // Attributes of the volume to be used on a node. This field is
   // OPTIONAL and MUST match the attributes of the Volume identified
   // by `volume_id`.
-  map<string, string> volume_attributes = 6;
+  map<string,string> volume_attributes = 6;
 }
 
 message ControllerPublishVolumeResponse {
@@ -937,7 +937,7 @@ message ValidateVolumeCapabilitiesRequest {
 
   // Attributes of the volume to check. This field is OPTIONAL and MUST
   // match the attributes of the Volume identified by `volume_id`.
-  map<string, string> volume_attributes = 3;
+  map<string,string> volume_attributes = 3;
 }
 
 message ValidateVolumeCapabilitiesResponse {
@@ -1164,9 +1164,9 @@ message NodeStageVolumeRequest {
   map<string, string> node_stage_secrets = 5;
 
   // Attributes of the volume to publish. This field is OPTIONAL and
-  // MUST match the attributes of the `Volume` identified by
+  // MUST match the attributes of the VolumeInfo identified by
   // `volume_id`.
-  map<string, string> volume_attributes = 6;
+  map<string,string> volume_attributes = 6;
 }
 
 message NodeStageVolumeResponse {
@@ -1184,7 +1184,7 @@ The CO MUST implement the specified error recovery behavior when it encounters t
 | Volume does not exist | 5 NOT_FOUND | Indicates that a volume corresponding to the specified `volume_id` does not exist. | Caller MUST verify that the `volume_id` is correct and that the volume is accessible and has not been deleted before retrying with exponential back off. |
 | Volume published but is incompatible | 6 ALREADY_EXISTS | Indicates that a volume corresponding to the specified `volume_id` has already been published at the specified `staging_target_path` but is incompatible with the specified `volume_capability` flag. | Caller MUST fix the arguments before retying. |
 | Operation pending for volume | 10 ABORTED | Indicates that there is a already an operation pending for the specified volume. In general the Cluster Orchestrator (CO) is responsible for ensuring that there is no more than one call "in-flight" per volume at a given time. However, in some circumstances, the CO MAY lose state (for example when the CO crashes and restarts), and MAY issue multiple calls simultaneously for the same volume. The Plugin, SHOULD handle this as gracefully as possible, and MAY return this error code to reject secondary calls. | Caller SHOULD ensure that there are no other calls pending for the specified volume, and then retry with exponential back off. |
-| Exceeds capabilities | 9 FAILED_PRECONDITION | Indicates that the CO has exceeded the volume's capabilities because the volume does not have MULTI_NODE capability. | Caller MAY choose to call `ValidateVolumeCapabilities` to validate the volume capabilities, or wait for the volume to be unpublished on the node. |
+| Exceeds capabilities | 10 FAILED_PRECONDITION | Indicates that the CO has exceeded the volume's capabilities because the volume does not have MULTI_NODE capability. | Caller MAY choose to call `ValidateVolumeCapabilities` to validate the volume capabilities, or wait for the volume to be unpublished on the node. |
 
 #### `NodeUnstageVolume`
 
@@ -1321,7 +1321,7 @@ message NodePublishVolumeRequest {
   // Attributes of the volume to publish. This field is OPTIONAL and
   // MUST match the attributes of the Volume identified by
   // `volume_id`.
-  map<string, string> volume_attributes = 8;
+  map<string,string> volume_attributes = 8;
 }
 
 message NodePublishVolumeResponse {
@@ -1339,8 +1339,8 @@ The CO MUST implement the specified error recovery behavior when it encounters t
 | Volume does not exists | 5 NOT_FOUND | Indicates that a volume corresponding to the specified `volume_id` does not exist. | Caller MUST verify that the `volume_id` is correct and that the volume is accessible and has not been deleted before retrying with exponential back off. |
 | Volume published but is incompatible | 6 ALREADY_EXISTS | Indicates that a volume corresponding to the specified `volume_id` has already been published at the specified `target_path` but is incompatible with the specified `volume_capability` or `readonly` flag. | Caller MUST fix the arguments before retying. |
 | Operation pending for volume | 10 ABORTED | Indicates that there is a already an operation pending for the specified volume. In general the Cluster Orchestrator (CO) is responsible for ensuring that there is no more than one call "in-flight" per volume at a given time. However, in some circumstances, the CO MAY lose state (for example when the CO crashes and restarts), and MAY issue multiple calls simultaneously for the same volume. The Plugin, SHOULD handle this as gracefully as possible, and MAY return this error code to reject secondary calls. | Caller SHOULD ensure that there are no other calls pending for the specified volume, and then retry with exponential back off. |
-| Exceeds capabilities | 9 FAILED_PRECONDITION | Indicates that the CO has exceeded the volume's capabilities because the volume does not have MULTI_NODE capability. | Caller MAY choose to call `ValidateVolumeCapabilities` to validate the volume capabilities, or wait for the volume to be unpublished on the node. |
-| Stanging target path not set | 9 FAILED_PRECONDITION | Indicates that `STAGE_UNSTAGE_VOLUME` capability is set but no `staging_target_path` was set. | Caller MUST make sure call to `NodeStageVolume` is made and returns success before retrying with valid `staging_target_path`. |
+| Exceeds capabilities | 10 FAILED_PRECONDITION | Indicates that the CO has exceeded the volume's capabilities because the volume does not have MULTI_NODE capability. | Caller MAY choose to call `ValidateVolumeCapabilities` to validate the volume capabilities, or wait for the volume to be unpublished on the node. |
+| Stanging target path not set | 10 FAILED_PRECONDITION | Indicates that `STAGE_UNSTAGE_VOLUME` capability is set but no `staging_target_path` was set. | Caller MUST make sure call to `NodeStageVolume` is made and returns success before retrying with valid `staging_target_path`. |  
 
 
 #### `NodeUnpublishVolume`

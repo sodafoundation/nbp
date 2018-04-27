@@ -5,35 +5,51 @@ import:
   subpackages:
   - lib/go/csi/v0
 - package: github.com/golang/glog
-- package: github.com/kubernetes-incubator/service-catalog
-  version: ^0.1.1
+- package: github.com/kubernetes-incubator/external-storage
+  version: 97c801a069ae93504ab3b1e4a1ca51a45a2ea5eb
   subpackages:
-  - contrib/pkg/broker/controller
-  - contrib/pkg/broker/server
-  - contrib/pkg/brokerapi
-  - pkg
+  - lib/controller
 - package: github.com/mitchellh/mapstructure
 - package: github.com/opensds/opensds
-  version: ^0.1.0
+  version: v0.1.7
   subpackages:
   - client
   - pkg/model
+- package: github.com/pmorie/go-open-service-broker-client
+  version: v0.0.9
+  subpackages:
+  - v2
+- package: github.com/pmorie/osb-broker-lib
+  version: v0.0.9
+  subpackages:
+  - pkg/broker
+  - pkg/metrics
+  - pkg/rest
+  - pkg/server
+- package: github.com/prometheus/client_golang
+  version: v0.8.0
+  subpackages:
+  - prometheus
+- package: github.com/spf13/cobra
+  version: v0.0.2
 - package: golang.org/x/net
   subpackages:
   - context
-- package: golang.org/x/sys
-  subpackages:
-  - unix
 - package: google.golang.org/grpc
-  version: ^1.2.1
+  version: v1.7.5
   subpackages:
   - codes
   - reflection
   - status
+- package: golang.org/x/sys
+  subpackages:
+  - unix
 - package: k8s.io/api
+  version: kubernetes-1.8.2
   subpackages:
   - core/v1
 - package: k8s.io/apimachinery
+  version: kubernetes-1.8.2
   subpackages:
   - pkg/apis/meta/v1
   - pkg/types
@@ -41,11 +57,12 @@ import:
   - pkg/util/validation/field
   - pkg/util/wait
 - package: k8s.io/client-go
+  version: kubernetes-1.8.2
   subpackages:
   - kubernetes
   - rest
   - tools/clientcmd
 - package: k8s.io/kubernetes
+  version: v1.8.2
   subpackages:
   - pkg/volume
-- package: github.com/spf13/cobra
