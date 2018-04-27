@@ -36,7 +36,7 @@ spec:
             port: 8080
           failureThreshold: 1
           initialDelaySeconds: 10
-          periodSeconds: 10
+          periodSeconds: 30
           successThreshold: 1
           timeoutSeconds: 2
         livenessProbe:
@@ -44,6 +44,6 @@ spec:
             port: 8080
           failureThreshold: 3
           initialDelaySeconds: 10
-          periodSeconds: 10
+          periodSeconds: 30
           successThreshold: 1
           timeoutSeconds: 2
