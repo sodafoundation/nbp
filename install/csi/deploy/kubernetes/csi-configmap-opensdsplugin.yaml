@@ -1,0 +1,9 @@
+# This YAML file contains configmap objects,
+# which are necessary to run csi opensds plugin.
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: csi-configmap-opensdsplugin
+data:
+  opensdsendpoint: http://127.0.0.1:50040

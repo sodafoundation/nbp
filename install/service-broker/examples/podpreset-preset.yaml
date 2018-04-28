@@ -1,0 +1,16 @@
+apiVersion: settings.k8s.io/v1alpha1
+kind: PodPreset
+metadata:
+  name: allow-database
+spec:
+  selector:
+    matchLabels:
+      role: frontend
+  volumeMounts:
+    - mountPath: /mnt/wordpress
+      name: 9c278303-2ebd-43c7-bcd7-c7996625ed63
+  volumes:
+    - name: 9c278303-2ebd-43c7-bcd7-c7996625ed63
+      flexVolume:
+        driver: "opensds.io/opensds"
+        fsType: "ext4"
