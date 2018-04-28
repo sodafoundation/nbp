@@ -24,11 +24,9 @@ container: build quick-container
 .PHONY: container
 
 quick-container:
-	cp opensds-provisioner deploy/docker/opensds-provisioner
-	docker build -t $(IMAGE):$(VERSION) deploy/docker
+	docker build . -t $(IMAGE):$(VERSION)
 .PHONY: quick-container
 
 clean:
 	rm -f opensds-provisioner
-	rm -f deploy/docker/flex-provisioner
 .PHONY: clean

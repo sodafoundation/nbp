@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+IMAGE = opensdsio/service-broker
+VERSION := latest
+
 all:build
 .PHONY: all
 
@@ -29,7 +32,7 @@ service-broker:package
 
 docker:build
 	cp ./.output/service-broker .
-	docker build . -t opensdsio/service-broker:latest
+	docker build . -t $(IMAGE):$(VERSION)
 .PHONY: docker
 
 clean:

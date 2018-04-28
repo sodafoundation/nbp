@@ -1,8 +1,0 @@
-[mons]
-localhost ansible_connection=local
-
-[osds]
-localhost ansible_connection=local
-
-[mgrs]
-localhost ansible_connection=local
