@@ -64,12 +64,9 @@ func DetachVolume(edp string, in *model.VolumeAttachmentSpec) error {
 		Metadata:       map[string]string{},
 		Context:        c.NewAdminContext().ToJson(),
 	}
-	response, err := dckClient.DetachVolume(context.Background(), detachOpt)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	_, err = dckClient.DetachVolume(context.Background(), detachOpt)
+	return err
 }
 
 func discoverAttachDock(edp, nodeId string) (dockClient.Client, error) {
@@ -105,7 +102,7 @@ func ConvertToHostInfoStruct(mapObj interface{}) (*model.HostInfo, error) {
 	}
 
 	var result *model.HostInfo
-	if err = json.Unmarshal(jsonStr, result); err != nil {
+	if err = json.Unmarshal(jsonStr, &result); err != nil {
 		return nil, err
 	}
 
