@@ -1,5 +1,5 @@
-hash: dcf296a22f397f309f57521154a0700d42cb458854744eb038cd590d47ae3b97
-updated: 2018-04-27T08:40:49.401144074Z
+hash: 9a681ae3e80a7f40ae218e37530dc4e228eea17ebdd78419acaabae68d05e77c
+updated: 2018-05-14T01:04:55.071460501Z
 imports:
 - name: github.com/astaxie/beego
   version: bf5c5626ab429e66d88602e1ab1ab5fbf4629a01
@@ -126,13 +126,16 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/mitchellh/mapstructure
-  version: 00c29f56e2386353d58c599509e8dc3801b0d716
+  version: a4e142e9c047c904fa2f1e144d9a84e6133024bc
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
 - name: github.com/opensds/opensds
-  version: f7d335e6ed414c40b606ab41e395b445d19612d4
+  version: 2f298b3f91c6bff69ce61f76b9258c3aa473b794
   subpackages:
   - client
+  - pkg/context
+  - pkg/dock/client
+  - pkg/dock/proto
   - pkg/model
   - pkg/utils
   - pkg/utils/constants

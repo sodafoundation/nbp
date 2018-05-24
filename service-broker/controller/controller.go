@@ -352,6 +352,112 @@ func (c *opensdsController) Bind(
 
 	response := &broker.BindResponse{}
 
+	if request.InstanceID == "" {
+		errMsg := fmt.Sprintf("Instance (%s) is not supported!", request.InstanceID)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+		}
+	}
+	if _, ok := c.bindingMap[request.BindingID]; ok {
+		glog.Infof("Binding %s already exist!\n", request.BindingID)
+		response.Exists = true
+		return response, nil
+	}
+
+	instance, ok := c.instanceMap[request.InstanceID]
+	if !ok {
+		errMsg := fmt.Sprintf("Instance (%s) not found in instance map!", request.InstanceID)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+		}
+	}
+	volInterface, ok := instance.Params["volumeID"]
+	if !ok {
+		errMsg := fmt.Sprintf("volumeID not found in instance (%s) params!", request.InstanceID)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: &errMsg,
+		}
+	}
+	hostInterface, ok := request.Parameters["hostInfo"]
+	if !ok {
+		errMsg := fmt.Sprint("hostInfo not found in bind request params!")
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+		}
+	}
+	hostInfoPtr, err := ConvertToHostInfoStruct(hostInterface)
+	if err != nil {
+		errMsg := fmt.Sprint("hostInfo format not supported in bind request params!")
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+		}
+	}
+
+	var in = &model.VolumeAttachmentSpec{
+		VolumeId: volInterface.(string),
+		HostInfo: *hostInfoPtr,
+	}
+	// Step 1: Create volume attachment.
+	atcResp, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
+		CreateVolumeAttachment(in)
+	if err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+	// Step 2: Check the status of volume attachment.
+	atc, err := sdsClient.NewClient((&sdsClient.Config{Endpoint: c.Endpoint})).
+		GetVolumeAttachment(atcResp.Id)
+	if err != nil || atc.Status != "available" {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+	// Step 3: Attach volume to the host.
+	devResp, err := AttachVolume(c.Endpoint, atc)
+	if err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+
+	// Insert credential info into opensds service binding map.
+	c.bindingMap[request.BindingID] = &opensdsServiceBinding{
+		ID:           request.BindingID,
+		InstanceID:   request.InstanceID,
+		ServiceID:    request.ServiceID,
+		PlanID:       request.PlanID,
+		BindResource: request.BindResource,
+		Params:       request.Parameters,
+	}
+	c.bindingMap[request.BindingID].Params["attachmentID"] = atc.Id
+	c.bindingMap[request.BindingID].Params["device"] = devResp["device"]
+
+	glog.Infof("Created OpenSDS Service Binding:\n%v\n",
+		c.bindingMap[request.BindingID])
+
+	// Generate service binding credentials.
+	creds := make(map[string]interface{})
+	creds["device"] = devResp["device"]
+	osbResponse := &osb.BindResponse{
+		Credentials: creds,
+	}
+
+	if request.AcceptsIncomplete {
+		response.Async = c.async
+	}
+	response.BindResponse = *osbResponse
 	return response, nil
 }
 
@@ -365,10 +471,57 @@ func (c *opensdsController) Unbind(
 	// Your unbind business logic goes here
 	response := broker.UnbindResponse{}
 
+	binding, ok := c.bindingMap[request.BindingID]
+	if !ok {
+		return &response, nil
+	}
+	atcInterface, ok := binding.Params["attachmentID"]
+	if !ok {
+		errMsg := fmt.Sprintf("attachmentID not found in bind (%s) params!", request.BindingID)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusNotFound,
+			ErrorMessage: &errMsg,
+		}
+	}
+
+	// Step 1: Check the status of volume attachment.
+	atc, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
+		GetVolumeAttachment(atcInterface.(string))
+	if err != nil || atc.Status != "available" {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+	// Step 2: Detach volume from host.
+	if err := DetachVolume(c.Endpoint, atc); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+	// Step 3: Delete volume attachment.
+	if err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
+		DeleteVolumeAttachment(atc.Id, nil); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
+
+	delete(c.bindingMap, request.BindingID)
+
+	glog.Infof("Deleted OpenSDS Service Binding:\n%s\n", request.BindingID)
+
+	if request.AcceptsIncomplete {
+		response.Async = c.async
+	}
 	return &response, nil
 }
 
 func (c *opensdsController) ValidateBrokerAPIVersion(version string) error {
 	return nil
 }
-
