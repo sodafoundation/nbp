@@ -3,7 +3,6 @@ package iscsi
 import (
 	"github.com/opensds/nbp/client/iscsi"
 	"github.com/opensds/nbp/driver"
-	"strconv"
 )
 
 var (
@@ -17,9 +16,7 @@ func init() {
 }
 
 func (isc *Iscsi) Attach(conn map[string]interface{}) (string, error) {
-	iscsiCon := iscsi.ParseIscsiConnectInfo(conn)
-
-	return iscsi.Connect(iscsiCon.TgtPortal, iscsiCon.TgtIQN, strconv.Itoa(iscsiCon.TgtLun))
+	return iscsi.Connect(conn)
 }
 
 func (isc *Iscsi) Detach(conn map[string]interface{}) error {
