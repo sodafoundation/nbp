@@ -14,7 +14,6 @@ const (
 
 // GetClient return OpenSDS Client
 func GetClient(endpoint string) *client.Client {
-
 	if endpoint == "" {
 		// Get endpoint from environment
 		endpoint = os.Getenv(OpenSDSEndPoint)
@@ -32,4 +31,3 @@ func GetClient(endpoint string) *client.Client {
 			Endpoint: endpoint,
 		})
 }
-

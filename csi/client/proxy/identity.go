@@ -19,8 +19,8 @@ type Identity struct {
 ////////////////////////////////////////////////////////////////////////////////
 
 // GetIdentity return Identity struct
-func GetIdentity() (client Identity, err error) {
-	conn, err := util.GetCSIClientConn()
+func GetIdentity(csiEndpoint string) (client Identity, err error) {
+	conn, err := util.GetCSIClientConn(csiEndpoint)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
