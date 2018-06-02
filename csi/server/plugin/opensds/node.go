@@ -1,18 +1,31 @@
+// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package opensds
 
 import (
 	"fmt"
-	"log"
-
 	"google.golang.org/grpc/codes"
-
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/golang/glog"
 	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/driver"
 	"github.com/opensds/opensds/pkg/model"
+	"github.com/prometheus/common/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
 )
@@ -34,25 +47,42 @@ func (p *Plugin) NodePublishVolume(
 	req *csi.NodePublishVolumeRequest) (
 	*csi.NodePublishVolumeResponse, error) {
 
-	log.Println("start to NodePublishVolume")
-	defer log.Println("end to NodePublishVolume")
+	glog.Info("start to NodePublishVolume")
+	defer glog.Info("end to NodePublishVolume")
 
+	volId := req.VolumeId
+	attachId := req.PublishInfo[KPublishAttachId]
 	client := sdscontroller.GetClient("")
+	if r := getReplicationByVolume(volId); r != nil {
+		if r.ReplicationStatus == model.ReplicationFailover {
+			volId = r.SecondaryVolumeId
+			attachId = req.PublishInfo[KPublishSecondaryAttachId]
+		}
+		if r.Metadata == nil {
+			r.Metadata = make(map[string]string)
+		}
+		r.Metadata[KAttachedVolumeId] = volId
+		if _, err := client.UpdateReplication(r.Id, r); err != nil {
+			msg := fmt.Sprintf("update replication(%s) failed, %v", r.Id, err)
+			log.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+	}
 
 	//check volume is exist
-	volSpec, errVol := client.GetVolume(req.VolumeId)
+	volSpec, errVol := client.GetVolume(volId)
 	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		msg := fmt.Sprintf("the volume %s is not exist", volId)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	atc, atcErr := client.GetVolumeAttachment(req.PublishInfo["atcid"])
+	atc, atcErr := client.GetVolumeAttachment(attachId)
 	if atcErr != nil || atc == nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
 	}
 
 	var targetPaths []string
-	if tps, exist := atc.Metadata["target_path"]; exist && len(tps) != 0 {
+	if tps, exist := atc.Metadata[KTargetPath]; exist && len(tps) != 0 {
 		targetPaths = strings.Split(tps, ";")
 		for _, tp := range targetPaths {
 			if req.TargetPath == tp {
@@ -65,13 +95,13 @@ func (p *Plugin) NodePublishVolume(
 		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
 			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
 			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
-			msg := fmt.Sprintf("the volume %s has been published to this node.", req.VolumeId)
+			msg := fmt.Sprintf("the volume %s has been published to this node.", volId)
 			return nil, status.Error(codes.Aborted, msg)
 		}
 	}
 
 	// if not attach before, attach first.
-	if len(atc.Mountpoint) == 0 {
+	if len(atc.Mountpoint) == 0 || atc.Mountpoint == "-" {
 		volDriver := driver.NewVolumeDriver(atc.DriverVolumeType)
 		if volDriver == nil {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
@@ -96,8 +126,8 @@ func (p *Plugin) NodePublishVolume(
 	}
 	format := true
 	for _, attachSpec := range atcs {
-		if attachSpec.VolumeId == req.VolumeId {
-			if _, exist := attachSpec.Metadata["target_path"]; exist {
+		if attachSpec.VolumeId == volId {
+			if _, exist := attachSpec.Metadata[KTargetPath]; exist {
 				// The device is formatted, can't be reformat for shared storage.
 				format = false
 				break
@@ -106,9 +136,9 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	// Format and Mount
-	log.Printf("[NodePublishVolume] device:%s TargetPath:%s", atc.Mountpoint, req.TargetPath)
+	glog.Infof("[NodePublishVolume] device:%s TargetPath:%s", atc.Mountpoint, req.TargetPath)
 	if format {
-		err = iscsi.FormatandMount(atc.Mountpoint, "", req.TargetPath)
+		err = iscsi.FormatAndMount(atc.Mountpoint, "", req.TargetPath)
 	} else {
 		err = iscsi.Mount(atc.Mountpoint, req.TargetPath)
 	}
@@ -117,12 +147,17 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	targetPaths = append(targetPaths, req.TargetPath)
-	atc.Metadata["target_path"] = strings.Join(targetPaths, ";")
+	atc.Metadata[KTargetPath] = strings.Join(targetPaths, ";")
 	_, err = client.UpdateVolumeAttachment(atc.Id, atc)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
 	}
-
+	volSpec.Status = model.VolumeInUse
+	_, err = client.UpdateVolume(volSpec.Id, volSpec)
+	if err != nil {
+		glog.Error("Error: update volume status failed")
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
+	}
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -132,15 +167,19 @@ func (p *Plugin) NodeUnpublishVolume(
 	req *csi.NodeUnpublishVolumeRequest) (
 	*csi.NodeUnpublishVolumeResponse, error) {
 
-	log.Println("start to NodeUnpublishVolume")
-	defer log.Println("end to NodeUnpublishVolume")
+	glog.Info("start to NodeUnpublishVolume")
+	defer glog.Info("end to NodeUnpublishVolume")
 
+	volId := req.VolumeId
 	client := sdscontroller.GetClient("")
+	if r := getReplicationByVolume(volId); r != nil {
+		volId = r.Metadata[KAttachedVolumeId]
+	}
 
 	//check volume is exist
-	volSpec, errVol := client.GetVolume(req.VolumeId)
+	volSpec, errVol := client.GetVolume(volId)
 	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		msg := fmt.Sprintf("the volume %s is not exist", volId)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
@@ -158,7 +197,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == localIqn {
+		if attachSpec.VolumeId == volId && attachSpec.Host == localIqn {
 			atc = attachSpec
 			break
 		}
@@ -168,13 +207,13 @@ func (p *Plugin) NodeUnpublishVolume(
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	if _, exist := atc.Metadata["target_path"]; !exist {
+	if _, exist := atc.Metadata[KTargetPath]; !exist {
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	var modifyTargetPaths []string
 	tpExist := false
-	targetPaths := strings.Split(atc.Metadata["target_path"], ";")
+	targetPaths := strings.Split(atc.Metadata[KTargetPath], ";")
 	for index, path := range targetPaths {
 		if path == req.TargetPath {
 			modifyTargetPaths = append(targetPaths[:index], targetPaths[index+1:]...)
@@ -187,9 +226,10 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	// Umount
-	log.Printf("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
+	glog.Infof("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
 	err = iscsi.Umount(req.TargetPath)
 	if err != nil {
+		log.Errorf("unmount", err)
 		return nil, err
 	}
 
@@ -203,15 +243,20 @@ func (p *Plugin) NodeUnpublishVolume(
 		if err != nil {
 			return nil, status.Errorf(codes.FailedPrecondition, "%s", err.Error())
 		}
-		atc.Mountpoint = ""
+		atc.Mountpoint = "-"
 	}
 
-	atc.Metadata["target_path"] = strings.Join(modifyTargetPaths, ";")
+	atc.Metadata[KTargetPath] = strings.Join(modifyTargetPaths, ";")
 	_, err = client.UpdateVolumeAttachment(atc.Id, atc)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to NodeUnpublish volume.")
 	}
-
+	volSpec.Status = model.VolumeAvailable
+	_, err = client.UpdateVolume(volSpec.Id, volSpec)
+	if err != nil {
+		glog.Info("Error: update volume status failed")
+		return nil, status.Error(codes.FailedPrecondition, "Failed to publish node.")
+	}
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
@@ -221,8 +266,8 @@ func (p *Plugin) NodeGetId(
 	req *csi.NodeGetIdRequest) (
 	*csi.NodeGetIdResponse, error) {
 
-	log.Println("start to GetNodeID")
-	defer log.Println("end to GetNodeID")
+	glog.Info("start to GetNodeID")
+	defer glog.Info("end to GetNodeID")
 
 	iqns, _ := iscsi.GetInitiator()
 	localIqn := ""
@@ -241,8 +286,8 @@ func (p *Plugin) NodeGetCapabilities(
 	req *csi.NodeGetCapabilitiesRequest) (
 	*csi.NodeGetCapabilitiesResponse, error) {
 
-	log.Println("start to NodeGetCapabilities")
-	defer log.Println("end to NodeGetCapabilities")
+	glog.Info("start to NodeGetCapabilities")
+	defer glog.Info("end to NodeGetCapabilities")
 
 	return &csi.NodeGetCapabilitiesResponse{
 		Capabilities: []*csi.NodeServiceCapability{

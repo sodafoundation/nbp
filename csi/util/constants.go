@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package util
 
 const (
-	//PluginName setting
-	PluginName = "csi-opensdsplugin"
-)
+	// NameSpace for CSI
+	NameSpace = "csi"
+	// CSI endpoint environment variable name
+	CSIEndpoint = "CSI_ENDPOINT"
+	// CSI default endpoint
+	CSIDefaultEndpoint = "unix://path/to/unix/domain/socket.sock"
 
-// Plugin define
-type Plugin struct {
-}
+	// Opensds endpoint environment variable name
+	OpensdsEndpoint = "OPENSDS_ENDPOINT"
+	// CSI default endpoint
+	OpensdsDefaultEndpoint = "http://localhost:50040"
+
+	// CSI  environment variable whether enable the replication function, value can be true or false
+	CSIEnableReplication = "CSI_ENABLE_REPLICATION"
+)
