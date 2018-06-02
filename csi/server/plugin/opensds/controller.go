@@ -75,7 +75,7 @@ func (p *Plugin) CreateVolume(
 		}
 	}
 
-	glog.Info("CreateVolume volumebody:%v", volumebody)
+	glog.Infof("CreateVolume volumebody: %v", volumebody)
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {
@@ -102,7 +102,7 @@ func (p *Plugin) CreateVolume(
 		volumebody.Name = SecondaryPrefix + req.Name
 		sVol, err := c.CreateVolume(volumebody)
 		if err != nil {
-			glog.Error("failed to create secondar volume: %v", err)
+			glog.Errorf("failed to create secondar volume: %v", err)
 			return nil, err
 		}
 		replicaBody := &model.ReplicationSpec{
@@ -110,7 +110,7 @@ func (p *Plugin) CreateVolume(
 			PrimaryVolumeId:   v.Id,
 			SecondaryVolumeId: sVol.Id,
 			ReplicationMode:   model.ReplicationModeSync,
-			ReplicationPeriod: 10,
+			ReplicationPeriod: 0,
 		}
 		replicaResp, err := c.CreateReplication(replicaBody)
 		volumeinfo.Attributes[KVolumeReplicationId] = replicaResp.Id
@@ -247,7 +247,7 @@ func (p *Plugin) ControllerPublishVolume(
 		attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
 		if errAttach != nil {
 			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-			glog.Error("failed to ControllerPublishVolume: %v", attachReq)
+			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 		resp.PublishInfo[KPublishSecondaryAttachId] = attachSpec.Id
