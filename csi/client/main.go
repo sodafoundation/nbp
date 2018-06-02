@@ -26,6 +26,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/client/proxy"
+	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
@@ -84,7 +85,7 @@ func main() {
 
 	rootCmd.ParseFlags(os.Args[1:])
 	if err := rootCmd.Execute(); err != nil {
-		glog.Fatalf("failed to execute: %v", err)
+		glog.Errorf("failed to execute: %v", err)
 		os.Exit(1)
 	}
 
@@ -144,22 +145,6 @@ func constructSubCmd(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(stagePublishCommand)
 }
 
-func StageCheck(nextStage string) bool {
-	curStage, _ := GetTestStage()
-	stageMap := map[string]string{
-		stageStart:             stageVolume,
-		stageVolume:            strings.Join([]string{stageControllerPublish, stageStart}, ","),
-		stageControllerPublish: strings.Join([]string{stageVolume, stageNodePublish}, ","),
-		stageNodePublish:       stageControllerPublish,
-	}
-	if strings.Contains(stageMap[curStage], nextStage) {
-		return true
-	} else {
-		glog.Errorf("The stage can't change from %s to %s", curStage, nextStage)
-		return false
-	}
-}
-
 func allAction(cmd *cobra.Command, args []string) {
 	setup()
 	allHandler()
@@ -172,36 +157,55 @@ func queryTestAction(cmd *cobra.Command, args []string) {
 
 type action func()
 
-func stageWraper(nextStage string, action action) {
-	if !StageCheck(nextStage) {
+func stageWraper(srcStage, destStage string, action action) {
+
+	name2enum := map[string]int{
+		stageStart:             0,
+		stageVolume:            1,
+		stageControllerPublish: 2,
+		stageNodePublish:       3,
+	}
+
+	curStage, _ := GetTestStage()
+	if srcStage != curStage {
+		glog.Errorf("Action got a wrong stage direction, %s ==> %s", curStage, destStage)
 		os.Exit(-1)
 	}
+
+	curStageN := name2enum[curStage]
+	nextStageN := name2enum[destStage]
+	diff := curStageN - nextStageN
+	if diff != 1 && diff != -1 {
+		glog.Errorf("Action got a wrong stage direction, %s ==> %s", curStage, destStage)
+		os.Exit(-1)
+	}
+
 	setup()
 	action()
-	SetTestStage(nextStage)
+	SetTestStage(destStage)
 }
 
 func volumeTestAction(cmd *cobra.Command, args []string) {
 	if !cleanFlag {
-		stageWraper(stageVolume, volumeCreate)
+		stageWraper(stageStart, stageVolume, volumeCreate)
 	} else {
-		stageWraper(stageStart, volumeDelete)
+		stageWraper(stageVolume, stageStart, volumeDelete)
 	}
 }
 
 func controllerPublishTestAction(cmd *cobra.Command, args []string) {
 	if !cleanFlag {
-		stageWraper(stageControllerPublish, controllerPublishVolume)
+		stageWraper(stageVolume, stageControllerPublish, controllerPublishVolume)
 	} else {
-		stageWraper(stageVolume, controllerUnpublishVolume)
+		stageWraper(stageControllerPublish, stageVolume, controllerUnpublishVolume)
 	}
 }
 
 func nodePublishTestAction(cmd *cobra.Command, args []string) {
 	if !cleanFlag {
-		stageWraper(stageNodePublish, nodePublishVolume)
+		stageWraper(stageControllerPublish, stageNodePublish, nodePublishVolume)
 	} else {
-		stageWraper(stageControllerPublish, nodeUnpulishVolume)
+		stageWraper(stageNodePublish, stageControllerPublish, nodeUnpulishVolume)
 	}
 }
 
@@ -212,6 +216,7 @@ func getStageAction(cmd *cobra.Command, args []string) {
 	}
 	glog.Info("Current Stage: ", stage)
 }
+
 func setup() {
 	// GetController
 	var err error
@@ -272,7 +277,7 @@ func queryCheck() {
 	// Test ValidateVolumeCapabilities
 	volumeid := "1234567890"
 	volumecapabilities := []*csi.VolumeCapability{
-		&csi.VolumeCapability{
+		{
 			AccessMode: &csi.VolumeCapability_AccessMode{
 				Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
 			},
@@ -310,9 +315,14 @@ func volumeCreate() {
 	rand.Seed(time.Now().Unix())
 	volumename := fmt.Sprintf("csivolume-%v", rand.Int())
 
-	param := map[string]string{}
+	param := map[string]string{opensds.KParamSecondaryAZ: util.OpensdsDefaultSecondaryAZ}
+	// add to param map if the replication is set.
 	if enableReplication {
-		param["enableReplication"] = "true"
+		param[opensds.KParamEnableReplication] = "true"
+	}
+	// set the secondary az
+	if v, ok := os.LookupEnv(util.OpensdsSecondaryAZ); ok {
+		param[opensds.KParamSecondaryAZ] = v
 	}
 	volumeinfo, err := controller.CreateVolume(context.Background(), volumename, nil, nil,
 		param, nil)

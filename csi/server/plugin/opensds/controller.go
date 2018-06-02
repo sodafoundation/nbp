@@ -22,6 +22,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -58,7 +59,7 @@ func (p *Plugin) CreateVolume(
 		//Using default volume size
 		volumebody.Size = 1
 	}
-	var secondaryAZ = "default"
+	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
