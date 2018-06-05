@@ -28,7 +28,6 @@ import (
 	"github.com/opensds/nbp/csi/client/proxy"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -212,7 +211,7 @@ func nodePublishTestAction(cmd *cobra.Command, args []string) {
 func getStageAction(cmd *cobra.Command, args []string) {
 	stage, err := GetTestStage()
 	if err != nil {
-		log.Error(err)
+		glog.Error(err)
 	}
 	glog.Info("Current Stage: ", stage)
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/util"
-	"github.com/prometheus/common/log"
 )
 
 const (
@@ -108,7 +107,7 @@ func GetTestStage() (string, error) {
 func SetTestStage(stage string) error {
 	err := writeFile(testStageFileName, []byte(stage))
 	if err != nil {
-		log.Errorf("Set stage fail %v", err)
+		glog.Errorf("Set stage fail %v", err)
 	}
 	return err
 }
