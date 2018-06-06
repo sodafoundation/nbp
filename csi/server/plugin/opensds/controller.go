@@ -114,6 +114,10 @@ func (p *Plugin) CreateVolume(
 			ReplicationPeriod: 0,
 		}
 		replicaResp, err := c.CreateReplication(replicaBody)
+		if err != nil {
+			glog.Errorf("Create replication failed,:%v", err)
+			return nil, err
+		}
 		volumeinfo.Attributes[KVolumeReplicationId] = replicaResp.Id
 	}
 
