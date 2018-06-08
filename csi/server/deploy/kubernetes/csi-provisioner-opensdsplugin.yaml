@@ -34,7 +34,7 @@ spec:
           args:
             - "--provisioner=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"
-            - "--connection-timeou=15s"
+            - "--connection-timeout=15s"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
