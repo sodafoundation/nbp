@@ -1,5 +1,5 @@
-hash: 9a681ae3e80a7f40ae218e37530dc4e228eea17ebdd78419acaabae68d05e77c
-updated: 2018-05-14T01:04:55.071460501Z
+hash: 08aa656b94630d82ce68333ab234ed05a064af4eac7ab51f8707a9b7ea306278
+updated: 2018-06-04T09:33:25.4297655+08:00
 imports:
 - name: github.com/astaxie/beego
   version: bf5c5626ab429e66d88602e1ab1ab5fbf4629a01
@@ -130,7 +130,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
 - name: github.com/opensds/opensds
-  version: 2f298b3f91c6bff69ce61f76b9258c3aa473b794
+  version: d97fb24976f4afa67cc281a8a4cf7e2ab4b9740c
   subpackages:
   - client
   - pkg/context
@@ -187,7 +187,7 @@ imports:
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  version: 66aacef3dd8a676686c7ae3716979581e8b03c47
   subpackages:
   - context
   - http2

@@ -25,7 +25,6 @@ import (
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/driver"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/prometheus/common/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
 )
@@ -64,7 +63,7 @@ func (p *Plugin) NodePublishVolume(
 		r.Metadata[KAttachedVolumeId] = volId
 		if _, err := client.UpdateReplication(r.Id, r); err != nil {
 			msg := fmt.Sprintf("update replication(%s) failed, %v", r.Id, err)
-			log.Error(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
@@ -229,7 +228,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	glog.Infof("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
 	err = iscsi.Umount(req.TargetPath)
 	if err != nil {
-		log.Errorf("unmount", err)
+		glog.Errorf("unmount", err)
 		return nil, err
 	}
 

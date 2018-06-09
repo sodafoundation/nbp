@@ -24,8 +24,12 @@ const (
 
 	// Opensds endpoint environment variable name
 	OpensdsEndpoint = "OPENSDS_ENDPOINT"
-	// CSI default endpoint
+	// Opensds default endpoint
 	OpensdsDefaultEndpoint = "http://localhost:50040"
+
+	//  Opensds Secondary AZ
+	OpensdsSecondaryAZ        = "OPENSDS_SECONDARY_AZ"
+	OpensdsDefaultSecondaryAZ = "secondary"
 
 	// CSI  environment variable whether enable the replication function, value can be true or false
 	CSIEnableReplication = "CSI_ENABLE_REPLICATION"
