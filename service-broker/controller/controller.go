@@ -498,28 +498,16 @@ func (c *opensdsController) Bind(
 			}
 		}
 	}
-	hostInterface, ok := request.Parameters["hostInfo"]
+	nodeInterface, ok := request.Parameters["nodeID"]
 	if !ok {
-		errMsg := fmt.Sprint("hostInfo not found in bind request params!")
-		return nil, osb.HTTPStatusCodeError{
-			StatusCode:   http.StatusBadRequest,
-			ErrorMessage: &errMsg,
-		}
-	}
-	hostInfoPtr, err := ConvertToHostInfoStruct(hostInterface)
-	if err != nil {
-		errMsg := fmt.Sprint("hostInfo format not supported in bind request params!")
+		errMsg := fmt.Sprint("nodeID not found in bind request params!")
 		return nil, osb.HTTPStatusCodeError{
 			StatusCode:   http.StatusBadRequest,
 			ErrorMessage: &errMsg,
 		}
 	}
 
-	var in = &model.VolumeAttachmentSpec{
-		VolumeId: volInterface.(string),
-		HostInfo: *hostInfoPtr,
-	}
-	devResp, err := c.volumeAttachHandler(in)
+	devResp, err := c.volumeAttachHandler(volInterface.(string), nodeInterface.(string))
 	if err != nil {
 		errMsg := fmt.Sprint("Broker error:", err)
 		return nil, osb.HTTPStatusCodeError{
@@ -602,22 +590,40 @@ func (c *opensdsController) ValidateBrokerAPIVersion(version string) error {
 	return nil
 }
 
-func (c *opensdsController) volumeAttachHandler(in *model.VolumeAttachmentSpec) (DeviceSpec, error) {
+func (c *opensdsController) volumeAttachHandler(volID, nodeID string) (DeviceSpec, error) {
+	dck, err := discoverAttacherDock(c.Endpoint, nodeID)
+	if err != nil {
+		return nil, err
+	}
+
+	in := &model.VolumeAttachmentSpec{
+		VolumeId: volID,
+		HostInfo: model.HostInfo{
+			Platform:  dck.Metadata["Platform"],
+			OsType:    dck.Metadata["OsType"],
+			Ip:        dck.Metadata["HostIp"],
+			Host:      dck.NodeId,
+			Initiator: dck.Metadata["Initiator"],
+		},
+	}
 	// Step 1: Create volume attachment.
 	atcResp, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
 		CreateVolumeAttachment(in)
 	if err != nil {
+		glog.Errorf("failed to create volume(%s) attachment: %v", in.VolumeId, err)
 		return nil, fmt.Errorf("failed to create volume(%s) attachment: %v", in.VolumeId, err)
 	}
 	// Step 2: Check the status of volume attachment.
 	atc, err := sdsClient.NewClient((&sdsClient.Config{Endpoint: c.Endpoint})).
 		GetVolumeAttachment(atcResp.Id)
 	if err != nil || atc.Status != "available" {
+		glog.Errorf("failed to get volume attachment(%s): %v", atcResp.Id, err)
 		return nil, fmt.Errorf("failed to get volume attachment(%s): %v", atcResp.Id, err)
 	}
 	// Step 3: Attach volume to the host.
 	devResp, err := AttachVolume(c.Endpoint, atc)
 	if err != nil {
+		glog.Errorf("failed to attach volume to host: %v", err)
 		return nil, fmt.Errorf("failed to attach volume to host: %v", err)
 	}
 
@@ -630,10 +636,12 @@ func (c *opensdsController) volumeDetachHandler(atcId string) error {
 	atc, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: c.Endpoint}).
 		GetVolumeAttachment(atcId)
 	if err != nil || atc.Status != "available" {
+		glog.Errorf("failed to get volume attachment(%s): %v", atcId, err)
 		return fmt.Errorf("failed to get volume attachment(%s): %v", atcId, err)
 	}
 	// Step 2: Detach volume from host.
 	if err := DetachVolume(c.Endpoint, atc); err != nil {
+		glog.Errorf("failed to detach volume from host: %v", err)
 		return fmt.Errorf("failed to detach volume from host: %v", err)
 	}
 	// Step 3: Delete volume attachment.
