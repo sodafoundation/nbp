@@ -16,6 +16,16 @@ spec:
         ports:
         - name: wordpress
           containerPort: 8084
+        volumeMounts:
+        - name: data
+          mountPath: /mnt/wordpress
+      volumes:
+      - name: data
+        hostPath:
+          # directory location on host 
+          path: /mnt/wordpress
+          # this field is optional
+          type: Directory
 ---
 apiVersion: v1
 kind: Service

@@ -8,7 +8,7 @@ Please NOTICE that the installation tutorial is tested on Ubuntu16.04, and we SU
 
 ### Install some package dependencies
 ```
-apt-get install gcc make libc-dev docker.io
+apt-get install -y gcc make socat libc-dev docker.io
 ```
 If the docker command doesn't work, try to restart it:
 ```
@@ -35,14 +35,6 @@ ADMISSION_CONTROL=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount{sec
 echo alias kubectl='/opt/kubernetes/cluster/kubectl.sh' >> /etc/profile
 RUNTIME_CONFIG=settings.k8s.io/v1alpha1=true AUTHORIZATION_MODE=Node,RBAC hack/local-up-cluster.sh -O
 kubectl get pod (check if k8s cluster running)
-```
-
-* Configure flexvolume plugin:
-```
-cd /opt && wget https://github.com/opensds/nbp/releases/download/v0.1.0/opensds-k8s-v0.1.0-linux-amd64.tar.gz
-tar zxvf opensds-k8s-v0.1.0-linux-amd64.tar.gz
-mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/opensds.io~opensds
-cp opensds-k8s-v0.1.0-linux-amd64/flexvolume/opensds /usr/libexec/kubernetes/kubelet-plugins/volume/exec/opensds.io~opensd
 ```
 
 ### Install helm (from scipt)
