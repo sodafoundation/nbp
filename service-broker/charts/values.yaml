@@ -3,7 +3,10 @@
 image: opensdsio/service-broker:latest
 # ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
 imagePullPolicy: IfNotPresent
+
 # Specify if registering it when deploying the service broker
 deployClusterServiceBroker: true
+
 # Please modify opensdsEndpoint field in real environment
 opensdsEndpoint: http://207.148.121.48:50040
+opensdsAuthStrategy: noauth

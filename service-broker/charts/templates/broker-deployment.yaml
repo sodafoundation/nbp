@@ -29,6 +29,8 @@ spec:
         - "8080"
         - --endpoint
         - {{ .Values.opensdsEndpoint }}
+        - --authOption
+        -  {{ .Values.opensdsAuthStrategy }}
         ports:
         - containerPort: 8080
         readinessProbe:
