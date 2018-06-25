@@ -11,14 +11,6 @@ import:
   subpackages:
   - lib/controller
 - package: github.com/mitchellh/mapstructure
-- package: github.com/opensds/opensds
-  version: v0.1.9
-  subpackages:
-  - client
-  - pkg/context
-  - pkg/dock/proto
-  - pkg/dock/client
-  - pkg/model
 - package: github.com/pmorie/go-open-service-broker-client
   version: v0.0.9
   subpackages:
@@ -70,3 +62,5 @@ import:
   version: v1.8.2
   subpackages:
   - pkg/volume
+- package: github.com/opensds/opensds
+  version: v0.1.10
