@@ -1,5 +1,5 @@
 # Based on ubuntu
-FROM ubuntu
+FROM ubuntu:xenial
 LABEL maintainers="Edison Xiang <xiang.edison@gmail.com>"
 LABEL description="OpenSDS CSI Plugin"
 
