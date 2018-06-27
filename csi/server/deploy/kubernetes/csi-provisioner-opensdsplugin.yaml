@@ -46,6 +46,7 @@ spec:
           args :
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+            - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
           env:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
@@ -54,6 +55,41 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: opensdsendpoint
+            - name: OPENSDS_AUTH_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsauthstrategy
+            - name: OS_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osauthurl
+            - name: OS_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osusername
+            - name: OS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: ospassword
+            - name: OS_TENANT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: ostenantname
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osprojectname
+            - name: OS_USER_DOMAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osuserdomainid
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir

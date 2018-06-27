@@ -27,6 +27,9 @@ import (
 const (
 	// OpenSDSEndPoint environment variable name
 	OpenSDSEndPoint = "OPENSDS_ENDPOINT"
+	
+	// OpenSDSAuthStrategy environment variable name
+	OpenSDSAuthStrategy = "OPENSDS_AUTH_STRATEGY"
 )
 
 const (
@@ -48,8 +51,8 @@ type WarpOpensdsClient interface {
 
 var _ WarpOpensdsClient = &SdsClient{}
 
-func NewSdsClient(endpoint string) WarpOpensdsClient {
-	client := getSdsClient(endpoint)
+func NewSdsClient(endpoint string, authStrategy string) WarpOpensdsClient {
+	client := getSdsClient(endpoint, authStrategy)
 	return &SdsClient{
 		client: client,
 	}
@@ -83,8 +86,8 @@ func (c *SdsClient) Delete(volumeId string) error {
 	return c.client.DeleteVolume(volumeId, &model.VolumeSpec{})
 }
 
-// GetClient return OpenSDS Client
-func getSdsClient(endpoint string) *client.Client {
+// getSdsClient return OpenSDS Client
+func getSdsClient(endpoint string, authStrategy string) *client.Client {
 	if endpoint == "" {
 		// Get endpoint from environment
 		endpoint = os.Getenv(OpenSDSEndPoint)
@@ -95,10 +98,28 @@ func getSdsClient(endpoint string) *client.Client {
 		endpoint = "http://localhost:50040"
 	}
 
-	return client.NewClient(
-		&client.Config{
-			Endpoint: endpoint,
-		})
+	if authStrategy == "" {
+		// Get auth strategy from environment
+		authStrategy = os.Getenv(OpenSDSAuthStrategy)
+	}
+
+	if authStrategy == "" {
+		// Using default auth strategy
+		authStrategy = "noauth"
+	}
+	
+	cfg := &client.Config{Endpoint: endpoint}
+	
+	switch authStrategy {
+	case client.Keystone:
+		cfg.AuthOptions = client.LoadKeystoneAuthOptionsFromEnv()
+	case client.Noauth:
+		cfg.AuthOptions = client.LoadNoAuthOptionsFromEnv()
+	default:
+		cfg.AuthOptions = client.NewNoauthOptions(constants.DefaultTenantId)
+	}
+
+	return client.NewClient(cfg)
 }
 
 func optionCheck(optCheckList []string, opts map[string]string) error {

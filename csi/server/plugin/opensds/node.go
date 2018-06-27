@@ -37,7 +37,7 @@ func (p *Plugin) NodePublishVolume(
 	log.Println("start to NodePublishVolume")
 	defer log.Println("end to NodePublishVolume")
 
-	client := sdscontroller.GetClient("")
+	client := sdscontroller.GetClient("", "")
 
 	//check volume is exist
 	volSpec, errVol := client.GetVolume(req.VolumeId)
@@ -135,7 +135,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	log.Println("start to NodeUnpublishVolume")
 	defer log.Println("end to NodeUnpublishVolume")
 
-	client := sdscontroller.GetClient("")
+	client := sdscontroller.GetClient("", "")
 
 	//check volume is exist
 	volSpec, errVol := client.GetVolume(req.VolumeId)
