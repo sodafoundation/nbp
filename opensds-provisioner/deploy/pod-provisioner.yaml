@@ -56,10 +56,46 @@ spec:
       securityContext:
       args:
         - "-endpoint=$(OPENSDS_ENDPOINT)"
+        - "-authstrategy=$(OPENSDS_AUTH_STRATEGY)"
       env:
         - name: OPENSDS_ENDPOINT
           valueFrom:
             configMapKeyRef:
               name: opensds-provisioner-configmap
               key: opensdsendpoint
+        - name: OPENSDS_AUTH_STRATEGY
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: opensdsauthstrategy
+        - name: OS_AUTH_URL
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: osauthurl
+        - name: OS_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: osusername
+        - name: OS_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: ospassword
+        - name: OS_TENANT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: ostenantname
+        - name: OS_PROJECT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: osprojectname
+        - name: OS_USER_DOMAIN_ID
+          valueFrom:
+            configMapKeyRef:
+              name: opensds-provisioner-configmap
+              key: osuserdomainid
       imagePullPolicy: "IfNotPresent"

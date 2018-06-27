@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	csiEndpoint     string
-	opensdsEndpoint string
+	csiEndpoint         string
+	opensdsEndpoint     string
+	opensdsAuthStrategy string
 )
 
 func init() {
@@ -45,6 +46,7 @@ func main() {
 
 	cmd.PersistentFlags().StringVar(&csiEndpoint, "csiEndpoint", "", "CSI Endpoint")
 	cmd.PersistentFlags().StringVar(&opensdsEndpoint, "opensdsEndpoint", "", "OpenSDS Endpoint")
+	cmd.PersistentFlags().StringVar(&opensdsAuthStrategy, "opensdsAuthStrategy", "", "OpenSDS Auth Strategy")
 
 	cmd.ParseFlags(os.Args[1:])
 	if err := cmd.Execute(); err != nil {
@@ -60,6 +62,7 @@ func handle() {
 	// Set Env
 	os.Setenv("CSI_ENDPOINT", csiEndpoint)
 	os.Setenv("OPENSDS_ENDPOINT", opensdsEndpoint)
+	os.Setenv("OPENSDS_AUTH_STRATEGY", opensdsAuthStrategy)
 
 	// Get CSI Endpoint Listener
 	lis, err := util.GetCSIEndPointListener()

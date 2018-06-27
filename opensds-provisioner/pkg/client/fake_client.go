@@ -21,7 +21,7 @@ type FakeClient struct {
 
 var _ WarpOpensdsClient = &FakeClient{}
 
-func NewFakeClient(endpoint string) WarpOpensdsClient {
+func NewFakeClient(endpoint string, authStrategy string) WarpOpensdsClient {
 	return &FakeClient{}
 }
 

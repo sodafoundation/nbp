@@ -80,7 +80,7 @@ func (plugin *OpenSDSPlugin) GetVolumeName(opts interface{}) Result {
 	opt := opts.(*OpenSDSOptions)
 	volId := opt.VolumeId
 
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	vol, err := client.GetVolume(volId)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	opt := opts.(*OpenSDSOptions)
 	volID := opt.VolumeId
 
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	vol, errVol := client.GetVolume(volID)
 	if errVol != nil {
 		return Fail(errors.New("volume not exist."))
@@ -190,7 +190,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 }
 
 func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return Fail(err.Error())
@@ -250,7 +250,7 @@ func (plugin *OpenSDSPlugin) MountDevice(mountDir string, device string, opts in
 	}
 	act.Metadata["baseMountPath"] = mountDir
 
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	_, err = client.UpdateVolumeAttachment(act.Id, act)
 	if err != nil {
 		return Fail(err.Error())
@@ -335,7 +335,7 @@ func (plugin *OpenSDSPlugin) WaitForDetach(device string) Result {
 }
 
 func getAttachmentByVolumeId(volumeId string) *model.VolumeAttachmentSpec {
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return nil
@@ -354,7 +354,7 @@ func getAttachmentByVolumeId(volumeId string) *model.VolumeAttachmentSpec {
 }
 
 func getAttachmentByDevice(device string) *model.VolumeAttachmentSpec {
-	client := opensds.GetClient("")
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return nil

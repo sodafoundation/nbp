@@ -35,10 +35,11 @@ import (
 )
 
 var (
-	provisioner = flag.String("provisioner", "opensds/nbp-provisioner", "Name of the provisioner. The provisioner will only provision volumes for claims that request a StorageClass with a provisioner field set equal to this name.")
-	master      = flag.String("master", "", "Master URL to build a client config from. Either this or kubeconfig needs to be set if the provisioner is being run out of cluster.")
-	kubeconfig  = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Either this or master needs to be set if the provisioner is being run out of cluster.")
-	endpoint    = flag.String("endpoint", "http://localhost:50040", "Opensds controller server URL to build a client config from.")
+	provisioner  = flag.String("provisioner", "opensds/nbp-provisioner", "Name of the provisioner. The provisioner will only provision volumes for claims that request a StorageClass with a provisioner field set equal to this name.")
+	master       = flag.String("master", "", "Master URL to build a client config from. Either this or kubeconfig needs to be set if the provisioner is being run out of cluster.")
+	kubeconfig   = flag.String("kubeconfig", "", "Absolute path to the kubeconfig file. Either this or master needs to be set if the provisioner is being run out of cluster.")
+	endpoint     = flag.String("endpoint", "http://localhost:50040", "Opensds controller server URL to build a client config from.")
+	authstrategy = flag.String("authstrategy", "noauth", "Opensds controller server auth strategy to build a client config from.")
 )
 
 func main() {
@@ -75,7 +76,7 @@ func main() {
 		glog.Fatalf("Error getting server version: %v", err)
 	}
 
-	sdsclient := client.NewSdsClient(*endpoint)
+	sdsclient := client.NewSdsClient(*endpoint, *authstrategy)
 
 	// Create the provisioner: it implements the Provisioner interface expected by
 	// the controller

@@ -28,7 +28,7 @@ func (p *Plugin) CreateVolume(
 	log.Println("start to CreateVolume")
 	defer log.Println("end to CreateVolume")
 
-	c := sdscontroller.GetClient("")
+	c := sdscontroller.GetClient("", "")
 
 	// build volume body
 	volumebody := &model.VolumeSpec{}
@@ -94,7 +94,7 @@ func (p *Plugin) DeleteVolume(
 	log.Println("start to DeleteVolume")
 	defer log.Println("end to DeleteVolume")
 
-	c := sdscontroller.GetClient("")
+	c := sdscontroller.GetClient("", "")
 	err := c.DeleteVolume(req.VolumeId, &model.VolumeSpec{})
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (p *Plugin) ControllerPublishVolume(
 	log.Println("start to ControllerPublishVolume")
 	defer log.Println("end to ControllerPublishVolume")
 
-	client := sdscontroller.GetClient("")
+	client := sdscontroller.GetClient("", "")
 
 	//check volume is exist
 	volSpec, errVol := client.GetVolume(req.VolumeId)
@@ -192,7 +192,7 @@ func (p *Plugin) ControllerUnpublishVolume(
 	log.Println("start to ControllerUnpublishVolume")
 	defer log.Println("end to ControllerUnpublishVolume")
 
-	client := sdscontroller.GetClient("")
+	client := sdscontroller.GetClient("", "")
 
 	//check volume is exist
 	volSpec, errVol := client.GetVolume(req.VolumeId)
@@ -263,7 +263,7 @@ func (p *Plugin) ListVolumes(
 	log.Println("start to ListVolumes")
 	defer log.Println("end to ListVolumes")
 
-	c := sdscontroller.GetClient("")
+	c := sdscontroller.GetClient("", "")
 
 	// only support list all the volumes at present
 	volumes, err := c.ListVolumes()
@@ -307,7 +307,7 @@ func (p *Plugin) GetCapacity(
 	log.Println("start to GetCapacity")
 	defer log.Println("end to GetCapacity")
 
-	c := sdscontroller.GetClient("")
+	c := sdscontroller.GetClient("", "")
 
 	pools, err := c.ListPools()
 	if err != nil {
