@@ -5,20 +5,15 @@ all:build
 build:csi.server.opensds csi.client.opensds flexvolume.server.opensds
 
 package:
-	go get github.com/opensds/nbp/csi/server
-	go get github.com/opensds/nbp/csi/client
-	go get github.com/opensds/nbp/flexvolume/cmd/flex-plugin
+	mkdir -p  ./.output/
 
 csi.server.opensds:package
-	mkdir -p  ./.output/
 	go build -o ./.output/csi.server.opensds github.com/opensds/nbp/csi/server
 
 csi.client.opensds:package
-	mkdir -p  ./.output/
 	go build -o ./.output/csi.client.opensds github.com/opensds/nbp/csi/client
 
 flexvolume.server.opensds:package
-	mkdir -p  ./.output/
 	go build -o ./.output/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
 
 docker:build
