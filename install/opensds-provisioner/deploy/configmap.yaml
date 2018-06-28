@@ -1,9 +1,0 @@
-# This YAML file contains configmap objects,
-# which are necessary to run opensds external provisioner.
-
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: opensds-provisioner-configmap
-data:
-  opensdsendpoint: http://127.0.0.1:50040
