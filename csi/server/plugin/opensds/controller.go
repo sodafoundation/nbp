@@ -1,14 +1,29 @@
+// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package opensds
 
 import (
-	"log"
+	"fmt"
 	"runtime"
 	"strings"
 
-	"fmt"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -25,8 +40,8 @@ func (p *Plugin) CreateVolume(
 	req *csi.CreateVolumeRequest) (
 	*csi.CreateVolumeResponse, error) {
 
-	log.Println("start to CreateVolume")
-	defer log.Println("end to CreateVolume")
+	glog.Info("start to CreateVolume")
+	defer glog.Info("end to CreateVolume")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -45,24 +60,28 @@ func (p *Plugin) CreateVolume(
 		//Using default volume size
 		volumebody.Size = 1
 	}
-	//	if req.Parameters != nil && req.Parameters["AvailabilityZone"] != "" {
-	//		volumebody.AvailabilityZone = req.Parameters["AvailabilityZone"]
-	//	}
-
+	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
+	var enableReplication = false
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
-		case "profile":
+		case KParamProfile:
 			volumebody.ProfileId = v
-		case "availabilityzone":
+		case KParamAZ:
 			volumebody.AvailabilityZone = v
+		case KParamEnableReplication:
+			if strings.ToLower(v) == "true" {
+				enableReplication = true
+			}
+		case KParamSecondaryAZ:
+			secondaryAZ = v
 		}
 	}
 
-	log.Println("CreateVolume volumebody:%v", volumebody)
+	glog.Infof("CreateVolume volumebody: %v", volumebody)
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {
-		log.Fatalf("failed to CreateVolume: %v", err)
+		glog.Fatalf("failed to CreateVolume: %v", err)
 		return nil, err
 	}
 
@@ -71,13 +90,36 @@ func (p *Plugin) CreateVolume(
 		CapacityBytes: v.Size,
 		Id:            v.Id,
 		Attributes: map[string]string{
-			"Name":             v.Name,
-			"Status":           v.Status,
-			"AvailabilityZone": v.AvailabilityZone,
-			"PoolId":           v.PoolId,
-			"ProfileId":        v.ProfileId,
-			"lvPath":           v.Metadata["lvPath"],
+			KVolumeName:      v.Name,
+			KVolumeStatus:    v.Status,
+			KVolumeAZ:        v.AvailabilityZone,
+			KVolumePoolId:    v.PoolId,
+			KVolumeProfileId: v.ProfileId,
+			KVolumeLvPath:    v.Metadata["lvPath"],
 		},
+	}
+
+	if enableReplication {
+		volumebody.AvailabilityZone = secondaryAZ
+		volumebody.Name = SecondaryPrefix + req.Name
+		sVol, err := c.CreateVolume(volumebody)
+		if err != nil {
+			glog.Errorf("failed to create secondar volume: %v", err)
+			return nil, err
+		}
+		replicaBody := &model.ReplicationSpec{
+			Name:              req.Name,
+			PrimaryVolumeId:   v.Id,
+			SecondaryVolumeId: sVol.Id,
+			ReplicationMode:   model.ReplicationModeSync,
+			ReplicationPeriod: 0,
+		}
+		replicaResp, err := c.CreateReplication(replicaBody)
+		if err != nil {
+			glog.Errorf("Create replication failed,:%v", err)
+			return nil, err
+		}
+		volumeinfo.Attributes[KVolumeReplicationId] = replicaResp.Id
 	}
 
 	return &csi.CreateVolumeResponse{
@@ -85,19 +127,41 @@ func (p *Plugin) CreateVolume(
 	}, nil
 }
 
+func getReplicationByVolume(volId string) *model.ReplicationSpec {
+	c := sdscontroller.GetClient("","")
+	replications, _ := c.ListReplications()
+	for _, r := range replications {
+		if volId == r.PrimaryVolumeId || volId == r.SecondaryVolumeId {
+			return r
+		}
+	}
+	return nil
+}
+
 // DeleteVolume implementation
 func (p *Plugin) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (
 	*csi.DeleteVolumeResponse, error) {
-
-	log.Println("start to DeleteVolume")
-	defer log.Println("end to DeleteVolume")
-
+	glog.Info("start to DeleteVolume")
+	defer glog.Info("end to DeleteVolume")
+	volId := req.VolumeId
 	c := sdscontroller.GetClient("", "")
-	err := c.DeleteVolume(req.VolumeId, &model.VolumeSpec{})
-	if err != nil {
-		return nil, err
+	r := getReplicationByVolume(volId)
+	if r != nil {
+		if err := c.DeleteReplication(r.Id, nil); err != nil {
+			return nil, err
+		}
+		if err := c.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+			return nil, err
+		}
+		if err := c.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := c.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+			return nil, err
+		}
 	}
 
 	return &csi.DeleteVolumeResponse{}, nil
@@ -109,8 +173,8 @@ func (p *Plugin) ControllerPublishVolume(
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
 
-	log.Println("start to ControllerPublishVolume")
-	defer log.Println("end to ControllerPublishVolume")
+	glog.Info("start to ControllerPublishVolume")
+	defer glog.Info("end to ControllerPublishVolume")
 
 	client := sdscontroller.GetClient("", "")
 
@@ -169,18 +233,33 @@ func (p *Plugin) ControllerPublishVolume(
 	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
 		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-		log.Fatalf("failed to ControllerPublishVolume: %v", attachReq)
+		glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	return &csi.ControllerPublishVolumeResponse{
+	resp := &csi.ControllerPublishVolumeResponse{
 		PublishInfo: map[string]string{
-			"ip":     attachSpec.Ip,
-			"host":   attachSpec.Host,
-			"atcid":  attachSpec.Id,
-			"status": attachSpec.Status,
+			KPublishHostIp:       attachSpec.Ip,
+			KPublishHostName:     attachSpec.Host,
+			KPublishAttachId:     attachSpec.Id,
+			KPublishAttachStatus: attachSpec.Status,
 		},
-	}, nil
+	}
+	if replicationId, ok := req.VolumeAttributes[KVolumeReplicationId]; ok {
+		r, err := client.GetReplication(replicationId)
+		if err != nil {
+			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
+		}
+		attachReq.VolumeId = r.SecondaryVolumeId
+		attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+		if errAttach != nil {
+			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+		resp.PublishInfo[KPublishSecondaryAttachId] = attachSpec.Id
+	}
+	return resp, nil
 }
 
 // ControllerUnpublishVolume implementation
@@ -189,8 +268,8 @@ func (p *Plugin) ControllerUnpublishVolume(
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
 
-	log.Println("start to ControllerUnpublishVolume")
-	defer log.Println("end to ControllerUnpublishVolume")
+	glog.Info("start to ControllerUnpublishVolume")
+	defer glog.Info("end to ControllerUnpublishVolume")
 
 	client := sdscontroller.GetClient("", "")
 
@@ -213,11 +292,18 @@ func (p *Plugin) ControllerUnpublishVolume(
 		}
 	}
 
+	if r := getReplicationByVolume(req.VolumeId); r != nil {
+		for _, attachSpec := range attachments {
+			if attachSpec.VolumeId == r.SecondaryVolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+				acts = append(acts, attachSpec)
+			}
+		}
+	}
 	for _, act := range acts {
 		err = client.DeleteVolumeAttachment(act.Id, act)
 		if err != nil {
 			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
-			log.Fatalf("failed to ControllerUnpublishVolume: %v", err)
+			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
@@ -231,8 +317,8 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	req *csi.ValidateVolumeCapabilitiesRequest) (
 	*csi.ValidateVolumeCapabilitiesResponse, error) {
 
-	log.Println("start to ValidateVolumeCapabilities")
-	defer log.Println("end to ValidateVolumeCapabilities")
+	glog.Info("start to ValidateVolumeCapabilities")
+	defer glog.Info("end to ValidateVolumeCapabilities")
 
 	if strings.TrimSpace(req.VolumeId) == "" {
 		// csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO
@@ -260,8 +346,8 @@ func (p *Plugin) ListVolumes(
 	req *csi.ListVolumesRequest) (
 	*csi.ListVolumesResponse, error) {
 
-	log.Println("start to ListVolumes")
-	defer log.Println("end to ListVolumes")
+	glog.Info("start to ListVolumes")
+	defer glog.Info("end to ListVolumes")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -304,8 +390,8 @@ func (p *Plugin) GetCapacity(
 	req *csi.GetCapacityRequest) (
 	*csi.GetCapacityResponse, error) {
 
-	log.Println("start to GetCapacity")
-	defer log.Println("end to GetCapacity")
+	glog.Info("start to GetCapacity")
+	defer glog.Info("end to GetCapacity")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -333,8 +419,8 @@ func (p *Plugin) ControllerGetCapabilities(
 	req *csi.ControllerGetCapabilitiesRequest) (
 	*csi.ControllerGetCapabilitiesResponse, error) {
 
-	log.Println("start to ControllerGetCapabilities")
-	defer log.Println("end to ControllerGetCapabilities")
+	glog.Info("start to ControllerGetCapabilities")
+	defer glog.Info("end to ControllerGetCapabilities")
 
 	return &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: []*csi.ControllerServiceCapability{
