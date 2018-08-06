@@ -1,10 +1,10 @@
 package opensds
 
 import (
-	"log"
 	"runtime"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,15 +20,15 @@ func (p *Plugin) Probe(
 	req *csi.ProbeRequest) (
 	*csi.ProbeResponse, error) {
 
-	log.Println("start to Probe")
-	defer log.Println("end to Probe")
+	glog.Info("start to Probe")
+	defer glog.Info("end to Probe")
 
 	switch runtime.GOOS {
 	case "linux":
 		return &csi.ProbeResponse{}, nil
 	default:
 		msg := "unsupported operating system:" + runtime.GOOS
-		log.Fatalf(msg)
+		glog.Error(msg)
 		// csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
@@ -40,8 +40,8 @@ func (p *Plugin) GetPluginInfo(
 	req *csi.GetPluginInfoRequest) (
 	*csi.GetPluginInfoResponse, error) {
 
-	log.Println("start to GetPluginInfo")
-	defer log.Println("end to GetPluginInfo")
+	glog.Info("start to GetPluginInfo")
+	defer glog.Info("end to GetPluginInfo")
 
 	return &csi.GetPluginInfoResponse{
 		Name:          PluginName,

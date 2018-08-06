@@ -86,7 +86,7 @@ func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransp
 }
 
 func execCmd(name string, arg ...string) (string, error) {
-	log.Printf("Command: %s %s:\n", name, strings.Join(arg, " "))
+	log.Printf("Command: %s %s\n", name, strings.Join(arg, " "))
 	info, err := exec.Command(name, arg...).CombinedOutput()
 	return string(info), err
 }
@@ -301,7 +301,7 @@ func Mount(device string, mountpoint string) error {
 }
 
 // FormatandMount device
-func FormatandMount(device string, fstype string, mountpoint string) error {
+func FormatAndMount(device string, fstype string, mountpoint string) error {
 	log.Printf("FormatandMount device: %s fstype: %s mountpoint: %s", device, fstype, mountpoint)
 
 	// Format
