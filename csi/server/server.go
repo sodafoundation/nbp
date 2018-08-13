@@ -129,6 +129,33 @@ func (s *server) ControllerGetCapabilities(
 	return s.plugin.ControllerGetCapabilities(ctx, req)
 }
 
+// CreateSnapshot
+func (s *server) CreateSnapshot(
+	ctx context.Context,
+	req *csi.CreateSnapshotRequest) (
+	*csi.CreateSnapshotResponse, error) {
+	// Use plugin implementation
+	return s.plugin.CreateSnapshot(ctx, req)
+}
+
+// DeleteSnapshot
+func (s *server) DeleteSnapshot(
+	ctx context.Context,
+	req *csi.DeleteSnapshotRequest) (
+	*csi.DeleteSnapshotResponse, error) {
+	// Use plugin implementation
+	return s.plugin.DeleteSnapshot(ctx, req)
+}
+
+// ListSnapshots
+func (s *server) ListSnapshots(
+	ctx context.Context,
+	req *csi.ListSnapshotsRequest) (
+	*csi.ListSnapshotsResponse, error) {
+	// Use plugin implementation
+	return s.plugin.ListSnapshots(ctx, req)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                            Node Service                                    //
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,4 +207,13 @@ func (s *server) NodeGetCapabilities(
 	*csi.NodeGetCapabilitiesResponse, error) {
 	// Use plugin implementation
 	return s.plugin.NodeGetCapabilities(ctx, req)
+}
+
+// NodeGetInfo
+func (s *server) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest) (
+	*csi.NodeGetInfoResponse, error) {
+	// Use plugin implementation
+	return s.plugin.NodeGetInfo(ctx, req)
 }
