@@ -17,20 +17,34 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
+	"github.com/golang/glog"
 	sdsClient "github.com/opensds/opensds/client"
-	c "github.com/opensds/opensds/pkg/context"
+	ctx "github.com/opensds/opensds/pkg/context"
 	dockClient "github.com/opensds/opensds/pkg/dock/client"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
+	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
+)
+
+const (
+	attacherDockFlag = "attacher"
 )
 
 type DeviceSpec map[string]string
 
-func AttachVolume(edp string, in *model.VolumeAttachmentSpec) (DeviceSpec, error) {
-	dckClient, err := discoverAttachDock(edp, in.HostInfo.Host)
+func AttachVolume(c *sdsClient.Client, in *model.VolumeAttachmentSpec) (DeviceSpec, error) {
+	dck, err := discoverAttacherDock(c, in.HostInfo.Host)
 	if err != nil {
+		glog.Errorf("failed to find attach dock with nodeID(%s): %v", in.HostInfo.Host, err)
+		return nil, err
+	}
+	// Create attach dock client and connect attach dock server.
+	dckClient := dockClient.NewClient()
+	if err = dckClient.Connect(dck.Endpoint); err != nil {
+		glog.Errorf("failed to connect attach dock with endpoint(%s): %v", dck.Endpoint, err)
 		return nil, err
 	}
 	defer dckClient.Close()
@@ -40,19 +54,27 @@ func AttachVolume(edp string, in *model.VolumeAttachmentSpec) (DeviceSpec, error
 		AccessProtocol: in.DriverVolumeType,
 		ConnectionData: string(connData),
 		Metadata:       map[string]string{},
-		Context:        c.NewAdminContext().ToJson(),
+		Context:        ctx.NewAdminContext().ToJson(),
 	}
 	response, err := dckClient.AttachVolume(context.Background(), attachOpt)
 	if err != nil {
+		glog.Errorf("failed to attach dock volume to host: %v", err)
 		return nil, err
 	}
 
 	return DeviceSpec{"device": response.GetResult().GetMessage()}, nil
 }
 
-func DetachVolume(edp string, in *model.VolumeAttachmentSpec) error {
-	dckClient, err := discoverAttachDock(edp, in.HostInfo.Host)
+func DetachVolume(c *sdsClient.Client, in *model.VolumeAttachmentSpec) error {
+	dck, err := discoverAttacherDock(c, in.HostInfo.Host)
 	if err != nil {
+		glog.Errorf("failed to find attach dock with nodeID(%s): %v", in.HostInfo.Host, err)
+		return err
+	}
+	// Create attach dock client and connect attach dock server.
+	dckClient := dockClient.NewClient()
+	if err = dckClient.Connect(dck.Endpoint); err != nil {
+		glog.Errorf("failed to connect attach dock with endpoint(%s): %v", dck.Endpoint, err)
 		return err
 	}
 	defer dckClient.Close()
@@ -62,23 +84,23 @@ func DetachVolume(edp string, in *model.VolumeAttachmentSpec) error {
 		AccessProtocol: in.DriverVolumeType,
 		ConnectionData: string(connData),
 		Metadata:       map[string]string{},
-		Context:        c.NewAdminContext().ToJson(),
+		Context:        ctx.NewAdminContext().ToJson(),
 	}
 
 	_, err = dckClient.DetachVolume(context.Background(), detachOpt)
 	return err
 }
 
-func discoverAttachDock(edp, nodeId string) (dockClient.Client, error) {
-	dcks, err := sdsClient.NewClient(&sdsClient.Config{Endpoint: edp}).
-		ListDocks()
+func discoverAttacherDock(c *sdsClient.Client, nodeId string) (*model.DockSpec, error) {
+	dcks, err := c.ListDocks()
 	if err != nil {
+		glog.Errorf("failed to list docks: %v", err)
 		return nil, err
 	}
 
 	d := func() *model.DockSpec {
 		for _, dck := range dcks {
-			if dck.NodeId == nodeId {
+			if dck.Type == attacherDockFlag && dck.NodeId == nodeId {
 				return dck
 			}
 		}
@@ -87,24 +109,43 @@ func discoverAttachDock(edp, nodeId string) (dockClient.Client, error) {
 	if d == nil {
 		return nil, fmt.Errorf("Can't find supported attach dock (%s)", nodeId)
 	}
-	// Create attach dock client and connect attach dock server.
-	dckClient := dockClient.NewClient()
-	if dckClient.Connect(d.Endpoint); err != nil {
-		return nil, err
-	}
-	return dckClient, nil
+
+	return d, nil
 }
 
-func ConvertToHostInfoStruct(mapObj interface{}) (*model.HostInfo, error) {
-	jsonStr, err := json.Marshal(mapObj)
-	if nil != err {
-		return nil, err
-	}
+const (
+	// Opensds Auth EVNs
+	opensdsEndpoint     = "OPENSDS_ENDPOINT"
+	opensdsAuthStrategy = "OPENSDS_AUTH_STRATEGY"
+	opensdsTenantId     = "OPENSDS_TENANT_ID"
 
-	var result *model.HostInfo
-	if err = json.Unmarshal(jsonStr, &result); err != nil {
-		return nil, err
-	}
+	// Keystone Auth ENVs
+	osAuthUrl      = "OS_AUTH_URL"
+	osUsername     = "OS_USERNAME"
+	osPassword     = "OS_PASSWORD"
+	osTenantName   = "OS_TENANT_NAME"
+	osProjectName  = "OS_PROJECT_NAME"
+	osUserDomainId = "OS_USER_DOMAIN_ID"
+)
 
-	return result, nil
+func LoadKeystoneAuthOptionsFromEnv() *sdsClient.KeystoneAuthOptions {
+	opt := sdsClient.NewKeystoneAuthOptions()
+	opt.IdentityEndpoint = os.Getenv(osAuthUrl)
+	opt.Username = os.Getenv(osUsername)
+	opt.Password = os.Getenv(osPassword)
+	opt.TenantName = os.Getenv(osTenantName)
+	projectName := os.Getenv(osProjectName)
+	opt.DomainID = os.Getenv(osUserDomainId)
+	if opt.TenantName == "" {
+		opt.TenantName = projectName
+	}
+	return opt
+}
+
+func LoadNoAuthOptionsFromEnv() *sdsClient.NoAuthOptions {
+	tenantId, ok := os.LookupEnv(opensdsTenantId)
+	if !ok {
+		return sdsClient.NewNoauthOptions(constants.DefaultTenantId)
+	}
+	return sdsClient.NewNoauthOptions(tenantId)
 }
