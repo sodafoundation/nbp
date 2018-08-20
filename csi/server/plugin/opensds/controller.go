@@ -48,9 +48,9 @@ func (p *Plugin) CreateVolume(
 	// build volume body
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
+	allocationUnitBytes := int64(1024 * 1024 * 1024)
 	if req.CapacityRange != nil {
 		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
-		allocationUnitBytes := int64(1024 * 1024 * 1024)
 		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
 		if volumebody.Size < 1 {
 			//Using default volume size
@@ -87,7 +87,7 @@ func (p *Plugin) CreateVolume(
 
 	// return volume info
 	volumeinfo := &csi.Volume{
-		CapacityBytes: v.Size,
+		CapacityBytes: v.Size * allocationUnitBytes,
 		Id:            v.Id,
 		Attributes: map[string]string{
 			KVolumeName:      v.Name,
