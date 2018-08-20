@@ -13,12 +13,13 @@ go_library(
         "validate.go",
         "validate_disabled.go",
     ],
+    importpath = "k8s.io/kubernetes/pkg/security/apparmor",
     deps = [
         "//pkg/features:go_default_library",
         "//pkg/kubelet/types:go_default_library",
         "//pkg/util/file:go_default_library",
-        "//vendor/k8s.io/api/core/v1:go_default_library",
-        "//vendor/k8s.io/apiserver/pkg/util/feature:go_default_library",
+        "//staging/src/k8s.io/api/core/v1:go_default_library",
+        "//staging/src/k8s.io/apiserver/pkg/util/feature:go_default_library",
     ],
 )
 
@@ -28,11 +29,11 @@ go_test(
     data = [
         "testdata/profiles",
     ],
-    library = ":go_default_library",
+    embed = [":go_default_library"],
     deps = [
+        "//staging/src/k8s.io/api/core/v1:go_default_library",
+        "//staging/src/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
         "//vendor/github.com/stretchr/testify/assert:go_default_library",
-        "//vendor/k8s.io/api/core/v1:go_default_library",
-        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
     ],
 )
 

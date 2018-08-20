@@ -280,6 +280,14 @@ func (p *Plugin) NodeGetId(
 	}, nil
 }
 
+// NodeGetInfo
+func (p *Plugin) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest) (
+	*csi.NodeGetInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
 // NodeGetCapabilities implementation
 func (p *Plugin) NodeGetCapabilities(
 	ctx context.Context,
