@@ -16,6 +16,7 @@ package opensds
 
 import (
 	"fmt"
+
 	"google.golang.org/grpc/codes"
 
 	"strings"
@@ -278,6 +279,14 @@ func (p *Plugin) NodeGetId(
 	return &csi.NodeGetIdResponse{
 		NodeId: localIqn,
 	}, nil
+}
+
+// NodeGetInfo
+func (p *Plugin) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest) (
+	*csi.NodeGetInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // NodeGetCapabilities implementation

@@ -19,7 +19,6 @@ import (
 	"runtime"
 	"strings"
 
-
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
@@ -128,7 +127,7 @@ func (p *Plugin) CreateVolume(
 }
 
 func getReplicationByVolume(volId string) *model.ReplicationSpec {
-	c := sdscontroller.GetClient("","")
+	c := sdscontroller.GetClient("", "")
 	replications, _ := c.ListReplications()
 	for _, r := range replications {
 		if volId == r.PrimaryVolumeId || volId == r.SecondaryVolumeId {
@@ -454,4 +453,28 @@ func (p *Plugin) ControllerGetCapabilities(
 			},
 		},
 	}, nil
+}
+
+// CreateSnapshot
+func (p *Plugin) CreateSnapshot(
+	ctx context.Context,
+	req *csi.CreateSnapshotRequest) (
+	*csi.CreateSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+// DeleteSnapshot
+func (p *Plugin) DeleteSnapshot(
+	ctx context.Context,
+	req *csi.DeleteSnapshotRequest) (
+	*csi.DeleteSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+// ListSnapshots
+func (p *Plugin) ListSnapshots(
+	ctx context.Context,
+	req *csi.ListSnapshotsRequest) (
+	*csi.ListSnapshotsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
 }
