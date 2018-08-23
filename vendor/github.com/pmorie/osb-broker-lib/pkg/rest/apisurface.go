@@ -340,7 +340,8 @@ func (s *APISurface) UnbindHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	request, err := unpackUnbindRequest(r)
+	v := mux.Vars(r)
+	request, err := unpackUnbindRequest(r, v)
 	if err != nil {
 		s.writeError(w, err, http.StatusInternalServerError)
 		return
@@ -362,12 +363,16 @@ func (s *APISurface) UnbindHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // unpackUnbindRequest unpacks an osb request from the given HTTP request.
-func unpackUnbindRequest(r *http.Request) (*osb.UnbindRequest, error) {
+func unpackUnbindRequest(r *http.Request, vars map[string]string) (*osb.UnbindRequest, error) {
 	osbRequest := &osb.UnbindRequest{}
 
-	vars := mux.Vars(r)
 	osbRequest.InstanceID = vars[osb.VarKeyInstanceID]
 	osbRequest.BindingID = vars[osb.VarKeyBindingID]
+
+	// plan_id and service_id are set in the query string parameters and thus need to
+	// be obtained differently than instance_id and binding_id.
+	osbRequest.PlanID = r.FormValue(osb.VarKeyPlanID)
+	osbRequest.ServiceID = r.FormValue(osb.VarKeyServiceID)
 
 	identity, err := retrieveOriginatingIdentity(r)
 	// This could be not found because platforms may support the feature
