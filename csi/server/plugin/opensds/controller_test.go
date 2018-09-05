@@ -87,6 +87,13 @@ func TestControllerGetCapabilities(t *testing.T) {
 				},
 			},
 		},
+		&csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+				},
+			},
+		},
 	}
 
 	rs, err := fakePlugin.ControllerGetCapabilities(fakeCtx, fakeReq)

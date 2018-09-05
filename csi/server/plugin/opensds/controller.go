@@ -18,12 +18,14 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/pkg/model"
+	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -451,30 +453,125 @@ func (p *Plugin) ControllerGetCapabilities(
 					},
 				},
 			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+					},
+				},
+			},
 		},
 	}, nil
 }
 
-// CreateSnapshot
+// CreateSnapshot implementation
 func (p *Plugin) CreateSnapshot(
 	ctx context.Context,
 	req *csi.CreateSnapshotRequest) (
 	*csi.CreateSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+
+	defer glog.Info("end to CreateSnapshot")
+	glog.Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
+		req.Name, req.SourceVolumeId, req.CreateSnapshotSecrets, req.Parameters)
+
+	if 0 == len(req.Name) {
+		return nil, status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
+	}
+
+	if 0 == len(req.SourceVolumeId) {
+		return nil, status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
+	}
+
+	client := sdscontroller.GetClient("", "")
+	snapReq := &model.VolumeSnapshotSpec{
+		Name:     req.Name,
+		VolumeId: req.SourceVolumeId,
+	}
+
+	snapshot, err := client.CreateVolumeSnapshot(snapReq)
+	if nil != err {
+		return nil, err
+	}
+
+	createdAt, err := time.Parse(constants.TimeFormat, snapshot.CreatedAt)
+	if nil != err {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &csi.CreateSnapshotResponse{
+		Snapshot: &csi.Snapshot{
+			SizeBytes:      snapshot.Size,
+			Id:             snapshot.Id,
+			SourceVolumeId: snapshot.VolumeId,
+			CreatedAt:      createdAt.UnixNano(),
+			Status: &csi.SnapshotStatus{
+				Type: csi.SnapshotStatus_READY,
+			},
+		},
+	}, nil
 }
 
-// DeleteSnapshot
+// DeleteSnapshot implementation
 func (p *Plugin) DeleteSnapshot(
 	ctx context.Context,
 	req *csi.DeleteSnapshotRequest) (
 	*csi.DeleteSnapshotResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+
+	defer glog.Info("end to DeleteSnapshot")
+	glog.Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
+		req.SnapshotId, req.DeleteSnapshotSecrets)
+
+	if 0 == len(req.SnapshotId) {
+		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+	}
+
+	client := sdscontroller.GetClient("", "")
+	err := client.DeleteVolumeSnapshot(req.SnapshotId, nil)
+
+	if nil != err {
+		return nil, err
+	}
+
+	return &csi.DeleteSnapshotResponse{}, nil
 }
 
-// ListSnapshots
+// ListSnapshots implementation
 func (p *Plugin) ListSnapshots(
 	ctx context.Context,
 	req *csi.ListSnapshotsRequest) (
 	*csi.ListSnapshotsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+
+	defer glog.Info("end to ListSnapshots")
+	glog.Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
+		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
+
+	client := sdscontroller.GetClient("", "")
+	var opts = map[string]string{"Id": req.SnapshotId, "VolumeId": req.SourceVolumeId}
+	snapshots, err := client.ListVolumeSnapshots(opts)
+
+	if nil != err {
+		return nil, err
+	}
+
+	entries := []*csi.ListSnapshotsResponse_Entry{}
+	for _, snapshot := range snapshots {
+		createdAt, err := time.Parse(constants.TimeFormat, snapshot.CreatedAt)
+		if nil != err {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		entries = append(entries, &csi.ListSnapshotsResponse_Entry{
+			Snapshot: &csi.Snapshot{
+				SizeBytes:      snapshot.Size,
+				Id:             snapshot.Id,
+				SourceVolumeId: snapshot.VolumeId,
+				CreatedAt:      createdAt.UnixNano(),
+				Status: &csi.SnapshotStatus{
+					Type: csi.SnapshotStatus_READY,
+				},
+			},
+		})
+	}
+
+	return &csi.ListSnapshotsResponse{Entries: entries}, nil
 }
