@@ -22,6 +22,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
+	k8util "github.com/kubernetes-incubator/external-storage/lib/util"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/pkg/model"
@@ -41,8 +42,8 @@ func (p *Plugin) CreateVolume(
 	req *csi.CreateVolumeRequest) (
 	*csi.CreateVolumeResponse, error) {
 
-	glog.Info("start to CreateVolume")
-	defer glog.Info("end to CreateVolume")
+	glog.V(5).Info("start to CreateVolume")
+	defer glog.V(5).Info("end to CreateVolume")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -78,7 +79,7 @@ func (p *Plugin) CreateVolume(
 		}
 	}
 
-	glog.Infof("CreateVolume volumebody: %v", volumebody)
+	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
 
 	v, err := c.CreateVolume(volumebody)
 	if err != nil {
@@ -144,8 +145,8 @@ func (p *Plugin) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (
 	*csi.DeleteVolumeResponse, error) {
-	glog.Info("start to DeleteVolume")
-	defer glog.Info("end to DeleteVolume")
+	glog.V(5).Info("start to DeleteVolume")
+	defer glog.V(5).Info("end to DeleteVolume")
 	volId := req.VolumeId
 	c := sdscontroller.GetClient("", "")
 	r := getReplicationByVolume(volId)
@@ -174,8 +175,8 @@ func (p *Plugin) ControllerPublishVolume(
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
 
-	glog.Info("start to ControllerPublishVolume")
-	defer glog.Info("end to ControllerPublishVolume")
+	glog.V(5).Info("start to ControllerPublishVolume")
+	defer glog.V(5).Info("end to ControllerPublishVolume")
 
 	client := sdscontroller.GetClient("", "")
 
@@ -269,8 +270,8 @@ func (p *Plugin) ControllerUnpublishVolume(
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
 
-	glog.Info("start to ControllerUnpublishVolume")
-	defer glog.Info("end to ControllerUnpublishVolume")
+	glog.V(5).Info("start to ControllerUnpublishVolume")
+	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
 	client := sdscontroller.GetClient("", "")
 
@@ -318,8 +319,8 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	req *csi.ValidateVolumeCapabilitiesRequest) (
 	*csi.ValidateVolumeCapabilitiesResponse, error) {
 
-	glog.Info("start to ValidateVolumeCapabilities")
-	defer glog.Info("end to ValidateVolumeCapabilities")
+	glog.V(5).Info("start to ValidateVolumeCapabilities")
+	defer glog.V(5).Info("end to ValidateVolumeCapabilities")
 
 	if strings.TrimSpace(req.VolumeId) == "" {
 		// csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO
@@ -347,8 +348,8 @@ func (p *Plugin) ListVolumes(
 	req *csi.ListVolumesRequest) (
 	*csi.ListVolumesResponse, error) {
 
-	glog.Info("start to ListVolumes")
-	defer glog.Info("end to ListVolumes")
+	glog.V(5).Info("start to ListVolumes")
+	defer glog.V(5).Info("end to ListVolumes")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -391,8 +392,8 @@ func (p *Plugin) GetCapacity(
 	req *csi.GetCapacityRequest) (
 	*csi.GetCapacityResponse, error) {
 
-	glog.Info("start to GetCapacity")
-	defer glog.Info("end to GetCapacity")
+	glog.V(5).Info("start to GetCapacity")
+	defer glog.V(5).Info("end to GetCapacity")
 
 	c := sdscontroller.GetClient("", "")
 
@@ -420,8 +421,8 @@ func (p *Plugin) ControllerGetCapabilities(
 	req *csi.ControllerGetCapabilitiesRequest) (
 	*csi.ControllerGetCapabilitiesResponse, error) {
 
-	glog.Info("start to ControllerGetCapabilities")
-	defer glog.Info("end to ControllerGetCapabilities")
+	glog.V(5).Info("start to ControllerGetCapabilities")
+	defer glog.V(5).Info("end to ControllerGetCapabilities")
 
 	return &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: []*csi.ControllerServiceCapability{
@@ -460,6 +461,13 @@ func (p *Plugin) ControllerGetCapabilities(
 					},
 				},
 			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
+					},
+				},
+			},
 		},
 	}, nil
 }
@@ -470,8 +478,8 @@ func (p *Plugin) CreateSnapshot(
 	req *csi.CreateSnapshotRequest) (
 	*csi.CreateSnapshotResponse, error) {
 
-	defer glog.Info("end to CreateSnapshot")
-	glog.Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
+	defer glog.V(5).Info("end to CreateSnapshot")
+	glog.V(5).Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
 		req.Name, req.SourceVolumeId, req.CreateSnapshotSecrets, req.Parameters)
 
 	if 0 == len(req.Name) {
@@ -500,7 +508,7 @@ func (p *Plugin) CreateSnapshot(
 
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
-			SizeBytes:      snapshot.Size,
+			SizeBytes:      snapshot.Size * k8util.GiB,
 			Id:             snapshot.Id,
 			SourceVolumeId: snapshot.VolumeId,
 			CreatedAt:      createdAt.UnixNano(),
@@ -517,8 +525,8 @@ func (p *Plugin) DeleteSnapshot(
 	req *csi.DeleteSnapshotRequest) (
 	*csi.DeleteSnapshotResponse, error) {
 
-	defer glog.Info("end to DeleteSnapshot")
-	glog.Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
+	defer glog.V(5).Info("end to DeleteSnapshot")
+	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
 		req.SnapshotId, req.DeleteSnapshotSecrets)
 
 	if 0 == len(req.SnapshotId) {
@@ -541,8 +549,8 @@ func (p *Plugin) ListSnapshots(
 	req *csi.ListSnapshotsRequest) (
 	*csi.ListSnapshotsResponse, error) {
 
-	defer glog.Info("end to ListSnapshots")
-	glog.Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
+	defer glog.V(5).Info("end to ListSnapshots")
+	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
 
 	client := sdscontroller.GetClient("", "")
@@ -562,7 +570,7 @@ func (p *Plugin) ListSnapshots(
 
 		entries = append(entries, &csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
-				SizeBytes:      snapshot.Size,
+				SizeBytes:      snapshot.Size * k8util.GiB,
 				Id:             snapshot.Id,
 				SourceVolumeId: snapshot.VolumeId,
 				CreatedAt:      createdAt.UnixNano(),

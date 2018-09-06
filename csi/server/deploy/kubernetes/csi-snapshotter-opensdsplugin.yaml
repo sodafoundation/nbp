@@ -1,5 +1,5 @@
-# This YAML file contains attacher & csi driver API objects,
-# which are necessary to run external csi provisioner for opensds.
+# This YAML file contains snapshotter & csi driver API objects,
+# which are necessary to run external csi snapshotter for opensds.
 
 kind: Service
 apiVersion: v1
@@ -30,6 +30,7 @@ spec:
       serviceAccount: csi-snapshotter
       containers:
         - name: csi-snapshotter
+          # This should be replaced by an official k8s-csi snapshotter image when it is released.
           image: xyang105/csi:csi-snapshotter
           args:
             - "--snapshotter=csi-opensdsplugin"
