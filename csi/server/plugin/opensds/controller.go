@@ -25,6 +25,7 @@ import (
 	k8util "github.com/kubernetes-incubator/external-storage/lib/util"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
+	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
@@ -36,6 +37,15 @@ import (
 //                            Controller Service                              //
 ////////////////////////////////////////////////////////////////////////////////
 
+var (
+	// Client opensds client
+	Client *c.Client
+)
+
+func init() {
+	Client = sdscontroller.GetClient("", "")
+}
+
 // CreateVolume implementation
 func (p *Plugin) CreateVolume(
 	ctx context.Context,
@@ -44,8 +54,6 @@ func (p *Plugin) CreateVolume(
 
 	glog.V(5).Info("start to CreateVolume")
 	defer glog.V(5).Info("end to CreateVolume")
-
-	c := sdscontroller.GetClient("", "")
 
 	// build volume body
 	volumebody := &model.VolumeSpec{}
@@ -81,7 +89,7 @@ func (p *Plugin) CreateVolume(
 
 	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
 
-	v, err := c.CreateVolume(volumebody)
+	v, err := Client.CreateVolume(volumebody)
 	if err != nil {
 		glog.Fatalf("failed to CreateVolume: %v", err)
 		return nil, err
@@ -104,7 +112,7 @@ func (p *Plugin) CreateVolume(
 	if enableReplication {
 		volumebody.AvailabilityZone = secondaryAZ
 		volumebody.Name = SecondaryPrefix + req.Name
-		sVol, err := c.CreateVolume(volumebody)
+		sVol, err := Client.CreateVolume(volumebody)
 		if err != nil {
 			glog.Errorf("failed to create secondar volume: %v", err)
 			return nil, err
@@ -116,7 +124,7 @@ func (p *Plugin) CreateVolume(
 			ReplicationMode:   model.ReplicationModeSync,
 			ReplicationPeriod: 0,
 		}
-		replicaResp, err := c.CreateReplication(replicaBody)
+		replicaResp, err := Client.CreateReplication(replicaBody)
 		if err != nil {
 			glog.Errorf("Create replication failed,:%v", err)
 			return nil, err
@@ -130,8 +138,7 @@ func (p *Plugin) CreateVolume(
 }
 
 func getReplicationByVolume(volId string) *model.ReplicationSpec {
-	c := sdscontroller.GetClient("", "")
-	replications, _ := c.ListReplications()
+	replications, _ := Client.ListReplications()
 	for _, r := range replications {
 		if volId == r.PrimaryVolumeId || volId == r.SecondaryVolumeId {
 			return r
@@ -148,20 +155,20 @@ func (p *Plugin) DeleteVolume(
 	glog.V(5).Info("start to DeleteVolume")
 	defer glog.V(5).Info("end to DeleteVolume")
 	volId := req.VolumeId
-	c := sdscontroller.GetClient("", "")
+
 	r := getReplicationByVolume(volId)
 	if r != nil {
-		if err := c.DeleteReplication(r.Id, nil); err != nil {
+		if err := Client.DeleteReplication(r.Id, nil); err != nil {
 			return nil, err
 		}
-		if err := c.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := Client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
 			return nil, err
 		}
-		if err := c.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := Client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := c.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+		if err := Client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
 			return nil, err
 		}
 	}
@@ -178,10 +185,8 @@ func (p *Plugin) ControllerPublishVolume(
 	glog.V(5).Info("start to ControllerPublishVolume")
 	defer glog.V(5).Info("end to ControllerPublishVolume")
 
-	client := sdscontroller.GetClient("", "")
-
 	//check volume is exist
-	volSpec, errVol := client.GetVolume(req.VolumeId)
+	volSpec, errVol := Client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
 		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
 		return nil, status.Error(codes.NotFound, msg)
@@ -189,7 +194,7 @@ func (p *Plugin) ControllerPublishVolume(
 
 	//TODO: need to check if node exists?
 
-	attachments, err := client.ListVolumeAttachments()
+	attachments, err := Client.ListVolumeAttachments()
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to publish volume.")
 	}
@@ -232,7 +237,7 @@ func (p *Plugin) ControllerPublishVolume(
 		},
 		Metadata: req.VolumeAttributes,
 	}
-	attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+	attachSpec, errAttach := Client.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
 		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
 		glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
@@ -248,12 +253,12 @@ func (p *Plugin) ControllerPublishVolume(
 		},
 	}
 	if replicationId, ok := req.VolumeAttributes[KVolumeReplicationId]; ok {
-		r, err := client.GetReplication(replicationId)
+		r, err := Client.GetReplication(replicationId)
 		if err != nil {
 			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
 		}
 		attachReq.VolumeId = r.SecondaryVolumeId
-		attachSpec, errAttach := client.CreateVolumeAttachment(attachReq)
+		attachSpec, errAttach := Client.CreateVolumeAttachment(attachReq)
 		if errAttach != nil {
 			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
 			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
@@ -273,16 +278,14 @@ func (p *Plugin) ControllerUnpublishVolume(
 	glog.V(5).Info("start to ControllerUnpublishVolume")
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
-	client := sdscontroller.GetClient("", "")
-
 	//check volume is exist
-	volSpec, errVol := client.GetVolume(req.VolumeId)
+	volSpec, errVol := Client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
 		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	attachments, err := client.ListVolumeAttachments()
+	attachments, err := Client.ListVolumeAttachments()
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
 	}
@@ -302,7 +305,7 @@ func (p *Plugin) ControllerUnpublishVolume(
 		}
 	}
 	for _, act := range acts {
-		err = client.DeleteVolumeAttachment(act.Id, act)
+		err = Client.DeleteVolumeAttachment(act.Id, act)
 		if err != nil {
 			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
 			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
@@ -351,10 +354,8 @@ func (p *Plugin) ListVolumes(
 	glog.V(5).Info("start to ListVolumes")
 	defer glog.V(5).Info("end to ListVolumes")
 
-	c := sdscontroller.GetClient("", "")
-
 	// only support list all the volumes at present
-	volumes, err := c.ListVolumes()
+	volumes, err := Client.ListVolumes()
 	if err != nil {
 		return nil, err
 	}
@@ -395,9 +396,7 @@ func (p *Plugin) GetCapacity(
 	glog.V(5).Info("start to GetCapacity")
 	defer glog.V(5).Info("end to GetCapacity")
 
-	c := sdscontroller.GetClient("", "")
-
-	pools, err := c.ListPools()
+	pools, err := Client.ListPools()
 	if err != nil {
 		return nil, err
 	}
@@ -490,13 +489,12 @@ func (p *Plugin) CreateSnapshot(
 		return nil, status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
 	}
 
-	client := sdscontroller.GetClient("", "")
 	snapReq := &model.VolumeSnapshotSpec{
 		Name:     req.Name,
 		VolumeId: req.SourceVolumeId,
 	}
 
-	snapshot, err := client.CreateVolumeSnapshot(snapReq)
+	snapshot, err := Client.CreateVolumeSnapshot(snapReq)
 	if nil != err {
 		return nil, err
 	}
@@ -533,8 +531,7 @@ func (p *Plugin) DeleteSnapshot(
 		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
 	}
 
-	client := sdscontroller.GetClient("", "")
-	err := client.DeleteVolumeSnapshot(req.SnapshotId, nil)
+	err := Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
 
 	if nil != err {
 		return nil, err
@@ -553,9 +550,8 @@ func (p *Plugin) ListSnapshots(
 	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
 
-	client := sdscontroller.GetClient("", "")
 	var opts = map[string]string{"Id": req.SnapshotId, "VolumeId": req.SourceVolumeId}
-	snapshots, err := client.ListVolumeSnapshots(opts)
+	snapshots, err := Client.ListVolumeSnapshots(opts)
 
 	if nil != err {
 		return nil, err
