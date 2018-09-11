@@ -45,7 +45,8 @@ const (
 
 // Opensds Attachment metadata keywords
 const (
-	KTargetPath = "targetPath"
+	KTargetPath        = "targetPath"
+	KStagingTargetPath = "stagingTargetPath"
 )
 
 // Opensds replication metadata keywords
@@ -55,3 +56,8 @@ const (
 
 // volume prefix
 const SecondaryPrefix = "secondary-"
+
+const (
+	// DefFSType default filesystem type
+	DefFSType = "ext4"
+)
