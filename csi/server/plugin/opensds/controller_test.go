@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
 
 	"github.com/opensds/opensds/pkg/model"
@@ -229,7 +230,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 	expectedResponse := csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
-			SizeBytes:      1 * 1024 * 1024 * 1024,
+			SizeBytes:      util.GiB,
 			Id:             "3769855c-a102-11e7-b772-17b880d2f537",
 			SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
 			CreatedAt:      1536167248000000000,
@@ -291,7 +292,7 @@ func TestListSnapshots(t *testing.T) {
 	expectedEntries := []*csi.ListSnapshotsResponse_Entry{
 		&csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
-				SizeBytes:      1 * 1024 * 1024 * 1024,
+				SizeBytes:      util.GiB,
 				Id:             "3769855c-a102-11e7-b772-17b880d2f537",
 				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
 				CreatedAt:      1536167248000000000,
@@ -302,7 +303,7 @@ func TestListSnapshots(t *testing.T) {
 		},
 		&csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
-				SizeBytes:      1 * 1024 * 1024 * 1024,
+				SizeBytes:      util.GiB,
 				Id:             "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
 				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
 				CreatedAt:      1536167248000000000,

@@ -22,7 +22,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
-	k8util "github.com/kubernetes-incubator/external-storage/lib/util"
+
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
@@ -58,7 +58,7 @@ func (p *Plugin) CreateVolume(
 	// build volume body
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
-	allocationUnitBytes := int64(1024 * 1024 * 1024)
+	allocationUnitBytes := util.GiB
 	if req.CapacityRange != nil {
 		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
 		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
@@ -506,7 +506,7 @@ func (p *Plugin) CreateSnapshot(
 
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
-			SizeBytes:      snapshot.Size * k8util.GiB,
+			SizeBytes:      snapshot.Size * util.GiB,
 			Id:             snapshot.Id,
 			SourceVolumeId: snapshot.VolumeId,
 			CreatedAt:      createdAt.UnixNano(),
@@ -566,7 +566,7 @@ func (p *Plugin) ListSnapshots(
 
 		entries = append(entries, &csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
-				SizeBytes:      snapshot.Size * k8util.GiB,
+				SizeBytes:      snapshot.Size * util.GiB,
 				Id:             snapshot.Id,
 				SourceVolumeId: snapshot.VolumeId,
 				CreatedAt:      createdAt.UnixNano(),

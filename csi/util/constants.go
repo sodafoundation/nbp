@@ -35,4 +35,7 @@ const (
 
 	// CSI  environment variable whether enable the replication function, value can be true or false
 	CSIEnableReplication = "CSI_ENABLE_REPLICATION"
+
+	// 1024 * 1024 * 1024
+	GiB int64 = 1073741824
 )
