@@ -15,12 +15,100 @@
 package opensds
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/opensds/nbp/csi/util"
+	c "github.com/opensds/opensds/client"
+
+	"github.com/opensds/opensds/pkg/model"
+
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func init() {
+	Client.VolumeMgr = fv
+}
+
+var fv = &c.VolumeMgr{
+	Receiver: NewFakeVolumeReceiver(),
+}
+var (
+	ByteSnapshot = `{
+		"id": "3769855c-a102-11e7-b772-17b880d2f537",
+		"createdAt":"2018-09-05T17:07:28",
+		"name": "sample-snapshot-01",
+		"description": "This is the first sample snapshot for testing",
+		"size": 1,
+		"status": "available",
+		"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"
+	}`
+
+	ByteSnapshots = `[
+		{
+			"id": "3769855c-a102-11e7-b772-17b880d2f537",
+			"createdAt":"2018-09-05T17:07:28",
+			"name": "sample-snapshot-01",
+			"description": "This is the first sample snapshot for testing",
+			"size": 1,
+			"status": "available",
+			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"
+		},
+		{
+			"id": "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
+			"createdAt":"2018-09-05T17:07:28",
+			"name": "sample-snapshot-02",
+			"description": "This is the second sample snapshot for testing",
+			"size": 1,
+			"status": "available",
+			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"
+		}
+	]`
+)
+
+func NewFakeVolumeReceiver() c.Receiver {
+	return &fakeVolumeReceiver{}
+}
+
+type fakeVolumeReceiver struct{}
+
+func (*fakeVolumeReceiver) Recv(
+	string,
+	method string,
+	in interface{},
+	out interface{},
+) error {
+	switch strings.ToUpper(method) {
+	case "POST", "PUT":
+		switch out.(type) {
+		case *model.VolumeSnapshotSpec:
+			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
+				return err
+			}
+			break
+		}
+	case "GET":
+		switch out.(type) {
+		case *[]*model.VolumeSnapshotSpec:
+			if err := json.Unmarshal([]byte(ByteSnapshots), out); err != nil {
+				return err
+			}
+			break
+		}
+	case "DELETE":
+		break
+	default:
+		return errors.New("inputed method format not supported!")
+	}
+
+	return nil
+}
 
 func TestValidateVolumeCapabilities(t *testing.T) {
 	var fakePlugin = &Plugin{}
@@ -87,6 +175,20 @@ func TestControllerGetCapabilities(t *testing.T) {
 				},
 			},
 		},
+		&csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+				},
+			},
+		},
+		&csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
+				},
+			},
+		},
 	}
 
 	rs, err := fakePlugin.ControllerGetCapabilities(fakeCtx, fakeReq)
@@ -96,5 +198,125 @@ func TestControllerGetCapabilities(t *testing.T) {
 
 	if !reflect.DeepEqual(rs.Capabilities, expectedControllerCapabilities) {
 		t.Errorf("expected: %v, actual: %v\n", rs.Capabilities, expectedControllerCapabilities)
+	}
+}
+
+func TestCreateSnapshot(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.CreateSnapshotRequest{}
+
+	rs, err := fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+
+	fakeReq.Name = "volume00"
+	rs, err = fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
+	expectedErr = status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+
+	fakeReq.SourceVolumeId = "b5e56f11-ea23-4aa0-b6f3-f902d4892bbb"
+	rs, err = fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to CreateSnapshot: %v\n", err)
+	}
+
+	expectedResponse := csi.CreateSnapshotResponse{
+		Snapshot: &csi.Snapshot{
+			SizeBytes:      util.GiB,
+			Id:             "3769855c-a102-11e7-b772-17b880d2f537",
+			SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+			CreatedAt:      1536167248000000000,
+			Status: &csi.SnapshotStatus{
+				Type: csi.SnapshotStatus_READY,
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(&expectedResponse, rs) {
+		t.Errorf("expected: %v, actual: %v\n", &expectedResponse, rs)
+	}
+}
+
+func TestDeleteSnapshot(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.DeleteSnapshotRequest{}
+
+	rs, err := fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+
+	fakeReq.SnapshotId = "3769855c-a102-11e7-b772-17b880d2f537"
+	rs, err = fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to DeleteSnapshot: %v\n", err)
+	}
+
+	expectedResponse := &csi.DeleteSnapshotResponse{}
+
+	if !reflect.DeepEqual(expectedResponse, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedResponse, rs)
+	}
+}
+
+func TestListSnapshots(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.ListSnapshotsRequest{}
+
+	rs, err := fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	fakeReq.SnapshotId = "3769855c-a102-11e7-b772-17b880d2f537"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedEntries := []*csi.ListSnapshotsResponse_Entry{
+		&csi.ListSnapshotsResponse_Entry{
+			Snapshot: &csi.Snapshot{
+				SizeBytes:      util.GiB,
+				Id:             "3769855c-a102-11e7-b772-17b880d2f537",
+				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+				CreatedAt:      1536167248000000000,
+				Status: &csi.SnapshotStatus{
+					Type: csi.SnapshotStatus_READY,
+				},
+			},
+		},
+		&csi.ListSnapshotsResponse_Entry{
+			Snapshot: &csi.Snapshot{
+				SizeBytes:      util.GiB,
+				Id:             "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
+				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+				CreatedAt:      1536167248000000000,
+				Status: &csi.SnapshotStatus{
+					Type: csi.SnapshotStatus_READY,
+				},
+			},
+		},
+	}
+
+	expectedRs := &csi.ListSnapshotsResponse{Entries: expectedEntries}
+
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedEntries, rs)
 	}
 }
