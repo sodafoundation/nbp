@@ -52,6 +52,7 @@ const (
 // Opensds replication metadata keywords
 const (
 	KAttachedVolumeId = "attachedVolumeId"
+	KAttachedId       = "attachedId"
 )
 
 // volume prefix
