@@ -95,7 +95,7 @@ spec:
               mountPropagation: "Bidirectional"
             - name: pods-probe-dir
               mountPath: /dev
-              mountPropagation: "HostToContainer"
+              mountPropagation: "Bidirectional"
             - name: iscsi-dir
               mountPath: /etc/iscsi/
             - name: ceph-dir
