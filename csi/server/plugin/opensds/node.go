@@ -230,7 +230,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	glog.Infof("[NodeUnpublishVolume] TargetPath:%s", req.TargetPath)
 	err = iscsi.Umount(req.TargetPath)
 	if err != nil {
-		glog.Errorf("unmount", err)
+		glog.Errorf("unmount %v", err)
 		return nil, err
 	}
 
