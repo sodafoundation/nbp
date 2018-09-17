@@ -359,7 +359,6 @@ func TestCreateVolume(t *testing.T) {
 	}
 
 	rs, err := fakePlugin.CreateVolume(fakeCtx, &fakeReq)
-
 	if nil != err {
 		t.Errorf("failed to CreateVolume: %v\n", err)
 	}
