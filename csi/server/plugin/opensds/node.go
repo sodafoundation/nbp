@@ -45,24 +45,24 @@ func init() {
 	Client = sdscontroller.GetClient("", "")
 }
 
-// GetVolAndAtc implementation
-func GetVolAndAtc(volId string, atcId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
-	vol, err := Client.GetVolume(volId)
+// getVolumeAndAttachment Get volume and attachment with volumeId and attachmentId
+func getVolumeAndAttachment(volumeId string, attachmentId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
+	vol, err := Client.GetVolume(volumeId)
 	if nil != err || nil == vol {
 		return nil, nil, status.Error(codes.NotFound, "Volume does not exist")
 	}
 
-	atc, err := Client.GetVolumeAttachment(atcId)
-	if nil != err || nil == atc {
+	attachment, err := Client.GetVolumeAttachment(attachmentId)
+	if nil != err || nil == attachment {
 		return nil, nil, status.Error(codes.FailedPrecondition,
-			fmt.Sprintf("the volume attachment %s does not exist, ", atcId))
+			fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
 	}
 
-	return vol, atc, nil
+	return vol, attachment, nil
 }
 
-// MountDeviceAndUpdateAtc implementation
-func MountDeviceAndUpdateAtc(device string, mountpoint string, key string, mountFlags []string, needUpdateAtc bool, atc *model.VolumeAttachmentSpec) error {
+// mountDeviceAndUpdateAttachment Mount device and then update attachment
+func mountDeviceAndUpdateAttachment(device string, mountpoint string, key string, mountFlags []string, needUpdateAtc bool, attachment *model.VolumeAttachmentSpec) error {
 	var err error
 
 	if len(mountFlags) > 0 {
@@ -75,8 +75,8 @@ func MountDeviceAndUpdateAtc(device string, mountpoint string, key string, mount
 		return status.Error(codes.Aborted, fmt.Sprintf("failed to mount: %v", err.Error()))
 	}
 
-	// update volume attachment
-	paths := strings.Split(atc.Metadata[key], ";")
+	// update volume Attachmentment
+	paths := strings.Split(attachment.Metadata[key], ";")
 	isExist := false
 	for _, path := range paths {
 		if mountpoint == path {
@@ -87,22 +87,22 @@ func MountDeviceAndUpdateAtc(device string, mountpoint string, key string, mount
 
 	if false == isExist {
 		paths = append(paths, mountpoint)
-		atc.Metadata[key] = strings.Join(paths, ";")
+		attachment.Metadata[key] = strings.Join(paths, ";")
 		needUpdateAtc = true
 	}
 
 	if needUpdateAtc {
-		_, err = Client.UpdateVolumeAttachment(atc.Id, atc)
+		_, err = Client.UpdateVolumeAttachment(attachment.Id, attachment)
 		if err != nil {
-			return status.Error(codes.FailedPrecondition, "update volume attachment failed")
+			return status.Error(codes.FailedPrecondition, "update volume attachmentment failed")
 		}
 	}
 
 	return nil
 }
 
-// GetVolAndAtcWhenUnxx implementation
-func GetVolAndAtcWhenUnxx(volId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
+// getVolumeAndAttachmentByVolumeId Get volume and attachment with volumeId
+func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
 	if r := getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[KAttachedVolumeId]
 	}
@@ -117,36 +117,36 @@ func GetVolAndAtcWhenUnxx(volId string) (*model.VolumeSpec, *model.VolumeAttachm
 		return nil, nil, status.Error(codes.FailedPrecondition, "List volume attachments failed")
 	}
 
-	var atc *model.VolumeAttachmentSpec
+	var attachment *model.VolumeAttachmentSpec
 	iqns, _ := iscsi.GetInitiator()
 	localIqn := ""
 	if len(iqns) > 0 {
 		localIqn = iqns[0]
 	}
 
-	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == volId && attachSpec.Host == localIqn {
-			atc = attachSpec
+	for _, attach := range attachments {
+		if attach.VolumeId == volId && attach.Host == localIqn {
+			attachment = attach
 			break
 		}
 	}
 
-	return vol, atc, nil
+	return vol, attachment, nil
 }
 
-// DelTargetPathInAtc implementation
-func DelTargetPathInAtc(atc *model.VolumeAttachmentSpec, key string, TargetPath string) error {
-	if nil == atc {
+// delTargetPathInAttachment Delete a targetPath (stagingTargetPath) from the attachment
+func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key string, TargetPath string) error {
+	if nil == attachment {
 		return nil
 	}
 
-	if _, exist := atc.Metadata[key]; !exist {
+	if _, exist := attachment.Metadata[key]; !exist {
 		return nil
 	}
 
 	var modifyPaths []string
 	isExist := false
-	paths := strings.Split(atc.Metadata[key], ";")
+	paths := strings.Split(attachment.Metadata[key], ";")
 	for index, path := range paths {
 		if path == TargetPath {
 			modifyPaths = append(paths[:index], paths[index+1:]...)
@@ -160,20 +160,20 @@ func DelTargetPathInAtc(atc *model.VolumeAttachmentSpec, key string, TargetPath 
 	}
 
 	if (0 == len(modifyPaths)) && (KStagingTargetPath == key) {
-		volDriver := driver.NewVolumeDriver(atc.DriverVolumeType)
+		volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
 		if volDriver == nil {
-			return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", atc.DriverVolumeType))
+			return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType))
 		}
 
-		err := volDriver.Detach(atc.ConnectionData)
+		err := volDriver.Detach(attachment.ConnectionData)
 		if err != nil {
 			return status.Errorf(codes.FailedPrecondition, "%s", err.Error())
 		}
-		atc.Mountpoint = "-"
+		attachment.Mountpoint = "-"
 	}
 
-	atc.Metadata[key] = strings.Join(modifyPaths, ";")
-	_, err := Client.UpdateVolumeAttachment(atc.Id, atc)
+	attachment.Metadata[key] = strings.Join(modifyPaths, ";")
+	_, err := Client.UpdateVolumeAttachment(attachment.Id, attachment)
 	if err != nil {
 		return status.Error(codes.FailedPrecondition, "update volume attachment failed")
 	}
@@ -195,12 +195,12 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	volId := req.VolumeId
-	attachId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishInfo[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		if r.ReplicationStatus == model.ReplicationFailover {
 			volId = r.SecondaryVolumeId
-			attachId = req.PublishInfo[KPublishSecondaryAttachId]
+			attachmentId = req.PublishInfo[KPublishSecondaryAttachId]
 		}
 		if r.Metadata == nil {
 			r.Metadata = make(map[string]string)
@@ -213,27 +213,27 @@ func (p *Plugin) NodeStageVolume(
 		}
 	}
 
-	vol, atc, err := GetVolAndAtc(volId, attachId)
+	vol, attachment, err := getVolumeAndAttachment(volId, attachmentId)
 	if nil != err {
 		return nil, err
 	}
 
-	device := atc.Mountpoint
+	device := attachment.Mountpoint
 	mountpoint := req.StagingTargetPath
 	needUpdateAtc := false
 
 	if 0 == len(device) || "-" == device {
-		volDriver := driver.NewVolumeDriver(atc.DriverVolumeType)
+		volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
 		if nil == volDriver {
-			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("unsupport driverVolumeType: %s", atc.DriverVolumeType))
+			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("unsupport driverVolumeType: %s", attachment.DriverVolumeType))
 		}
 
-		devicePath, err := volDriver.Attach(atc.ConnectionData)
+		devicePath, err := volDriver.Attach(attachment.ConnectionData)
 		if nil != err || 0 == len(devicePath) || "-" == devicePath {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to find device: %s", err.Error()))
 		}
 
-		atc.Mountpoint = devicePath
+		attachment.Mountpoint = devicePath
 		device = devicePath
 		needUpdateAtc = true
 	}
@@ -256,7 +256,7 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	// Format
-	curFSType := iscsi.GetFSType(atc.Mountpoint)
+	curFSType := iscsi.GetFSType(attachment.Mountpoint)
 	hopeFSType := DefFSType
 	if "" != mnt.FsType {
 		hopeFSType = mnt.FsType
@@ -281,7 +281,7 @@ func (p *Plugin) NodeStageVolume(
 		return nil, status.Error(codes.Aborted, fmt.Sprintf("failed to mkdir: %v", err.Error()))
 	}
 
-	err = MountDeviceAndUpdateAtc(device, mountpoint, KStagingTargetPath, mountFlags, needUpdateAtc, atc)
+	err = mountDeviceAndUpdateAttachment(device, mountpoint, KStagingTargetPath, mountFlags, needUpdateAtc, attachment)
 	if err != nil {
 		return nil, err
 	}
@@ -315,12 +315,12 @@ func (p *Plugin) NodeUnstageVolume(
 		return nil, err
 	}
 
-	vol, atc, err := GetVolAndAtcWhenUnxx(req.VolumeId)
+	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, err
 	}
 
-	err = DelTargetPathInAtc(atc, KStagingTargetPath, req.StagingTargetPath)
+	err = delTargetPathInAttachment(attachment, KStagingTargetPath, req.StagingTargetPath)
 	if err != nil {
 		return nil, err
 	}
@@ -348,14 +348,14 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	volId := req.VolumeId
-	attachId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishInfo[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[KAttachedVolumeId]
-		attachId = r.Metadata[KAttachedId]
+		attachmentId = r.Metadata[KAttachedId]
 	}
 
-	_, atc, err := GetVolAndAtc(volId, attachId)
+	_, attachment, err := getVolumeAndAttachment(volId, attachmentId)
 	if nil != err {
 		return nil, err
 	}
@@ -386,7 +386,7 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	// Mount
-	err = MountDeviceAndUpdateAtc(device, mountpoint, KTargetPath, mountFlags, needUpdateAtc, atc)
+	err = mountDeviceAndUpdateAttachment(device, mountpoint, KTargetPath, mountFlags, needUpdateAtc, attachment)
 	if err != nil {
 		return nil, err
 	}
@@ -414,12 +414,12 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, err
 	}
 
-	_, atc, err := GetVolAndAtcWhenUnxx(req.VolumeId)
+	_, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, err
 	}
 
-	err = DelTargetPathInAtc(atc, KTargetPath, req.TargetPath)
+	err = delTargetPathInAttachment(attachment, KTargetPath, req.TargetPath)
 	if err != nil {
 		return nil, err
 	}
