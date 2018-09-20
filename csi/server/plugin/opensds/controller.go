@@ -87,8 +87,15 @@ func (p *Plugin) CreateVolume(
 		}
 	}
 
-	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
+	contentSource := req.GetVolumeContentSource()
+	if nil != contentSource {
+		snapshot := contentSource.GetSnapshot()
+		if snapshot != nil {
+			volumebody.SnapshotId = snapshot.GetId()
+		}
+	}
 
+	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
 	v, err := Client.CreateVolume(volumebody)
 	if err != nil {
 		glog.Fatalf("failed to CreateVolume: %v", err)

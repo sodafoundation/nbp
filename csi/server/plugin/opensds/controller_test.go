@@ -40,6 +40,17 @@ var fv = &c.VolumeMgr{
 	Receiver: NewFakeVolumeReceiver(),
 }
 var (
+	ByteVolume = `{
+		"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
+		"name": "sample-volume",
+		"description": "This is a sample volume for testing",
+		"size": 1,
+		"availabilityZone": "default",
+		"status": "available",
+		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
+		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
+	}`
+
 	ByteSnapshot = `{
 		"id": "3769855c-a102-11e7-b772-17b880d2f537",
 		"createdAt":"2018-09-05T17:07:28",
@@ -87,12 +98,20 @@ func (*fakeVolumeReceiver) Recv(
 	switch strings.ToUpper(method) {
 	case "POST", "PUT":
 		switch out.(type) {
+		case *model.VolumeSpec:
+			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
+				return err
+			}
+			break
 		case *model.VolumeSnapshotSpec:
 			if err := json.Unmarshal([]byte(ByteSnapshot), out); err != nil {
 				return err
 			}
 			break
+		default:
+			return errors.New("output format not supported!")
 		}
+		break
 	case "GET":
 		switch out.(type) {
 		case *[]*model.VolumeSnapshotSpec:
@@ -318,5 +337,50 @@ func TestListSnapshots(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedRs, rs) {
 		t.Errorf("expected: %v, actual: %v\n", expectedEntries, rs)
+	}
+}
+
+func TestCreateVolume(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.CreateVolumeRequest{
+		Name: "sample-volume",
+		Parameters: map[string]string{
+			"profile":          "1106b972-66ef-11e7-b172-db03f3689c9c",
+			"availabilityzone": "default",
+		},
+		VolumeContentSource: &csi.VolumeContentSource{
+			Type: &csi.VolumeContentSource_Snapshot{
+				Snapshot: &csi.VolumeContentSource_SnapshotSource{
+					Id: "3769855c-a102-11e7-b772-17b880d2f537",
+				},
+			},
+		},
+	}
+
+	rs, err := fakePlugin.CreateVolume(fakeCtx, &fakeReq)
+	if nil != err {
+		t.Errorf("failed to CreateVolume: %v\n", err)
+	}
+
+	expectedVolumeinfo := &csi.Volume{
+		CapacityBytes: util.GiB,
+		Id:            "bd5b12a8-a101-11e7-941e-d77981b584d8",
+		Attributes: map[string]string{
+			KVolumeName:      "sample-volume",
+			KVolumeStatus:    "available",
+			KVolumeAZ:        "default",
+			KVolumePoolId:    "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			KVolumeProfileId: "1106b972-66ef-11e7-b172-db03f3689c9c",
+			KVolumeLvPath:    "",
+		},
+	}
+
+	expectedRs := &csi.CreateVolumeResponse{
+		Volume: expectedVolumeinfo,
+	}
+
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
 	}
 }
