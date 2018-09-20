@@ -29,7 +29,7 @@ rules:
     verbs: ["list", "watch", "create", "update", "patch"]
   - apiGroups: [""]
     resources: ["endpoints"]
-    verbs: [ "create", "delete", "get", "list","watch","update"]
+    verbs: [ "get", "update"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots"]
     verbs: ["create","get", "list", "watch","update", "delete"]
