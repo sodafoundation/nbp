@@ -1,15 +1,15 @@
-# This YAML file contains attacher & csi driver API objects,
-# which are necessary to run external csi provisioner for opensds.
+# This YAML file contains snapshotter & csi driver API objects,
+# which are necessary to run external csi snapshotter for opensds.
 
 kind: Service
 apiVersion: v1
 metadata:
-  name: csi-provisioner-opensdsplugin
+  name: csi-snapshotter-opensdsplugin
   labels:
-    app: csi-provisioner-opensdsplugin
+    app: csi-snapshotter-opensdsplugin
 spec:
   selector:
-    app: csi-provisioner-opensdsplugin
+    app: csi-snapshotter-opensdsplugin
   ports:
     - name: dummy
       port: 12345
@@ -18,22 +18,22 @@ spec:
 kind: StatefulSet
 apiVersion: apps/v1beta1
 metadata:
-  name: csi-provisioner-opensdsplugin
+  name: csi-snapshotter-opensdsplugin
 spec:
-  serviceName: "csi-provisioner-opensdsplugin"
+  serviceName: "csi-snapshotter-opensdsplugin"
   replicas: 1
   template:
     metadata:
       labels:
-        app: csi-provisioner-opensdsplugin
+        app: csi-snapshotter-opensdsplugin
     spec:
-      serviceAccount: csi-provisioner
+      serviceAccount: csi-snapshotter
       containers:
-        - name: csi-provisioner
-          # This should be replaced by an official k8s-csi provisioner image when it is released.
-          image: xyang105/csi:csi-provisioner
+        - name: csi-snapshotter
+          # This should be replaced by an official k8s-csi snapshotter image when it is released.
+          image: xyang105/csi:csi-snapshotter
           args:
-            - "--provisioner=csi-opensdsplugin"
+            - "--snapshotter=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"
             - "--connection-timeout=15s"
           env:
