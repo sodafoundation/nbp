@@ -281,12 +281,25 @@ func (p *Plugin) NodeGetId(
 	}, nil
 }
 
-// NodeGetInfo
+// NodeGetInfo gets information on a node
 func (p *Plugin) NodeGetInfo(
 	ctx context.Context,
 	req *csi.NodeGetInfoRequest) (
 	*csi.NodeGetInfoResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	glog.Info("start to GetNodeInfo")
+	defer glog.Info("end to GetNodeInfo")
+
+	// TODO: For non-iscsi protocol, iqn should not be
+	// used as NodeId here.
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
+
+	return &csi.NodeGetInfoResponse{
+		NodeId: localIqn,
+	}, nil
 }
 
 // NodeGetCapabilities implementation
