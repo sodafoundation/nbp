@@ -15,10 +15,14 @@
 package opensds
 
 const (
-	//PluginName setting
+	// PluginName setting
 	PluginName = "csi-opensdsplugin"
+	FakeIQN    = "fakeIqn"
 )
 
 // Plugin define
 type Plugin struct {
+}
+
+type FakePlugin struct {
 }

@@ -25,6 +25,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// NodeGetInfo for FakePlugin
+func (p *FakePlugin) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest) (
+	*csi.NodeGetInfoResponse, error) {
+	return &csi.NodeGetInfoResponse{
+		NodeId: FakeIQN,
+	}, nil
+}
+
 func TestNodeGetId(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
@@ -42,7 +52,23 @@ func TestNodeGetId(t *testing.T) {
 	}
 
 	if rs.NodeId != expectedNodeId {
-		t.Errorf("expected: %s, actual: %s\n", rs.NodeId, expectedNodeId)
+		t.Errorf("expected: %s, actual: %s\n", expectedNodeId, rs.NodeId)
+	}
+}
+
+func TestNodeGetInfo(t *testing.T) {
+	var fakePlugin = &FakePlugin{}
+	var fakeCtx = context.Background()
+	fakeReq := &csi.NodeGetInfoRequest{}
+	expectedNodeId := FakeIQN
+
+	rs, err := fakePlugin.NodeGetInfo(fakeCtx, fakeReq)
+	if err != nil {
+		t.Errorf("failed to GetNodeInfo: %v\n", err)
+	}
+
+	if rs.NodeId != expectedNodeId {
+		t.Errorf("expected: %s, actual: %s\n", expectedNodeId, rs.NodeId)
 	}
 }
 
