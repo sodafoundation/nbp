@@ -109,7 +109,7 @@ func (*fakeVolumeReceiver) Recv(
 			}
 			break
 		default:
-			return errors.New("output format not supported!")
+			return errors.New("output format not supported")
 		}
 		break
 	case "GET":
@@ -119,11 +119,14 @@ func (*fakeVolumeReceiver) Recv(
 				return err
 			}
 			break
+		default:
+			return errors.New("output format not supported")
 		}
+		break
 	case "DELETE":
 		break
 	default:
-		return errors.New("inputed method format not supported!")
+		return errors.New("inputed method format not supported")
 	}
 
 	return nil

@@ -22,6 +22,7 @@ spec:
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=/var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock"
           env:
             - name: ADDRESS
               value: /var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
@@ -104,7 +105,7 @@ spec:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/csi-opensdsplugin
-            type: DirectoryOrCreate		
+            type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/pods
@@ -120,4 +121,8 @@ spec:
         - name: ceph-dir
           hostPath:
             path: /etc/ceph/
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins
             type: Directory
