@@ -33,6 +33,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
+            - name: registration-dir
+              mountPath: /registration
         - name: opensds
           securityContext:
             privileged: true
@@ -44,6 +46,7 @@ spec:
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "-v8"
           env:
             - name: CSI_ENDPOINT
               value: unix://var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
