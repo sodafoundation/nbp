@@ -320,6 +320,7 @@ func (p *Plugin) NodeUnstageVolume(
 		return nil, status.Error(codes.FailedPrecondition, "update volume failed")
 	}
 
+	glog.V(5).Info("NodeUnstageVolume success")
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
@@ -413,6 +414,7 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, err
 	}
 
+	glog.V(5).Info("NodeUnpublishVolume success")
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
