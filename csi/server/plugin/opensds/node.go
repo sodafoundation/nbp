@@ -148,20 +148,28 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 		return nil
 	}
 
-	if (0 == len(modifyPaths)) && (KStagingTargetPath == key) {
-		volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
-		if volDriver == nil {
-			return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType))
-		}
+	if (1 == len(modifyPaths) && 0 == len(modifyPaths[0])) || (0 == len(modifyPaths)) {
+		glog.V(5).Info("No more " + key)
+		delete(attachment.Metadata, key)
 
-		err := volDriver.Detach(attachment.ConnectionData)
-		if err != nil {
-			return status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+		if KStagingTargetPath == key {
+			volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
+
+			if volDriver == nil {
+				return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType))
+			}
+
+			err := volDriver.Detach(attachment.ConnectionData)
+			if err != nil {
+				return status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+			}
+
+			attachment.Mountpoint = "-"
 		}
-		attachment.Mountpoint = "-"
+	} else {
+		attachment.Metadata[key] = strings.Join(modifyPaths, ";")
 	}
 
-	attachment.Metadata[key] = strings.Join(modifyPaths, ";")
 	_, err := Client.UpdateVolumeAttachment(attachment.Id, attachment)
 	if err != nil {
 		return status.Error(codes.FailedPrecondition, "update volume attachment failed")
