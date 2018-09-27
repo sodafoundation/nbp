@@ -23,6 +23,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/client/iscsi"
+	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/driver"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -33,6 +34,10 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 //                            Node Service                                    //
 ////////////////////////////////////////////////////////////////////////////////
+
+func init() {
+	Client = sdscontroller.GetClient("", "")
+}
 
 // getVolumeAndAttachment Get volume and attachment with volumeId and attachmentId
 func getVolumeAndAttachment(volumeId string, attachmentId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
