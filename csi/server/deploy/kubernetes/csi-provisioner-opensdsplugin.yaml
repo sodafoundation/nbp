@@ -30,7 +30,8 @@ spec:
       serviceAccount: csi-provisioner
       containers:
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v0.2.0
+          # This should be replaced by an official k8s-csi provisioner image when it is released.
+          image: xyang105/csi:csi-provisioner
           args:
             - "--provisioner=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"
@@ -48,6 +49,7 @@ spec:
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "-v8"
           env:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock

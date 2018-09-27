@@ -21,7 +21,19 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/client/iscsi"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+// NodeGetInfo for FakePlugin
+func (p *FakePlugin) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest) (
+	*csi.NodeGetInfoResponse, error) {
+	return &csi.NodeGetInfoResponse{
+		NodeId: FakeIQN,
+	}, nil
+}
 
 func TestNodeGetId(t *testing.T) {
 	var fakePlugin = &Plugin{}
@@ -40,7 +52,23 @@ func TestNodeGetId(t *testing.T) {
 	}
 
 	if rs.NodeId != expectedNodeId {
-		t.Errorf("expected: %s, actual: %s\n", rs.NodeId, expectedNodeId)
+		t.Errorf("expected: %s, actual: %s\n", expectedNodeId, rs.NodeId)
+	}
+}
+
+func TestNodeGetInfo(t *testing.T) {
+	var fakePlugin = &FakePlugin{}
+	var fakeCtx = context.Background()
+	fakeReq := &csi.NodeGetInfoRequest{}
+	expectedNodeId := FakeIQN
+
+	rs, err := fakePlugin.NodeGetInfo(fakeCtx, fakeReq)
+	if err != nil {
+		t.Errorf("failed to GetNodeInfo: %v\n", err)
+	}
+
+	if rs.NodeId != expectedNodeId {
+		t.Errorf("expected: %s, actual: %s\n", expectedNodeId, rs.NodeId)
 	}
 }
 
@@ -52,7 +80,7 @@ func TestNodeGetCapabilities(t *testing.T) {
 		&csi.NodeServiceCapability{
 			Type: &csi.NodeServiceCapability_Rpc{
 				Rpc: &csi.NodeServiceCapability_RPC{
-					Type: csi.NodeServiceCapability_RPC_UNKNOWN,
+					Type: csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
 				},
 			},
 		},
@@ -65,5 +93,80 @@ func TestNodeGetCapabilities(t *testing.T) {
 
 	if !reflect.DeepEqual(rs.Capabilities, expectedNodeCapabilities) {
 		t.Errorf("expected: %v, actual: %v\n", rs.Capabilities, expectedNodeCapabilities)
+	}
+}
+
+func TestNodeStageVolume(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.NodeStageVolumeRequest{}
+
+	_, err := fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/volume_capability must be specified")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+
+	fakeReq.VolumeId = "bd5b12a8-a101-11e7-941e-d77981b584d9"
+	fakeReq.StagingTargetPath = "123"
+	fakeReq.VolumeCapability = &csi.VolumeCapability{
+		AccessType: &csi.VolumeCapability_Mount{
+			Mount: &csi.VolumeCapability_MountVolume{
+				FsType:     "",
+				MountFlags: []string{""},
+			},
+		},
+		AccessMode: &csi.VolumeCapability_AccessMode{
+			Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+		},
+	}
+
+	fakeReq.PublishInfo = map[string]string{KPublishAttachId: "f2dda3d2-bf79-11e7-8665-f750b088f63e"}
+
+	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
+	expectedErr = status.Error(codes.NotFound, "Volume does not exist")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+}
+
+func TestNodeUnstageVolume(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.NodeUnstageVolumeRequest{}
+
+	_, err := fakePlugin.NodeUnstageVolume(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path must be specified")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+}
+
+func TestNodePublishVolume(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.NodePublishVolumeRequest{}
+
+	_, err := fakePlugin.NodePublishVolume(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/target_path/volume_capability must be specified")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+}
+
+func TestNodeUnpublishVolume(t *testing.T) {
+	var fakePlugin = &Plugin{}
+	var fakeCtx = context.Background()
+	fakeReq := csi.NodeUnpublishVolumeRequest{}
+
+	_, err := fakePlugin.NodeUnpublishVolume(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/target_path must be specified")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
 	}
 }

@@ -18,10 +18,11 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: quay.io/k8scsi/driver-registrar:v0.2.0
+          image: quay.io/k8scsi/driver-registrar:v0.3.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(ADDRESS)"
           env:
             - name: ADDRESS
               value: /var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
@@ -32,6 +33,8 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
+            - name: registration-dir
+              mountPath: /registration
         - name: opensds
           securityContext:
             privileged: true
@@ -43,6 +46,7 @@ spec:
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "-v8"
           env:
             - name: CSI_ENDPOINT
               value: unix://var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
@@ -95,7 +99,7 @@ spec:
               mountPropagation: "Bidirectional"
             - name: pods-probe-dir
               mountPath: /dev
-              mountPropagation: "Bidirectional"
+              mountPropagation: "HostToContainer"
             - name: iscsi-dir
               mountPath: /etc/iscsi/
             - name: ceph-dir
@@ -104,7 +108,7 @@ spec:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/csi-opensdsplugin
-            type: DirectoryOrCreate		
+            type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/pods
@@ -120,4 +124,8 @@ spec:
         - name: ceph-dir
           hostPath:
             path: /etc/ceph/
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins
             type: Directory
