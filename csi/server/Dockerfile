@@ -7,11 +7,11 @@ LABEL description="OpenSDS CSI Plugin"
 COPY csi.server.opensds /csi.server.opensds
 
 # Install iscsi
-RUN apt-get update
-
-RUN apt-get -y install open-iscsi
-RUN apt-get -y install kmod
-RUN apt-get -y install ceph-common
+RUN apt-get update && \
+    apt-get -y install open-iscsi \
+    kmod \
+    ceph-common && \
+    rm -rf /var/lib/apt/lists/*
 
 # Define default command
 ENTRYPOINT ["/csi.server.opensds"]
