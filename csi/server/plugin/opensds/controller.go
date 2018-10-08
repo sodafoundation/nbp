@@ -565,11 +565,6 @@ func (p *Plugin) ListSnapshots(
 		return nil, err
 	}
 
-	if len(allSnapshots) <= 0 {
-		glog.V(5).Info("len(allSnapshots) <= 0")
-		return &csi.ListSnapshotsResponse{}, nil
-	}
-
 	snapshotId := req.GetSnapshotId()
 	snapshotIDLen := len(snapshotId)
 	sourceVolumeId := req.GetSourceVolumeId()
@@ -590,6 +585,11 @@ func (p *Plugin) ListSnapshots(
 
 	switch {
 	case (0 == snapshotIDLen) && (0 == sourceVolumeIdLen):
+		if len(allSnapshots) <= 0 {
+			glog.V(5).Info("len(allSnapshots) <= 0")
+			return &csi.ListSnapshotsResponse{}, nil
+		}
+
 		filterResult = allSnapshots
 		break
 	case (0 == snapshotIDLen) && (0 != sourceVolumeIdLen):
@@ -695,7 +695,7 @@ func (p *Plugin) ListSnapshots(
 		})
 	}
 
-	glog.V(5).Info("entries=%v.", entries)
+	glog.V(5).Infof("entries=%v.", entries)
 	return &csi.ListSnapshotsResponse{
 		Entries:   entries,
 		NextToken: nextToken,
