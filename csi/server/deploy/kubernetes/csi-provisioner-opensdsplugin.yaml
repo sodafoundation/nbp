@@ -31,7 +31,7 @@ spec:
       containers:
         - name: csi-provisioner
           # This should be replaced by an official k8s-csi provisioner image when it is released.
-          image: xyang105/csi:csi-provisioner
+          image: quay.io/k8scsi/csi-provisioner:v0.4.0
           args:
             - "--provisioner=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"
