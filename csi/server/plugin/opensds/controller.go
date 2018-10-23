@@ -498,10 +498,20 @@ func (p *Plugin) CreateSnapshot(
 		return nil, status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
 	}
 
+
+
 	snapReq := &model.VolumeSnapshotSpec{
 		Name:     req.Name,
 		VolumeId: req.SourceVolumeId,
 	}
+
+	for k, v := range req.GetParameters() {
+		switch strings.ToLower(k) {
+		case KParamProfile:
+			snapReq.ProfileId = v
+		}
+	}
+	glog.Infof("snapshot response:%v",snapReq)
 
 	snapshot, err := Client.CreateVolumeSnapshot(snapReq)
 	if nil != err {
