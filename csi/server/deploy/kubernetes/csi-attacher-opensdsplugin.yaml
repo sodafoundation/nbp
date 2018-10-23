@@ -111,4 +111,4 @@ spec:
         - name: ceph-dir
           hostPath:
             path: /etc/ceph/
-            type: Directory
+            type: DirectoryOrCreate
