@@ -19,10 +19,10 @@ package main
 
 import (
 	"flag"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
-
 	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
 	"github.com/opensds/nbp/opensds-provisioner/pkg/volume"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"strings"
 )
 
 var (
