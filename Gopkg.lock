@@ -253,10 +253,12 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:78b916137b335657853aa6653b661c6983d56680c13e328ad0969e6db6cb4335"
+  digest = "1:b2359b0e5f1e47026264dbfb0962dc53aeb35f7221125ebf4d1161278df16937"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
+    "contrib/connector",
+    "contrib/connector/iscsi",
     "pkg/context",
     "pkg/dock/client",
     "pkg/dock/proto",
@@ -264,10 +266,11 @@
     "pkg/utils",
     "pkg/utils/constants",
     "pkg/utils/urls",
+    "testutils/collection",
   ]
   pruneopts = "UT"
-  revision = "64253fe89ab8dcb080d5d593ec0f7ba85f6baf7f"
-  version = "v0.3.0"
+  revision = "bcecaa9cac6727a8abe0682f88ffe46820c29dde"
+  version = "v0.3.1"
 
 [[projects]]
   digest = "1:361de06aa7ae272616cbe71c3994a654cc6316324e30998e650f7765b20c5b33"
@@ -897,8 +900,9 @@
     "github.com/container-storage-interface/spec/lib/go/csi/v0",
     "github.com/golang/glog",
     "github.com/kubernetes-incubator/external-storage/lib/controller",
-    "github.com/mitchellh/mapstructure",
     "github.com/opensds/opensds/client",
+    "github.com/opensds/opensds/contrib/connector",
+    "github.com/opensds/opensds/contrib/connector/iscsi",
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/dock/client",
     "github.com/opensds/opensds/pkg/dock/proto",

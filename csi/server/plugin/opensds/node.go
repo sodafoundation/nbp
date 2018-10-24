@@ -16,15 +16,14 @@ package opensds
 
 import (
 	"fmt"
-
 	"os/exec"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/client/iscsi"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/driver"
+	"github.com/opensds/opensds/contrib/connector"
+	"github.com/opensds/opensds/contrib/connector/iscsi"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -158,13 +157,13 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 		delete(attachment.Metadata, key)
 
 		if KStagingTargetPath == key {
-			volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
+			volConnector := connector.NewConnector(attachment.DriverVolumeType)
 
-			if volDriver == nil {
+			if volConnector == nil {
 				return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType))
 			}
 
-			err := volDriver.Detach(attachment.ConnectionData)
+			err := volConnector.Detach(attachment.ConnectionData)
 			if err != nil {
 				return status.Errorf(codes.FailedPrecondition, "%s", err.Error())
 			}
@@ -225,12 +224,12 @@ func (p *Plugin) NodeStageVolume(
 	needUpdateAtc := false
 
 	if 0 == len(device) || "-" == device {
-		volDriver := driver.NewVolumeDriver(attachment.DriverVolumeType)
-		if nil == volDriver {
+		volConnector := connector.NewConnector(attachment.DriverVolumeType)
+		if nil == volConnector {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("unsupport driverVolumeType: %s", attachment.DriverVolumeType))
 		}
 
-		devicePath, err := volDriver.Attach(attachment.ConnectionData)
+		devicePath, err := volConnector.Attach(attachment.ConnectionData)
 		if nil != err || 0 == len(devicePath) || "-" == devicePath {
 			return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to find device: %s", err.Error()))
 		}
