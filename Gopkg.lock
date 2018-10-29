@@ -253,12 +253,13 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:b2359b0e5f1e47026264dbfb0962dc53aeb35f7221125ebf4d1161278df16937"
+  digest = "1:2d1636e45504ec04b2d85a4d49f4b0282b2e2561614b3bf97e96980a8c815e07"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
     "contrib/connector",
     "contrib/connector/iscsi",
+    "contrib/connector/rbd",
     "pkg/context",
     "pkg/dock/client",
     "pkg/dock/proto",
@@ -903,6 +904,7 @@
     "github.com/opensds/opensds/client",
     "github.com/opensds/opensds/contrib/connector",
     "github.com/opensds/opensds/contrib/connector/iscsi",
+    "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/dock/client",
     "github.com/opensds/opensds/pkg/dock/proto",
