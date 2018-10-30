@@ -8,7 +8,7 @@ imagePullPolicy: IfNotPresent
 deployClusterServiceBroker: true
 
 # Please modify these fields according to your real environment
-opensdsEndpoint: http://207.148.121.48:50040
+opensdsEndpoint: http://127.0.0.1:50040
 opensdsAuthStrategy: noauth
 osAuthURL: http://127.0.0.1/identity
 osUsername: admin

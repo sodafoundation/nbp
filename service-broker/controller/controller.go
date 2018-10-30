@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	sdsClient "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
@@ -31,11 +32,6 @@ import (
 const (
 	defaultSnapshotPlan    = "787c9322-3d92-11e8-8cb3-4f1353df06c1"
 	defaultReplicationPlan = "b466e4ce-6cb2-11e8-a580-bb2b8754c9de"
-)
-
-const (
-	noauthAuthType   = "noauth"
-	keystoneAuthType = "keystone"
 )
 
 const (
@@ -68,21 +64,8 @@ type opensdsController struct {
 
 // NewController creates an instance of an OpenSDS service broker controller.
 func NewController(edp, auth string) *opensdsController {
-	var authOption sdsClient.AuthOptions
-	switch auth {
-	case keystoneAuthType:
-		authOption = LoadKeystoneAuthOptionsFromEnv()
-		break
-	default:
-		authOption = LoadNoAuthOptionsFromEnv()
-	}
-
-	cli := sdsClient.NewClient(&sdsClient.Config{
-		Endpoint:    edp,
-		AuthOptions: authOption,
-	})
 	return &opensdsController{
-		Client:      cli,
+		Client:      opensds.GetClient(edp, auth),
 		instanceMap: make(map[string]*opensdsServiceInstance),
 		bindingMap:  make(map[string]*opensdsServiceBinding),
 	}
@@ -132,7 +115,7 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 			Name:        prf.Name,
 			ID:          prf.Id,
 			Description: prf.Description,
-			Metadata:    prf.Extras,
+			Metadata:    prf.CustomProperties,
 			Free:        truePtr(),
 		}
 		plans = append(plans, plan)

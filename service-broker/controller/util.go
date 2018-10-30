@@ -17,7 +17,6 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/golang/glog"
 	sdsClient "github.com/opensds/opensds/client"
@@ -25,7 +24,6 @@ import (
 	dockClient "github.com/opensds/opensds/pkg/dock/client"
 	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 )
 
@@ -111,41 +109,4 @@ func discoverAttacherDock(c *sdsClient.Client, nodeId string) (*model.DockSpec, 
 	}
 
 	return d, nil
-}
-
-const (
-	// Opensds Auth EVNs
-	opensdsEndpoint     = "OPENSDS_ENDPOINT"
-	opensdsAuthStrategy = "OPENSDS_AUTH_STRATEGY"
-	opensdsTenantId     = "OPENSDS_TENANT_ID"
-
-	// Keystone Auth ENVs
-	osAuthUrl      = "OS_AUTH_URL"
-	osUsername     = "OS_USERNAME"
-	osPassword     = "OS_PASSWORD"
-	osTenantName   = "OS_TENANT_NAME"
-	osProjectName  = "OS_PROJECT_NAME"
-	osUserDomainId = "OS_USER_DOMAIN_ID"
-)
-
-func LoadKeystoneAuthOptionsFromEnv() *sdsClient.KeystoneAuthOptions {
-	opt := sdsClient.NewKeystoneAuthOptions()
-	opt.IdentityEndpoint = os.Getenv(osAuthUrl)
-	opt.Username = os.Getenv(osUsername)
-	opt.Password = os.Getenv(osPassword)
-	opt.TenantName = os.Getenv(osTenantName)
-	projectName := os.Getenv(osProjectName)
-	opt.DomainID = os.Getenv(osUserDomainId)
-	if opt.TenantName == "" {
-		opt.TenantName = projectName
-	}
-	return opt
-}
-
-func LoadNoAuthOptionsFromEnv() *sdsClient.NoAuthOptions {
-	tenantId, ok := os.LookupEnv(opensdsTenantId)
-	if !ok {
-		return sdsClient.NewNoauthOptions(constants.DefaultTenantId)
-	}
-	return sdsClient.NewNoauthOptions(tenantId)
 }
