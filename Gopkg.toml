@@ -27,7 +27,15 @@
 
 [[constraint]]
   name = "github.com/container-storage-interface/spec"
-  version = "0.2.0"
+  version = "~0.3.0"
+
+[[override]]
+  name = "github.com/golang/protobuf"
+  version = "1.1.0"
+
+[[constraint]]
+  name = "golang.org/x/sys"
+  branch = "master"
 
 [[constraint]]
   branch = "master"
@@ -39,7 +47,7 @@
 
 [[constraint]]
   name = "github.com/opensds/opensds"
-  version = "0.2.0"
+  version = "0.3.0"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"
@@ -59,23 +67,23 @@
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.7.5"
+  version = "1.10.0"
 
 [[constraint]]
   name = "k8s.io/api"
-  version = "kubernetes-1.8.2"
+  version = "kubernetes-1.12.0-beta.1"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.8.2"
+  version = "kubernetes-1.12.0-beta.1"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.8.2"
+  version = "kubernetes-1.12.0-beta.1"
 
 [[constraint]]
   name = "k8s.io/kubernetes"
-  version = "1.8.2"
+  version = "=v1.12.0-beta.1"
 
 [prune]
   go-tests = true

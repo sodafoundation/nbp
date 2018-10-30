@@ -1,0 +1,101 @@
+# This YAML file contains snapshotter & csi driver API objects,
+# which are necessary to run external csi snapshotter for opensds.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-snapshotter-opensdsplugin
+  labels:
+    app: csi-snapshotter-opensdsplugin
+spec:
+  selector:
+    app: csi-snapshotter-opensdsplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1beta1
+metadata:
+  name: csi-snapshotter-opensdsplugin
+spec:
+  serviceName: "csi-snapshotter-opensdsplugin"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-snapshotter-opensdsplugin
+    spec:
+      serviceAccount: csi-snapshotter
+      containers:
+        - name: csi-snapshotter
+          image: quay.io/k8scsi/csi-snapshotter:v0.4.0
+          args:
+            - "--snapshotter=csi-opensdsplugin"
+            - "--csi-address=$(ADDRESS)"
+            - "--connection-timeout=15s"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: opensds
+          image: opensdsio/csiplugin:latest
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+            - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "-v8"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://csi/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsendpoint
+            - name: OPENSDS_AUTH_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsauthstrategy
+            - name: OS_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osauthurl
+            - name: OS_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osusername
+            - name: OS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: ospassword
+            - name: OS_TENANT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: ostenantname
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osprojectname
+            - name: OS_USER_DOMAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: osuserdomainid
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+      volumes:
+        - name: socket-dir
+          emptyDir:
