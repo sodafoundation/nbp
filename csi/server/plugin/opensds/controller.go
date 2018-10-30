@@ -502,6 +502,15 @@ func (p *Plugin) CreateSnapshot(
 		VolumeId: req.SourceVolumeId,
 	}
 
+	for k, v := range req.GetParameters() {
+		switch strings.ToLower(k) {
+		// TODO: support profile name
+		case KParamProfile:
+			snapReq.ProfileId = v
+		}
+	}
+	glog.Infof("snapshot response:%v",snapReq)
+
 	snapshot, err := Client.CreateVolumeSnapshot(snapReq)
 	if nil != err {
 		return nil, err
