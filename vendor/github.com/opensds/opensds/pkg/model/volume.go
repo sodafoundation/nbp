@@ -169,6 +169,7 @@ type VolumeSnapshotSpec struct {
 	VolumeId string `json:"volumeId,omitempty"`
 	// The uuid of the profile which the volume belongs to.
 	ProfileId string `json:"profileId,omitempty"`
+	// TODO： support profile name
 	// Metadata should be kept until the scemantics between opensds volume
 	// snapshot and backend storage resouce snapshot description are clear.
 	// +optional
