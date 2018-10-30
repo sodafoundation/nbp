@@ -1,3 +1,17 @@
+// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package iscsi
 
 import (
@@ -85,16 +99,9 @@ func waitForPathToExistInternal(devicePath *string, maxRetries int, deviceTransp
 	return false
 }
 
-func execCmd(name string, arg ...string) (string, error) {
-	log.Printf("Command: %s %s\n", name, strings.Join(arg, " "))
-	info, err := exec.Command(name, arg...).CombinedOutput()
-	return string(info), err
-}
-
 // GetInitiator returns all the ISCSI Initiator Name
 func GetInitiator() ([]string, error) {
 	res, err := execCmd("cat", "/etc/iscsi/initiatorname.iscsi")
-	log.Printf("result from cat: %s", res)
 	iqns := []string{}
 	if err != nil {
 		log.Printf("Error encountered gathering initiator names: %v", err)
@@ -103,7 +110,6 @@ func GetInitiator() ([]string, error) {
 
 	lines := strings.Split(string(res), "\n")
 	for _, l := range lines {
-		log.Printf("Inspect line: %s", l)
 		if strings.Contains(l, "InitiatorName=") {
 			iqns = append(iqns, strings.Split(l, "=")[1])
 		}
@@ -113,20 +119,8 @@ func GetInitiator() ([]string, error) {
 	return iqns, nil
 }
 
-// Discovery ISCSI Target
-func Discovery(portal string) error {
-	log.Printf("Discovery portal: %s", portal)
-	_, err := execCmd("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", portal)
-	if err != nil {
-		log.Fatalf("Error encountered in sendtargets: %v", err)
-		return err
-	}
-	return nil
-}
-
 // Login ISCSI Target
 func SetAuth(portal string, targetiqn string, name string, passwd string) error {
-	log.Println("Set user auth", portal, targetiqn, name, passwd)
 	// Set UserName
 	info, err := execCmd("iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn,
 		"--op=update", "--name", "node.session.auth.username", "--value", name)
@@ -144,12 +138,21 @@ func SetAuth(portal string, targetiqn string, name string, passwd string) error 
 	return nil
 }
 
+// Discovery ISCSI Target
+func Discovery(portal string) error {
+	info, err := execCmd("iscsiadm", "-m", "discovery", "-t", "sendtargets", "-p", portal)
+	if err != nil {
+		log.Println("Error encountered in sendtargets:", string(info), err)
+		return err
+	}
+	return nil
+}
+
 // Login ISCSI Target
 func Login(portal string, targetiqn string) error {
-	log.Printf("Login portal: %s targetiqn: %s", portal, targetiqn)
 	info, err := execCmd("iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--login")
 	if err != nil {
-		log.Fatalln("Received error on login attempt", err, info)
+		log.Println("Received error on login attempt:", string(info), err)
 		return err
 	}
 	return nil
@@ -157,21 +160,19 @@ func Login(portal string, targetiqn string) error {
 
 // Logout ISCSI Target
 func Logout(portal string, targetiqn string) error {
-	log.Printf("Logout portal: %s targetiqn: %s", portal, targetiqn)
 	info, err := execCmd("iscsiadm", "-m", "node", "-p", portal, "-T", targetiqn, "--logout")
 	if err != nil {
-		log.Fatalln("Received error on logout attempt", err, info)
+		log.Println("Received error on logout attempt:", string(info), err)
 		return err
 	}
 	return nil
 }
 
 // Delete ISCSI Node
-func Delete(targetiqn string) (err error) {
-	log.Printf("Delete targetiqn: %s", targetiqn)
-	_, err = execCmd("iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn)
+func Delete(targetiqn string) error {
+	info, err := execCmd("iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn)
 	if err != nil {
-		log.Fatalf("Received error on Delete attempt: %v", err)
+		log.Println("Received error on Delete attempt:", string(info), err)
 		return err
 	}
 	return nil
@@ -180,13 +181,10 @@ func Delete(targetiqn string) (err error) {
 // Connect ISCSI Target
 func Connect(connMap map[string]interface{}) (string, error) {
 	conn := ParseIscsiConnectInfo(connMap)
-	log.Println(connMap)
-	log.Println(conn)
 	portal := conn.TgtPortal
 	targetiqn := conn.TgtIQN
 	targetlun := strconv.Itoa(conn.TgtLun)
 
-	log.Printf("Connect portal: %s targetiqn: %s targetlun: %s", portal, targetiqn, targetlun)
 	devicePath := strings.Join([]string{
 		"/dev/disk/by-path/ip",
 		portal,
@@ -203,6 +201,7 @@ func Connect(connMap map[string]interface{}) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		// Set authentication messages,if is has.
 		if len(conn.AuthMethod) != 0 {
 			SetAuth(portal, targetiqn, conn.AuthUser, conn.AuthPass)
 		}
@@ -213,7 +212,6 @@ func Connect(connMap map[string]interface{}) (string, error) {
 		}
 
 		isexist = waitForPathToExist(&devicePath, 10, ISCSITranslateTCP)
-
 		if !isexist {
 			return "", errors.New("Could not connect volume: Timeout after 10s")
 		}
@@ -222,28 +220,44 @@ func Connect(connMap map[string]interface{}) (string, error) {
 	return devicePath, nil
 }
 
+func sessionExists(portal string, tgtIqn string) bool {
+	info, err := execCmd("iscsiadm", "-m", "session", "-s")
+	if err != nil {
+		log.Println("Warning: get session failed,", string(info))
+		return false
+	}
+	portal = strings.Replace(portal, ":", ",", -1)
+	for _, line := range strings.Split(string(info), "\n") {
+		if strings.Contains(line, tgtIqn) && strings.Contains(line, portal) {
+			return true
+		}
+	}
+	return false
+}
+
+func recordExists(portal string, tgtIqn string) bool {
+	_, err := execCmd("iscsiadm", "-m", "node", "-o", "show",
+		"-T", tgtIqn, "-p", portal)
+	return err == nil
+}
+
 // Disconnect ISCSI Target
 func Disconnect(portal string, targetiqn string) error {
 	log.Printf("Disconnect portal: %s targetiqn: %s", portal, targetiqn)
-
-	// Logout
-	err := Logout(portal, targetiqn)
-	if err != nil {
-		return err
+	if sessionExists(portal, targetiqn) {
+		if err := Logout(portal, targetiqn); err != nil {
+			return err
+		}
 	}
 
-	//Delete
-	err = Delete(targetiqn)
-	if err != nil {
-		return err
+	if recordExists(portal, targetiqn) {
+		return Delete(targetiqn)
 	}
-
 	return nil
 }
 
 // GetFSType returns the File System Type of device
 func GetFSType(device string) string {
-	log.Printf("GetFSType: %s", device)
 	fsType := ""
 	res, err := execCmd("blkid", device)
 	if err != nil {
@@ -275,7 +289,7 @@ func Format(device string, fstype string) error {
 		}
 		_, err := execCmd("mkfs", "-t", fstype, "-F", device)
 		if err != nil {
-			log.Fatalf("failed to Format: %v", err)
+			log.Printf("failed to Format: %v", err)
 			return err
 		}
 	} else {
@@ -290,17 +304,17 @@ func Mount(device string, mountpoint string) error {
 
 	_, err := execCmd("mkdir", "-p", mountpoint)
 	if err != nil {
-		log.Fatalf("failed to mkdir: %v", err)
+		log.Printf("failed to mkdir: %v", err)
 	}
 	_, err = execCmd("mount", device, mountpoint)
 	if err != nil {
-		log.Fatalf("failed to mount: %v", err)
+		log.Printf("failed to mount: %v", err)
 		return err
 	}
 	return nil
 }
 
-// FormatandMount device
+// FormatAndMount device
 func FormatAndMount(device string, fstype string, mountpoint string) error {
 	log.Printf("FormatandMount device: %s fstype: %s mountpoint: %s", device, fstype, mountpoint)
 
@@ -325,7 +339,7 @@ func Umount(mountpoint string) error {
 
 	_, err := execCmd("umount", mountpoint)
 	if err != nil {
-		log.Fatalf("failed to Umount: %v", err)
+		log.Printf("failed to Umount: %v", err)
 		return err
 	}
 	return nil
@@ -352,4 +366,10 @@ func GetHostIp() string {
 	}
 
 	return "127.0.0.1"
+}
+
+func execCmd(name string, arg ...string) (string, error) {
+	log.Printf("Command: %s %s:\n", name, strings.Join(arg, " "))
+	info, err := exec.Command(name, arg...).CombinedOutput()
+	return string(info), err
 }

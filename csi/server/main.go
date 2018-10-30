@@ -20,18 +20,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
-	_ "github.com/opensds/nbp/driver/iscsi"
-	_ "github.com/opensds/nbp/driver/rbd"
+	_ "github.com/opensds/opensds/contrib/connector/iscsi"
+	_ "github.com/opensds/opensds/contrib/connector/rbd"
 )
 
 var (

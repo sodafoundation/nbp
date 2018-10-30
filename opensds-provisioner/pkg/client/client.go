@@ -18,17 +18,18 @@ package client
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/constants"
-	"os"
-	"strconv"
 )
 
 const (
 	// OpenSDSEndPoint environment variable name
 	OpenSDSEndPoint = "OPENSDS_ENDPOINT"
-	
+
 	// OpenSDSAuthStrategy environment variable name
 	OpenSDSAuthStrategy = "OPENSDS_AUTH_STRATEGY"
 )
@@ -108,9 +109,9 @@ func getSdsClient(endpoint string, authStrategy string) *client.Client {
 		// Using default auth strategy
 		authStrategy = "noauth"
 	}
-	
+
 	cfg := &client.Config{Endpoint: endpoint}
-	
+
 	switch authStrategy {
 	case client.Keystone:
 		cfg.AuthOptions = client.LoadKeystoneAuthOptionsFromEnv()

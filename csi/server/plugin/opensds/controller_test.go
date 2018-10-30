@@ -24,9 +24,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
-
 	"github.com/opensds/opensds/pkg/model"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

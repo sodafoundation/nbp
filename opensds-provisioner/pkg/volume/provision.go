@@ -18,6 +18,8 @@ limitations under the License.
 package volume
 
 import (
+	"strconv"
+
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
@@ -26,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/volume"
-	"strconv"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
-	"github.com/opensds/nbp/client/iscsi"
+	"github.com/opensds/opensds/contrib/connector/iscsi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

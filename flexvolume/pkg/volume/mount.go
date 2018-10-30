@@ -48,9 +48,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"golang.org/x/sys/unix"
-	"strings"
 )
 
 func isMounted(mountDir string) bool {
