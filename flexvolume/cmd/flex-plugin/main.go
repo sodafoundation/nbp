@@ -146,7 +146,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		HostInfo: model.HostInfo{
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
-			Ip:        iscsi.GetHostIp(),
+			Ip:        connector.GetHostIp(),
 			Host:      hostname,
 			Initiator: localIqn,
 		},

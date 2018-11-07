@@ -12,34 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iscsi
+package fc
 
 import (
 	"github.com/opensds/opensds/contrib/connector"
 )
 
 const (
-	iscsiDriver = "iscsi"
-	Iqn = "iqn"
+	fcDriver = "fibre_channel"
+	PortName = "port_name"
+	NodeName = "node_name"
+	Wwpn     = "wwpn"
+	Wwnn     = "wwnn"
 )
 
-type Iscsi struct{}
+type FC struct {
+	self *fibreChannel
+}
 
 func init() {
-	connector.RegisterConnector(iscsiDriver, &Iscsi{})
+	connector.RegisterConnector(fcDriver,
+		&FC{
+			self: &fibreChannel{
+				helper: &linuxfc{},
+			},
+		})
 }
 
-func (isc *Iscsi) Attach(conn map[string]interface{}) (string, error) {
-	return Connect(conn)
+func (f *FC) Attach(conn map[string]interface{}) (string, error) {
+	deviceInfo, err := f.self.connectVolume(conn)
+	if err != nil {
+		return "", err
+	}
+	return deviceInfo["path"], nil
 }
 
-func (isc *Iscsi) Detach(conn map[string]interface{}) error {
-	iscsiCon := ParseIscsiConnectInfo(conn)
-
-	return Disconnect(iscsiCon.TgtPortal, iscsiCon.TgtIQN)
+func (f *FC) Detach(conn map[string]interface{}) error {
+	return f.self.disconnectVolume(conn)
 }
 
 // GetInitiatorInfo implementation
-func (isc *Iscsi) GetInitiatorInfo() (string, error) {
-	return getInitiatorInfo()
+func (f *FC) GetInitiatorInfo() (string, error) {
+	return f.self.getInitiatorInfo()
 }

@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
-	"github.com/opensds/opensds/contrib/connector/iscsi"
+	"github.com/opensds/opensds/contrib/connector"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -39,12 +39,11 @@ func TestNodeGetId(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
 	fakeReq := &csi.NodeGetIdRequest{}
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+
+	expectedNodeId, err := connector.GetHostName()
+	if err != nil {
+		t.Errorf("failed to GetHostname: %v\n", err)
 	}
-	expectedNodeId := localIqn
 
 	rs, err := fakePlugin.NodeGetId(fakeCtx, fakeReq)
 	if err != nil {
