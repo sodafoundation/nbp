@@ -7,7 +7,4 @@ spec:
   instanceRef:
     name: service-instance
   parameters:
-    hostInfo:
-      ip: 207.148.121.48
-      host: vultr-test
-      initiator: iqn.1993-08.org.debian:01:2682e220a9e
+    nodeID: xxxxxx

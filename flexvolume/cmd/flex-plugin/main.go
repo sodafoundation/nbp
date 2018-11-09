@@ -39,16 +39,16 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/opensds/nbp/client/iscsi"
-	"github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/driver"
-	_ "github.com/opensds/nbp/driver/iscsi"
-	_ "github.com/opensds/nbp/driver/rbd"
-	"github.com/opensds/nbp/flexvolume/pkg/volume"
-	"github.com/opensds/opensds/pkg/model"
 	"log"
 	"os"
 	"runtime"
+
+	"github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/flexvolume/pkg/volume"
+	"github.com/opensds/opensds/contrib/connector"
+	"github.com/opensds/opensds/contrib/connector/iscsi"
+	_ "github.com/opensds/opensds/contrib/connector/rbd"
+	"github.com/opensds/opensds/pkg/model"
 )
 
 //TODO: if volume has status, opensds should supply the definition of status, and set status of volume.
@@ -164,13 +164,13 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 		}
 	}()
 
-	volDriver := driver.NewVolumeDriver(attachSpec.DriverVolumeType)
-	if volDriver == nil {
+	volConnector := connector.NewConnector(attachSpec.DriverVolumeType)
+	if volConnector == nil {
 		rollback = true
 		return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", attachSpec.DriverVolumeType)))
 	}
 
-	device, errAttach := volDriver.Attach(attachSpec.ConnectionData)
+	device, errAttach := volConnector.Attach(attachSpec.ConnectionData)
 	if errAttach != nil {
 		rollback = true
 		return Fail(errAttach.Error())
@@ -210,12 +210,12 @@ func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
 	}
 
 	if act.Mountpoint != "" {
-		volDriver := driver.NewVolumeDriver(act.DriverVolumeType)
-		if volDriver == nil {
+		volConnector := connector.NewConnector(act.DriverVolumeType)
+		if volConnector == nil {
 			return Fail(errors.New(fmt.Sprintf("Unsupport driverVolumeType: %s", act.DriverVolumeType)))
 		}
 
-		err = volDriver.Detach(act.ConnectionData)
+		err = volConnector.Detach(act.ConnectionData)
 		if err != nil {
 			return Fail(err.Error())
 		}

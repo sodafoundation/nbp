@@ -11,6 +11,6 @@ spec:
   selector:
     app: {{ template "fullname" . }}
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

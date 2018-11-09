@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        role: frontend
+    spec:
+      containers:
+      - name: wordpress
+        image: opensdsio/wordpress:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: wordpress
+          containerPort: 8084
+        volumeMounts:
+        - name: data
+          mountPath: /mnt/wordpress
+      volumes:
+      - name: data
+        hostPath:
+          # directory location on host 
+          path: /mnt/wordpress
+          # this field is optional
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  type: ClusterIP
+  ports:
+  - name: wordpress
+    port: 8084
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: wordpress

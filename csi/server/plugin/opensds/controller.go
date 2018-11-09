@@ -17,12 +17,13 @@ package opensds
 import (
 	"fmt"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/golang/glog"
-
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
@@ -501,6 +502,15 @@ func (p *Plugin) CreateSnapshot(
 		VolumeId: req.SourceVolumeId,
 	}
 
+	for k, v := range req.GetParameters() {
+		switch strings.ToLower(k) {
+		// TODO: support profile name
+		case KParamProfile:
+			snapReq.ProfileId = v
+		}
+	}
+	glog.Infof("snapshot response:%v",snapReq)
+
 	snapshot, err := Client.CreateVolumeSnapshot(snapReq)
 	if nil != err {
 		return nil, err
@@ -557,15 +567,124 @@ func (p *Plugin) ListSnapshots(
 	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
 
-	var opts = map[string]string{"Id": req.SnapshotId, "VolumeId": req.SourceVolumeId}
-	snapshots, err := Client.ListVolumeSnapshots(opts)
-
+	var opts map[string]string
+	allSnapshots, err := Client.ListVolumeSnapshots(opts)
 	if nil != err {
 		return nil, err
 	}
 
+	snapshotId := req.GetSnapshotId()
+	snapshotIDLen := len(snapshotId)
+	sourceVolumeId := req.GetSourceVolumeId()
+	sourceVolumeIdLen := len(sourceVolumeId)
+	var snapshotsFilterByVolumeId []*model.VolumeSnapshotSpec
+	var snapshotsFilterById []*model.VolumeSnapshotSpec
+	var filterResult []*model.VolumeSnapshotSpec
+
+	for _, snapshot := range allSnapshots {
+		if snapshot.VolumeId == sourceVolumeId {
+			snapshotsFilterByVolumeId = append(snapshotsFilterByVolumeId, snapshot)
+		}
+
+		if snapshot.Id == snapshotId {
+			snapshotsFilterById = append(snapshotsFilterById, snapshot)
+		}
+	}
+
+	switch {
+	case (0 == snapshotIDLen) && (0 == sourceVolumeIdLen):
+		if len(allSnapshots) <= 0 {
+			glog.V(5).Info("len(allSnapshots) <= 0")
+			return &csi.ListSnapshotsResponse{}, nil
+		}
+
+		filterResult = allSnapshots
+		break
+	case (0 == snapshotIDLen) && (0 != sourceVolumeIdLen):
+		if len(snapshotsFilterByVolumeId) <= 0 {
+			return nil, status.Error(codes.NotFound, fmt.Sprintf("no snapshot with source volume id %s", sourceVolumeId))
+		}
+
+		filterResult = snapshotsFilterByVolumeId
+		break
+	case (0 != snapshotIDLen) && (0 == sourceVolumeIdLen):
+		if len(snapshotsFilterById) <= 0 {
+			return nil, status.Error(codes.NotFound, fmt.Sprintf("no snapshot with id %s", snapshotId))
+		}
+
+		filterResult = snapshotsFilterById
+		break
+	case (0 != snapshotIDLen) && (0 != sourceVolumeIdLen):
+		for _, snapshot := range snapshotsFilterById {
+			if snapshot.VolumeId == sourceVolumeId {
+				filterResult = append(filterResult, snapshot)
+			}
+		}
+
+		if len(filterResult) <= 0 {
+			return nil, status.Error(codes.NotFound,
+				fmt.Sprintf("no snapshot with id %v and source volume id %v", snapshotId, sourceVolumeId))
+		}
+
+		break
+	}
+
+	glog.V(5).Infof("filterResult=%v.", filterResult)
+	var sortedKeys []string
+	snapshotsMap := make(map[string]*model.VolumeSnapshotSpec)
+
+	for _, snapshot := range filterResult {
+		sortedKeys = append(sortedKeys, snapshot.Id)
+		snapshotsMap[snapshot.Id] = snapshot
+	}
+	sort.Strings(sortedKeys)
+
+	var sortResult []*model.VolumeSnapshotSpec
+	for _, key := range sortedKeys {
+		sortResult = append(sortResult, snapshotsMap[key])
+	}
+
+	var (
+		ulenSnapshots = int32(len(sortResult))
+		maxEntries    = req.MaxEntries
+		startingToken int32
+	)
+
+	if v := req.StartingToken; v != "" {
+		i, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			return nil, status.Error(codes.Aborted, "parsing the startingToken failed")
+		}
+		startingToken = int32(i)
+	}
+
+	if startingToken >= ulenSnapshots {
+		return nil, status.Errorf(
+			codes.Aborted,
+			"startingToken=%d >= len(snapshots)=%d",
+			startingToken, ulenSnapshots)
+	}
+
+	// If maxEntries is 0 or greater than the number of remaining entries then
+	// set maxEntries to the number of remaining entries.
+	var sliceResult []*model.VolumeSnapshotSpec
+	var nextToken string
+	nextTokenIndex := startingToken + maxEntries
+
+	if maxEntries == 0 || nextTokenIndex >= ulenSnapshots {
+		sliceResult = sortResult[startingToken:]
+	} else {
+		sliceResult = sortResult[startingToken:nextTokenIndex]
+		nextToken = fmt.Sprintf("%d", nextTokenIndex)
+	}
+
+	glog.V(5).Infof("sliceResult=%v, nextToken=%v.", sliceResult, nextToken)
+	if len(sliceResult) <= 0 {
+		return &csi.ListSnapshotsResponse{NextToken: nextToken}, nil
+	}
+
 	entries := []*csi.ListSnapshotsResponse_Entry{}
-	for _, snapshot := range snapshots {
+	for _, snapshot := range sliceResult {
 		createdAt, err := time.Parse(constants.TimeFormat, snapshot.CreatedAt)
 		if nil != err {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -584,5 +703,9 @@ func (p *Plugin) ListSnapshots(
 		})
 	}
 
-	return &csi.ListSnapshotsResponse{Entries: entries}, nil
+	glog.V(5).Infof("entries=%v.", entries)
+	return &csi.ListSnapshotsResponse{
+		Entries:   entries,
+		NextToken: nextToken,
+	}, nil
 }

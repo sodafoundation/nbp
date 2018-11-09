@@ -24,9 +24,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
-
 	"github.com/opensds/opensds/pkg/model"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -78,7 +76,7 @@ var (
 			"description": "This is the second sample snapshot for testing",
 			"size": 1,
 			"status": "available",
-			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8"
+			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d9"
 		}
 	]`
 )
@@ -296,21 +294,6 @@ func TestDeleteSnapshot(t *testing.T) {
 func TestListSnapshots(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
-	fakeReq := csi.ListSnapshotsRequest{}
-
-	rs, err := fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
-
-	if nil != err {
-		t.Errorf("failed to ListSnapshots: %v\n", err)
-	}
-
-	fakeReq.SnapshotId = "3769855c-a102-11e7-b772-17b880d2f537"
-	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
-
-	if nil != err {
-		t.Errorf("failed to ListSnapshots: %v\n", err)
-	}
-
 	expectedEntries := []*csi.ListSnapshotsResponse_Entry{
 		&csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
@@ -327,7 +310,7 @@ func TestListSnapshots(t *testing.T) {
 			Snapshot: &csi.Snapshot{
 				SizeBytes:      util.GiB,
 				Id:             "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
-				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
+				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d9",
 				CreatedAt:      1536167248000000000,
 				Status: &csi.SnapshotStatus{
 					Type: csi.SnapshotStatus_READY,
@@ -337,9 +320,122 @@ func TestListSnapshots(t *testing.T) {
 	}
 
 	expectedRs := &csi.ListSnapshotsResponse{Entries: expectedEntries}
+	// 1、ListSnapshotsRequest no parameters
+	fakeReq := csi.ListSnapshotsRequest{}
+	rs, err := fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
 
 	if !reflect.DeepEqual(expectedRs, rs) {
-		t.Errorf("expected: %v, actual: %v\n", expectedEntries, rs)
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	// 2、ListSnapshotsRequest use only "SnapshotId" as a filter
+	fakeReq.SnapshotId = "3769855c-a102-11e7-b772-17b880d2f537"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries[:1]}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	// 3、ListSnapshotsRequest use only "SourceVolumeId" as a filter
+	fakeReq.SnapshotId = ""
+	fakeReq.SourceVolumeId = "bd5b12a8-a101-11e7-941e-d77981b584d9"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries[1:2]}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	// 4、ListSnapshotsRequest use "SourceVolumeId" and "SnapshotId"
+	fakeReq.SnapshotId = "3769855c-a102-11e7-b772-17b880d2f537"
+	fakeReq.SourceVolumeId = "bd5b12a8-a101-11e7-941e-d77981b584d8"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries[0:1]}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	// 5、ListSnapshotsRequest use "MaxEntries" and "StartingToken"
+	fakeReq.SnapshotId = ""
+	fakeReq.SourceVolumeId = ""
+	fakeReq.MaxEntries = 2
+	fakeReq.StartingToken = "1"
+
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries[1:2]}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	fakeReq.MaxEntries = 3
+	fakeReq.StartingToken = "0"
+
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	fakeReq.MaxEntries = 1
+	fakeReq.StartingToken = "0"
+
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+
+	if nil != err {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
+
+	expectedRs = &csi.ListSnapshotsResponse{Entries: expectedEntries[0:1],
+		NextToken: "1"}
+	if !reflect.DeepEqual(expectedRs, rs) {
+		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
+	}
+
+	// Test error
+	fakeReq.MaxEntries = 1
+	fakeReq.StartingToken = "2"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+	expectedErr := status.Error(codes.Aborted,
+		"startingToken=2 >= len(snapshots)=2")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
+	}
+
+	fakeReq.MaxEntries = 1
+	fakeReq.StartingToken = "k"
+	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
+	expectedErr = status.Error(codes.Aborted, "parsing the startingToken failed")
+
+	if !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
 	}
 }
 
