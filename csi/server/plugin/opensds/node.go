@@ -23,6 +23,8 @@ import (
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/contrib/connector"
+	"github.com/opensds/opensds/contrib/connector/fc"
+	"github.com/opensds/opensds/contrib/connector/iscsi"
 	"github.com/opensds/opensds/contrib/drivers/utils/config"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -432,11 +434,11 @@ func (p *Plugin) NodeUnpublishVolume(
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+// GetNodeId implementation
 func GetNodeId() (string, error) {
 	hostName, err := connector.GetHostName()
 	if err != nil {
-		msg := fmt.Sprintf("Faild to get host name %v", err)
-		return "", status.Error(codes.FailedPrecondition, msg)
+		return "", status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	nodeId := hostName
@@ -444,7 +446,25 @@ func GetNodeId() (string, error) {
 	if fcConnector != nil {
 		fcInitiator, err := fcConnector.GetInitiatorInfo()
 		if err == nil {
-			nodeId = nodeId + fcInitiator
+			wwpnInterface, ok := fcInitiator.InitiatorData[fc.Wwpn]
+			if ok {
+				wwpnStrArray, ok := wwpnInterface.([]string)
+				if ok {
+					for _, wwpnStr := range wwpnStrArray {
+						nodeId = nodeId + "," + fc.Wwpn + ":" + wwpnStr
+					}
+				}
+			}
+
+			wwnnInterface, ok := fcInitiator.InitiatorData[fc.Wwnn]
+			if ok {
+				wwnnStrArray, ok := wwnnInterface.([]string)
+				if ok {
+					for _, wwnnStr := range wwnnStrArray {
+						nodeId = nodeId + "," + fc.Wwnn + ":" + wwnnStr
+					}
+				}
+			}
 		}
 	}
 
@@ -452,7 +472,14 @@ func GetNodeId() (string, error) {
 	if iscsiConnector != nil {
 		iscsiInitiator, err := iscsiConnector.GetInitiatorInfo()
 		if err == nil {
-			nodeId = nodeId + ",iqn:" + iscsiInitiator
+			iqnInterface, ok := iscsiInitiator.InitiatorData[iscsi.Iqn]
+
+			if ok {
+				iqnStr, ok := iqnInterface.(string)
+				if ok {
+					nodeId = nodeId + "," + iscsi.Iqn + ":" + iqnStr
+				}
+			}
 		}
 	}
 

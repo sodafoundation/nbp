@@ -9,6 +9,7 @@ COPY csi.server.opensds /csi.server.opensds
 # Install iscsi
 RUN apt-get update && \
     apt-get -y install open-iscsi \
+    sysfsutils \
     kmod \
     ceph-common && \
     rm -rf /var/lib/apt/lists/*
