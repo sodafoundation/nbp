@@ -157,6 +157,9 @@ type VolumeSnapshotSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 
+	// The uuid of the profile which the volume belongs to.
+	ProfileId string `json:"profileId,omitempty"`
+
 	// The size of the volume which the snapshot belongs to.
 	// Default unit of volume Size is GB.
 	Size int64 `json:"size,omitempty"`
@@ -167,9 +170,7 @@ type VolumeSnapshotSpec struct {
 
 	// The uuid of the volume which the snapshot belongs to.
 	VolumeId string `json:"volumeId,omitempty"`
-	// The uuid of the profile which the volume belongs to.
-	ProfileId string `json:"profileId,omitempty"`
-	// TODO： support profile name
+
 	// Metadata should be kept until the scemantics between opensds volume
 	// snapshot and backend storage resouce snapshot description are clear.
 	// +optional

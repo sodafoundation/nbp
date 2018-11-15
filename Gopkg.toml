@@ -42,12 +42,8 @@
   name = "github.com/golang/glog"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/mitchellh/mapstructure"
-
-[[constraint]]
   name = "github.com/opensds/opensds"
-  version = "0.3.0"
+  version = "0.3.2"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"
