@@ -50,6 +50,51 @@ func init() {
 	Client = sdscontroller.GetClient("", "")
 }
 
+// GetDefaultProfile implementation
+func GetDefaultProfile() (*model.ProfileSpec, error) {
+	profiles, err := Client.ListProfiles()
+	if err != nil {
+		glog.Error("Get default profile failed: ", err)
+		return nil, err
+	}
+
+	for _, profile := range profiles {
+		if profile.Name == "default" {
+			return profile, nil
+		}
+	}
+
+	return nil, status.Error(codes.FailedPrecondition, "No default profile")
+}
+
+// FindVolume implementation
+func FindVolume(req *model.VolumeSpec) (bool, bool, *model.VolumeSpec, error) {
+	isExist := false
+	volumes, err := Client.ListVolumes()
+
+	if err != nil {
+		glog.Error("List volumes failed: ", err)
+
+		return false, false, nil, err
+	}
+
+	for _, volume := range volumes {
+		if volume.Name == req.Name {
+			isExist = true
+
+			if (volume.Size == req.Size) && (volume.ProfileId == req.ProfileId) &&
+				(volume.AvailabilityZone == req.AvailabilityZone) &&
+				(volume.SnapshotId == req.SnapshotId) {
+				glog.V(5).Infof("Volume already exists and is compatible")
+
+				return true, true, volume, nil
+			}
+		}
+	}
+
+	return isExist, false, nil, nil
+}
+
 // CreateVolume implementation
 func (p *Plugin) CreateVolume(
 	ctx context.Context,
@@ -99,13 +144,56 @@ func (p *Plugin) CreateVolume(
 		}
 	}
 
+	if "" == volumebody.ProfileId {
+		defaultRrf, err := GetDefaultProfile()
+		if err != nil {
+			return nil, err
+		}
+
+		volumebody.ProfileId = defaultRrf.Id
+	}
+
+	if "" == volumebody.AvailabilityZone {
+		volumebody.AvailabilityZone = "default"
+	}
+
 	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
-	v, err := Client.CreateVolume(volumebody)
+
+	isExist, isCompatible, findVolume, err := FindVolume(volumebody)
 	if err != nil {
-		glog.Fatalf("failed to CreateVolume: %v", err)
 		return nil, err
 	}
 
+	var v *model.VolumeSpec
+
+	if isExist {
+		if isCompatible {
+			v = findVolume
+		}
+
+		return nil, status.Error(codes.AlreadyExists,
+			"Volume already exists but is incompatible")
+	} else {
+		createVolume, err := Client.CreateVolume(volumebody)
+		if err != nil {
+			isExist, isCompatible, findV, findErr := FindVolume(volumebody)
+			if findErr != nil {
+				return nil, findErr
+			}
+
+			if !(isExist && isCompatible) {
+				glog.Error("failed to CreateVolume", err)
+				return nil, err
+			}
+
+			v = findV
+			glog.V(5).Infof("Although the return failed, it was actually successful. volume = %v", findV)
+		} else {
+			v = createVolume
+		}
+	}
+
+	glog.V(5).Infof("opensds volume = %v", v)
 	// return volume info
 	volumeinfo := &csi.Volume{
 		CapacityBytes: v.Size * allocationUnitBytes,
@@ -120,7 +208,8 @@ func (p *Plugin) CreateVolume(
 		},
 	}
 
-	if enableReplication {
+	glog.V(5).Infof("resp volumeinfo = %v", volumeinfo)
+	if enableReplication && !isExist {
 		volumebody.AvailabilityZone = secondaryAZ
 		volumebody.Name = SecondaryPrefix + req.Name
 		sVol, err := Client.CreateVolume(volumebody)
