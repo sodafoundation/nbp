@@ -38,7 +38,7 @@ type RBD struct{}
 var _ connector.Connector = &RBD{}
 
 func init() {
-	connector.RegisterConnector(rbdDriver, &RBD{})
+	connector.RegisterConnector(connector.RbdDriver, &RBD{})
 }
 
 func (*RBD) Attach(conn map[string]interface{}) (string, error) {
