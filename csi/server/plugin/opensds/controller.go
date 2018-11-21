@@ -27,9 +27,7 @@ import (
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/contrib/connector/fc"
-	"github.com/opensds/opensds/contrib/connector/iscsi"
-	"github.com/opensds/opensds/contrib/drivers/utils/config"
+	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
@@ -335,7 +333,7 @@ func (p *Plugin) ControllerPublishVolume(
 
 	var initator string
 	switch protocol {
-	case config.FCProtocol:
+	case connector.FcDriver:
 		if len(wwpns) <= 0 {
 			msg := fmt.Sprintf("protocol is %v, but no wwpn", protocol)
 			glog.Error(msg)
@@ -344,7 +342,7 @@ func (p *Plugin) ControllerPublishVolume(
 
 		initator = strings.Join(wwpns, ",")
 		break
-	case config.ISCSIProtocol:
+	case connector.IscsiDriver:
 		if len(iqns) <= 0 {
 			msg := fmt.Sprintf("protocol is %v, but no iqn", protocol)
 			glog.Error(msg)
@@ -353,7 +351,7 @@ func (p *Plugin) ControllerPublishVolume(
 
 		initator = iqns[0]
 		break
-	case config.RBDProtocol:
+	case connector.RbdDriver:
 		break
 	default:
 		msg := fmt.Sprintf("protocol cannot be %v", protocol)
@@ -423,29 +421,29 @@ func extractInfoFromNodeId(nodeId string) (string, []string, []string, []string)
 	previousIndex := 0
 
 	for i := 1; i < hostNameAndInitorLen; i++ {
-		if strings.HasPrefix(hostNameAndInitor[i], fc.Wwpn+":") {
-			wwpns = append(wwpns, strings.Split(hostNameAndInitor[i], fc.Wwpn+":")[1])
-			previousParameter = fc.Wwpn
+		if strings.HasPrefix(hostNameAndInitor[i], connector.Wwpn+":") {
+			wwpns = append(wwpns, strings.Split(hostNameAndInitor[i], connector.Wwpn+":")[1])
+			previousParameter = connector.Wwpn
 			previousIndex = len(wwpns) - 1
 		} else {
-			if strings.HasPrefix(hostNameAndInitor[i], fc.Wwnn+":") {
-				wwnns = append(wwnns, strings.Split(hostNameAndInitor[i], fc.Wwnn+":")[1])
-				previousParameter = fc.Wwnn
+			if strings.HasPrefix(hostNameAndInitor[i], connector.Wwnn+":") {
+				wwnns = append(wwnns, strings.Split(hostNameAndInitor[i], connector.Wwnn+":")[1])
+				previousParameter = connector.Wwnn
 				previousIndex = len(wwnns) - 1
 			} else {
-				if strings.HasPrefix(hostNameAndInitor[i], iscsi.Iqn+":") {
-					iqns = append(iqns, strings.Split(hostNameAndInitor[i], iscsi.Iqn+":")[1])
-					previousParameter = iscsi.Iqn
+				if strings.HasPrefix(hostNameAndInitor[i], connector.Iqn+":") {
+					iqns = append(iqns, strings.Split(hostNameAndInitor[i], connector.Iqn+":")[1])
+					previousParameter = connector.Iqn
 					previousIndex = len(iqns) - 1
 				} else {
 					switch previousParameter {
-					case fc.Wwpn:
+					case connector.Wwpn:
 						wwpns[previousIndex] = wwpns[previousIndex] + "," + hostNameAndInitor[i]
 						break
-					case fc.Wwnn:
+					case connector.Wwnn:
 						wwnns[previousIndex] = wwnns[previousIndex] + "," + hostNameAndInitor[i]
 						break
-					case iscsi.Iqn:
+					case connector.Iqn:
 						iqns[previousIndex] = iqns[previousIndex] + "," + hostNameAndInitor[i]
 						break
 					default:

@@ -23,9 +23,6 @@ import (
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/contrib/connector"
-	"github.com/opensds/opensds/contrib/connector/fc"
-	"github.com/opensds/opensds/contrib/connector/iscsi"
-	"github.com/opensds/opensds/contrib/drivers/utils/config"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -442,42 +439,42 @@ func GetNodeId() (string, error) {
 	}
 
 	nodeId := hostName
-	fcConnector := connector.NewConnector(config.FCProtocol)
+	fcConnector := connector.NewConnector(connector.FcDriver)
 	if fcConnector != nil {
 		fcInitiator, err := fcConnector.GetInitiatorInfo()
 		if err == nil {
-			wwpnInterface, ok := fcInitiator.InitiatorData[fc.Wwpn]
+			wwpnInterface, ok := fcInitiator.InitiatorData[connector.Wwpn]
 			if ok {
 				wwpnStrArray, ok := wwpnInterface.([]string)
 				if ok {
 					for _, wwpnStr := range wwpnStrArray {
-						nodeId = nodeId + "," + fc.Wwpn + ":" + wwpnStr
+						nodeId = nodeId + "," + connector.Wwpn + ":" + wwpnStr
 					}
 				}
 			}
 
-			wwnnInterface, ok := fcInitiator.InitiatorData[fc.Wwnn]
+			wwnnInterface, ok := fcInitiator.InitiatorData[connector.Wwnn]
 			if ok {
 				wwnnStrArray, ok := wwnnInterface.([]string)
 				if ok {
 					for _, wwnnStr := range wwnnStrArray {
-						nodeId = nodeId + "," + fc.Wwnn + ":" + wwnnStr
+						nodeId = nodeId + "," + connector.Wwnn + ":" + wwnnStr
 					}
 				}
 			}
 		}
 	}
 
-	iscsiConnector := connector.NewConnector(config.ISCSIProtocol)
+	iscsiConnector := connector.NewConnector(connector.IscsiDriver)
 	if iscsiConnector != nil {
 		iscsiInitiator, err := iscsiConnector.GetInitiatorInfo()
 		if err == nil {
-			iqnInterface, ok := iscsiInitiator.InitiatorData[iscsi.Iqn]
+			iqnInterface, ok := iscsiInitiator.InitiatorData[connector.Iqn]
 
 			if ok {
 				iqnStr, ok := iqnInterface.(string)
 				if ok {
-					nodeId = nodeId + "," + iscsi.Iqn + ":" + iqnStr
+					nodeId = nodeId + "," + connector.Iqn + ":" + iqnStr
 				}
 			}
 		}

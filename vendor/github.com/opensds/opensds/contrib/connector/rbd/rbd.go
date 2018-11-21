@@ -27,10 +27,6 @@ import (
 	"github.com/opensds/opensds/contrib/connector"
 )
 
-const (
-	rbdDriver = "rbd"
-)
-
 var (
 	rbdBusPath    = "/sys/bus/rbd"
 	rbdDevicePath = path.Join(rbdBusPath, "devices")
