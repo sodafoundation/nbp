@@ -212,10 +212,10 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "1624edc4454b8682399def8740d46db5e4362ba4"
-  version = "1.1.5"
+  version = "v1.1.5"
 
 [[projects]]
-  digest = "1:13b7ab7badfe69afe0ad3ccf7dffa0bfd1b501aa1743c9fee49b70848b0f273b"
+  digest = "1:a3e0a8b4a7c503a01aa7a0da851bff137bda98333b429f44f312aaf366ceaf4f"
   name = "github.com/kubernetes-incubator/external-storage"
   packages = [
     "lib/controller",
@@ -848,7 +848,7 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:c65ab3f9005b66bb72d520ae0049a6797219347289d6f06068b25a7a27d35171"
+  digest = "1:9e5ff583d23d8bbe0f7967f50858319c0c338905a6dca2b43d8b9443408977ab"
   name = "k8s.io/kubernetes"
   packages = [
     "pkg/api/legacyscheme",
