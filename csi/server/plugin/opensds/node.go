@@ -23,7 +23,6 @@ import (
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/contrib/connector"
-	"github.com/opensds/opensds/contrib/connector/iscsi"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -111,14 +110,16 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 	}
 
 	var attachment *model.VolumeAttachmentSpec
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+	hostName, err := connector.GetHostName()
+
+	if err != nil {
+		msg := fmt.Sprintf("Faild to get host name %v", err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	for _, attach := range attachments {
-		if attach.VolumeId == volId && attach.Host == localIqn {
+		if attach.VolumeId == volId && attach.Host == hostName {
 			attachment = attach
 			break
 		}
@@ -257,7 +258,7 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	// Format
-	curFSType := iscsi.GetFSType(attachment.Mountpoint)
+	curFSType := connector.GetFSType(attachment.Mountpoint)
 	hopeFSType := DefFSType
 	if "" != mnt.FsType {
 		hopeFSType = mnt.FsType
@@ -311,7 +312,7 @@ func (p *Plugin) NodeUnstageVolume(
 	}
 
 	// Umount
-	err := iscsi.Umount(req.StagingTargetPath)
+	err := connector.Umount(req.StagingTargetPath)
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +412,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	// Umount
-	err := iscsi.Umount(req.TargetPath)
+	err := connector.Umount(req.TargetPath)
 	if err != nil {
 		return nil, err
 	}
@@ -430,6 +431,59 @@ func (p *Plugin) NodeUnpublishVolume(
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+// GetNodeId implementation
+func GetNodeId() (string, error) {
+	hostName, err := connector.GetHostName()
+	if err != nil {
+		return "", status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	nodeId := hostName
+	fcConnector := connector.NewConnector(connector.FcDriver)
+	if fcConnector != nil {
+		fcInitiator, err := fcConnector.GetInitiatorInfo()
+		if err == nil {
+			wwpnInterface, ok := fcInitiator.InitiatorData[connector.Wwpn]
+			if ok {
+				wwpnStrArray, ok := wwpnInterface.([]string)
+				if ok {
+					for _, wwpnStr := range wwpnStrArray {
+						nodeId = nodeId + "," + connector.Wwpn + ":" + wwpnStr
+					}
+				}
+			}
+
+			wwnnInterface, ok := fcInitiator.InitiatorData[connector.Wwnn]
+			if ok {
+				wwnnStrArray, ok := wwnnInterface.([]string)
+				if ok {
+					for _, wwnnStr := range wwnnStrArray {
+						nodeId = nodeId + "," + connector.Wwnn + ":" + wwnnStr
+					}
+				}
+			}
+		}
+	}
+
+	iscsiConnector := connector.NewConnector(connector.IscsiDriver)
+	if iscsiConnector != nil {
+		iscsiInitiator, err := iscsiConnector.GetInitiatorInfo()
+		if err == nil {
+			iqnInterface, ok := iscsiInitiator.InitiatorData[connector.Iqn]
+
+			if ok {
+				iqnStr, ok := iqnInterface.(string)
+				if ok {
+					nodeId = nodeId + "," + connector.Iqn + ":" + iqnStr
+				}
+			}
+		}
+	}
+
+	glog.V(5).Info("NodeId: " + nodeId)
+	return nodeId, nil
+}
+
 // NodeGetId implementation
 func (p *Plugin) NodeGetId(
 	ctx context.Context,
@@ -439,14 +493,13 @@ func (p *Plugin) NodeGetId(
 	glog.V(5).Info("start to GetNodeID")
 	defer glog.V(5).Info("end to GetNodeID")
 
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+	nodeId, err := GetNodeId()
+	if err != nil {
+		return nil, err
 	}
 
 	return &csi.NodeGetIdResponse{
-		NodeId: localIqn,
+		NodeId: nodeId,
 	}, nil
 }
 
@@ -460,14 +513,13 @@ func (p *Plugin) NodeGetInfo(
 
 	// TODO: For non-iscsi protocol, iqn should not be
 	// used as NodeId here.
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+	nodeId, err := GetNodeId()
+	if err != nil {
+		return nil, err
 	}
 
 	return &csi.NodeGetInfoResponse{
-		NodeId: localIqn,
+		NodeId: nodeId,
 	}, nil
 }
 

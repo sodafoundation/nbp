@@ -49,6 +49,18 @@ var (
 		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
 	}`
 
+	ByteVolumes = `[
+		{
+			"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
+			"name": "sample-volume-1",
+			"description": "This is a sample volume for testing",
+			"size": 1,
+			"status": "available",
+			"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
+		}
+	]`
+
 	ByteSnapshot = `{
 		"id": "3769855c-a102-11e7-b772-17b880d2f537",
 		"createdAt":"2018-09-05T17:07:28",
@@ -114,6 +126,11 @@ func (*fakeVolumeReceiver) Recv(
 		switch out.(type) {
 		case *[]*model.VolumeSnapshotSpec:
 			if err := json.Unmarshal([]byte(ByteSnapshots), out); err != nil {
+				return err
+			}
+			break
+		case *[]*model.VolumeSpec:
+			if err := json.Unmarshal([]byte(ByteVolumes), out); err != nil {
 				return err
 			}
 			break
