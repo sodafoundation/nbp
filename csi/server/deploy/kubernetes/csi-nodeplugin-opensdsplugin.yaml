@@ -2,7 +2,7 @@
 # which are necessary to run csi nodeplugin for opensds.
 
 kind: DaemonSet
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 metadata:
   name: csi-nodeplugin-opensdsplugin
 spec:
@@ -18,10 +18,14 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: quay.io/k8scsi/driver-registrar:v0.4.0
+          # TODO: replace the following with official image when available
+          image: xyang105/test-registrar:release1.0 #quay.io/k8scsi/driver-registrar:v1.0-canary #v1.0.0
           args:
             - "--v=5"
-            - "--csi-address=$(ADDRESS)"
+            - "--csi-address=/csi/csi.sock"
+            - "--mode=node-register"
+            - "--driver-requires-attachment=true"
+            - "--pod-info-mount-version=v1"
             - "--kubelet-registration-path=$(ADDRESS)"
           env:
             - name: ADDRESS
@@ -33,7 +37,7 @@ spec:
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
+              mountPath: /csi
             - name: registration-dir
               mountPath: /registration
         - name: opensds

@@ -20,7 +20,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"

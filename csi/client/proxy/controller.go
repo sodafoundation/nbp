@@ -17,7 +17,7 @@ package proxy
 import (
 	"github.com/golang/glog"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
 	"golang.org/x/net/context"
 )
@@ -57,11 +57,11 @@ func (c *Controller) CreateVolume(
 	credentials map[string]string /*Optional*/) (volume *csi.Volume, err error) {
 
 	req := &csi.CreateVolumeRequest{
-		Name:                    name,
-		CapacityRange:           capacity,
-		VolumeCapabilities:      capabilities,
-		Parameters:              params,
-		ControllerCreateSecrets: credentials,
+		Name:               name,
+		CapacityRange:      capacity,
+		VolumeCapabilities: capabilities,
+		Parameters:         params,
+		Secrets:            credentials,
 	}
 
 	rs, err := c.client.CreateVolume(ctx, req)
@@ -79,8 +79,8 @@ func (c *Controller) DeleteVolume(
 	credentials map[string]string /*Optional*/) error {
 
 	req := &csi.DeleteVolumeRequest{
-		VolumeId:                volumeid,
-		ControllerDeleteSecrets: credentials,
+		VolumeId: volumeid,
+		Secrets:  credentials,
 	}
 
 	_, err := c.client.DeleteVolume(ctx, req)
@@ -102,12 +102,12 @@ func (c *Controller) ControllerPublishVolume(
 	volumeattributes map[string]string /*Optional*/) (map[string]string, error) {
 
 	req := &csi.ControllerPublishVolumeRequest{
-		VolumeId:                 volumeid,
-		NodeId:                   nodeID,
-		VolumeCapability:         capabilities,
-		Readonly:                 readonly,
-		ControllerPublishSecrets: credentials,
-		VolumeAttributes:         volumeattributes,
+		VolumeId:         volumeid,
+		NodeId:           nodeID,
+		VolumeCapability: capabilities,
+		Readonly:         readonly,
+		Secrets:          credentials,
+		VolumeContext:    volumeattributes,
 	}
 
 	rs, err := c.client.ControllerPublishVolume(ctx, req)
@@ -115,7 +115,7 @@ func (c *Controller) ControllerPublishVolume(
 		return nil, err
 	}
 
-	return rs.PublishInfo, nil
+	return rs.PublishContext, nil
 }
 
 // ControllerUnpublishVolume proxy
@@ -128,7 +128,7 @@ func (c *Controller) ControllerUnpublishVolume(
 	req := &csi.ControllerUnpublishVolumeRequest{
 		VolumeId: volumeid,
 		NodeId:   nodeID,
-		ControllerUnpublishSecrets: credentials,
+		Secrets:  credentials,
 	}
 
 	_, err := c.client.ControllerUnpublishVolume(ctx, req)
@@ -149,7 +149,7 @@ func (c *Controller) ValidateVolumeCapabilities(
 	req := &csi.ValidateVolumeCapabilitiesRequest{
 		VolumeId:           volumeid,
 		VolumeCapabilities: capabilities,
-		VolumeAttributes:   volumeattributes,
+		VolumeContext:      volumeattributes,
 	}
 
 	rs, err := c.client.ValidateVolumeCapabilities(ctx, req)

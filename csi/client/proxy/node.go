@@ -17,7 +17,7 @@ package proxy
 import (
 	"log"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
 	"golang.org/x/net/context"
 )
@@ -59,11 +59,11 @@ func (c *Node) NodeStageVolume(
 
 	req := &csi.NodeStageVolumeRequest{
 		VolumeId:          volumeid,
-		PublishInfo:       publicInfo,
+		PublishContext:    publicInfo,
 		StagingTargetPath: stagingTargetPath,
 		VolumeCapability:  capability,
-		NodeStageSecrets:  credentials,
-		VolumeAttributes:  volumeattributes,
+		Secrets:           credentials,
+		VolumeContext:     volumeattributes,
 	}
 
 	_, err := c.client.NodeStageVolume(ctx, req)
@@ -106,14 +106,14 @@ func (c *Node) NodePublishVolume(
 	volumeattributes map[string]string /*Optional*/) error {
 
 	req := &csi.NodePublishVolumeRequest{
-		VolumeId:           volumeid,
-		PublishInfo:        publicInfo,
-		StagingTargetPath:  stagingTargetPath,
-		TargetPath:         targetPath,
-		VolumeCapability:   capability,
-		Readonly:           readonly,
-		NodePublishSecrets: credentials,
-		VolumeAttributes:   volumeattributes,
+		VolumeId:          volumeid,
+		PublishContext:    publicInfo,
+		StagingTargetPath: stagingTargetPath,
+		TargetPath:        targetPath,
+		VolumeCapability:  capability,
+		Readonly:          readonly,
+		Secrets:           credentials,
+		VolumeContext:     volumeattributes,
 	}
 
 	_, err := c.client.NodePublishVolume(ctx, req)
@@ -143,13 +143,13 @@ func (c *Node) NodeUnpublishVolume(
 	return nil
 }
 
-// NodeGetId proxy
-func (c *Node) NodeGetId(
+// NodeGetInfo proxy
+func (c *Node) NodeGetInfo(
 	ctx context.Context) (string, error) {
 
-	req := &csi.NodeGetIdRequest{}
+	req := &csi.NodeGetInfoRequest{}
 
-	rs, err := c.client.NodeGetId(ctx, req)
+	rs, err := c.client.NodeGetInfo(ctx, req)
 	if err != nil {
 		return "", err
 	}
