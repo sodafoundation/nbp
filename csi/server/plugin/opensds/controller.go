@@ -167,10 +167,10 @@ func (p *Plugin) CreateVolume(
 	if isExist {
 		if isCompatible {
 			v = findVolume
+		} else {
+			return nil, status.Error(codes.AlreadyExists,
+				"Volume already exists but is incompatible")
 		}
-
-		return nil, status.Error(codes.AlreadyExists,
-			"Volume already exists but is incompatible")
 	} else {
 		createVolume, err := Client.CreateVolume(volumebody)
 		if err != nil {
