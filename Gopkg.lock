@@ -2,7 +2,7 @@
 
 
 [[projects]]
-  digest = "1:8dd96f32e7a6225b840038be088a150d685b6c20b264d93ef9e7927f0b26b1e2"
+  digest = "1:835ce1b3458643eae535664fd4fc506d61030596ffaeb0dbbdb7017c29aae01c"
   name = "github.com/astaxie/beego"
   packages = [
     "context",
@@ -11,8 +11,8 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "053a075344c118a5cc41981b29ef612bb53d20ca"
-  version = "v1.10.1"
+  revision = "b0e2bbce2a45fcfda684b47968387fa0866ada06"
+  version = "v1.11.0"
 
 [[projects]]
   branch = "master"
@@ -262,11 +262,12 @@
 
 [[projects]]
   branch = "development"
-  digest = "1:948e1461dc5d1d5d696afeac6c109b6ee44cd9b1c45515dd78ae087e1b7cc49a"
+  digest = "1:054b2d3331439f87b87c17bccf231c6380195c03e2c159b18e08f02ee9cde0f4"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
     "contrib/connector",
+    "contrib/connector/fc",
     "contrib/connector/iscsi",
     "contrib/connector/rbd",
     "pkg/context",
@@ -279,7 +280,7 @@
     "testutils/collection",
   ]
   pruneopts = "UT"
-  revision = "d7acc467d695aa66b5dc242d91794b63016ec79d"
+  revision = "422c0492134a368d3d144d2ac323980cf2818fbf"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
@@ -436,7 +437,7 @@
     "windows",
   ]
   pruneopts = "UT"
-  revision = "0cf1ed9e522b7dbb416f080a5c8003de9b702bf4"
+  revision = "62eef0e2fa9b2c385f7b2778e763486da6880d37"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -675,7 +676,7 @@
     "pkg/util/feature",
   ]
   pruneopts = "UT"
-  revision = "8d90f74522f415137334e2671f8a166cf393dd24"
+  revision = "e3c8fa95bba5a5ff9939a62c6ccd51ff3646b350"
 
 [[projects]]
   digest = "1:2198fd12ed992b4cb3845d46772fbf3c77a56f664c17a0e69905e690c4d792e6"
@@ -919,6 +920,7 @@
     "github.com/kubernetes-incubator/external-storage/lib/controller",
     "github.com/opensds/opensds/client",
     "github.com/opensds/opensds/contrib/connector",
+    "github.com/opensds/opensds/contrib/connector/fc",
     "github.com/opensds/opensds/contrib/connector/iscsi",
     "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
