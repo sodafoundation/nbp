@@ -27,10 +27,6 @@ spec:
           args:
             - --port
             - "8080"
-            - --endpoint
-            - {{ .Values.opensdsEndpoint }}
-            - --authOption
-            -  {{ .Values.opensdsAuthStrategy }}
           env:
             - name: OPENSDS_ENDPOINT
               value: {{ .Values.opensdsEndpoint }}
