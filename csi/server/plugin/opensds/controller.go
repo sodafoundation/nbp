@@ -465,7 +465,8 @@ func (p *Plugin) ControllerUnpublishVolume(
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
 
-	glog.V(5).Info("start to ControllerUnpublishVolume")
+	glog.V(5).Infof("start to ControllerUnpublishVolume, req VolumeId = %v, NodeId = %v, ControllerUnpublishSecrets =%v",
+		req.VolumeId, req.NodeId, req.ControllerUnpublishSecrets)
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
 	//check volume is exist
@@ -480,20 +481,23 @@ func (p *Plugin) ControllerUnpublishVolume(
 		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
 	}
 
+	hostName, _, _, _ := extractInfoFromNodeId(req.NodeId)
 	var acts []*model.VolumeAttachmentSpec
+
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
 			acts = append(acts, attachSpec)
 		}
 	}
 
 	if r := getReplicationByVolume(req.VolumeId); r != nil {
 		for _, attachSpec := range attachments {
-			if attachSpec.VolumeId == r.SecondaryVolumeId && (req.NodeId == "" || attachSpec.Host == req.NodeId) {
+			if attachSpec.VolumeId == r.SecondaryVolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
 				acts = append(acts, attachSpec)
 			}
 		}
 	}
+
 	for _, act := range acts {
 		err = Client.DeleteVolumeAttachment(act.Id, act)
 		if err != nil {
@@ -501,6 +505,8 @@ func (p *Plugin) ControllerUnpublishVolume(
 			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
+
+		glog.V(5).Infof("attachment %v has been successfully deleted", act.Id)
 	}
 
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
