@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/client/proxy"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
@@ -342,7 +342,7 @@ func volumeDelete() {
 	if err != nil {
 		glog.Fatalf("Get volume info failed: %v", err)
 	}
-	err = controller.DeleteVolume(context.Background(), volumeinfo.Id, nil)
+	err = controller.DeleteVolume(context.Background(), volumeinfo.VolumeId, nil)
 	if err != nil {
 		glog.Fatalf("failed to DeleteVolume: %v", err)
 	} else {
@@ -352,12 +352,12 @@ func volumeDelete() {
 }
 
 func controllerPublishVolume() {
-	// Test GetNodeID
-	nodeid, err := node.NodeGetId(context.Background())
+	// Test NodeGetInfo
+	nodeid, err := node.NodeGetInfo(context.Background())
 	if err != nil {
-		glog.Fatalf("failed to NodeGetId: %v", err)
+		glog.Fatalf("failed to call NodeGetInfo: %v", err)
 	}
-	glog.Infof("[NodeGetId] nodeid:%v", nodeid)
+	glog.Infof("[NodeGetInfo] nodeid:%v", nodeid)
 
 	volumeinfo, err := GetVolume()
 	if err != nil {
@@ -366,7 +366,7 @@ func controllerPublishVolume() {
 
 	// Test ControllerPublishVolume
 	publishvolumeinfo, err := controller.ControllerPublishVolume(context.Background(),
-		volumeinfo.Id, nodeid, nil, false, nil, volumeinfo.Attributes)
+		volumeinfo.VolumeId, nodeid, nil, false, nil, volumeinfo.VolumeContext)
 	if err != nil {
 		glog.Fatalf("failed to ControllerPublishVolume: %v", err)
 	} else {
@@ -386,13 +386,13 @@ func controllerUnpublishVolume() {
 	if err != nil {
 		glog.Fatalf("Get volume info failed: %v", err)
 	}
-	nodeid, err := node.NodeGetId(context.Background())
+	nodeid, err := node.NodeGetInfo(context.Background())
 	if err != nil {
-		glog.Fatalf("failed to NodeGetId: %v", err)
+		glog.Fatalf("failed to call NodeGetInfo: %v", err)
 	}
-	glog.Infof("[NodeGetId] nodeid:%v", nodeid)
+	glog.Infof("[NodeGetInfo] nodeid:%v", nodeid)
 	// Test ControllerUnpublishVolume
-	err = controller.ControllerUnpublishVolume(context.Background(), volumeinfo.Id, nodeid, nil)
+	err = controller.ControllerUnpublishVolume(context.Background(), volumeinfo.VolumeId, nodeid, nil)
 	if err != nil {
 		glog.Fatalf("failed to ControllerUnpublishVolume: %v", err)
 	} else {
@@ -412,7 +412,7 @@ func nodePublishVolume() {
 		glog.Fatalf("Get publish volume info failed %v", err)
 	}
 	err = node.NodePublishVolume(context.Background(),
-		volumeinfo.Id, publishvolumeinfo, "",
+		volumeinfo.VolumeId, publishvolumeinfo, "",
 		targetpath, nil, false, nil, nil)
 	if err != nil {
 		glog.Fatalf("failed to NodePublishVolume: %v", err)
@@ -428,7 +428,7 @@ func nodeUnpulishVolume() {
 		glog.Fatalf("Get volume info failed %v", err)
 	}
 	err = node.NodeUnpublishVolume(context.Background(),
-		volumeinfo.Id, targetpath)
+		volumeinfo.VolumeId, targetpath)
 	if err != nil {
 		glog.Fatalf("failed to NodeUnpublishVolume: %v", err)
 	} else {

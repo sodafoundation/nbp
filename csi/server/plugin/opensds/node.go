@@ -19,7 +19,7 @@ import (
 	"os/exec"
 	"strings"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/contrib/connector"
@@ -197,12 +197,12 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	volId := req.VolumeId
-	attachmentId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishContext[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		if r.ReplicationStatus == model.ReplicationFailover {
 			volId = r.SecondaryVolumeId
-			attachmentId = req.PublishInfo[KPublishSecondaryAttachId]
+			attachmentId = req.PublishContext[KPublishSecondaryAttachId]
 		}
 		if r.Metadata == nil {
 			r.Metadata = make(map[string]string)
@@ -351,7 +351,7 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	volId := req.VolumeId
-	attachmentId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishContext[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[KAttachedVolumeId]
@@ -431,8 +431,8 @@ func (p *Plugin) NodeUnpublishVolume(
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-// GetNodeId implementation
-func GetNodeId() (string, error) {
+// getNodeId gets node id based on the protocol, i.e., FC, iSCSI, RBD, etc.
+func getNodeId() (string, error) {
 	hostName, err := connector.GetHostName()
 	if err != nil {
 		return "", status.Error(codes.FailedPrecondition, err.Error())
@@ -484,25 +484,6 @@ func GetNodeId() (string, error) {
 	return nodeId, nil
 }
 
-// NodeGetId implementation
-func (p *Plugin) NodeGetId(
-	ctx context.Context,
-	req *csi.NodeGetIdRequest) (
-	*csi.NodeGetIdResponse, error) {
-
-	glog.V(5).Info("start to GetNodeID")
-	defer glog.V(5).Info("end to GetNodeID")
-
-	nodeId, err := GetNodeId()
-	if err != nil {
-		return nil, err
-	}
-
-	return &csi.NodeGetIdResponse{
-		NodeId: nodeId,
-	}, nil
-}
-
 // NodeGetInfo gets information on a node
 func (p *Plugin) NodeGetInfo(
 	ctx context.Context,
@@ -511,9 +492,7 @@ func (p *Plugin) NodeGetInfo(
 	glog.Info("start to GetNodeInfo")
 	defer glog.Info("end to GetNodeInfo")
 
-	// TODO: For non-iscsi protocol, iqn should not be
-	// used as NodeId here.
-	nodeId, err := GetNodeId()
+	nodeId, err := getNodeId()
 	if err != nil {
 		return nil, err
 	}
@@ -543,4 +522,12 @@ func (p *Plugin) NodeGetCapabilities(
 			},
 		},
 	}, nil
+}
+
+// NodeGetVolumeStats
+func (p *Plugin) NodeGetVolumeStats(
+	ctx context.Context,
+	req *csi.NodeGetVolumeStatsRequest) (
+	*csi.NodeGetVolumeStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
 }

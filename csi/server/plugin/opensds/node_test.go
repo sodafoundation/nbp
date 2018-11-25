@@ -18,8 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
-	"github.com/opensds/opensds/contrib/connector"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,26 +32,6 @@ func (p *FakePlugin) NodeGetInfo(
 	return &csi.NodeGetInfoResponse{
 		NodeId: FakeIQN,
 	}, nil
-}
-
-func TestNodeGetId(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
-	fakeReq := &csi.NodeGetIdRequest{}
-
-	expectedNodeId, err := connector.GetHostName()
-	if err != nil {
-		t.Errorf("failed to GetHostname: %v\n", err)
-	}
-
-	rs, err := fakePlugin.NodeGetId(fakeCtx, fakeReq)
-	if err != nil {
-		t.Errorf("failed to GetNodeID: %v\n", err)
-	}
-
-	if rs.NodeId != expectedNodeId {
-		t.Errorf("expected: %s, actual: %s\n", expectedNodeId, rs.NodeId)
-	}
 }
 
 func TestNodeGetInfo(t *testing.T) {
@@ -121,7 +100,7 @@ func TestNodeStageVolume(t *testing.T) {
 		},
 	}
 
-	fakeReq.PublishInfo = map[string]string{KPublishAttachId: "f2dda3d2-bf79-11e7-8665-f750b088f63e"}
+	fakeReq.PublishContext = map[string]string{KPublishAttachId: "f2dda3d2-bf79-11e7-8665-f750b088f63e"}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
 	expectedErr = status.Error(codes.NotFound, "Volume does not exist")

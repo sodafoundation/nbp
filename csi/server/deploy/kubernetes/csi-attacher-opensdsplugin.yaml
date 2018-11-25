@@ -16,12 +16,15 @@ spec:
 
 ---
 kind: StatefulSet
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 metadata:
   name: csi-attacher-opensdsplugin
 spec:
   serviceName: "csi-attacher-opensdsplugin"
   replicas: 1
+  selector:
+    matchLabels:
+      app: csi-attacher-opensdsplugin
   template:
     metadata:
       labels:
@@ -30,7 +33,8 @@ spec:
       serviceAccount: csi-attacher
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v0.4.0
+          # TODO: replace with official image when available
+          image: xyang105/test-attacher:k8s1.13.0_beta.1 #quay.io/k8scsi/csi-attacher:v1.0.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"

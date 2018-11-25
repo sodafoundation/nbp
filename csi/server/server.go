@@ -15,7 +15,7 @@
 package main
 
 import (
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"golang.org/x/net/context"
 )
@@ -191,15 +191,6 @@ func (s *server) NodeUnpublishVolume(
 	return s.plugin.NodeUnpublishVolume(ctx, req)
 }
 
-// GetNodeID implementation
-func (s *server) NodeGetId(
-	ctx context.Context,
-	req *csi.NodeGetIdRequest) (
-	*csi.NodeGetIdResponse, error) {
-	// Use plugin implementation
-	return s.plugin.NodeGetId(ctx, req)
-}
-
 // NodeGetCapabilities implementation
 func (s *server) NodeGetCapabilities(
 	ctx context.Context,
@@ -209,11 +200,19 @@ func (s *server) NodeGetCapabilities(
 	return s.plugin.NodeGetCapabilities(ctx, req)
 }
 
-// NodeGetInfo
+// NodeGetInfo implementation
 func (s *server) NodeGetInfo(
 	ctx context.Context,
 	req *csi.NodeGetInfoRequest) (
 	*csi.NodeGetInfoResponse, error) {
 	// Use plugin implementation
 	return s.plugin.NodeGetInfo(ctx, req)
+}
+
+// NodeGetVolumeStats
+func (s *server) NodeGetVolumeStats(
+	ctx context.Context,
+	req *csi.NodeGetVolumeStatsRequest) (
+	*csi.NodeGetVolumeStatsResponse, error) {
+	return s.plugin.NodeGetVolumeStats(ctx, req)
 }

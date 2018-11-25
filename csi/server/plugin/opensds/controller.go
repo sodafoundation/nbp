@@ -22,7 +22,10 @@ import (
 	"strings"
 	"time"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
+
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
@@ -138,7 +141,7 @@ func (p *Plugin) CreateVolume(
 	if nil != contentSource {
 		snapshot := contentSource.GetSnapshot()
 		if snapshot != nil {
-			volumebody.SnapshotId = snapshot.GetId()
+			volumebody.SnapshotId = snapshot.GetSnapshotId()
 		}
 	}
 
@@ -195,8 +198,8 @@ func (p *Plugin) CreateVolume(
 	// return volume info
 	volumeinfo := &csi.Volume{
 		CapacityBytes: v.Size * allocationUnitBytes,
-		Id:            v.Id,
-		Attributes: map[string]string{
+		VolumeId:      v.Id,
+		VolumeContext: map[string]string{
 			KVolumeName:      v.Name,
 			KVolumeStatus:    v.Status,
 			KVolumeAZ:        v.AvailabilityZone,
@@ -227,7 +230,7 @@ func (p *Plugin) CreateVolume(
 			glog.Errorf("Create replication failed,:%v", err)
 			return nil, err
 		}
-		volumeinfo.Attributes[KVolumeReplicationId] = replicaResp.Id
+		volumeinfo.VolumeContext[KVolumeReplicationId] = replicaResp.Id
 	}
 
 	return &csi.CreateVolumeResponse{
@@ -367,7 +370,7 @@ func (p *Plugin) ControllerPublishVolume(
 			OsType:    runtime.GOOS,
 			Initiator: initator,
 		},
-		Metadata:       req.VolumeAttributes,
+		Metadata:       req.VolumeContext,
 		AccessProtocol: protocol,
 	}
 
@@ -379,14 +382,14 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	resp := &csi.ControllerPublishVolumeResponse{
-		PublishInfo: map[string]string{
+		PublishContext: map[string]string{
 			KPublishHostIp:       attachSpec.Ip,
 			KPublishHostName:     attachSpec.Host,
 			KPublishAttachId:     attachSpec.Id,
 			KPublishAttachStatus: attachSpec.Status,
 		},
 	}
-	if replicationId, ok := req.VolumeAttributes[KVolumeReplicationId]; ok {
+	if replicationId, ok := req.VolumeContext[KVolumeReplicationId]; ok {
 		r, err := Client.GetReplication(replicationId)
 		if err != nil {
 			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
@@ -398,7 +401,7 @@ func (p *Plugin) ControllerPublishVolume(
 			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
-		resp.PublishInfo[KPublishSecondaryAttachId] = attachSpec.Id
+		resp.PublishContext[KPublishSecondaryAttachId] = attachSpec.Id
 	}
 	return resp, nil
 }
@@ -466,7 +469,7 @@ func (p *Plugin) ControllerUnpublishVolume(
 	*csi.ControllerUnpublishVolumeResponse, error) {
 
 	glog.V(5).Infof("start to ControllerUnpublishVolume, req VolumeId = %v, NodeId = %v, ControllerUnpublishSecrets =%v",
-		req.VolumeId, req.NodeId, req.ControllerUnpublishSecrets)
+		req.VolumeId, req.NodeId, req.Secrets)
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
 	//check volume is exist
@@ -517,28 +520,7 @@ func (p *Plugin) ValidateVolumeCapabilities(
 	ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest) (
 	*csi.ValidateVolumeCapabilitiesResponse, error) {
-
-	glog.V(5).Info("start to ValidateVolumeCapabilities")
-	defer glog.V(5).Info("end to ValidateVolumeCapabilities")
-
-	if strings.TrimSpace(req.VolumeId) == "" {
-		// csi.Error_ValidateVolumeCapabilitiesError_INVALID_VOLUME_INFO
-		return nil, status.Error(codes.NotFound, "invalid volume id")
-	}
-
-	for _, capabilities := range req.VolumeCapabilities {
-		if capabilities.GetMount() != nil {
-			return &csi.ValidateVolumeCapabilitiesResponse{
-				Supported: false,
-				Message:   "opensds does not support mounted volume",
-			}, nil
-		}
-	}
-
-	return &csi.ValidateVolumeCapabilitiesResponse{
-		Supported: true,
-		Message:   "supported",
-	}, nil
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ListVolumes implementation
@@ -562,8 +544,8 @@ func (p *Plugin) ListVolumes(
 
 			volumeinfo := &csi.Volume{
 				CapacityBytes: v.Size,
-				Id:            v.Id,
-				Attributes: map[string]string{
+				VolumeId:      v.Id,
+				VolumeContext: map[string]string{
 					"Name":             v.Name,
 					"Status":           v.Status,
 					"AvailabilityZone": v.AvailabilityZone,
@@ -675,7 +657,7 @@ func (p *Plugin) CreateSnapshot(
 
 	defer glog.V(5).Info("end to CreateSnapshot")
 	glog.V(5).Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
-		req.Name, req.SourceVolumeId, req.CreateSnapshotSecrets, req.Parameters)
+		req.Name, req.SourceVolumeId, req.Secrets, req.Parameters)
 
 	if 0 == len(req.Name) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
@@ -704,22 +686,32 @@ func (p *Plugin) CreateSnapshot(
 		return nil, err
 	}
 
-	createdAt, err := time.Parse(constants.TimeFormat, snapshot.CreatedAt)
+	creationTime, err := p.convertStringToPtypesTimestamp(snapshot.CreatedAt)
 	if nil != err {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
 			SizeBytes:      snapshot.Size * util.GiB,
-			Id:             snapshot.Id,
+			SnapshotId:     snapshot.Id,
 			SourceVolumeId: snapshot.VolumeId,
-			CreatedAt:      createdAt.UnixNano(),
-			Status: &csi.SnapshotStatus{
-				Type: csi.SnapshotStatus_READY,
-			},
+			CreationTime:   creationTime,
+			ReadyToUse:     true,
 		},
 	}, nil
+}
+
+func (p *Plugin) convertStringToPtypesTimestamp(timeStr string) (*timestamp.Timestamp, error) {
+	timeAt, err := time.Parse(constants.TimeFormat, timeStr)
+	if nil != err {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	ptypesTime, err := ptypes.TimestampProto(timeAt)
+	if err != nil {
+		return nil, err
+	}
+	return ptypesTime, nil
 }
 
 // DeleteSnapshot implementation
@@ -730,7 +722,7 @@ func (p *Plugin) DeleteSnapshot(
 
 	defer glog.V(5).Info("end to DeleteSnapshot")
 	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
-		req.SnapshotId, req.DeleteSnapshotSecrets)
+		req.SnapshotId, req.Secrets)
 
 	if 0 == len(req.SnapshotId) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
@@ -873,20 +865,17 @@ func (p *Plugin) ListSnapshots(
 
 	entries := []*csi.ListSnapshotsResponse_Entry{}
 	for _, snapshot := range sliceResult {
-		createdAt, err := time.Parse(constants.TimeFormat, snapshot.CreatedAt)
+		creationTime, err := p.convertStringToPtypesTimestamp(snapshot.CreatedAt)
 		if nil != err {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, err
 		}
-
 		entries = append(entries, &csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
 				SizeBytes:      snapshot.Size * util.GiB,
-				Id:             snapshot.Id,
+				SnapshotId:     snapshot.Id,
 				SourceVolumeId: snapshot.VolumeId,
-				CreatedAt:      createdAt.UnixNano(),
-				Status: &csi.SnapshotStatus{
-					Type: csi.SnapshotStatus_READY,
-				},
+				CreationTime:   creationTime,
+				ReadyToUse:     true,
 			},
 		})
 	}

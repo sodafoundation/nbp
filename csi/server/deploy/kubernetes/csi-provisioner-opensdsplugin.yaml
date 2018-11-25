@@ -16,12 +16,15 @@ spec:
 
 ---
 kind: StatefulSet
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 metadata:
   name: csi-provisioner-opensdsplugin
 spec:
   serviceName: "csi-provisioner-opensdsplugin"
   replicas: 1
+  selector:
+    matchLabels:
+      app: csi-provisioner-opensdsplugin
   template:
     metadata:
       labels:
@@ -30,8 +33,7 @@ spec:
       serviceAccount: csi-provisioner
       containers:
         - name: csi-provisioner
-          # This should be replaced by an official k8s-csi provisioner image when it is released.
-          image: quay.io/k8scsi/csi-provisioner:v0.4.0
+          image: quay.io/k8scsi/csi-provisioner:v1.0.0
           args:
             - "--provisioner=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"

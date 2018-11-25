@@ -16,12 +16,15 @@ spec:
 
 ---
 kind: StatefulSet
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 metadata:
   name: csi-snapshotter-opensdsplugin
 spec:
   serviceName: "csi-snapshotter-opensdsplugin"
   replicas: 1
+  selector:
+    matchLabels:
+      app: csi-snapshotter-opensdsplugin
   template:
     metadata:
       labels:
@@ -30,7 +33,7 @@ spec:
       serviceAccount: csi-snapshotter
       containers:
         - name: csi-snapshotter
-          image: quay.io/k8scsi/csi-snapshotter:v0.4.0
+          image: quay.io/k8scsi/csi-snapshotter:v1.0.0
           args:
             - "--snapshotter=csi-opensdsplugin"
             - "--csi-address=$(ADDRESS)"
