@@ -2,12 +2,18 @@
 
 
 [[projects]]
-  digest = "1:835ce1b3458643eae535664fd4fc506d61030596ffaeb0dbbdb7017c29aae01c"
+  digest = "1:28488052ac364bdcbb7da0de3d1998b04cbe4a0aaffea9795926a399a1a8f2b3"
   name = "github.com/astaxie/beego"
   packages = [
+    ".",
+    "config",
     "context",
+    "context/param",
+    "grace",
     "httplib",
+    "logs",
     "session",
+    "toolbox",
     "utils",
   ]
   pruneopts = "UT"
@@ -56,6 +62,14 @@
   pruneopts = "UT"
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:15e27372d379b45b18ac917b9dafc45c45485239490ece18cca97a12f9591146"
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9c8236e659b76e87bf02044d06fde8683008ff3e"
+  version = "v1.39.0"
 
 [[projects]]
   digest = "1:34e709f36fd4f868fb00dbaf8a6cab4c1ae685832d392874ba9d7c5dec2429d1"
@@ -262,7 +276,7 @@
 
 [[projects]]
   branch = "development"
-  digest = "1:054b2d3331439f87b87c17bccf231c6380195c03e2c159b18e08f02ee9cde0f4"
+  digest = "1:1c94346d4e05259f16a94daaa44546cb3095f3235e2017b9fdde9b0802625bcb"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -275,7 +289,9 @@
     "pkg/dock/proto",
     "pkg/model",
     "pkg/utils",
+    "pkg/utils/config",
     "pkg/utils/constants",
+    "pkg/utils/logs",
     "pkg/utils/urls",
     "testutils/collection",
   ]
@@ -389,9 +405,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8e241498e35f550e5192ee6b1f6ff2c0a7ffe81feff9541d297facffe1383979"
+  digest = "1:ffdb44566276086052f4f2a49284dc90c872c1ea89e2f01d69bd1ab3763bdcca"
   name = "golang.org/x/crypto"
   packages = [
+    "acme",
+    "acme/autocert",
     "ed25519",
     "ed25519/internal/edwards25519",
     "pbkdf2",
@@ -915,6 +933,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/astaxie/beego",
+    "github.com/astaxie/beego/context",
     "github.com/container-storage-interface/spec/lib/go/csi",
     "github.com/golang/glog",
     "github.com/golang/protobuf/ptypes",
@@ -930,6 +950,7 @@
     "github.com/opensds/opensds/pkg/dock/proto",
     "github.com/opensds/opensds/pkg/model",
     "github.com/opensds/opensds/pkg/utils/constants",
+    "github.com/opensds/opensds/pkg/utils/logs",
     "github.com/pmorie/go-open-service-broker-client/v2",
     "github.com/pmorie/osb-broker-lib/pkg/broker",
     "github.com/pmorie/osb-broker-lib/pkg/metrics",
