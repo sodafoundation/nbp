@@ -229,7 +229,7 @@
   version = "1.1.5"
 
 [[projects]]
-  digest = "1:13b7ab7badfe69afe0ad3ccf7dffa0bfd1b501aa1743c9fee49b70848b0f273b"
+  digest = "1:a3e0a8b4a7c503a01aa7a0da851bff137bda98333b429f44f312aaf366ceaf4f"
   name = "github.com/kubernetes-incubator/external-storage"
   packages = [
     "lib/controller",
@@ -579,7 +579,7 @@
   version = "v2.2.1"
 
 [[projects]]
-  digest = "1:2ef69eae8d7f06d95c8567b146d08aa374455f871efa6c4e805905dfa7aa9b06"
+  digest = "1:0d299a04c6472e4458461d7034c76d014cc6f632a3262cbf21d123b19ce13e65"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1alpha1",
@@ -587,6 +587,7 @@
     "apps/v1",
     "apps/v1beta1",
     "apps/v1beta2",
+    "auditregistration/v1alpha1",
     "authentication/v1",
     "authentication/v1beta1",
     "authorization/v1",
@@ -615,8 +616,8 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "0527d9f2238346a310e6cf1e6afe2422f329cc3d"
-  version = "kubernetes-1.12.0-beta.1"
+  revision = "d01564359763a39d310efc27866b63d4f5c92f1d"
+  version = "kubernetes-1.13.0-beta.1"
 
 [[projects]]
   branch = "master"
@@ -627,7 +628,7 @@
   revision = "e8a638592964bfb3aaacb66d283c483097d1c0a7"
 
 [[projects]]
-  digest = "1:498ff71f18403841e886cc89370c766fb6974e41f4c7ce4aff041580cc8f1b5f"
+  digest = "1:4e531944d2de74c16a5637df33789169bdc509b6ad9fb8c6a22c2de80100e4a4"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -679,8 +680,8 @@
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "UT"
-  revision = "63dd81ab0848cd58da3257a806f599808708029c"
-  version = "kubernetes-1.12.0-beta.1"
+  revision = "0028e7a3cc82b29fea214c5793c77c24a23bb3ef"
+  version = "kubernetes-1.13.0-beta.1"
 
 [[projects]]
   branch = "master"
@@ -697,7 +698,7 @@
   revision = "e3c8fa95bba5a5ff9939a62c6ccd51ff3646b350"
 
 [[projects]]
-  digest = "1:2198fd12ed992b4cb3845d46772fbf3c77a56f664c17a0e69905e690c4d792e6"
+  digest = "1:389c30304ee98d8f9243a88164be8052c86d8415d8e7c957da289bf117441051"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -709,6 +710,8 @@
     "informers/apps/v1",
     "informers/apps/v1beta1",
     "informers/apps/v1beta2",
+    "informers/auditregistration",
+    "informers/auditregistration/v1alpha1",
     "informers/autoscaling",
     "informers/autoscaling/v1",
     "informers/autoscaling/v2beta1",
@@ -752,6 +755,7 @@
     "kubernetes/typed/apps/v1",
     "kubernetes/typed/apps/v1beta1",
     "kubernetes/typed/apps/v1beta2",
+    "kubernetes/typed/auditregistration/v1alpha1",
     "kubernetes/typed/authentication/v1",
     "kubernetes/typed/authentication/v1beta1",
     "kubernetes/typed/authorization/v1",
@@ -783,6 +787,7 @@
     "listers/apps/v1",
     "listers/apps/v1beta1",
     "listers/apps/v1beta2",
+    "listers/auditregistration/v1alpha1",
     "listers/autoscaling/v1",
     "listers/autoscaling/v2beta1",
     "listers/autoscaling/v2beta2",
@@ -834,8 +839,8 @@
     "util/workqueue",
   ]
   pruneopts = "UT"
-  revision = "173ad5fde8e4ee8f92763f78c6ba37322f2125ab"
-  version = "kubernetes-1.12.0-beta.1"
+  revision = "46a8dc78ec29761d6cb89a9eb50ddde947c84030"
+  version = "kubernetes-1.13.0-beta.1"
 
 [[projects]]
   branch = "master"
@@ -867,7 +872,7 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:c65ab3f9005b66bb72d520ae0049a6797219347289d6f06068b25a7a27d35171"
+  digest = "1:9e5ff583d23d8bbe0f7967f50858319c0c338905a6dca2b43d8b9443408977ab"
   name = "k8s.io/kubernetes"
   packages = [
     "pkg/api/legacyscheme",
@@ -928,6 +933,14 @@
   ]
   pruneopts = "UT"
   revision = "0d26856f57b32ec3398579285e5c8a2bfe8c5243"
+
+[[projects]]
+  digest = "1:7719608fe0b52a4ece56c2dde37bedd95b938677d1ab0f84b8a7852e4c59f849"
+  name = "sigs.k8s.io/yaml"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "fd68e9863619f6ec2fdd8625fe1f02e7c877e480"
+  version = "v1.1.0"
 
 [solve-meta]
   analyzer-name = "dep"
