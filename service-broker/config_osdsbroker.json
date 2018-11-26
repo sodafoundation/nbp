@@ -1,0 +1,66 @@
+{
+    "url": "http://localhost:8005",
+    "apiVersion" : "2.13",
+    "user": "username",
+    "password": "password",
+    "authentication": "noauth",
+    "pollingInterval": 5,
+    "maxPollingNum": 60,
+    "cases": [
+        {
+            "name": "OpenSDS Storage Provision Service Test",
+            "service_id" :"4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
+            "organization_guid": "org-guid-here",
+            "space_guid": "space-guid-here",
+            "lifecycle": [
+                {
+                    "operation": "provision",
+                    "plan_id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+                    "async": true,
+                    "parameters": {
+                        "name": "vol-01",
+                        "description": "This is a volume provided by opensds",
+                        "capacity": 1
+                    }
+                },
+                {
+                    "operation": "update",
+                    "plan_id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
+                    "async": true,
+                    "parameters": {
+                        "capacity": 2
+                    }
+                },
+                {
+                    "operation": "bind",
+                    "parameters": {
+                        "nodeId": "host"
+                    }
+                },
+                {
+                    "operation": "unbind"
+                },
+                {
+                    "operation": "deprovision",
+                    "async": true
+                }
+            ]
+        }
+    ],
+    "conflictiveProvision": {
+        "service_id" :"acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+        "plan_id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
+        "async": true,
+        "parameters": {
+            "billing-account": "fake-account"
+        }
+    },
+    "conflictiveBind": {
+        "service_id" :"acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+        "plan_id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+        "parameters": {
+            "parameter1-name-here": 1,
+            "parameter2-name-here": "parameter2-value-here"
+        }
+    }
+}
