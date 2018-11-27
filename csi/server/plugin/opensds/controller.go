@@ -649,6 +649,32 @@ func (p *Plugin) ControllerGetCapabilities(
 	}, nil
 }
 
+// FindSnapshot implementation
+func FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnapshotSpec, error) {
+	isExist := false
+	snapshots, err := Client.ListVolumeSnapshots()
+
+	if err != nil {
+		glog.Error("List volume snapshots failed: ", err)
+
+		return false, false, nil, err
+	}
+
+	for _, snapshot := range snapshots {
+		if snapshot.Name == req.Name {
+			isExist = true
+
+			if (snapshot.VolumeId == req.VolumeId) && (snapshot.ProfileId == req.ProfileId) {
+				glog.V(5).Infof("snapshot already exists and is compatible")
+
+				return true, true, snapshot, nil
+			}
+		}
+	}
+
+	return isExist, false, nil, nil
+}
+
 // CreateSnapshot implementation
 func (p *Plugin) CreateSnapshot(
 	ctx context.Context,
@@ -679,13 +705,33 @@ func (p *Plugin) CreateSnapshot(
 			snapReq.ProfileId = v
 		}
 	}
-	glog.Infof("snapshot response:%v", snapReq)
 
-	snapshot, err := Client.CreateVolumeSnapshot(snapReq)
-	if nil != err {
+	glog.Infof("opensds CreateVolumeSnapshot request body: %v", snapReq)
+	var snapshot *model.VolumeSnapshotSpec
+	isExist, isCompatible, findSnapshot, err := FindSnapshot(snapReq)
+
+	if err != nil {
 		return nil, err
 	}
 
+	if isExist {
+		if isCompatible {
+			snapshot = findSnapshot
+		} else {
+			return nil, status.Error(codes.AlreadyExists,
+				"Snapshot already exists but is incompatible")
+		}
+	} else {
+		createSnapshot, err := Client.CreateVolumeSnapshot(snapReq)
+		if err != nil {
+			glog.Error("failed to CreateVolumeSnapshot", err)
+			return nil, err
+		}
+
+		snapshot = createSnapshot
+	}
+
+	glog.V(5).Infof("opensds snapshot = %v", snapshot)
 	creationTime, err := p.convertStringToPtypesTimestamp(snapshot.CreatedAt)
 	if nil != err {
 		return nil, err
