@@ -259,7 +259,6 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "development"
   digest = "1:9a41d25613f5e46b479afaed9d1c4061e6161c949947a3a5b657eba41c2fdf79"
   name = "github.com/opensds/opensds"
   packages = [
@@ -279,7 +278,8 @@
     "testutils/collection",
   ]
   pruneopts = "UT"
-  revision = "1acc720e4bb404c3bd2e48f847aad5c3412ebb04"
+  revision = "a7e9da1a93976b533072dbbd0e89fe41ff8bf9e0"
+  version = "v0.3.3"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
