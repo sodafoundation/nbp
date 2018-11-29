@@ -272,6 +272,7 @@ func (p *Plugin) NodeStageVolume(
 	} else {
 		if "" != mnt.FsType {
 			if mnt.FsType != curFSType {
+				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType,curFSType )
 				return nil, status.Error(codes.Aborted, "Volume formatted but is incompatible")
 			}
 		}

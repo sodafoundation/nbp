@@ -32,6 +32,7 @@ import (
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
+	"github.com/opensds/opensds/pkg/utils"
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -227,7 +228,7 @@ func (p *Plugin) CreateVolume(
 		}
 		replicaResp, err := Client.CreateReplication(replicaBody)
 		if err != nil {
-			glog.Errorf("Create replication failed,:%v", err)
+			glog.Errorf("Create replication failed: %v", err)
 			return nil, err
 		}
 		volumeinfo.VolumeContext[KVolumeReplicationId] = replicaResp.Id
@@ -277,6 +278,71 @@ func (p *Plugin) DeleteVolume(
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
+// isStringMapEqual implementation
+func isStringMapEqual(metadataA, metadataB map[string]string) bool {
+	glog.V(5).Infof("start to isStringMapEqual, metadataA = %v, metadataB = %v!",
+		metadataA, metadataB)
+	if len(metadataA) != len(metadataB) {
+		glog.V(5).Infof("len(metadataA)(%v) != len(metadataB)(%v) ",
+			len(metadataA), len(metadataB))
+		return false
+	}
+
+	for key, valueA := range metadataA {
+		valueB, ok := metadataB[key]
+		if !ok || (valueA != valueB) {
+			glog.V(5).Infof("ok = %v, key = %v, valueA = %v, valueB = %v!",
+				ok, key, valueA, valueB)
+			return false
+		}
+	}
+
+	return true
+}
+
+// isVolumePublished Check if the volume is published and compatible
+func isVolumePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpec,
+	metadata map[string]string) (*model.VolumeAttachmentSpec, error) {
+	glog.V(5).Infof("start to isVolumePublished, canAtMultiNode = %v, attachReq = %v",
+		canAtMultiNode, attachReq)
+
+	attachments, err := Client.ListVolumeAttachments()
+	if err != nil {
+		glog.V(5).Info("ListVolumeAttachments failed: " + err.Error())
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	for _, attachSpec := range attachments {
+		if attachSpec.VolumeId == attachReq.VolumeId {
+			if attachSpec.Host != attachReq.Host {
+				if !canAtMultiNode {
+					msg := fmt.Sprintf("the volume %s has been published to another node and does not have MULTI_NODE volume capability",
+						attachReq.VolumeId)
+					return nil, status.Error(codes.FailedPrecondition, msg)
+				}
+			} else {
+				// Opensds does not have volume_capability and readonly parameters,
+				// but needs to check other parameters to determine compatibility?
+				if attachSpec.Platform == attachReq.Platform &&
+					attachSpec.OsType == attachReq.OsType &&
+					attachSpec.Initiator == attachReq.Initiator &&
+					isStringMapEqual(attachSpec.Metadata, metadata) &&
+					attachSpec.AccessProtocol == attachReq.AccessProtocol {
+					glog.V(5).Info("Volume published and is compatible")
+
+					return attachSpec, nil
+				}
+
+				glog.Error("Volume published but is incompatible, incompatible attachement Id = " + attachSpec.Id)
+				return nil, status.Error(codes.AlreadyExists, "Volume published but is incompatible")
+			}
+		}
+	}
+
+	glog.V(5).Info("Need to create a new attachment")
+	return nil, nil
+}
+
 // ControllerPublishVolume implementation
 func (p *Plugin) ControllerPublishVolume(
 	ctx context.Context,
@@ -293,34 +359,6 @@ func (p *Plugin) ControllerPublishVolume(
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	//TODO: need to check if node exists?
-
-	attachments, err := Client.ListVolumeAttachments()
-	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, "Failed to publish volume.")
-	}
-
-	var attachNodes []string
-	hostName, wwpns, _, iqns := extractInfoFromNodeId(req.NodeId)
-
-	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host != hostName {
-			//TODO: node id is what? use hostname to indicate node id currently.
-			attachNodes = append(attachNodes, attachSpec.Host)
-		}
-	}
-
-	if len(attachNodes) != 0 {
-		//if the volume has been published, but without MULTI_NODE capability, return error.
-		mode := req.VolumeCapability.AccessMode.Mode
-		if mode != csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER &&
-			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY &&
-			mode != csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER {
-			msg := fmt.Sprintf("the volume %s has been published to another node.", req.VolumeId)
-			return nil, status.Error(codes.AlreadyExists, msg)
-		}
-	}
-
 	pool, err := Client.GetPool(volSpec.PoolId)
 	if err != nil || pool == nil {
 		msg := fmt.Sprintf("the pool %s is not sxist", volSpec.PoolId)
@@ -335,6 +373,8 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	var initator string
+	hostName, wwpns, _, iqns := extractInfoFromNodeId(req.NodeId)
+
 	switch protocol {
 	case connector.FcDriver:
 		if len(wwpns) <= 0 {
@@ -374,11 +414,34 @@ func (p *Plugin) ControllerPublishVolume(
 		AccessProtocol: protocol,
 	}
 
-	attachSpec, errAttach := Client.CreateVolumeAttachment(attachReq)
-	if errAttach != nil {
-		msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-		glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-		return nil, status.Error(codes.FailedPrecondition, msg)
+	mode := req.VolumeCapability.AccessMode.Mode
+	canAtMultiNode := false
+
+	if csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER == mode ||
+		csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY == mode ||
+		csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER == mode {
+		canAtMultiNode = true
+	}
+
+	expectedMetadata := utils.MergeStringMaps(attachReq.Metadata, volSpec.Metadata)
+	existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
+	if err != nil {
+		return nil, err
+	}
+
+	var attachSpec *model.VolumeAttachmentSpec
+
+	if nil == existAttachment {
+		newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
+		if errAttach != nil {
+			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
+		attachSpec = newAttachment
+	} else {
+		attachSpec = existAttachment
 	}
 
 	resp := &csi.ControllerPublishVolumeResponse{
@@ -389,18 +452,32 @@ func (p *Plugin) ControllerPublishVolume(
 			KPublishAttachStatus: attachSpec.Status,
 		},
 	}
+
 	if replicationId, ok := req.VolumeContext[KVolumeReplicationId]; ok {
 		r, err := Client.GetReplication(replicationId)
 		if err != nil {
 			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
 		}
+
 		attachReq.VolumeId = r.SecondaryVolumeId
-		attachSpec, errAttach := Client.CreateVolumeAttachment(attachReq)
-		if errAttach != nil {
-			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
+		if err != nil {
+			return nil, err
 		}
+
+		if nil == existAttachment {
+			newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
+			if errAttach != nil {
+				msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
+				glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
+				return nil, status.Error(codes.FailedPrecondition, msg)
+			}
+
+			attachSpec = newAttachment
+		} else {
+			attachSpec = existAttachment
+		}
+
 		resp.PublishContext[KPublishSecondaryAttachId] = attachSpec.Id
 	}
 	return resp, nil
