@@ -23,4 +23,4 @@ install:
 script:
   - go test -v github.com/opensds/nbp/csi/... -cover
   - go test -v github.com/opensds/nbp/flexvolume/... -cover
-
+  - go test -v github.com/opensds/nbp/cindercompatibleapi/... -cover

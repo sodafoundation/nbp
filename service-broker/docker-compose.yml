@@ -1,0 +1,16 @@
+version: '2'
+services:
+  svc-broker:
+    image: 'opensdsio/service-broker:latest'
+    tty: true
+    network_mode: "host"
+    restart: on-failure
+    environment:
+      OPENSDS_ENDPOINT: http://127.0.0.1:50040
+      OPENSDS_AUTH_STRATEGY: noauth
+      OS_AUTH_URL: http://127.0.0.1/identity
+      OS_USERNAME: admin
+      OS_PASSWORD: opensds@123
+      OS_TENANT_NAME: admin
+      OS_PROJECT_NAME: admin
+      OS_USER_DOMAIN_ID: default

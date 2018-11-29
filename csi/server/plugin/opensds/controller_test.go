@@ -20,8 +20,11 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"github.com/golang/protobuf/ptypes"
+
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
@@ -48,6 +51,18 @@ var (
 		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
 		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
 	}`
+
+	ByteVolumes = `[
+		{
+			"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
+			"name": "sample-volume-1",
+			"description": "This is a sample volume for testing",
+			"size": 1,
+			"status": "available",
+			"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
+		}
+	]`
 
 	ByteSnapshot = `{
 		"id": "3769855c-a102-11e7-b772-17b880d2f537",
@@ -117,6 +132,11 @@ func (*fakeVolumeReceiver) Recv(
 				return err
 			}
 			break
+		case *[]*model.VolumeSpec:
+			if err := json.Unmarshal([]byte(ByteVolumes), out); err != nil {
+				return err
+			}
+			break
 		default:
 			return errors.New("output format not supported")
 		}
@@ -128,38 +148,6 @@ func (*fakeVolumeReceiver) Recv(
 	}
 
 	return nil
-}
-
-func TestValidateVolumeCapabilities(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
-	fakeReq := &csi.ValidateVolumeCapabilitiesRequest{
-		VolumeId: "1234567890",
-		VolumeCapabilities: []*csi.VolumeCapability{
-			&csi.VolumeCapability{
-				AccessMode: &csi.VolumeCapability_AccessMode{
-					Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-				},
-				AccessType: &csi.VolumeCapability_Block{
-					Block: &csi.VolumeCapability_BlockVolume{},
-				},
-			},
-		},
-		VolumeAttributes: map[string]string{"key": "value"},
-	}
-	expectedValidateVolumeCapabilities := &csi.ValidateVolumeCapabilitiesResponse{
-		Supported: true,
-		Message:   "supported",
-	}
-
-	rs, err := fakePlugin.ValidateVolumeCapabilities(fakeCtx, fakeReq)
-	if err != nil {
-		t.Errorf("failed to ValidateVolumeCapabilities: %v\n", err)
-	}
-
-	if !reflect.DeepEqual(rs, expectedValidateVolumeCapabilities) {
-		t.Errorf("expected: %v, actual: %v\n", rs, expectedValidateVolumeCapabilities)
-	}
 }
 
 func TestControllerGetCapabilities(t *testing.T) {
@@ -248,15 +236,18 @@ func TestCreateSnapshot(t *testing.T) {
 		t.Errorf("failed to CreateSnapshot: %v\n", err)
 	}
 
+	ptypesTime, err := ptypes.TimestampProto(time.Unix(0, 1536167248000000000))
+	if err != nil {
+		t.Errorf("failed to CreateSnapshot: %v\n", err)
+	}
+
 	expectedResponse := csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
 			SizeBytes:      util.GiB,
-			Id:             "3769855c-a102-11e7-b772-17b880d2f537",
+			SnapshotId:     "3769855c-a102-11e7-b772-17b880d2f537",
 			SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			CreatedAt:      1536167248000000000,
-			Status: &csi.SnapshotStatus{
-				Type: csi.SnapshotStatus_READY,
-			},
+			CreationTime:   ptypesTime,
+			ReadyToUse:     true,
 		},
 	}
 
@@ -294,27 +285,27 @@ func TestDeleteSnapshot(t *testing.T) {
 func TestListSnapshots(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
+	ptypesTime, err := ptypes.TimestampProto(time.Unix(0, 1536167248000000000))
+	if err != nil {
+		t.Errorf("failed to ListSnapshots: %v\n", err)
+	}
 	expectedEntries := []*csi.ListSnapshotsResponse_Entry{
 		&csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
 				SizeBytes:      util.GiB,
-				Id:             "3769855c-a102-11e7-b772-17b880d2f537",
+				SnapshotId:     "3769855c-a102-11e7-b772-17b880d2f537",
 				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-				CreatedAt:      1536167248000000000,
-				Status: &csi.SnapshotStatus{
-					Type: csi.SnapshotStatus_READY,
-				},
+				CreationTime:   ptypesTime,
+				ReadyToUse:     true,
 			},
 		},
 		&csi.ListSnapshotsResponse_Entry{
 			Snapshot: &csi.Snapshot{
 				SizeBytes:      util.GiB,
-				Id:             "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
+				SnapshotId:     "3bfaf2cc-a102-11e7-8ecb-63aea739d755",
 				SourceVolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d9",
-				CreatedAt:      1536167248000000000,
-				Status: &csi.SnapshotStatus{
-					Type: csi.SnapshotStatus_READY,
-				},
+				CreationTime:   ptypesTime,
+				ReadyToUse:     true,
 			},
 		},
 	}
@@ -451,7 +442,7 @@ func TestCreateVolume(t *testing.T) {
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
 				Snapshot: &csi.VolumeContentSource_SnapshotSource{
-					Id: "3769855c-a102-11e7-b772-17b880d2f537",
+					SnapshotId: "3769855c-a102-11e7-b772-17b880d2f537",
 				},
 			},
 		},
@@ -464,8 +455,8 @@ func TestCreateVolume(t *testing.T) {
 
 	expectedVolumeinfo := &csi.Volume{
 		CapacityBytes: util.GiB,
-		Id:            "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		Attributes: map[string]string{
+		VolumeId:      "bd5b12a8-a101-11e7-941e-d77981b584d8",
+		VolumeContext: map[string]string{
 			KVolumeName:      "sample-volume",
 			KVolumeStatus:    "available",
 			KVolumeAZ:        "default",
@@ -483,3 +474,14 @@ func TestCreateVolume(t *testing.T) {
 		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
 	}
 }
+
+func TestIsStringMapEqual(t *testing.T) {
+	metadataA := map[string]string{"lvPath":"/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
+	metadataB := map[string]string{"lvPath":"/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
+	ret := isStringMapEqual(metadataA,metadataB)
+	
+	if !ret {
+		t.Errorf("expected: true, actual: %v\n", ret)
+	}
+	
+	}

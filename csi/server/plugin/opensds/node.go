@@ -19,11 +19,10 @@ import (
 	"os/exec"
 	"strings"
 
-	csi "github.com/container-storage-interface/spec/lib/go/csi/v0"
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/opensds/contrib/connector"
-	"github.com/opensds/opensds/contrib/connector/iscsi"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -111,14 +110,16 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 	}
 
 	var attachment *model.VolumeAttachmentSpec
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+	hostName, err := connector.GetHostName()
+
+	if err != nil {
+		msg := fmt.Sprintf("Faild to get host name %v", err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	for _, attach := range attachments {
-		if attach.VolumeId == volId && attach.Host == localIqn {
+		if attach.VolumeId == volId && attach.Host == hostName {
 			attachment = attach
 			break
 		}
@@ -196,12 +197,12 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	volId := req.VolumeId
-	attachmentId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishContext[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		if r.ReplicationStatus == model.ReplicationFailover {
 			volId = r.SecondaryVolumeId
-			attachmentId = req.PublishInfo[KPublishSecondaryAttachId]
+			attachmentId = req.PublishContext[KPublishSecondaryAttachId]
 		}
 		if r.Metadata == nil {
 			r.Metadata = make(map[string]string)
@@ -257,7 +258,7 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	// Format
-	curFSType := iscsi.GetFSType(attachment.Mountpoint)
+	curFSType := connector.GetFSType(attachment.Mountpoint)
 	hopeFSType := DefFSType
 	if "" != mnt.FsType {
 		hopeFSType = mnt.FsType
@@ -271,6 +272,7 @@ func (p *Plugin) NodeStageVolume(
 	} else {
 		if "" != mnt.FsType {
 			if mnt.FsType != curFSType {
+				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType,curFSType )
 				return nil, status.Error(codes.Aborted, "Volume formatted but is incompatible")
 			}
 		}
@@ -311,7 +313,7 @@ func (p *Plugin) NodeUnstageVolume(
 	}
 
 	// Umount
-	err := iscsi.Umount(req.StagingTargetPath)
+	err := connector.Umount(req.StagingTargetPath)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +352,7 @@ func (p *Plugin) NodePublishVolume(
 	}
 
 	volId := req.VolumeId
-	attachmentId := req.PublishInfo[KPublishAttachId]
+	attachmentId := req.PublishContext[KPublishAttachId]
 
 	if r := getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[KAttachedVolumeId]
@@ -411,7 +413,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	// Umount
-	err := iscsi.Umount(req.TargetPath)
+	err := connector.Umount(req.TargetPath)
 	if err != nil {
 		return nil, err
 	}
@@ -430,24 +432,57 @@ func (p *Plugin) NodeUnpublishVolume(
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-// NodeGetId implementation
-func (p *Plugin) NodeGetId(
-	ctx context.Context,
-	req *csi.NodeGetIdRequest) (
-	*csi.NodeGetIdResponse, error) {
-
-	glog.V(5).Info("start to GetNodeID")
-	defer glog.V(5).Info("end to GetNodeID")
-
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+// getNodeId gets node id based on the protocol, i.e., FC, iSCSI, RBD, etc.
+func getNodeId() (string, error) {
+	hostName, err := connector.GetHostName()
+	if err != nil {
+		return "", status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	return &csi.NodeGetIdResponse{
-		NodeId: localIqn,
-	}, nil
+	nodeId := hostName
+	fcConnector := connector.NewConnector(connector.FcDriver)
+	if fcConnector != nil {
+		fcInitiator, err := fcConnector.GetInitiatorInfo()
+		if err == nil {
+			wwpnInterface, ok := fcInitiator.InitiatorData[connector.Wwpn]
+			if ok {
+				wwpnStrArray, ok := wwpnInterface.([]string)
+				if ok {
+					for _, wwpnStr := range wwpnStrArray {
+						nodeId = nodeId + "," + connector.Wwpn + ":" + wwpnStr
+					}
+				}
+			}
+
+			wwnnInterface, ok := fcInitiator.InitiatorData[connector.Wwnn]
+			if ok {
+				wwnnStrArray, ok := wwnnInterface.([]string)
+				if ok {
+					for _, wwnnStr := range wwnnStrArray {
+						nodeId = nodeId + "," + connector.Wwnn + ":" + wwnnStr
+					}
+				}
+			}
+		}
+	}
+
+	iscsiConnector := connector.NewConnector(connector.IscsiDriver)
+	if iscsiConnector != nil {
+		iscsiInitiator, err := iscsiConnector.GetInitiatorInfo()
+		if err == nil {
+			iqnInterface, ok := iscsiInitiator.InitiatorData[connector.Iqn]
+
+			if ok {
+				iqnStr, ok := iqnInterface.(string)
+				if ok {
+					nodeId = nodeId + "," + connector.Iqn + ":" + iqnStr
+				}
+			}
+		}
+	}
+
+	glog.V(5).Info("NodeId: " + nodeId)
+	return nodeId, nil
 }
 
 // NodeGetInfo gets information on a node
@@ -458,16 +493,13 @@ func (p *Plugin) NodeGetInfo(
 	glog.Info("start to GetNodeInfo")
 	defer glog.Info("end to GetNodeInfo")
 
-	// TODO: For non-iscsi protocol, iqn should not be
-	// used as NodeId here.
-	iqns, _ := iscsi.GetInitiator()
-	localIqn := ""
-	if len(iqns) > 0 {
-		localIqn = iqns[0]
+	nodeId, err := getNodeId()
+	if err != nil {
+		return nil, err
 	}
 
 	return &csi.NodeGetInfoResponse{
-		NodeId: localIqn,
+		NodeId: nodeId,
 	}, nil
 }
 
@@ -491,4 +523,12 @@ func (p *Plugin) NodeGetCapabilities(
 			},
 		},
 	}, nil
+}
+
+// NodeGetVolumeStats
+func (p *Plugin) NodeGetVolumeStats(
+	ctx context.Context,
+	req *csi.NodeGetVolumeStatsRequest) (
+	*csi.NodeGetVolumeStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "")
 }
