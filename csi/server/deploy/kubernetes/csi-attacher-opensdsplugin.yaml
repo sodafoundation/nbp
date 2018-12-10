@@ -34,7 +34,7 @@ spec:
       containers:
         - name: csi-attacher
           # TODO: replace with official image when available
-          image: xyang105/test-attacher:k8s1.13.0_beta.1 #quay.io/k8scsi/csi-attacher:v1.0.0
+          image: xyang105/test-attacher:k8s1.13.0_beta.2 #quay.io/k8scsi/csi-attacher:v1.0.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"

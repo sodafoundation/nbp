@@ -14,17 +14,18 @@
 
 BASE_DIR := $(shell pwd)
 BUILD_DIR := $(BASE_DIR)/build/out
+IMAGE_TAG := latest
 DIST_DIR := $(BASE_DIR)/build/dist
 VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) \
 		 --always --dirty --abbrev=8)
 BUILD_TGT := opensds-sushi-$(VERSION)-linux-amd64
 
-.PHONY: all build prebuild csi.server.opensds csi.client.opensds flexvolume.server.opensds docker clean
+.PHONY: all build prebuild csi.server.opensds csi.client.opensds flexvolume.server.opensds service-broker cindercompatibleapi docker clean
 
 all: build
 
-build: csi.server.opensds csi.client.opensds flexvolume.server.opensds
+build: csi.server.opensds csi.client.opensds flexvolume.server.opensds service-broker cindercompatibleapi
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)
@@ -38,14 +39,22 @@ csi.client.opensds: prebuild
 flexvolume.server.opensds: prebuild
 	go build -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
 
+service-broker: prebuild
+	go build -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker
+
+cindercompatibleapi: prebuild
+	go build -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
+
 docker: build
 	cp $(BUILD_DIR)/csi.server.opensds ./csi/server
 	cp $(BUILD_DIR)/csi.client.opensds ./csi/client
-	docker build csi/server -t opensdsio/csiplugin:latest
-	docker build csi/client -t opensdsio/csipluginclient:latest
+	cp $(BUILD_DIR)/service-broker ./service-broker
+	docker build csi/server -t opensdsio/csiplugin:$(IMAGE_TAG)
+	docker build csi/client -t opensdsio/csipluginclient:$(IMAGE_TAG)
+	docker build service-broker -t opensdsio/service-broker:$(IMAGE_TAG)
 
 clean:
-	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds
+	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds ./service-broker/service-broker
 
 version:
 	@echo ${VERSION}
