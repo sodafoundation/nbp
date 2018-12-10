@@ -48,19 +48,20 @@
         }
     ],
     "conflictiveProvision": {
-        "service_id" :"acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+        "service_id" :"4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
         "plan_id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
         "async": true,
         "parameters": {
-            "billing-account": "fake-account"
+            "name": "vol-02",
+            "description": "This is a volume provided by opensds",
+            "capacity": 1
         }
     },
     "conflictiveBind": {
-        "service_id" :"acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+        "service_id" :"4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
         "plan_id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
         "parameters": {
-            "parameter1-name-here": 1,
-            "parameter2-name-here": "parameter2-value-here"
+            "nodeId": "host02"
         }
     }
 }
