@@ -21,8 +21,14 @@ spec:
         heritage: "{{ .Release.Service }}"
     spec:
       containers:
+        - name: etcd-store
+          image: {{ .Values.image.etcd-store }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+            - name: etcd-cert-dir
+              mountPath: /etc/ssl/certs
         - name: service-broker
-          image: {{ .Values.image }}
+          image: {{ .Values.image.service-broker }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           args:
             - --port
