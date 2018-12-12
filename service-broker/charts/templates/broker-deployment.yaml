@@ -68,3 +68,8 @@ spec:
             periodSeconds: 30
             successThreshold: 1
             timeoutSeconds: 2
+      volumes:
+        - name: etcd-cert-dir
+          hostPath:
+            path: /usr/share/ca-certificates/
+            type: Directory

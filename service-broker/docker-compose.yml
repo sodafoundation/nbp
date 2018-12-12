@@ -14,3 +14,11 @@ services:
       OS_TENANT_NAME: admin
       OS_PROJECT_NAME: admin
       OS_USER_DOMAIN_ID: default
+    depends_on:
+    - etcd-store
+  etcd-store:
+    image: 'quay.io/coreos/etcd:latest'
+    tty: true
+    network_mode: "host"
+    volumes:
+    - /usr/share/ca-certificates/:/etc/ssl/certs
