@@ -40,7 +40,7 @@ flexvolume.server.opensds: prebuild
 	go build -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
 
 service-broker: prebuild
-	go build -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker
+	go build -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
 
 cindercompatibleapi: prebuild
 	go build -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
