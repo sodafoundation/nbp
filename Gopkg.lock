@@ -37,6 +37,21 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:8e9863c4e0ccf27cdc99a242af880cc0883084d37bdd6d140b76d1eef55f09c7"
+  name = "github.com/coreos/etcd"
+  packages = [
+    "auth/authpb",
+    "clientv3",
+    "etcdserver/api/v3rpc/rpctypes",
+    "etcdserver/etcdserverpb",
+    "mvcc/mvccpb",
+    "pkg/types",
+  ]
+  pruneopts = "UT"
+  revision = "27fc7e2296f506182f58ce846e48f36b34fe6842"
+  version = "v3.3.10"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -56,10 +71,12 @@
   version = "v2.6.2"
 
 [[projects]]
-  digest = "1:34e709f36fd4f868fb00dbaf8a6cab4c1ae685832d392874ba9d7c5dec2429d1"
+  digest = "1:db238461f652ddb7c7057bc6fc503f6003a29987b1485ecbb96d92287db65bc9"
   name = "github.com/gogo/protobuf"
   packages = [
+    "gogoproto",
     "proto",
+    "protoc-gen-gogo/descriptor",
     "sortkeys",
   ]
   pruneopts = "UT"
@@ -259,7 +276,8 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:3357b0097f3fc4e415a5a3ac20889e788ed7489a597c51c9d1082aa666e7f1c1"
+  branch = "development"
+  digest = "1:70be773bf54d192b5363040d1fab9130c1c67c3e11ac88b50f973b1d8545a33e"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -268,6 +286,7 @@
     "contrib/connector/iscsi",
     "contrib/connector/rbd",
     "pkg/context",
+    "pkg/db/drivers/etcd",
     "pkg/dock/client",
     "pkg/dock/proto",
     "pkg/model",
@@ -369,6 +388,14 @@
   ]
   pruneopts = "UT"
   revision = "619930b0b4713cc1280189bf0a4c54b3fb506f60"
+
+[[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
@@ -496,7 +523,7 @@
   revision = "31ac5d88444a9e7ad18077db9a165d793ad06a2e"
 
 [[projects]]
-  digest = "1:e72ebff67b73d31785959af0660215213c58ab50d7b7d61aac0f1a6834c07e8c"
+  digest = "1:7df90886bfa3282d344d54b7c47cddca165522a8fc927f3adf29e0d29bfbb5f2"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -509,6 +536,7 @@
     "encoding",
     "encoding/proto",
     "grpclog",
+    "health/grpc_health_v1",
     "internal",
     "internal/backoff",
     "internal/channelz",
@@ -942,6 +970,7 @@
     "github.com/opensds/opensds/contrib/connector/iscsi",
     "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
+    "github.com/opensds/opensds/pkg/db/drivers/etcd",
     "github.com/opensds/opensds/pkg/dock/client",
     "github.com/opensds/opensds/pkg/dock/proto",
     "github.com/opensds/opensds/pkg/model",
