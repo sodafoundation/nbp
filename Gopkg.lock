@@ -297,7 +297,8 @@
     "testutils/collection",
   ]
   pruneopts = "UT"
-  revision = "1acc720e4bb404c3bd2e48f847aad5c3412ebb04"
+  revision = "f52f384985b60a49697be2d628f12ed45baf24a6"
+  version = "v0.4.0"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
