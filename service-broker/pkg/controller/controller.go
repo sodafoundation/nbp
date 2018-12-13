@@ -23,6 +23,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/util"
+	sbmodel "github.com/opensds/nbp/service-broker/pkg/model"
+	"github.com/opensds/nbp/service-broker/pkg/store"
 	sdsClient "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
@@ -42,32 +44,18 @@ var (
 	supportedPlanList []string
 )
 
-type opensdsServiceInstance struct {
-	ID, ServiceID, PlanID string
-	Params                map[string]interface{}
-}
-
-type opensdsServiceBinding struct {
-	ID, InstanceID, ServiceID, PlanID string
-	BindResource                      *osb.BindResource
-	Params                            map[string]interface{}
-}
-
 type opensdsController struct {
 	*sdsClient.Client
 
-	async       bool
-	rwMutex     sync.RWMutex
-	instanceMap map[string]*opensdsServiceInstance
-	bindingMap  map[string]*opensdsServiceBinding
+	storeHandler store.Store
+	async        bool
+	rwMutex      sync.RWMutex
 }
 
 // NewController creates an instance of an OpenSDS service broker controller.
 func NewController(edp, auth string) *opensdsController {
 	return &opensdsController{
-		Client:      opensds.GetClient(edp, auth),
-		instanceMap: make(map[string]*opensdsServiceInstance),
-		bindingMap:  make(map[string]*opensdsServiceBinding),
+		Client: opensds.GetClient(edp, auth),
 	}
 }
 
@@ -88,6 +76,10 @@ func validatePlanID(planID string) bool {
 		}
 	}
 	return false
+}
+
+func (c *opensdsController) LoadStoreHandler(handler store.Store) {
+	c.storeHandler = handler
 }
 
 func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.CatalogResponse, error) {
@@ -190,7 +182,7 @@ func (c *opensdsController) Provision(
 
 	response := broker.ProvisionResponse{}
 
-	if _, ok := c.instanceMap[request.InstanceID]; ok {
+	if _, ok, _ := c.storeHandler.GetInstance(request.InstanceID); ok {
 		glog.Infof("Instance %s already exist!\n", request.InstanceID)
 		response.Exists = true
 		return &response, nil
@@ -202,7 +194,7 @@ func (c *opensdsController) Provision(
 			ErrorMessage: &errMsg,
 		}
 	}
-	instance := &opensdsServiceInstance{
+	instance := &sbmodel.ServiceInstance{
 		ID:        request.InstanceID,
 		ServiceID: request.ServiceID,
 		PlanID:    request.PlanID,
@@ -328,11 +320,17 @@ func (c *opensdsController) Provision(
 
 		instance.Params["volumeID"] = vol.Id
 	}
-	// Store instance info into instance map.
-	c.instanceMap[request.InstanceID] = instance
+	// Store instance info into backend storage.
+	if err := c.storeHandler.SetInstance(instance); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
 
 	glog.Infof("Created OpenSDS Service Instance:\n%v\n",
-		c.instanceMap[request.InstanceID])
+		request.InstanceID)
 
 	if request.AcceptsIncomplete {
 		response.Async = c.async
@@ -363,7 +361,7 @@ func (c *opensdsController) Deprovision(
 
 	response := broker.DeprovisionResponse{}
 
-	instance, ok := c.instanceMap[request.InstanceID]
+	instance, ok, _ := c.storeHandler.GetInstance(request.InstanceID)
 	if !ok {
 		return &response, nil
 	}
@@ -442,7 +440,13 @@ func (c *opensdsController) Deprovision(
 			}
 		}
 	}
-	delete(c.instanceMap, request.InstanceID)
+	if _, err := c.storeHandler.DeleteInstance(request.InstanceID); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
 
 	glog.Infof("Deleted OpenSDS Service Instance:\n%s\n", request.InstanceID)
 
@@ -468,13 +472,13 @@ func (c *opensdsController) Bind(
 			ErrorMessage: &errMsg,
 		}
 	}
-	if _, ok := c.bindingMap[request.BindingID]; ok {
+	if _, ok, _ := c.storeHandler.GetBinding(request.BindingID, request.InstanceID); ok {
 		glog.Infof("Binding %s already exist!\n", request.BindingID)
 		response.Exists = true
 		return response, nil
 	}
 
-	instance, ok := c.instanceMap[request.InstanceID]
+	instance, ok, _ := c.storeHandler.GetInstance(request.InstanceID)
 	if !ok {
 		errMsg := fmt.Sprintf("Instance (%s) not found in instance map!", request.InstanceID)
 		return nil, osb.HTTPStatusCodeError{
@@ -512,7 +516,7 @@ func (c *opensdsController) Bind(
 	}
 
 	// Insert credential info into opensds service binding map.
-	c.bindingMap[request.BindingID] = &opensdsServiceBinding{
+	binding := &sbmodel.ServiceBinding{
 		ID:           request.BindingID,
 		InstanceID:   request.InstanceID,
 		ServiceID:    request.ServiceID,
@@ -520,11 +524,18 @@ func (c *opensdsController) Bind(
 		BindResource: request.BindResource,
 		Params:       request.Parameters,
 	}
-	c.bindingMap[request.BindingID].Params["attachmentID"] = devResp["attachmentID"]
-	c.bindingMap[request.BindingID].Params["device"] = devResp["device"]
+	binding.Params["attachmentID"] = devResp["attachmentID"]
+	binding.Params["device"] = devResp["device"]
+	if err = c.storeHandler.SetBinding(binding); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
 
 	glog.Infof("Created OpenSDS Service Binding:\n%v\n",
-		c.bindingMap[request.BindingID])
+		request.BindingID)
 
 	// Generate service binding credentials.
 	creds := make(map[string]interface{})
@@ -550,7 +561,7 @@ func (c *opensdsController) Unbind(
 	// Your unbind business logic goes here
 	response := broker.UnbindResponse{}
 
-	binding, ok := c.bindingMap[request.BindingID]
+	binding, ok, _ := c.storeHandler.GetBinding(request.BindingID, request.InstanceID)
 	if !ok {
 		return &response, nil
 	}
@@ -571,7 +582,13 @@ func (c *opensdsController) Unbind(
 		}
 	}
 
-	delete(c.bindingMap, request.BindingID)
+	if _, err := c.storeHandler.DeleteBinding(request.BindingID, request.InstanceID); err != nil {
+		errMsg := fmt.Sprint("Broker error:", err)
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusInternalServerError,
+			ErrorMessage: &errMsg,
+		}
+	}
 
 	glog.Infof("Deleted OpenSDS Service Binding:\n%s\n", request.BindingID)
 

@@ -21,8 +21,14 @@ spec:
         heritage: "{{ .Release.Service }}"
     spec:
       containers:
+        - name: etcd-store
+          image: {{ .Values.image.etcd-store }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+            - name: etcd-cert-dir
+              mountPath: /etc/ssl/certs
         - name: service-broker
-          image: {{ .Values.image }}
+          image: {{ .Values.image.service-broker }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           args:
             - --port
@@ -62,3 +68,8 @@ spec:
             periodSeconds: 30
             successThreshold: 1
             timeoutSeconds: 2
+      volumes:
+        - name: etcd-cert-dir
+          hostPath:
+            path: /usr/share/ca-certificates/
+            type: Directory
