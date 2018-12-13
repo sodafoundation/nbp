@@ -276,8 +276,7 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "development"
-  digest = "1:70be773bf54d192b5363040d1fab9130c1c67c3e11ac88b50f973b1d8545a33e"
+  digest = "1:7483830cd7cdd811f26cc081942c96a959bb28e3653a1dd1ccb7b82fc1b65dbe"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
