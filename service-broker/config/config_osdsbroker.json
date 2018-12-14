@@ -15,7 +15,7 @@
             "lifecycle": [
                 {
                     "operation": "provision",
-                    "plan_id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
+                    "plan_id": "0f4008b5-XXXX-XXXX-XXXX-dace631cd648",
                     "async": true,
                     "parameters": {
                         "name": "vol-01",
@@ -55,13 +55,6 @@
             "name": "vol-02",
             "description": "This is a volume provided by opensds",
             "capacity": 1
-        }
-    },
-    "conflictiveBind": {
-        "service_id" :"4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
-        "plan_id": "d3031751-XXXX-XXXX-XXXX-a42377d3320e",
-        "parameters": {
-            "nodeId": "host02"
         }
     }
 }

@@ -18,13 +18,22 @@ import (
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 
-type ServiceInstance struct {
-	ID, ServiceID, PlanID string
-	Params                map[string]interface{}
+type ServiceClassSpec struct {
+	osb.Service `json:"service"`
 }
 
-type ServiceBinding struct {
-	ID, InstanceID, ServiceID, PlanID string
-	BindResource                      *osb.BindResource
-	Params                            map[string]interface{}
+type ServiceInstanceSpec struct {
+	ID        string                 `json:"id"`
+	ServiceID string                 `json:"serviceID"`
+	PlanID    string                 `json:"planID"`
+	Params    map[string]interface{} `json:"params"`
+}
+
+type ServiceBindingSpec struct {
+	ID           string                 `json:"id"`
+	InstanceID   string                 `json:"instanceID"`
+	ServiceID    string                 `json:"serviceID"`
+	PlanID       string                 `json:"planID"`
+	Params       map[string]interface{} `json:"params"`
+	BindResource *osb.BindResource      `json:"bindResource"`
 }

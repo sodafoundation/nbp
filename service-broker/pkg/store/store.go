@@ -34,24 +34,36 @@ func NewStore(driver, endpoint string) Store {
 // Store is an interface to be implemented by types capable of handling
 // persistence for other broker-related types
 type Store interface {
+	// SetServiceClass persists the given service class to the underlying storage
+	SetServiceClass(service *model.ServiceClassSpec) error
+	// GetServiceClass retrieves a persisted instance from the underlying storage by
+	// instance id
+	GetServiceClass(serviceID string) (*model.ServiceClassSpec, bool, error)
+	// ListServiceClasses retrieves all persisted service classes from the underlying storage
+	ListServiceClasses() ([]*model.ServiceClassSpec, error)
+	// DeleteServiceClass deletes a persisted service class from the underlying storage by
+	// service id
+	DeleteServiceClass(serviceID string) (bool, error)
+
 	// SetInstance persists the given instance to the underlying storage
-	SetInstance(instance *model.ServiceInstance) error
+	SetInstance(instance *model.ServiceInstanceSpec) error
 	// GetInstance retrieves a persisted instance from the underlying storage by
 	// instance id
-	GetInstance(instanceID string) (*model.ServiceInstance, bool, error)
+	GetInstance(instanceID string) (*model.ServiceInstanceSpec, bool, error)
 	// ListInstances retrieves all persisted instances from the underlying storage
-	ListInstances() ([]*model.ServiceInstance, error)
+	ListInstances() ([]*model.ServiceInstanceSpec, error)
 	// DeleteInstance deletes a persisted instance from the underlying storage by
 	// instance id
 	DeleteInstance(instanceID string) (bool, error)
+
 	// SetBinding persists the given binding to the underlying storage
-	SetBinding(binding *model.ServiceBinding) error
+	SetBinding(binding *model.ServiceBindingSpec) error
 	// GetBinding retrieves a persisted instance from the underlying storage by
 	// binding id and instance id
-	GetBinding(bindingID, instanceID string) (*model.ServiceBinding, bool, error)
+	GetBinding(bindingID, instanceID string) (*model.ServiceBindingSpec, bool, error)
 	// ListBindings retrieves all persisted instance bindings from the underlying
 	// storage
-	ListBindings(instanceID string) ([]*model.ServiceBinding, error)
+	ListBindings(instanceID string) ([]*model.ServiceBindingSpec, error)
 	// DeleteBinding deletes a persisted binding from the underlying storage by
 	// binding id and instance id
 	DeleteBinding(bindingID, instanceID string) (bool, error)
