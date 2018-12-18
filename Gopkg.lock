@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:55388fd080150b9a072912f97b1f5891eb0b50df43401f8b75fb4273d3fec9fc"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
   digest = "1:28488052ac364bdcbb7da0de3d1998b04cbe4a0aaffea9795926a399a1a8f2b3"
   name = "github.com/astaxie/beego"
   packages = [
@@ -956,6 +964,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/Masterminds/semver",
     "github.com/astaxie/beego",
     "github.com/astaxie/beego/context",
     "github.com/container-storage-interface/spec/lib/go/csi",
