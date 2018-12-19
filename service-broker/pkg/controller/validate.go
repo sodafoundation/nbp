@@ -15,8 +15,6 @@
 package controller
 
 import (
-	"reflect"
-
 	"github.com/Masterminds/semver"
 	"github.com/opensds/nbp/service-broker/pkg/store"
 	"github.com/opensds/opensds/pkg/utils"
@@ -66,15 +64,25 @@ func validateCatalogSchema(
 	}
 	schemas := plan.Schemas
 
+	mapKeyContained := func(obj interface{}, tgt map[string]interface{}) bool {
+		mapObj := obj.(map[string]interface{})
+		for k := range mapObj {
+			if !utils.Contained(k, tgt) {
+				return false
+			}
+		}
+		return true
+	}
+
 	switch schemaType {
 	case ServiceInstanceType:
 		instanceSchema := schemas.ServiceInstance
 		if operation == OperationCreate {
-			if utils.Contained(instanceSchema.Create.Parameters, params) {
+			if mapKeyContained(instanceSchema.Create.Parameters, params) {
 				return true
 			}
 		} else if operation == OperationUpdate {
-			if utils.Contained(instanceSchema.Update.Parameters, params) {
+			if mapKeyContained(instanceSchema.Update.Parameters, params) {
 				return true
 			}
 		}
@@ -82,7 +90,7 @@ func validateCatalogSchema(
 	case ServiceBindingType:
 		bindingSchema := schemas.ServiceBinding
 		if operation == OperationCreate {
-			if reflect.DeepEqual(params, bindingSchema.Create.Parameters) {
+			if mapKeyContained(bindingSchema.Create.Parameters, params) {
 				return true
 			}
 		}
