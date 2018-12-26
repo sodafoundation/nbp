@@ -33,8 +33,7 @@ spec:
       serviceAccount: csi-attacher
       containers:
         - name: csi-attacher
-          # TODO: replace with official image when available
-          image: xyang105/test-attacher:k8s1.13.0_beta.2 #quay.io/k8scsi/csi-attacher:v1.0.0
+          image: quay.io/k8scsi/csi-attacher:v1.0.1
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -47,6 +46,18 @@ spec:
               mountPath: /csi
             - name: iscsi-dir
               mountPath: /etc/iscsi/
+        - name: cluster-driver-registrar
+          image: quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1
+          args:
+            - "--v=5"
+            - "--pod-info-mount-version=\"v1\""
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
         - name: opensds
           image: opensdsio/csiplugin:latest
           args :
