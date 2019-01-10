@@ -9,6 +9,7 @@ import (
 )
 
 const (
+
 	// OpenSDSEndPoint environment variable name
 	OpenSDSEndPoint = "OPENSDS_ENDPOINT"
 
