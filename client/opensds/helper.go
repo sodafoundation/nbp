@@ -26,6 +26,7 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 	if opensdsClient != nil {
 		return opensdsClient
 	}
+
 	if endpoint == "" {
 		// Get endpoint from environment
 		endpoint = os.Getenv(OpenSDSEndPoint)
