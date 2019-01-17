@@ -9,6 +9,7 @@ import (
 )
 
 const (
+
 	// OpenSDSEndPoint environment variable name
 	OpenSDSEndPoint = "OPENSDS_ENDPOINT"
 
@@ -16,8 +17,16 @@ const (
 	OpenSDSAuthStrategy = "OPENSDS_AUTH_STRATEGY"
 )
 
+var (
+	opensdsClient *client.Client
+)
+
 // GetClient return OpenSDS Client
 func GetClient(endpoint string, authStrategy string) *client.Client {
+	if opensdsClient != nil {
+		return opensdsClient
+	}
+
 	if endpoint == "" {
 		// Get endpoint from environment
 		endpoint = os.Getenv(OpenSDSEndPoint)
@@ -53,5 +62,6 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 		cfg.AuthOptions = client.NewNoauthOptions(constants.DefaultTenantId)
 	}
 
-	return client.NewClient(cfg)
+	opensdsClient = client.NewClient(cfg)
+	return opensdsClient
 }
