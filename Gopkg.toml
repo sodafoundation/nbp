@@ -78,5 +78,6 @@
   version = "kubernetes-1.13.0-beta.1"
 
 [prune]
+  non-go = true
   go-tests = true
   unused-packages = true
