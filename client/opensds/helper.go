@@ -3,6 +3,7 @@ package opensds
 import (
 	"log"
 	"os"
+	"sync"
 
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/utils/constants"
@@ -21,47 +22,49 @@ var (
 	opensdsClient *client.Client
 )
 
+// Concurrent security
+var once sync.Once
+
 // GetClient return OpenSDS Client
 func GetClient(endpoint string, authStrategy string) *client.Client {
-	if opensdsClient != nil {
-		return opensdsClient
-	}
+	once.Do(func() {
+		if endpoint == "" {
+			// Get endpoint from environment
+			endpoint = os.Getenv(OpenSDSEndPoint)
+			log.Printf("current OpenSDS Client endpoint: %s", endpoint)
+		}
 
-	if endpoint == "" {
-		// Get endpoint from environment
-		endpoint = os.Getenv(OpenSDSEndPoint)
-		log.Printf("current OpenSDS Client endpoint: %s", endpoint)
-	}
+		if endpoint == "" {
+			// Using default endpoint
+			endpoint = "http://localhost:50040"
+			log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
+		}
 
-	if endpoint == "" {
-		// Using default endpoint
-		endpoint = "http://localhost:50040"
-		log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
-	}
+		if authStrategy == "" {
+			// Get auth strategy from environment
+			authStrategy = os.Getenv(OpenSDSAuthStrategy)
+			log.Printf("current OpenSDS Client auth strategy: %s", authStrategy)
+		}
 
-	if authStrategy == "" {
-		// Get auth strategy from environment
-		authStrategy = os.Getenv(OpenSDSAuthStrategy)
-		log.Printf("current OpenSDS Client auth strategy: %s", authStrategy)
-	}
+		if authStrategy == "" {
+			// Using default auth strategy
+			authStrategy = "noauth"
+			log.Printf("using default OpenSDS Client auth strategy: %s", authStrategy)
+		}
 
-	if authStrategy == "" {
-		// Using default auth strategy
-		authStrategy = "noauth"
-		log.Printf("using default OpenSDS Client auth strategy: %s", authStrategy)
-	}
+		cfg := &client.Config{Endpoint: endpoint}
 
-	cfg := &client.Config{Endpoint: endpoint}
+		switch authStrategy {
+		case client.Keystone:
+			cfg.AuthOptions = client.LoadKeystoneAuthOptionsFromEnv()
+		case client.Noauth:
+			cfg.AuthOptions = client.LoadNoAuthOptionsFromEnv()
+		default:
+			cfg.AuthOptions = client.NewNoauthOptions(constants.DefaultTenantId)
+		}
 
-	switch authStrategy {
-	case client.Keystone:
-		cfg.AuthOptions = client.LoadKeystoneAuthOptionsFromEnv()
-	case client.Noauth:
-		cfg.AuthOptions = client.LoadNoAuthOptionsFromEnv()
-	default:
-		cfg.AuthOptions = client.NewNoauthOptions(constants.DefaultTenantId)
-	}
+		opensdsClient = client.NewClient(cfg)
+	})
 
-	opensdsClient = client.NewClient(cfg)
 	return opensdsClient
 }
