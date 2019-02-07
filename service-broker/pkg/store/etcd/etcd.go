@@ -47,8 +47,94 @@ type clientInterface interface {
 	Delete(req *client.Request) *client.Response
 }
 
+// SetServiceClass persists the given service class to the etcd storage
+func (es *etcdStore) SetServiceClass(service *model.ServiceClassSpec) error {
+	if service.ID == "" {
+		return errors.New("Service id can NOT be empty!")
+	}
+	reqBody, err := json.Marshal(service)
+	if err != nil {
+		return err
+	}
+
+	dbReq := &client.Request{
+		Url:     "/v2/service_classes/" + service.ID,
+		Content: string(reqBody),
+	}
+	dbRes := es.Create(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When create service class in db:", dbRes.Error)
+		return errors.New(dbRes.Error)
+	}
+
+	return nil
+}
+
+// GetServiceClass retrieves a persisted service class from the etcd storage by
+// service id
+func (es *etcdStore) GetServiceClass(serviceID string) (*model.ServiceClassSpec, bool, error) {
+	dbReq := &client.Request{
+		Url: "/v2/service_classes/" + serviceID,
+	}
+	dbRes := es.Get(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When get service class in db:", dbRes.Error)
+		return nil, false, errors.New(dbRes.Error)
+	}
+
+	var service = &model.ServiceClassSpec{}
+	if err := json.Unmarshal([]byte(dbRes.Message[0]), service); err != nil {
+		log.Error("When parsing service class in db:", dbRes.Error)
+		return nil, false, errors.New(dbRes.Error)
+	}
+
+	return service, true, nil
+}
+
+// ListServiceClasses retrieves all persisted service classes from the etcd storage
+func (es *etcdStore) ListServiceClasses() ([]*model.ServiceClassSpec, error) {
+	dbReq := &client.Request{
+		Url: "/v2/service_classes",
+	}
+	dbRes := es.List(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When list service classes in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+
+	var services = []*model.ServiceClassSpec{}
+	if len(dbRes.Message) == 0 {
+		return services, nil
+	}
+	for _, msg := range dbRes.Message {
+		var service = &model.ServiceClassSpec{}
+		if err := json.Unmarshal([]byte(msg), service); err != nil {
+			log.Error("When parsing service class in db:", dbRes.Error)
+			return nil, errors.New(dbRes.Error)
+		}
+		services = append(services, service)
+	}
+
+	return services, nil
+}
+
+// DeleteServiceClass deletes a persisted service class from the etcd storage by
+// service id
+func (es *etcdStore) DeleteServiceClass(serviceID string) (bool, error) {
+	dbReq := &client.Request{
+		Url: "/v2/service_classes/" + serviceID,
+	}
+	dbRes := es.Delete(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When delete service class in db:", dbRes.Error)
+		return false, errors.New(dbRes.Error)
+	}
+
+	return true, nil
+}
+
 // SetInstance persists the given instance to the etcd storage
-func (es *etcdStore) SetInstance(instance *model.ServiceInstance) error {
+func (es *etcdStore) SetInstance(instance *model.ServiceInstanceSpec) error {
 	if instance.ID == "" {
 		return errors.New("Instance id can NOT be empty!")
 	}
@@ -72,7 +158,7 @@ func (es *etcdStore) SetInstance(instance *model.ServiceInstance) error {
 
 // GetInstance retrieves a persisted instance from the etcd storage by
 // instance id
-func (es *etcdStore) GetInstance(instanceID string) (*model.ServiceInstance, bool, error) {
+func (es *etcdStore) GetInstance(instanceID string) (*model.ServiceInstanceSpec, bool, error) {
 	dbReq := &client.Request{
 		Url: "/v2/service_instances/" + instanceID,
 	}
@@ -82,7 +168,7 @@ func (es *etcdStore) GetInstance(instanceID string) (*model.ServiceInstance, boo
 		return nil, false, errors.New(dbRes.Error)
 	}
 
-	var instance = &model.ServiceInstance{}
+	var instance = &model.ServiceInstanceSpec{}
 	if err := json.Unmarshal([]byte(dbRes.Message[0]), instance); err != nil {
 		log.Error("When parsing instance in db:", dbRes.Error)
 		return nil, false, errors.New(dbRes.Error)
@@ -92,7 +178,7 @@ func (es *etcdStore) GetInstance(instanceID string) (*model.ServiceInstance, boo
 }
 
 // ListInstances retrieves all persisted instances from the etcd storage
-func (es *etcdStore) ListInstances() ([]*model.ServiceInstance, error) {
+func (es *etcdStore) ListInstances() ([]*model.ServiceInstanceSpec, error) {
 	dbReq := &client.Request{
 		Url: "/v2/service_instances",
 	}
@@ -102,12 +188,12 @@ func (es *etcdStore) ListInstances() ([]*model.ServiceInstance, error) {
 		return nil, errors.New(dbRes.Error)
 	}
 
-	var instances = []*model.ServiceInstance{}
+	var instances = []*model.ServiceInstanceSpec{}
 	if len(dbRes.Message) == 0 {
 		return instances, nil
 	}
 	for _, msg := range dbRes.Message {
-		var instance = &model.ServiceInstance{}
+		var instance = &model.ServiceInstanceSpec{}
 		if err := json.Unmarshal([]byte(msg), instance); err != nil {
 			log.Error("When parsing instance in db:", dbRes.Error)
 			return nil, errors.New(dbRes.Error)
@@ -134,7 +220,7 @@ func (es *etcdStore) DeleteInstance(instanceID string) (bool, error) {
 }
 
 // CreateBinding persists the given binding to the etcd storage
-func (es *etcdStore) SetBinding(binding *model.ServiceBinding) error {
+func (es *etcdStore) SetBinding(binding *model.ServiceBindingSpec) error {
 	if binding.ID == "" || binding.InstanceID == "" {
 		return errors.New("Instance id or binding id can NOT be empty!")
 	}
@@ -158,7 +244,7 @@ func (es *etcdStore) SetBinding(binding *model.ServiceBinding) error {
 
 // GetBinding retrieves a persisted instance from the etcd storage by
 // binding id
-func (es *etcdStore) GetBinding(bindingID, instanceID string) (*model.ServiceBinding, bool, error) {
+func (es *etcdStore) GetBinding(bindingID, instanceID string) (*model.ServiceBindingSpec, bool, error) {
 	dbReq := &client.Request{
 		Url: "/v2/service_instances/" + instanceID + "/service_bindings/" + bindingID,
 	}
@@ -168,7 +254,7 @@ func (es *etcdStore) GetBinding(bindingID, instanceID string) (*model.ServiceBin
 		return nil, false, errors.New(dbRes.Error)
 	}
 
-	var binding = &model.ServiceBinding{}
+	var binding = &model.ServiceBindingSpec{}
 	if err := json.Unmarshal([]byte(dbRes.Message[0]), binding); err != nil {
 		log.Error("When parsing binding in db:", dbRes.Error)
 		return nil, false, errors.New(dbRes.Error)
@@ -179,7 +265,7 @@ func (es *etcdStore) GetBinding(bindingID, instanceID string) (*model.ServiceBin
 
 // ListBindings retrieves all persisted instance bindings from the etcd
 // storage
-func (es *etcdStore) ListBindings(instanceID string) ([]*model.ServiceBinding, error) {
+func (es *etcdStore) ListBindings(instanceID string) ([]*model.ServiceBindingSpec, error) {
 	dbReq := &client.Request{
 		Url: "/v2/service_instances/" + instanceID + "/service_bindings",
 	}
@@ -189,12 +275,12 @@ func (es *etcdStore) ListBindings(instanceID string) ([]*model.ServiceBinding, e
 		return nil, errors.New(dbRes.Error)
 	}
 
-	var bindings = []*model.ServiceBinding{}
+	var bindings = []*model.ServiceBindingSpec{}
 	if len(dbRes.Message) == 0 {
 		return bindings, nil
 	}
 	for _, msg := range dbRes.Message {
-		var binding = &model.ServiceBinding{}
+		var binding = &model.ServiceBindingSpec{}
 		if err := json.Unmarshal([]byte(msg), binding); err != nil {
 			log.Error("When parsing binding in db:", dbRes.Error)
 			return nil, errors.New(dbRes.Error)

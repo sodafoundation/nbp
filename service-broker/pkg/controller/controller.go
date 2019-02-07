@@ -18,7 +18,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
-	"sync"
+	"reflect"
 
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/client/opensds"
@@ -32,16 +32,7 @@ import (
 )
 
 const (
-	defaultSnapshotPlan    = "787c9322-3d92-11e8-8cb3-4f1353df06c1"
-	defaultReplicationPlan = "b466e4ce-6cb2-11e8-a580-bb2b8754c9de"
-)
-
-const (
 	secondaryPrefix = "secondary-"
-)
-
-var (
-	supportedPlanList []string
 )
 
 type opensdsController struct {
@@ -49,48 +40,25 @@ type opensdsController struct {
 
 	storeHandler store.Store
 	async        bool
-	rwMutex      sync.RWMutex
 }
 
 // NewController creates an instance of an OpenSDS service broker controller.
-func NewController(edp, auth string) *opensdsController {
+func NewController(edp, auth string, handler store.Store) broker.Interface {
 	return &opensdsController{
-		Client: opensds.GetClient(edp, auth),
+		Client:       opensds.GetClient(edp, auth),
+		storeHandler: handler,
+		async:        true,
 	}
-}
-
-func truePtr() *bool {
-	a := true
-	return &a
-}
-
-func falsePtr() *bool {
-	b := false
-	return &b
-}
-
-func validatePlanID(planID string) bool {
-	for _, v := range supportedPlanList {
-		if v == planID {
-			return true
-		}
-	}
-	return false
-}
-
-func (c *opensdsController) LoadStoreHandler(handler store.Store) {
-	c.storeHandler = handler
 }
 
 func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.CatalogResponse, error) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
 
-	// Clean the supportedPlanList and insert default snapshot plan.
-	supportedPlanList = supportedPlanList[:0]
-	supportedPlanList = append(supportedPlanList, defaultSnapshotPlan)
-
+	initializePlanList()
 	response := &broker.CatalogResponse{}
+
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
 
 	prfs, err := c.Client.ListProfiles()
 	if err != nil {
@@ -109,6 +77,24 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 			Description: prf.Description,
 			Metadata:    prf.CustomProperties,
 			Free:        truePtr(),
+			Schemas: &osb.Schemas{
+				ServiceInstance: &osb.ServiceInstanceSchema{
+					Create: &osb.InputParametersSchema{
+						Parameters: map[string]interface{}{
+							"capacity": 1,
+						},
+					},
+				},
+				ServiceBinding: &osb.ServiceBindingSchema{
+					Create: &osb.RequestResponseSchema{
+						InputParametersSchema: osb.InputParametersSchema{
+							Parameters: map[string]interface{}{
+								"nodeID": "host",
+							},
+						},
+					},
+				},
+			},
 		}
 		plans = append(plans, plan)
 		supportedPlanList = append(supportedPlanList, prf.Id)
@@ -118,7 +104,7 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 		Services: []osb.Service{
 			{
 				Name:          "volume-service",
-				ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad2468",
+				ID:            defaultVolumeService,
 				Description:   "Policy based volume provision service",
 				Bindable:      true,
 				PlanUpdatable: falsePtr(),
@@ -126,7 +112,7 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 			},
 			{
 				Name:          "volume-snapshot-service",
-				ID:            "434ba788-3d92-11e8-8712-1740dc7b3f46",
+				ID:            defaultSnapshotService,
 				Description:   "Policy based volume snapshot service",
 				Bindable:      false,
 				PlanUpdatable: falsePtr(),
@@ -136,12 +122,21 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 						ID:          defaultSnapshotPlan,
 						Description: "This is the default snapshot plan",
 						Free:        truePtr(),
+						Schemas: &osb.Schemas{
+							ServiceInstance: &osb.ServiceInstanceSchema{
+								Create: &osb.InputParametersSchema{
+									Parameters: map[string]interface{}{
+										"volumeID": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 			{
 				Name:          "volume-replication-service",
-				ID:            "ef136c64-6cb2-11e8-802e-3fdf92f7654d",
+				ID:            defaultReplicationService,
 				Description:   "Policy based volume replication service",
 				Bindable:      true,
 				PlanUpdatable: falsePtr(),
@@ -151,10 +146,32 @@ func (c *opensdsController) GetCatalog(ctx *broker.RequestContext) (*broker.Cata
 						ID:          defaultReplicationPlan,
 						Description: "This is the default replication plan",
 						Free:        truePtr(),
+						Schemas: &osb.Schemas{
+							ServiceInstance: &osb.ServiceInstanceSchema{
+								Create: &osb.InputParametersSchema{
+									Parameters: map[string]interface{}{
+										"volumeID": "acb56d7c-XXXX-XXXX-XXXX-feb140a59a66",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		},
+	}
+
+	for _, service := range osbResponse.Services {
+		serviceSpec := &sbmodel.ServiceClassSpec{
+			Service: service,
+		}
+		if err := c.storeHandler.SetServiceClass(serviceSpec); err != nil {
+			errMsg := fmt.Sprint("Broker error:", err)
+			return nil, osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusInternalServerError,
+				ErrorMessage: &errMsg,
+			}
+		}
 	}
 
 	glog.Infof("catalog response: %#+v", osbResponse)
@@ -167,8 +184,10 @@ func (c *opensdsController) LastOperation(
 	request *osb.LastOperationRequest,
 	ctx *broker.RequestContext,
 ) (*broker.LastOperationResponse, error) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
+
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
 
 	return &broker.LastOperationResponse{}, nil
 }
@@ -177,24 +196,46 @@ func (c *opensdsController) Provision(
 	request *osb.ProvisionRequest,
 	ctx *broker.RequestContext,
 ) (*broker.ProvisionResponse, error) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
 
 	response := broker.ProvisionResponse{}
 
-	if _, ok, _ := c.storeHandler.GetInstance(request.InstanceID); ok {
-		glog.Infof("Instance %s already exist!\n", request.InstanceID)
-		response.Exists = true
-		return &response, nil
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
 	}
-	if !validatePlanID(request.PlanID) {
-		errMsg := fmt.Sprintf("PlanID (%s) is not supported!", request.PlanID)
+	if err := c.ValidateAsyncParameter(request.AcceptsIncomplete); err != nil {
+		return nil, err
+	}
+
+	if request.ServiceID == "" || request.PlanID == "" ||
+		!(validateServiceID(request.ServiceID) && validatePlanID(request.PlanID)) {
+		errMsg := fmt.Sprintf("The request is malformed or missing mandatory data!")
 		return nil, osb.HTTPStatusCodeError{
 			StatusCode:   http.StatusBadRequest,
 			ErrorMessage: &errMsg,
 		}
 	}
-	instance := &sbmodel.ServiceInstance{
+	if err := c.ValidateCatalogSchema(
+		request.ServiceID, request.PlanID, request.Parameters,
+		ServiceInstanceType, OperationCreate); err != nil {
+		return nil, err
+	}
+	if instance, ok, _ := c.storeHandler.GetInstance(request.InstanceID); ok {
+		if reflect.DeepEqual(request.ServiceID, instance.ServiceID) &&
+			reflect.DeepEqual(request.PlanID, instance.PlanID) &&
+			reflect.DeepEqual(request.Parameters, instance.Params) {
+			glog.Infof("Instance %s already exist!\n", request.InstanceID)
+			response.Exists = true
+			return &response, nil
+		} else {
+			errMsg := fmt.Sprintf("Instance %s conflict!\n", request.InstanceID)
+			return nil, osb.HTTPStatusCodeError{
+				StatusCode:   http.StatusConflict,
+				ErrorMessage: &errMsg,
+			}
+		}
+	}
+
+	instance := &sbmodel.ServiceInstanceSpec{
 		ID:        request.InstanceID,
 		ServiceID: request.ServiceID,
 		PlanID:    request.PlanID,
@@ -342,10 +383,21 @@ func (c *opensdsController) Update(
 	request *osb.UpdateInstanceRequest,
 	ctx *broker.RequestContext,
 ) (*broker.UpdateInstanceResponse, error) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
 
 	response := broker.UpdateInstanceResponse{}
+
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
+	if err := c.ValidateAsyncParameter(request.AcceptsIncomplete); err != nil {
+		return nil, err
+	}
+	if err := c.ValidateCatalogSchema(
+		request.ServiceID, *request.PlanID, request.Parameters,
+		ServiceInstanceType, OperationUpdate); err != nil {
+		return nil, err
+	}
+
 	if request.AcceptsIncomplete {
 		response.Async = c.async
 	}
@@ -356,22 +408,30 @@ func (c *opensdsController) Deprovision(
 	request *osb.DeprovisionRequest,
 	ctx *broker.RequestContext,
 ) (*broker.DeprovisionResponse, error) {
-	c.rwMutex.Lock()
-	defer c.rwMutex.Unlock()
 
 	response := broker.DeprovisionResponse{}
 
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
+	if err := c.ValidateAsyncParameter(request.AcceptsIncomplete); err != nil {
+		return nil, err
+	}
+
+	if request.PlanID == "" || request.ServiceID == "" ||
+		!(validatePlanID(request.PlanID) && validateServiceID(request.ServiceID)) {
+		errMsg := fmt.Sprintf("The request is malformed or missing mandatory data!")
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+		}
+	}
 	instance, ok, _ := c.storeHandler.GetInstance(request.InstanceID)
 	if !ok {
-		return &response, nil
-	}
-	if request.PlanID != "" {
-		if !validatePlanID(request.PlanID) {
-			errMsg := fmt.Sprintf("PlanID (%s) is not supported!", request.PlanID)
-			return nil, osb.HTTPStatusCodeError{
-				StatusCode:   http.StatusBadRequest,
-				ErrorMessage: &errMsg,
-			}
+		errMsg := fmt.Sprintf("The instance does not exist!")
+		return &response, osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusGone,
+			ErrorMessage: &errMsg,
 		}
 	}
 
@@ -460,10 +520,17 @@ func (c *opensdsController) Bind(
 	request *osb.BindRequest,
 	ctx *broker.RequestContext,
 ) (*broker.BindResponse, error) {
-	c.rwMutex.RLock()
-	defer c.rwMutex.RUnlock()
 
 	response := &broker.BindResponse{}
+
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
+	if err := c.ValidateCatalogSchema(
+		request.ServiceID, request.PlanID, request.Parameters,
+		ServiceBindingType, OperationCreate); err != nil {
+		return nil, err
+	}
 
 	if request.InstanceID == "" {
 		errMsg := fmt.Sprintf("Instance (%s) is not supported!", request.InstanceID)
@@ -516,7 +583,7 @@ func (c *opensdsController) Bind(
 	}
 
 	// Insert credential info into opensds service binding map.
-	binding := &sbmodel.ServiceBinding{
+	binding := &sbmodel.ServiceBindingSpec{
 		ID:           request.BindingID,
 		InstanceID:   request.InstanceID,
 		ServiceID:    request.ServiceID,
@@ -555,11 +622,13 @@ func (c *opensdsController) Unbind(
 	request *osb.UnbindRequest,
 	ctx *broker.RequestContext,
 ) (*broker.UnbindResponse, error) {
-	c.rwMutex.RLock()
-	defer c.rwMutex.RUnlock()
 
 	// Your unbind business logic goes here
 	response := broker.UnbindResponse{}
+
+	if err := c.ValidateBrokerAPIVersion(ctx.Request.Header.Get("X-Broker-API-Version")); err != nil {
+		return nil, err
+	}
 
 	binding, ok, _ := c.storeHandler.GetBinding(request.BindingID, request.InstanceID)
 	if !ok {
@@ -599,6 +668,53 @@ func (c *opensdsController) Unbind(
 }
 
 func (c *opensdsController) ValidateBrokerAPIVersion(version string) error {
+	if version == "" {
+		errMsg, errDsp := fmt.Sprintf("Precondition Failed"),
+			fmt.Sprintf("Reject requests without X-Broker-API-Version header!")
+		return osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusPreconditionFailed,
+			ErrorMessage: &errMsg,
+			Description:  &errDsp,
+		}
+	} else if !validateBrokerAPIVersion(version) {
+		errMsg, errDsp := fmt.Sprintf("Precondition Failed"),
+			fmt.Sprintf("API version %v is not supported by broker!", version)
+		return osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusPreconditionFailed,
+			ErrorMessage: &errMsg,
+			Description:  &errDsp,
+		}
+	}
+	return nil
+}
+
+func (c *opensdsController) ValidateAsyncParameter(asyncRequest bool) error {
+	if c.async && !asyncRequest {
+		errMsg, errDsp := fmt.Sprintf("AsyncRequired"),
+			fmt.Sprintf("This service plan requires client support for asynchronous service operations.")
+		return osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusUnprocessableEntity,
+			ErrorMessage: &errMsg,
+			Description:  &errDsp,
+		}
+	}
+	return nil
+}
+
+func (c *opensdsController) ValidateCatalogSchema(
+	serviceID, planID string,
+	params map[string]interface{},
+	schemaType, operation string,
+) error {
+	if !validateCatalogSchema(serviceID, planID, params, schemaType, operation, c.storeHandler) {
+		errMsg, errDsp := fmt.Sprintf("Bad Request"),
+			fmt.Sprintf("The request is malformed or missing mandatory data.")
+		return osb.HTTPStatusCodeError{
+			StatusCode:   http.StatusBadRequest,
+			ErrorMessage: &errMsg,
+			Description:  &errDsp,
+		}
+	}
 	return nil
 }
 

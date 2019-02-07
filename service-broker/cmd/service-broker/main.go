@@ -79,9 +79,7 @@ func runWithContext(ctx context.Context) error {
 	addr := ":" + strconv.Itoa(options.Port)
 
 	dbStore := store.NewStore(options.StoreType, options.StoreEndpoint)
-
-	c := sdsController.NewController(options.Endpoint, options.AuthOption)
-	c.LoadStoreHandler(dbStore)
+	c := sdsController.NewController(options.Endpoint, options.AuthOption, dbStore)
 
 	// Prom. metrics
 	reg := prom.NewRegistry()
