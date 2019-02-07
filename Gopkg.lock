@@ -276,7 +276,7 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:7483830cd7cdd811f26cc081942c96a959bb28e3653a1dd1ccb7b82fc1b65dbe"
+  digest = "1:034ec214e5110c413112b180a05090545a35392ad4a79cd5f61a011632872186"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -292,12 +292,13 @@
     "pkg/utils",
     "pkg/utils/constants",
     "pkg/utils/logs",
+    "pkg/utils/pwd",
     "pkg/utils/urls",
     "testutils/collection",
   ]
   pruneopts = "UT"
-  revision = "f52f384985b60a49697be2d628f12ed45baf24a6"
-  version = "v0.4.0"
+  revision = "76481a4c6f9b17d8055606ad60b4170cd0962c91"
+  version = "v0.5.0"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
