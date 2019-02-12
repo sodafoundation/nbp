@@ -98,7 +98,7 @@ spec:
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
-            - name: volumeDevices-dir
+            - name: volume-devices-dir
               mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
               mountPropagation: "Bidirectional"
             - name: pods-probe-dir
@@ -113,7 +113,7 @@ spec:
           hostPath:
             path: /var/lib/kubelet/plugins/csi-opensdsplugin
             type: DirectoryOrCreate
-        - name: volumeDevices-dir
+        - name: volume-devices-dir
           hostPath:
             path: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
             type: DirectoryOrCreate

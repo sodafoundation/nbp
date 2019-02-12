@@ -321,6 +321,13 @@ func (p *Plugin) NodeStageVolume(
 		if err != nil {
 			return nil, err
 		}
+		
+		if needUpdateAtc {
+			_, err = Client.UpdateVolumeAttachment(attachment.Id, attachment)
+			if err != nil {
+				return nil, status.Error(codes.FailedPrecondition, "update volume attachmentment failed")
+			}
+		}
 	}
 
 	vol.Status = model.VolumeInUse
@@ -408,7 +415,6 @@ func (p *Plugin) NodePublishVolume(
 
 	device := req.StagingTargetPath
 	mountpoint := req.TargetPath
-	needUpdateAtc := false
 
 	// Check if it is: "Volume published but is incompatible"
 	mnt := req.VolumeCapability.GetMount()
@@ -440,7 +446,7 @@ func (p *Plugin) NodePublishVolume(
 		}
 
 		// Mount
-		err = mountDeviceAndUpdateAttachment(device, mountpoint, KTargetPath, mountFlags, needUpdateAtc, attachment)
+		err = mountDeviceAndUpdateAttachment(device, mountpoint, KTargetPath, mountFlags, false, attachment)
 		if err != nil {
 			return nil, err
 		}
