@@ -62,3 +62,15 @@ const (
 	// DefFSType default filesystem type
 	DefFSType = "ext4"
 )
+
+// Csi configuration parameters and values
+const (
+	// parameters
+	KCSIVolumeMode = "CSIVolumeMode"
+
+	// CSIVolumeMode = Filesystem
+	KCSIFilesystem = "Filesystem"
+
+	// CSIVolumeMode = Block
+	KCSIBlock = "Block"
+)
