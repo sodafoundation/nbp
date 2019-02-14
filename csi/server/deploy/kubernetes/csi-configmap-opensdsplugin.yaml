@@ -11,7 +11,8 @@ data:
   osauthurl: http://127.0.0.1/identity
   osusername: admin
   ospassword: opensds@123
-  ospassworddecrypttool: aes
+  passwordencrypter: aes
+  enableEncrypted: false
   ostenantname: admin
   osprojectname: admin
   osuserdomainid: default

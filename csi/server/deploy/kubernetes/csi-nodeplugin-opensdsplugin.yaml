@@ -77,10 +77,10 @@ spec:
                   name: csi-configmap-opensdsplugin
                   key: ospassword
             - name: OS_PASSWORD_DECRYPT_TOOL
-			  valueFrom:
-			    configMapKeyRef:
-				  name: csi-configmap-opensdsplugin
-				  key: ospassworddecrypttool
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: ospassworddecrypttool
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
