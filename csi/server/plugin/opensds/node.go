@@ -72,9 +72,9 @@ func mountDeviceAndUpdateAttachment(device string, mountpoint string, key string
 		_, err = os.Lstat(mountpoint)
 
 		if err != nil && os.IsNotExist(err) {
-			glog.V(5).Infof("Mountpoint=%v is not exist", mountpoint)
+			glog.V(5).Infof("Mountpoint=%v does not exist", mountpoint)
 		} else {
-			glog.Errorf("Mountpoint=%v already exists!", mountpoint)
+			glog.Errorf("mountpoint=%v already exists", mountpoint)
 			_, err := exec.Command("rm", "-rf", mountpoint).CombinedOutput()
 
 			if nil != err {
@@ -285,7 +285,7 @@ func (p *Plugin) NodeStageVolume(
 			if len(mountFlags) > 0 {
 				_, err := exec.Command("findmnt", "-o", strings.Join(mountFlags, ","), device, mountpoint).CombinedOutput()
 				if nil != err {
-					return nil, status.Error(codes.Aborted, "Volume published but is incompatible")
+					return nil, status.Error(codes.Aborted, "volume published but is incompatible")
 				}
 			}
 
@@ -308,7 +308,7 @@ func (p *Plugin) NodeStageVolume(
 			if "" != mnt.FsType {
 				if mnt.FsType != curFSType {
 					glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType, curFSType)
-					return nil, status.Error(codes.Aborted, "Volume formatted but is incompatible")
+					return nil, status.Error(codes.Aborted, "volume formatted but is incompatible")
 				}
 			}
 		}
@@ -436,7 +436,7 @@ func (p *Plugin) NodePublishVolume(
 			if len(mountFlags) > 0 {
 				_, err := exec.Command("findmnt", "-o", strings.Join(mountFlags, ","), device, mountpoint).CombinedOutput()
 				if nil != err {
-					return nil, status.Error(codes.Aborted, "Volume published but is incompatible")
+					return nil, status.Error(codes.Aborted, "volume published but is incompatible")
 				}
 			}
 
