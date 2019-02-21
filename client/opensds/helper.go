@@ -16,6 +16,9 @@ const (
 
 	// OpenSDSAuthStrategy environment variable name
 	OpenSDSAuthStrategy = "OPENSDS_AUTH_STRATEGY"
+
+	// Noauth
+	Noauth = "noauth"
 )
 
 var (
@@ -48,7 +51,7 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 
 		if authStrategy == "" {
 			// Using default auth strategy
-			authStrategy = constants.Noauth
+			authStrategy = Noauth
 			log.Printf("using default OpenSDS Client auth strategy: %s", authStrategy)
 		}
 

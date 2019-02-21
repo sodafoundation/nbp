@@ -34,9 +34,6 @@ const (
 	// BeegoServerTimeOut ...
 	BeegoServerTimeOut = 60
 
-	// Noauth
-	Noauth = "noauth"
-
 	// OpensdsCaCertFile ...
 	OpensdsCaCertFile = "/opt/opensds-security/ca/ca-cert.pem"
 )
