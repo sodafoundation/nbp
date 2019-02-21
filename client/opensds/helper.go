@@ -36,7 +36,7 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 
 		if endpoint == "" {
 			// Using default endpoint
-			endpoint = contants.DefaultOpensdsEndpoint
+			endpoint = constants.DefaultOpensdsEndpoint
 			log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
 		}
 
