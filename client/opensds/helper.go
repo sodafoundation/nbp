@@ -34,9 +34,9 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 			log.Printf("current OpenSDS Client endpoint: %s", endpoint)
 		}
 
-        if endpoint == "" {
+		if endpoint == "" {
 			// Using default endpoint
-			endpoint = "http://localhost:50040"
+			endpoint = contants.DefaultOpensdsEndpoint
 			log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
 		}
 
@@ -48,7 +48,7 @@ func GetClient(endpoint string, authStrategy string) *client.Client {
 
 		if authStrategy == "" {
 			// Using default auth strategy
-			authStrategy = "noauth"
+			authStrategy = constants.Noauth
 			log.Printf("using default OpenSDS Client auth strategy: %s", authStrategy)
 		}
 
