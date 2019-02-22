@@ -12,7 +12,7 @@ RUN apt-get update && \
     sysfsutils \
     kmod \
     ceph-common \
-	iputils-ping && \
+    iputils-ping && \
     rm -rf /var/lib/apt/lists/*
 
 # Define default command
