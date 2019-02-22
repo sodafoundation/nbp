@@ -1127,6 +1127,7 @@ func (p *Plugin) waitForVolStatusStable(volumeID string) (*model.VolumeSpec, err
 type AttachmentObj struct {
 	l *list.List
 	m sync.Mutex
+	r sync.RWMutex
 }
 
 // NewList implementation
@@ -1149,8 +1150,8 @@ func (q *AttachmentObj) Add(v interface{}) {
 
 // GetHead implementation
 func (q *AttachmentObj) GetHead() *list.Element {
-	q.m.Lock()
-	defer q.m.Unlock()
+	q.r.RLock()
+	defer q.r.RUnlock()
 	return q.l.Front()
 }
 
@@ -1179,8 +1180,8 @@ func (q *AttachmentObj) Delete(e *list.Element) {
 
 // GetLen implementation
 func (q *AttachmentObj) GetLen() int {
-	q.m.Lock()
-	defer q.m.Unlock()
+	q.r.RLock()
+	defer q.r.RUnlock()
 	return q.l.Len()
 }
 
