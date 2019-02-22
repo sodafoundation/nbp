@@ -81,6 +81,16 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: ostenantname
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: enableEncrypted
             - name: OS_PROJECT_NAME
               valueFrom:
                 configMapKeyRef:
@@ -105,6 +115,8 @@ spec:
               mountPath: /etc/iscsi/
             - name: ceph-dir
               mountPath: /etc/ceph/
+            - name: certificate-path
+              mountPath: /opt/opensds-security
       volumes:
         - name: socket-dir
           hostPath:
@@ -130,3 +142,7 @@ spec:
           hostPath:
             path: /var/lib/kubelet/plugins_registry
             type: DirectoryOrCreate
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: Directory
