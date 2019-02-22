@@ -3,6 +3,7 @@ package opensds
 import (
 	"log"
 	"os"
+	"sync"
 
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/utils/constants"
@@ -19,6 +20,9 @@ const (
 	// Noauth
 	Noauth = "noauth"
 )
+
+// Concurrent security
+var once sync.Once
 
 // GetClient return OpenSDS Client
 func GetClient(endpoint string, authStrategy string) (*client.Client, error) {
