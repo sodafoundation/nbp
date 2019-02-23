@@ -265,7 +265,6 @@ func (p *Plugin) CreateVolume(
 		}
 
 		sVolStable, err := p.waitForVolStatusStable(sVol.Id)
-		fmt.Println("daole zheli ", sVolStable)
 		if err != nil {
 			msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
 			glog.Errorf(msg)
