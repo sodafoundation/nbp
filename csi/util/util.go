@@ -20,12 +20,14 @@ import (
 	"log"
 	"net"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
 	"path"
+
+	"google.golang.org/grpc"
 )
 
 // getProtoandAdd return protocal and address
@@ -103,4 +105,35 @@ func GetCSIClientConn(csiEndpoint string) (*grpc.ClientConn, error) {
 
 	// Set up a connection to the server
 	return grpc.DialContext(ctx, target, dialOpts...)
+}
+
+// IsSupportFstype ...
+func IsSupportFstype(fstype string) bool {
+	supportFstypes := [...]string{"ext2", "ext3", "ext4", "cramfs", "minix"}
+	for _, v := range supportFstypes {
+		if strings.ToLower(fstype) == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Contained ...
+func Contained(obj, target interface{}) bool {
+	targetValue := reflect.ValueOf(target)
+	switch reflect.TypeOf(target).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < targetValue.Len(); i++ {
+			if targetValue.Index(i).Interface() == obj {
+				return true
+			}
+		}
+	case reflect.Map:
+		if targetValue.MapIndex(reflect.ValueOf(obj)).IsValid() {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
 }

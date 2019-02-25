@@ -107,6 +107,7 @@ func (p *Plugin) CreateVolume(
 	defer glog.V(5).Info("end to CreateVolume")
 
 	// build volume body
+	var fstype string
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
 	allocationUnitBytes := util.GiB
@@ -125,6 +126,8 @@ func (p *Plugin) CreateVolume(
 	var enableReplication = false
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
+		case "fstype":
+			fstype = v
 		case KParamProfile:
 			volumebody.ProfileId = v
 		case KParamAZ:
@@ -136,6 +139,12 @@ func (p *Plugin) CreateVolume(
 		case KParamSecondaryAZ:
 			secondaryAZ = v
 		}
+	}
+
+	if !util.IsSupportFstype(fstype) {
+		msg := (fmt.Sprintf("Volume create fstype[%s] not support.", fstype))
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
 	}
 
 	contentSource := req.GetVolumeContentSource()
@@ -178,24 +187,28 @@ func (p *Plugin) CreateVolume(
 	} else {
 		createVolume, err := Client.CreateVolume(volumebody)
 		if err != nil {
-			isExist, isCompatible, findV, findErr := FindVolume(volumebody)
-			if findErr != nil {
-				return nil, findErr
-			}
-
-			if !(isExist && isCompatible) {
-				glog.Error("failed to CreateVolume", err)
-				return nil, err
-			}
-
-			v = findV
-			glog.V(5).Infof("Although the return failed, it was actually successful. volume = %v", findV)
+			glog.Error("failed to CreateVolume", err)
+			return nil, err
 		} else {
 			v = createVolume
 		}
 	}
 
+	glog.V(5).Infof("waiting until volume is created.")
+	volStable, err := p.waitForVolStatusStable(v.Id)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+	if volStable.Status != "available" {
+		msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+
 	glog.V(5).Infof("opensds volume = %v", v)
+
 	// return volume info
 	volumeinfo := &csi.Volume{
 		CapacityBytes: v.Size * allocationUnitBytes,
@@ -207,6 +220,7 @@ func (p *Plugin) CreateVolume(
 			KVolumePoolId:    v.PoolId,
 			KVolumeProfileId: v.ProfileId,
 			KVolumeLvPath:    v.Metadata["lvPath"],
+			KVolumeFstype:    fstype,
 		},
 	}
 
@@ -219,6 +233,19 @@ func (p *Plugin) CreateVolume(
 			glog.Errorf("failed to create secondar volume: %v", err)
 			return nil, err
 		}
+
+		sVolStable, err := p.waitForVolStatusStable(sVol.Id)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+			glog.Errorf(msg)
+			return nil, status.Error(codes.Internal, msg)
+		}
+		if sVolStable.Status != "available" {
+			msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
+			glog.Errorf(msg)
+			return nil, status.Error(codes.Internal, msg)
+		}
+
 		replicaBody := &model.ReplicationSpec{
 			Name:              req.Name,
 			PrimaryVolumeId:   v.Id,
@@ -352,6 +379,14 @@ func (p *Plugin) ControllerPublishVolume(
 	glog.V(5).Info("start to ControllerPublishVolume")
 	defer glog.V(5).Info("end to ControllerPublishVolume")
 
+	//Check fstype
+	fstype, ok := req.VolumeContext[KVolumeFstype]
+	if !ok {
+		msg := "ControllerPublishVolume fstype must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
 	//check volume is exist
 	volSpec, errVol := Client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
@@ -450,6 +485,7 @@ func (p *Plugin) ControllerPublishVolume(
 			KPublishHostName:     attachSpec.Host,
 			KPublishAttachId:     attachSpec.Id,
 			KPublishAttachStatus: attachSpec.Status,
+			KVolumeFstype:        fstype,
 		},
 	}
 
@@ -1008,4 +1044,30 @@ func (p *Plugin) ListSnapshots(
 		Entries:   entries,
 		NextToken: nextToken,
 	}, nil
+}
+
+func (p *Plugin) waitForVolStatusStable(volumeID string) (*model.VolumeSpec, error) {
+
+	ticker := time.NewTicker(2 * time.Second)
+	timeout := time.After(5 * time.Minute)
+
+	defer ticker.Stop()
+	validVolumeStatus := []string{"error", "error_deleting", "error_restoring", "error_extending", "available", "in-use"}
+
+	for {
+		select {
+		case <-ticker.C:
+			vol, err := Client.GetVolume(volumeID)
+			if err != nil {
+				return nil, fmt.Errorf("Get volume %s failed, errInfo: %v", volumeID, err)
+			}
+
+			if vol != nil && util.Contained(vol.Status, validVolumeStatus) {
+				return vol, nil
+			}
+
+		case <-timeout:
+			return nil, fmt.Errorf("timeout occured waiting for checking status of the volume %s", volumeID)
+		}
+	}
 }

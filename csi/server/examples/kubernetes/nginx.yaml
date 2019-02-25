@@ -7,6 +7,7 @@ metadata:
   name: csi-sc-opensdsplugin
 provisioner: csi-opensdsplugin
 parameters:
+  fsytpe: ext4
 
 ---
 apiVersion: v1
