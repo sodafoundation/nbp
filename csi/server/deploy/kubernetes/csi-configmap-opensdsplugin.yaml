@@ -12,7 +12,7 @@ data:
   osusername: admin
   ospassword: opensds@123
   passwordencrypter: aes
-  enableEncrypted: false
+  enableEncrypted: F
   ostenantname: admin
   osprojectname: admin
   osuserdomainid: default
