@@ -272,7 +272,7 @@ func (p *Plugin) NodeStageVolume(
 	} else {
 		if "" != mnt.FsType {
 			if mnt.FsType != curFSType {
-				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType,curFSType )
+				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType, curFSType)
 				return nil, status.Error(codes.Aborted, "Volume formatted but is incompatible")
 			}
 		}
@@ -493,10 +493,42 @@ func (p *Plugin) NodeGetInfo(
 	glog.Info("start to GetNodeInfo")
 	defer glog.Info("end to GetNodeInfo")
 
-	nodeId, err := getNodeId()
+	hostName, err := connector.GetHostName()
 	if err != nil {
-		return nil, err
+		msg := fmt.Sprintf("Failed to get node name %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
+
+	var initiators []string
+
+	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver}
+
+	for _, volDriverType := range volDriverTypes {
+		volDriver := connector.NewConnector(volDriverType)
+		if volDriver == nil {
+			glog.Errorf("Unsupport volDriver: %s", volDriverType)
+			continue
+		}
+
+		initiator, err := volDriver.GetInitiatorInfo()
+		if err != nil {
+			glog.Errorf("Cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
+			continue
+		}
+
+		initiators = append(initiators, initiator)
+	}
+
+	if len(initiators) == 0 {
+		msg := fmt.Sprintf("Cannot get any initiator for host %s", hostName)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
+	nodeId := hostName + "," + strings.Join(initiators, ",")
+
+	glog.Infof("node info is %s", nodeId)
 
 	return &csi.NodeGetInfoResponse{
 		NodeId: nodeId,
