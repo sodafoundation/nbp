@@ -34,7 +34,12 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 
 func init() {
-	Client = sdscontroller.GetClient("", "")
+	var err error
+	client, err = sdscontroller.GetClient("", "")
+	if client == nil || err != nil {
+		glog.Errorf("client init failed, %s", err.Error())
+		return
+	}
 }
 
 // getVolumeAndAttachment Get volume and attachment with volumeId and attachmentId
@@ -196,6 +201,10 @@ func (p *Plugin) NodeStageVolume(
 		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/volume_capability must be specified")
 	}
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	volId := req.VolumeId
 	attachmentId := req.PublishContext[KPublishAttachId]
 
@@ -272,7 +281,7 @@ func (p *Plugin) NodeStageVolume(
 	} else {
 		if "" != mnt.FsType {
 			if mnt.FsType != curFSType {
-				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType,curFSType )
+				glog.Errorf("Volume formatted but is incompatible, %v != %v!", mnt.FsType, curFSType)
 				return nil, status.Error(codes.Aborted, "Volume formatted but is incompatible")
 			}
 		}
@@ -312,6 +321,10 @@ func (p *Plugin) NodeUnstageVolume(
 		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path must be specified")
 	}
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	// Umount
 	err := connector.Umount(req.StagingTargetPath)
 	if err != nil {
@@ -349,6 +362,10 @@ func (p *Plugin) NodePublishVolume(
 	glog.V(5).Info("start to NodePublishVolume, Volume_id: " + req.VolumeId + ", staging_target_path: " + req.StagingTargetPath + ", target_path: " + req.TargetPath)
 	if "" == req.VolumeId || "" == req.StagingTargetPath || "" == req.TargetPath || nil == req.VolumeCapability {
 		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/target_path/volume_capability must be specified")
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
 	}
 
 	volId := req.VolumeId
@@ -410,6 +427,10 @@ func (p *Plugin) NodeUnpublishVolume(
 	glog.V(5).Info("start to NodeUnpublishVolume, Volume_id: " + req.VolumeId + ", target_path: " + req.TargetPath)
 	if "" == req.VolumeId || "" == req.TargetPath {
 		return nil, status.Error(codes.InvalidArgument, "Volume_id/target_path must be specified")
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
 	}
 
 	// Umount
@@ -492,6 +513,10 @@ func (p *Plugin) NodeGetInfo(
 	*csi.NodeGetInfoResponse, error) {
 	glog.Info("start to GetNodeInfo")
 	defer glog.Info("end to GetNodeInfo")
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	nodeId, err := getNodeId()
 	if err != nil {

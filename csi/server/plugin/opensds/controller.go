@@ -49,7 +49,12 @@ var (
 )
 
 func init() {
-	Client = sdscontroller.GetClient("", "")
+	var err error
+	Client, err = sdscontroller.GetClient("", "")
+	if client == nil || err != nil {
+		glog.Errorf("client init failed, %s", err.Error())
+		return
+	}
 }
 
 // GetDefaultProfile implementation
@@ -105,6 +110,10 @@ func (p *Plugin) CreateVolume(
 
 	glog.V(5).Info("start to CreateVolume")
 	defer glog.V(5).Info("end to CreateVolume")
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	// build volume body
 	volumebody := &model.VolumeSpec{}
@@ -256,21 +265,40 @@ func (p *Plugin) DeleteVolume(
 	*csi.DeleteVolumeResponse, error) {
 	glog.V(5).Info("start to DeleteVolume")
 	defer glog.V(5).Info("end to DeleteVolume")
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	volId := req.VolumeId
+
+	vol, err := client.GetVolume(volId)
+	if err != nil {
+		glog.Error("Get volume failed, ", err)
+		return nil, err
+	}
+
+	if vol == nil {
+		return nil, fmt.Errorf("The volume %s is already deleted.", volId)
+	}
 
 	r := getReplicationByVolume(volId)
 	if r != nil {
-		if err := Client.DeleteReplication(r.Id, nil); err != nil {
+		if err := client.DeleteReplication(r.Id, nil); err != nil {
+			glog.Error("Delete replication failed, ", err)
 			return nil, err
 		}
-		if err := Client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete primary volume failed, ", err)
 			return nil, err
 		}
-		if err := Client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete secondary volume failed, ", err)
 			return nil, err
 		}
 	} else {
-		if err := Client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete volume failed, ", err)
 			return nil, err
 		}
 	}
@@ -351,6 +379,10 @@ func (p *Plugin) ControllerPublishVolume(
 
 	glog.V(5).Info("start to ControllerPublishVolume")
 	defer glog.V(5).Info("end to ControllerPublishVolume")
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	//check volume is exist
 	volSpec, errVol := Client.GetVolume(req.VolumeId)
@@ -549,6 +581,10 @@ func (p *Plugin) ControllerUnpublishVolume(
 		req.VolumeId, req.NodeId, req.Secrets)
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	//check volume is exist
 	volSpec, errVol := Client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
@@ -609,6 +645,10 @@ func (p *Plugin) ListVolumes(
 	glog.V(5).Info("start to ListVolumes")
 	defer glog.V(5).Info("end to ListVolumes")
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	// only support list all the volumes at present
 	volumes, err := Client.ListVolumes()
 	if err != nil {
@@ -650,6 +690,10 @@ func (p *Plugin) GetCapacity(
 
 	glog.V(5).Info("start to GetCapacity")
 	defer glog.V(5).Info("end to GetCapacity")
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	pools, err := Client.ListPools()
 	if err != nil {
@@ -729,6 +773,11 @@ func (p *Plugin) ControllerGetCapabilities(
 // FindSnapshot implementation
 func FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnapshotSpec, error) {
 	isExist := false
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	snapshots, err := Client.ListVolumeSnapshots()
 
 	if err != nil {
@@ -761,6 +810,10 @@ func (p *Plugin) CreateSnapshot(
 	defer glog.V(5).Info("end to CreateSnapshot")
 	glog.V(5).Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
 		req.Name, req.SourceVolumeId, req.Secrets, req.Parameters)
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	if 0 == len(req.Name) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
@@ -847,6 +900,10 @@ func (p *Plugin) DeleteSnapshot(
 	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
 		req.SnapshotId, req.Secrets)
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	if 0 == len(req.SnapshotId) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
 	}
@@ -869,6 +926,10 @@ func (p *Plugin) ListSnapshots(
 	defer glog.V(5).Info("end to ListSnapshots")
 	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	var opts map[string]string
 	allSnapshots, err := Client.ListVolumeSnapshots(opts)
