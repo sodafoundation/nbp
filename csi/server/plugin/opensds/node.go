@@ -317,12 +317,6 @@ func (p *Plugin) NodeUnstageVolume(
 		return nil, err
 	}
 
-	//	vol.Status = model.VolumeAvailable
-	//	_, err = client.UpdateVolume(vol.Id, vol)
-	//	if err != nil {
-	//		return nil, status.Error(codes.FailedPrecondition, "update volume failed")
-	//	}
-
 	glog.V(5).Info("NodeUnstageVolume success")
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
