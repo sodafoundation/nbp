@@ -15,6 +15,7 @@
 package opensds
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"sort"
@@ -373,31 +374,31 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	var initator string
-	hostName, wwpns, _, iqns := extractInfoFromNodeId(req.NodeId)
+	var nodeInfo = req.NodeId
 
 	switch protocol {
 	case connector.FcDriver:
-		if len(wwpns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no wwpn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		wwpns, err := extractFCInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			glog.Error(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 
 		initator = strings.Join(wwpns, ",")
 		break
 	case connector.IscsiDriver:
-		if len(iqns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no iqn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		iqn, err := extractISCSIInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			glog.Error(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 
-		initator = iqns[0]
+		initator = iqn
 		break
 	case connector.RbdDriver:
 		break
 	default:
-		msg := fmt.Sprintf("protocol cannot be %v", protocol)
+		msg := fmt.Sprintf("protocol:[%s] not support.", protocol)
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -405,7 +406,7 @@ func (p *Plugin) ControllerPublishVolume(
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: model.HostInfo{
-			Host:      hostName,
+			Host:      strings.Split(nodeInfo, ",")[0],
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
 			Initiator: initator,
@@ -483,62 +484,6 @@ func (p *Plugin) ControllerPublishVolume(
 	return resp, nil
 }
 
-func extractInfoFromNodeId(nodeId string) (string, []string, []string, []string) {
-	var hostName string
-	var wwpns []string
-	var wwnns []string
-	var iqns []string
-
-	glog.V(5).Info("nodeId: " + nodeId)
-	hostNameAndInitor := strings.Split(nodeId, ",")
-	hostNameAndInitorLen := len(hostNameAndInitor)
-
-	if hostNameAndInitorLen >= 1 {
-		hostName = hostNameAndInitor[0]
-	}
-
-	var previousParameter string
-	previousIndex := 0
-
-	for i := 1; i < hostNameAndInitorLen; i++ {
-		if strings.HasPrefix(hostNameAndInitor[i], connector.Wwpn+":") {
-			wwpns = append(wwpns, strings.Split(hostNameAndInitor[i], connector.Wwpn+":")[1])
-			previousParameter = connector.Wwpn
-			previousIndex = len(wwpns) - 1
-		} else {
-			if strings.HasPrefix(hostNameAndInitor[i], connector.Wwnn+":") {
-				wwnns = append(wwnns, strings.Split(hostNameAndInitor[i], connector.Wwnn+":")[1])
-				previousParameter = connector.Wwnn
-				previousIndex = len(wwnns) - 1
-			} else {
-				if strings.HasPrefix(hostNameAndInitor[i], connector.Iqn+":") {
-					iqns = append(iqns, strings.Split(hostNameAndInitor[i], connector.Iqn+":")[1])
-					previousParameter = connector.Iqn
-					previousIndex = len(iqns) - 1
-				} else {
-					switch previousParameter {
-					case connector.Wwpn:
-						wwpns[previousIndex] = wwpns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Wwnn:
-						wwnns[previousIndex] = wwnns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Iqn:
-						iqns[previousIndex] = iqns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					default:
-						glog.Error("The format of nodeId is incorrect")
-
-					}
-				}
-
-			}
-		}
-	}
-
-	return hostName, wwpns, wwnns, iqns
-}
-
 // ControllerUnpublishVolume implementation
 func (p *Plugin) ControllerUnpublishVolume(
 	ctx context.Context,
@@ -556,12 +501,18 @@ func (p *Plugin) ControllerUnpublishVolume(
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
+	if volSpec.Status == model.VolumeAvailable {
+		msg := fmt.Sprintf("volume %s has already been unpublished.", volSpec.Id)
+		glog.Error(msg)
+		return &csi.ControllerUnpublishVolumeResponse{}, nil
+	}
+
 	attachments, err := Client.ListVolumeAttachments()
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
 	}
 
-	hostName, _, _, _ := extractInfoFromNodeId(req.NodeId)
+	hostName := strings.Split(req.NodeId, ",")[0]
 	var acts []*model.VolumeAttachmentSpec
 
 	for _, attachSpec := range attachments {
@@ -1008,4 +959,32 @@ func (p *Plugin) ListSnapshots(
 		Entries:   entries,
 		NextToken: nextToken,
 	}, nil
+}
+
+func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "iqn") {
+			glog.Info("ISCSI initiator is ", v)
+			return v, nil
+		}
+	}
+
+	return "", errors.New("No ISCSI initiators found")
+}
+
+func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
+	var wwpns []string
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "node_name") {
+			wwpns = append(wwpns, strings.Split(v, ":")[1])
+		}
+	}
+
+	if len(wwpns) == 0 {
+		return nil, errors.New("No FC initiators found.")
+	}
+
+	glog.Info("FC initiators are ", wwpns)
+
+	return wwpns, nil
 }
