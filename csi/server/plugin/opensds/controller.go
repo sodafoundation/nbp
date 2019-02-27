@@ -126,7 +126,7 @@ func (p *Plugin) CreateVolume(
 	var enableReplication = false
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
-		case "fstype":
+		case KVolumeFstype:
 			fstype = v
 		case KParamProfile:
 			volumebody.ProfileId = v
@@ -187,7 +187,7 @@ func (p *Plugin) CreateVolume(
 	} else {
 		createVolume, err := Client.CreateVolume(volumebody)
 		if err != nil {
-			glog.Error("failed to CreateVolume", err)
+			glog.Error("failed to CreateVolume: ", err)
 			return nil, err
 		} else {
 			v = createVolume
