@@ -75,15 +75,19 @@ func mountDeviceAndUpdateAttachment(device string, mountpoint string, key string
 			glog.V(5).Infof("Mountpoint=%v does not exist", mountpoint)
 		} else {
 			glog.Errorf("mountpoint=%v already exists", mountpoint)
+			// The mountpoint deleted here is a folder or a soft connection.
+			// From the test results, this is fine.
 			_, err := exec.Command("rm", "-rf", mountpoint).CombinedOutput()
 
 			if nil != err {
+				glog.Errorf("Faild to delete %v", mountpoint)
 				return err
 			}
 		}
 
 		err = os.Symlink(device, mountpoint)
 		if err != nil {
+			glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
 			return err
 		}
 	}
@@ -279,8 +283,9 @@ func (p *Plugin) NodeStageVolume(
 		vol.Metadata[KCSIVolumeMode] = "Filesystem"
 		mountFlags = mnt.MountFlags
 		_, err = exec.Command("findmnt", device, mountpoint).CombinedOutput()
-		glog.V(5).Infof("findmnt err: %v \n", err)
+		glog.V(5).Infof("findmnt %v %v return err: %v \n", device, mountpoint, err)
 
+		// Returning err here is not an error, it just means that the volume has been published.
 		if nil == err {
 			if len(mountFlags) > 0 {
 				_, err := exec.Command("findmnt", "-o", strings.Join(mountFlags, ","), device, mountpoint).CombinedOutput()
@@ -358,6 +363,7 @@ func (p *Plugin) NodeUnstageVolume(
 	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
 		err = connector.Umount(req.StagingTargetPath)
 		if err != nil {
+			glog.Errorf("Connector umount %v failed, return error:%v\n", req.StagingTargetPath, err)
 			return nil, err
 		}
 	}
@@ -365,6 +371,7 @@ func (p *Plugin) NodeUnstageVolume(
 	if KCSIBlock == vol.Metadata[KCSIVolumeMode] {
 		_, err = exec.Command("rm", "-rf", req.StagingTargetPath).CombinedOutput()
 		if err != nil {
+			glog.Errorf("rm -rf %v failed, return error:%v\n", req.StagingTargetPath, err)
 			return nil, err
 		}
 	}
@@ -475,6 +482,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
 		err := connector.Umount(req.TargetPath)
 		if err != nil {
+			glog.Errorf("Connector umount %v failed, return error:%v\n", req.TargetPath, err)
 			return nil, err
 		}
 	}
