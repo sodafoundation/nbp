@@ -107,4 +107,4 @@ spec:
         - name: certificate-path
           hostPath:
             path: /opt/opensds-security
-            type: Directory
+            type: DirectoryOrCreate
