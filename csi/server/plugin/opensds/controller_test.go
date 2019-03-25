@@ -476,12 +476,12 @@ func TestCreateVolume(t *testing.T) {
 }
 
 func TestIsStringMapEqual(t *testing.T) {
-	metadataA := map[string]string{"lvPath":"/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
-	metadataB := map[string]string{"lvPath":"/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
-	ret := isStringMapEqual(metadataA,metadataB)
-	
+	metadataA := map[string]string{"lvPath": "/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
+	metadataB := map[string]string{"lvPath": "/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
+	ret := isStringMapEqual(metadataA, metadataB)
+
 	if !ret {
 		t.Errorf("expected: true, actual: %v\n", ret)
 	}
-	
-	}
+
+}
