@@ -99,6 +99,12 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+            - name: certificate-path
+              mountPath: /opt/opensds-security
       volumes:
         - name: socket-dir
           emptyDir:
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: DirectoryOrCreate
