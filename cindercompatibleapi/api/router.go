@@ -28,8 +28,8 @@ import (
 	"github.com/astaxie/beego"
 	bctx "github.com/astaxie/beego/context"
 	log "github.com/golang/glog"
-	c "github.com/opensds/opensds/client"
 	"github.com/opensds/nbp/cindercompatibleapi/converter"
+	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/utils/constants"
 )
 
