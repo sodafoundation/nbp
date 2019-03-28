@@ -51,6 +51,7 @@ var (
 )
 
 func init() {
+
 	var err error
 	Client, err = sdscontroller.GetClient("", "")
 	if client == nil || err != nil {
