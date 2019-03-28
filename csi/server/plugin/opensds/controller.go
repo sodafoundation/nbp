@@ -16,6 +16,7 @@ package opensds
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"runtime"
 	"sort"
@@ -59,8 +60,6 @@ func init() {
 		return
 	}
 
-	GUnpublishAttachmentList = NewList()
-	go UnpublishRoutine()
 	UnpublishAttachmentList = NewList()
 	go UnpublishRoutine()
 }
@@ -1135,8 +1134,8 @@ func NewList() *AttachmentObj {
 	return &AttachmentObj{l: list.New()}
 }
 
-// GUnpublishAttachmentList implementation
-var GUnpublishAttachmentList *AttachmentObj
+// UnpublishAttachmentList implementation
+var UnpublishAttachmentList *AttachmentObj
 
 // Add implementation
 func (q *AttachmentObj) Add(v interface{}) {
@@ -1197,10 +1196,10 @@ func (q *AttachmentObj) PrintList() {
 // UnpublishRoutine implementation
 func UnpublishRoutine() {
 	for {
-		listLen := GUnpublishAttachmentList.GetLen()
+		listLen := UnpublishAttachmentList.GetLen()
 		if listLen > 0 {
 			var next *list.Element
-			for e := GUnpublishAttachmentList.GetHead(); e != nil; e = next {
+			for e := UnpublishAttachmentList.GetHead(); e != nil; e = next {
 				next = e.Next()
 				act := e.Value.(*model.VolumeAttachmentSpec)
 
@@ -1230,7 +1229,7 @@ func waitVolumeAttachmentDeleted(act *model.VolumeAttachmentSpec, e *list.Elemen
 				glog.Errorf("Waiting for the volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
 			} else {
 				glog.V(5).Infof("The volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
-				GUnpublishAttachmentList.Delete(e)
+				UnpublishAttachmentList.Delete(e)
 				return
 			}
 
