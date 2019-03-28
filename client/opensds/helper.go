@@ -20,6 +20,7 @@ const (
 	Noauth = "noauth"
 )
 
+	opensdsClient *client.Client
 // GetClient return OpenSDS Client
 func GetClient(endpoint string, authStrategy string) (*client.Client, error) {
 	if endpoint == "" {
