@@ -16,7 +16,6 @@ package opensds
 
 import (
 	"container/list"
-	"errors"
 	"fmt"
 	"runtime"
 	"sort"
@@ -61,6 +60,8 @@ func init() {
 	}
 
 	GUnpublishAttachmentList = NewList()
+	go UnpublishRoutine()
+	UnpublishAttachmentList = NewList()
 	go UnpublishRoutine()
 }
 
@@ -648,10 +649,10 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	for _, act := range acts {
-		if ok := GUnpublishAttachmentList.isExist(act.Id); !ok {
+		if ok := UnpublishAttachmentList.isExist(act.Id); !ok {
 			glog.Infof("Add attachment id %s into unpublish attachment list.", act.Id)
-			GUnpublishAttachmentList.Add(act)
-			GUnpublishAttachmentList.PrintList()
+			UnpublishAttachmentList.Add(act)
+			UnpublishAttachmentList.PrintList()
 		}
 	}
 

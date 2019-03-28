@@ -185,7 +185,7 @@ func logout(portal string, targetiqn string) error {
 
 // Delete ISCSI Node
 func delete(targetiqn string) (err error) {
-	log.Println("Delete targetiqn: %s", targetiqn)
+	log.Printf("Delete targetiqn: %s\n", targetiqn)
 	_, err = connector.ExecCmd("iscsiadm", "-m", "node", "-o", "delete", "-T", targetiqn)
 	if err != nil {
 		log.Printf("Received error on Delete attempt: %v\n", err)
@@ -239,11 +239,11 @@ func connect(connMap map[string]interface{}) (string, error) {
 	targetiqn := conn.TgtIQN[index]
 	targetlun := strconv.Itoa(conn.TgtLun)
 
-	cmd := "pgrep -f /usr/sbin/iscsid"
+	cmd := "pgrep -f /sbin/iscsid"
 	_, err = connector.ExecCmd("/bin/bash", "-c", cmd)
 
 	if err != nil {
-		cmd = "/usr/sbin/iscsid"
+		cmd = "/sbin/iscsid"
 		_, errExec := connector.ExecCmd("/bin/bash", "-c", cmd)
 		if errExec != nil {
 			return "", fmt.Errorf("Please stop the iscsi process outside the container first: %v", errExec)
