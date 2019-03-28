@@ -15,11 +15,13 @@
 package opensds
 
 import (
+	"container/list"
 	"fmt"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -55,6 +57,9 @@ func init() {
 		glog.Errorf("client init failed, %s", err.Error())
 		return
 	}
+
+	UnpublishAttachmentList = NewList()
+	go UnpublishRoutine()
 }
 
 // GetDefaultProfile implementation
@@ -615,14 +620,11 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	for _, act := range acts {
-		err = Client.DeleteVolumeAttachment(act.Id, act)
-		if err != nil {
-			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		if ok := UnpublishAttachmentList.isExist(act.Id); !ok {
+			glog.Infof("Add attachment id %s into unpublish attachment list.", act.Id)
+			UnpublishAttachmentList.Add(act)
+			UnpublishAttachmentList.PrintList()
 		}
-
-		glog.V(5).Infof("attachment %v has been successfully deleted", act.Id)
 	}
 
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
@@ -1069,4 +1071,122 @@ func (p *Plugin) ListSnapshots(
 		Entries:   entries,
 		NextToken: nextToken,
 	}, nil
+}
+
+// AttachmentObj implementation
+type AttachmentObj struct {
+	l *list.List
+	m sync.Mutex
+	r sync.RWMutex
+}
+
+// NewList implementation
+func NewList() *AttachmentObj {
+	return &AttachmentObj{l: list.New()}
+}
+
+// GUnpublishAttachmentList implementation
+var UnpublishAttachmentList *AttachmentObj
+
+// Add implementation
+func (q *AttachmentObj) Add(v interface{}) {
+	if v == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.PushBack(v)
+}
+
+// GetHead implementation
+func (q *AttachmentObj) GetHead() *list.Element {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Front()
+}
+
+// isExist implementation
+func (q *AttachmentObj) isExist(v interface{}) bool {
+	if q.GetLen() == 0 {
+		return false
+	}
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		if e.Value == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Delete implementation
+func (q *AttachmentObj) Delete(e *list.Element) {
+	if e == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.Remove(e)
+}
+
+// GetLen implementation
+func (q *AttachmentObj) GetLen() int {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Len()
+}
+
+// PrintList implementation
+func (q *AttachmentObj) PrintList() {
+	var attachmentIDList string
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		attachmentIDList = attachmentIDList + e.Value.(*model.VolumeAttachmentSpec).Id + ","
+	}
+	glog.Infof("The list of attachments in the context is %s", attachmentIDList)
+}
+
+// UnpublishRoutine implementation
+func UnpublishRoutine() {
+	for {
+		listLen := UnpublishAttachmentList.GetLen()
+		if listLen > 0 {
+			var next *list.Element
+			for e := UnpublishAttachmentList.GetHead(); e != nil; e = next {
+				next = e.Next()
+				act := e.Value.(*model.VolumeAttachmentSpec)
+
+				err := Client.DeleteVolumeAttachment(act.Id, act)
+				if err != nil {
+					glog.Errorf("the volume %s failed to unpublish from node %s, error: %v.", act.VolumeId, act.Host, err)
+				} else {
+					waitVolumeAttachmentDeleted(act, e)
+				}
+				time.Sleep(10 * time.Second)
+			}
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func waitVolumeAttachmentDeleted(act *model.VolumeAttachmentSpec, e *list.Element) {
+	ticker := time.NewTicker(2 * time.Second)
+	timeout := time.After(5 * time.Minute)
+
+	for {
+		select {
+		case <-ticker.C:
+			attachment, _ := Client.GetVolumeAttachment(act.Id)
+			if attachment != nil {
+				glog.Errorf("Waiting for the volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
+			} else {
+				glog.V(5).Infof("The volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
+				UnpublishAttachmentList.Delete(e)
+				return
+			}
+
+		case <-timeout:
+			glog.Errorf("timeout occured waiting for checking deletion of the volume attachment %s", act.Id)
+			return
+		}
+	}
 }
