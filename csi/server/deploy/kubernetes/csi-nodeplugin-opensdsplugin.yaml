@@ -115,6 +115,8 @@ spec:
               mountPath: /etc/iscsi/
             - name: ceph-dir
               mountPath: /etc/ceph/
+            - name: certificate-path
+              mountPath: /opt/opensds-security
       volumes:
         - name: socket-dir
           hostPath:
@@ -139,4 +141,8 @@ spec:
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
             type: DirectoryOrCreate
