@@ -60,6 +60,16 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: opensdsendpoint
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: enableEncrypted
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: passwordencrypter
             - name: OPENSDS_AUTH_STRATEGY
               valueFrom:
                 configMapKeyRef:

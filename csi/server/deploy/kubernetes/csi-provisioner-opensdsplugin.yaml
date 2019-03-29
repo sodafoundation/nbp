@@ -75,6 +75,11 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: osusername
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: passwordencrypter
             - name: OS_PASSWORD
               valueFrom:
                 configMapKeyRef:

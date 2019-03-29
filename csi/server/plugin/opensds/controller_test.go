@@ -34,7 +34,7 @@ import (
 )
 
 func init() {
-	Client.VolumeMgr = fv
+	client.VolumeMgr = fv
 }
 
 var fv = &c.VolumeMgr{
@@ -134,6 +134,11 @@ func (*fakeVolumeReceiver) Recv(
 			break
 		case *[]*model.VolumeSpec:
 			if err := json.Unmarshal([]byte(ByteVolumes), out); err != nil {
+				return err
+			}
+			break
+		case *model.VolumeSpec:
+			if err := json.Unmarshal([]byte(ByteVolume), out); err != nil {
 				return err
 			}
 			break
@@ -435,9 +440,20 @@ func TestCreateVolume(t *testing.T) {
 	var fakeCtx = context.Background()
 	fakeReq := csi.CreateVolumeRequest{
 		Name: "sample-volume",
+		VolumeCapabilities: []*csi.VolumeCapability{
+			&csi.VolumeCapability{
+				AccessMode: &csi.VolumeCapability_AccessMode{
+					Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+				},
+				AccessType: &csi.VolumeCapability_Block{
+					Block: &csi.VolumeCapability_BlockVolume{},
+				},
+			},
+		},
 		Parameters: map[string]string{
 			"profile":          "1106b972-66ef-11e7-b172-db03f3689c9c",
 			"availabilityzone": "default",
+			"fstype":           "ext4",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
@@ -463,6 +479,7 @@ func TestCreateVolume(t *testing.T) {
 			KVolumePoolId:    "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			KVolumeProfileId: "1106b972-66ef-11e7-b172-db03f3689c9c",
 			KVolumeLvPath:    "",
+			KVolumeFstype:    "ext4",
 		},
 	}
 

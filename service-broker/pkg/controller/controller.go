@@ -44,8 +44,9 @@ type opensdsController struct {
 
 // NewController creates an instance of an OpenSDS service broker controller.
 func NewController(edp, auth string, handler store.Store) broker.Interface {
+	client, _ := opensds.GetClient(edp, auth)
 	return &opensdsController{
-		Client:       opensds.GetClient(edp, auth),
+		Client:       client,
 		storeHandler: handler,
 		async:        true,
 	}

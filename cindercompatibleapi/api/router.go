@@ -84,10 +84,10 @@ func Run(cinderEndpoint string) {
 		break
 	case c.Noauth:
 		cfg.AuthOptions = c.LoadNoAuthOptionsFromEnv()
-		opensdsClient = c.NewClient(cfg)
+		opensdsClient, _ = c.NewClient(cfg)
 	default:
 		cfg.AuthOptions = c.NewNoauthOptions(constants.DefaultTenantId)
-		opensdsClient = c.NewClient(cfg)
+		opensdsClient, _ = c.NewClient(cfg)
 	}
 
 	ns :=
@@ -138,7 +138,7 @@ func NewClient(ctx *bctx.Context) {
 		if "/" == reqURL {
 			cfg := &c.Config{Endpoint: opensdsEndpoint}
 			cfg.AuthOptions = c.LoadNoAuthOptionsFromEnv()
-			opensdsClient = c.NewClient(cfg)
+			opensdsClient, _ = c.NewClient(cfg)
 		} else {
 			tenantId := GetProjectId(reqURL)
 			tokenID := ctx.Input.Header(constants.AuthTokenHeader)
