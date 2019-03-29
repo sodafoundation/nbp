@@ -16,6 +16,8 @@ package opensds
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -168,6 +170,33 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 	return nil
 }
 
+// Symlink implementation
+func createSymlink(device, mountpoint string) error {
+	_, err := os.Lstat(mountpoint)
+
+	if err != nil && os.IsNotExist(err) {
+		glog.V(5).Infof("Mountpoint=%v does not exist", mountpoint)
+	} else {
+		glog.Errorf("mountpoint=%v already exists", mountpoint)
+		// The mountpoint deleted here is a folder or a soft connection.
+		// From the test results, this is fine.
+		_, err := exec.Command("rm", "-rf", mountpoint).CombinedOutput()
+
+		if nil != err {
+			glog.Errorf("Faild to delete %v", mountpoint)
+			return err
+		}
+	}
+
+	err = os.Symlink(device, mountpoint)
+	if err != nil {
+		glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+		return err
+	}
+
+	return nil
+}
+
 // NodeStageVolume implementation
 func (p *Plugin) NodeStageVolume(
 	ctx context.Context,
@@ -205,7 +234,7 @@ func (p *Plugin) NodeStageVolume(
 		}
 	}
 
-	_, attachment, err := getVolumeAndAttachment(volId, attachmentId)
+	vol, attachment, err := getVolumeAndAttachment(volId, attachmentId)
 	if nil != err {
 		return nil, err
 	}
@@ -232,54 +261,79 @@ func (p *Plugin) NodeStageVolume(
 	}
 
 	mnt := req.VolumeCapability.GetMount()
-	mountFlags := mnt.MountFlags
+	block := req.VolumeCapability.GetBlock()
+	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
-	// Format
-	hopeFSType := req.PublishContext[KVolumeFstype]
-	fmt.Println("fsType is ", hopeFSType)
-
-	if mnt.FsType != "" {
-		hopeFSType = mnt.FsType
+	if (nil != mnt) && (nil != block) {
+		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
 	}
 
-	curFSType, err := connector.GetFSType(device)
-	if err != nil {
-		return nil, status.Error(codes.Aborted, err.Error())
+	if nil == vol.Metadata {
+		vol.Metadata = make(map[string]string)
 	}
 
-	if curFSType == "" {
-		if err := connector.Format(device, hopeFSType); err != nil {
-			return nil, status.Error(codes.Aborted, fmt.Sprintf("failed to mkfs: %v", err.Error()))
+	if nil == block {
+		vol.Metadata[KCSIVolumeMode] = "Filesystem"
+		// Format
+		hopeFSType := req.PublishContext[KVolumeFstype]
+		fmt.Println("fsType is ", hopeFSType)
+
+		if mnt.FsType != "" {
+			hopeFSType = mnt.FsType
+		}
+
+		curFSType, err := connector.GetFSType(device)
+		if err != nil {
+			return nil, status.Error(codes.Aborted, err.Error())
+		}
+
+		if curFSType == "" {
+			if err := connector.Format(device, hopeFSType); err != nil {
+				return nil, status.Error(codes.Aborted, fmt.Sprintf("failed to mkfs: %v", err.Error()))
+			}
+		} else {
+			glog.Infof("Device: %s has been formatted yet. fsType: %s", device, curFSType)
+		}
+
+		// Mount
+		mounted, err := connector.IsMounted(mountpoint)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to check mounted, %v", err)
+			glog.Errorf(msg)
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
+		}
+
+		if mounted {
+			glog.Info("volume is already mounted.")
+			return &csi.NodeStageVolumeResponse{}, nil
+		}
+
+		glog.Info("mounting...")
+
+		err = connector.Mount(device, mountpoint, hopeFSType, mnt.MountFlags)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to mount, %v", err)
+			glog.Errorf(msg)
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
 	} else {
-		glog.Infof("Device: %s has been formatted yet. fsType: %s", device, curFSType)
-	}
+		vol.Metadata[KCSIVolumeMode] = "Block"
+		err = createSymlink(device, mountpoint)
 
-	// Mount
-	mounted, err := connector.IsMounted(mountpoint)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to check mounted, %v", err)
-		glog.Errorf(msg)
-		return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
-	}
-
-	if mounted {
-		glog.Info("volume is already mounted.")
-		return &csi.NodeStageVolumeResponse{}, nil
-	}
-
-	glog.Info("mounting...")
-
-	err = connector.Mount(device, mountpoint, hopeFSType, mountFlags)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to mount, %v", err)
-		glog.Errorf(msg)
-		return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
+		if err != nil {
+			glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+			return nil, err
+		}
 	}
 
 	err = updateAttachment(mountpoint, KStagingTargetPath, attachment)
 	if err != nil {
 		return nil, status.Error(codes.Aborted, err.Error())
+	}
+
+	_, err = client.UpdateVolume(vol.Id, vol)
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, "update volume failed")
 	}
 
 	glog.V(5).Info("NodeStageVolume success")
@@ -304,25 +358,35 @@ func (p *Plugin) NodeUnstageVolume(
 		return nil, status.Error(codes.InvalidArgument, "client is nil")
 	}
 
-	_, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
+	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, err
 	}
 
-	//check volume is unmounted
-	mounted, err := connector.IsMounted(req.StagingTargetPath)
-	if !mounted {
-		glog.Info("target path is already unmounted")
-		return &csi.NodeUnstageVolumeResponse{}, nil
+	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
+		//check volume is unmounted
+		mounted, err := connector.IsMounted(req.StagingTargetPath)
+		if !mounted {
+			glog.Info("target path is already unmounted")
+			return &csi.NodeUnstageVolumeResponse{}, nil
+		}
+
+		// Umount
+		glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.StagingTargetPath)
+		err = connector.Umount(req.StagingTargetPath)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to Umount, %v", err)
+			glog.Info(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
 	}
 
-	// Umount
-	glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.StagingTargetPath)
-	err = connector.Umount(req.StagingTargetPath)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to Umount, %v", err)
-		glog.Info(msg)
-		return nil, status.Error(codes.FailedPrecondition, msg)
+	if KCSIBlock == vol.Metadata[KCSIVolumeMode] {
+		_, err = exec.Command("rm", "-rf", req.StagingTargetPath).CombinedOutput()
+		if err != nil {
+			glog.Errorf("rm -rf %v failed, return error:%v\n", req.StagingTargetPath, err)
+			return nil, err
+		}
 	}
 
 	err = delTargetPathInAttachment(attachment, KStagingTargetPath, req.StagingTargetPath)
@@ -375,41 +439,55 @@ func (p *Plugin) NodePublishVolume(
 	mountpoint := req.TargetPath
 
 	mnt := req.VolumeCapability.GetMount()
-	mountFlags := mnt.MountFlags
+	block := req.VolumeCapability.GetBlock()
+	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
-	// Bind mount
-	mountFlags = append(mountFlags, "bind")
-	fmt.Println("req.Readonly", req.Readonly)
-	if req.Readonly {
-		mountFlags = append(mountFlags, "ro")
+	if (nil != mnt) && (nil != block) {
+		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
 	}
 
-	fsType := req.PublishContext[KVolumeFstype]
-	fmt.Println("fsType is ", fsType)
-	if mnt.FsType != "" {
-		fsType = mnt.FsType
-	}
+	if nil == block {
+		// Bind mount
+		mountFlags := append(mnt.MountFlags, "bind")
+		fmt.Println("req.Readonly", req.Readonly)
+		if req.Readonly {
+			mountFlags = append(mountFlags, "ro")
+		}
 
-	// Mount
-	mounted, err := connector.IsMounted(mountpoint)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to check mounted, %v", err)
-		glog.Errorf(msg)
-		return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
-	}
+		fsType := req.PublishContext[KVolumeFstype]
+		fmt.Println("fsType is ", fsType)
+		if mnt.FsType != "" {
+			fsType = mnt.FsType
+		}
 
-	if mounted {
-		glog.Info("volume is already mounted.")
-		return &csi.NodePublishVolumeResponse{}, nil
-	}
+		// Mount
+		mounted, err := connector.IsMounted(mountpoint)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to check mounted, %v", err)
+			glog.Errorf(msg)
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
+		}
 
-	glog.Info("mounting...")
+		if mounted {
+			glog.Info("volume is already mounted.")
+			return &csi.NodePublishVolumeResponse{}, nil
+		}
 
-	err = connector.Mount(device, mountpoint, fsType, mountFlags)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to mount, %v", err)
-		glog.Errorf(msg)
-		return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
+		glog.Info("mounting...")
+
+		err = connector.Mount(device, mountpoint, fsType, mountFlags)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to mount, %v", err)
+			glog.Errorf(msg)
+			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
+		}
+	} else {
+		err = createSymlink(device, mountpoint)
+
+		if err != nil {
+			glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+			return nil, err
+		}
 	}
 
 	// Mount
@@ -440,25 +518,34 @@ func (p *Plugin) NodeUnpublishVolume(
 		return nil, status.Error(codes.InvalidArgument, "client is nil")
 	}
 
-	// check volume is unmounted
-	mounted, err := connector.IsMounted(req.TargetPath)
-	if !mounted {
-		glog.Info("target path is already unmounted")
-		return &csi.NodeUnpublishVolumeResponse{}, nil
-	}
-
-	// Umount
-	glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.TargetPath)
-	err = connector.Umount(req.TargetPath)
-	if err != nil {
-		msg := fmt.Sprintf("Failed to Umount, %v", err)
-		glog.Info(msg)
-		return nil, status.Error(codes.FailedPrecondition, msg)
-	}
-
-	_, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
+	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, err
+	}
+
+	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
+		// check volume is unmounted
+		mounted, err := connector.IsMounted(req.TargetPath)
+		if !mounted {
+			glog.Info("target path is already unmounted")
+			return &csi.NodeUnpublishVolumeResponse{}, nil
+		}
+
+		// Umount
+		glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.TargetPath)
+		err = connector.Umount(req.TargetPath)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to Umount, %v", err)
+			glog.Info(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+	}
+
+	if KCSIBlock == vol.Metadata[KCSIVolumeMode] {
+		_, err = exec.Command("rm", "-rf", req.TargetPath).CombinedOutput()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = delTargetPathInAttachment(attachment, KTargetPath, req.TargetPath)
@@ -548,7 +635,7 @@ func (p *Plugin) NodeGetCapabilities(
 	}, nil
 }
 
-// NodeGetVolumeStats
+// NodeGetVolumeStats implementation
 func (p *Plugin) NodeGetVolumeStats(
 	ctx context.Context,
 	req *csi.NodeGetVolumeStatsRequest) (
