@@ -22,7 +22,7 @@ import (
 	sdsClient "github.com/opensds/opensds/client"
 	ctx "github.com/opensds/opensds/pkg/context"
 	dockClient "github.com/opensds/opensds/pkg/dock/client"
-	pb "github.com/opensds/opensds/pkg/model/proto"
+	pb "github.com/opensds/opensds/pkg/dock/proto"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 )

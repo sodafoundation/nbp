@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
-	"github.com/opensds/nbp/cindercompatibleapi/converter"
 	c "github.com/opensds/opensds/client"
+	"github.com/opensds/nbp/cindercompatibleapi/converter"
 )
 
 func init() {

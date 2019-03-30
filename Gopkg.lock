@@ -160,7 +160,8 @@
   version = "v0.2.0"
 
 [[projects]]
-  digest = "1:23f77354dd0bfec335d5fa03cc52d370408b082c09204a1f50664c58dae4edd1"
+  branch = "master"
+  digest = "1:3f5485f5f0ea50de409c25414eaf4154bd54b2fa9ef03fc4a0a278967daac906"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -172,7 +173,7 @@
     "pagination",
   ]
   pruneopts = "NUT"
-  revision = "754e57e7867bfa48062ff2a237caad538085700a"
+  revision = "3a7818a07cfc862267a0b03635075a444c92dcda"
 
 [[projects]]
   digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
@@ -283,7 +284,7 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:6981a8bf1991753ec77f5100590102c793edeaef3d859dfddbae2b7360ad3be4"
+  digest = "1:dec06de1c4a04a18f8d352681d89910494de8018982314671857e55af138dbc8"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -294,8 +295,8 @@
     "pkg/context",
     "pkg/db/drivers/etcd",
     "pkg/dock/client",
+    "pkg/dock/proto",
     "pkg/model",
-    "pkg/model/proto",
     "pkg/utils",
     "pkg/utils/constants",
     "pkg/utils/logs",
@@ -304,8 +305,8 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "b9cd3fe65a676e8b6fc1d507bcacfb8f1b242618"
-  version = "v0.5.1"
+  revision = "76481a4c6f9b17d8055606ad60b4170cd0962c91"
+  version = "v0.5.0"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
@@ -530,30 +531,25 @@
   revision = "31ac5d88444a9e7ad18077db9a165d793ad06a2e"
 
 [[projects]]
-  digest = "1:2e7dd27ea7dcc06208eb8d813658f561f8ea1dd2719773fb4da023e034b63cef"
+  digest = "1:204b001c4084ad571efefebdb5bcbcf8b973616a49b30c75343deb9c4a9c4b41"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
-    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
-    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
-    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
-    "internal/grpcsync",
-    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -569,8 +565,8 @@
     "tap",
   ]
   pruneopts = "NUT"
-  revision = "3507fb8e1a5ad030303c106fef3a47c9fdad16ad"
-  version = "v1.19.1"
+  revision = "2e463a05d100327ca47ac218281906921038fd95"
+  version = "v1.16.0"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -985,8 +981,8 @@
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/db/drivers/etcd",
     "github.com/opensds/opensds/pkg/dock/client",
+    "github.com/opensds/opensds/pkg/dock/proto",
     "github.com/opensds/opensds/pkg/model",
-    "github.com/opensds/opensds/pkg/model/proto",
     "github.com/opensds/opensds/pkg/utils",
     "github.com/opensds/opensds/pkg/utils/constants",
     "github.com/opensds/opensds/pkg/utils/logs",

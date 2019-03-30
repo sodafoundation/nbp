@@ -15,13 +15,18 @@ const (
 
 	// OpenSDSAuthStrategy environment variable name
 	OpenSDSAuthStrategy = "OPENSDS_AUTH_STRATEGY"
+)
 
-	// Noauth
-	Noauth = "noauth"
+var (
+	opensdsClient *client.Client
 )
 
 // GetClient return OpenSDS Client
-func GetClient(endpoint string, authStrategy string) (*client.Client, error) {
+func GetClient(endpoint string, authStrategy string) *client.Client {
+	if opensdsClient != nil {
+		return opensdsClient
+	}
+
 	if endpoint == "" {
 		// Get endpoint from environment
 		endpoint = os.Getenv(OpenSDSEndPoint)
@@ -30,7 +35,7 @@ func GetClient(endpoint string, authStrategy string) (*client.Client, error) {
 
 	if endpoint == "" {
 		// Using default endpoint
-		endpoint = constants.DefaultOpensdsEndpoint
+		endpoint = "http://localhost:50040"
 		log.Printf("using default OpenSDS Client endpoint: %s", endpoint)
 	}
 
@@ -42,28 +47,21 @@ func GetClient(endpoint string, authStrategy string) (*client.Client, error) {
 
 	if authStrategy == "" {
 		// Using default auth strategy
-		authStrategy = Noauth
+		authStrategy = "noauth"
 		log.Printf("using default OpenSDS Client auth strategy: %s", authStrategy)
 	}
 
 	cfg := &client.Config{Endpoint: endpoint}
 
-	var authOptions client.AuthOptions
-	var err error
-
 	switch authStrategy {
 	case client.Keystone:
-		authOptions, err = client.LoadKeystoneAuthOptionsFromEnv()
-		if err != nil {
-			return nil, err
-		}
+		cfg.AuthOptions = client.LoadKeystoneAuthOptionsFromEnv()
 	case client.Noauth:
-		authOptions = client.LoadNoAuthOptionsFromEnv()
+		cfg.AuthOptions = client.LoadNoAuthOptionsFromEnv()
 	default:
-		authOptions = client.NewNoauthOptions(constants.DefaultTenantId)
+		cfg.AuthOptions = client.NewNoauthOptions(constants.DefaultTenantId)
 	}
 
-	cfg.AuthOptions = authOptions
-
-	return client.NewClient(cfg)
+	opensdsClient = client.NewClient(cfg)
+	return opensdsClient
 }
