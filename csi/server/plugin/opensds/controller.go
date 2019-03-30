@@ -15,11 +15,14 @@
 package opensds
 
 import (
+	"container/list"
+	"errors"
 	"fmt"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -36,6 +39,7 @@ import (
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
+
 	"google.golang.org/grpc/status"
 )
 
@@ -45,16 +49,24 @@ import (
 
 var (
 	// Client opensds client
-	Client *c.Client
+	client *c.Client
 )
 
 func init() {
-	Client = sdscontroller.GetClient("", "")
+	var err error
+	client, err = sdscontroller.GetClient("", "")
+	if client == nil || err != nil {
+		glog.Errorf("client init failed, %s", err.Error())
+		return
+	}
+
+	UnpublishAttachmentList = NewList()
+	go UnpublishRoutine()
 }
 
 // GetDefaultProfile implementation
 func GetDefaultProfile() (*model.ProfileSpec, error) {
-	profiles, err := Client.ListProfiles()
+	profiles, err := client.ListProfiles()
 	if err != nil {
 		glog.Error("Get default profile failed: ", err)
 		return nil, err
@@ -72,7 +84,7 @@ func GetDefaultProfile() (*model.ProfileSpec, error) {
 // FindVolume implementation
 func FindVolume(req *model.VolumeSpec) (bool, bool, *model.VolumeSpec, error) {
 	isExist := false
-	volumes, err := Client.ListVolumes()
+	volumes, err := client.ListVolumes()
 
 	if err != nil {
 		glog.Error("List volumes failed: ", err)
@@ -106,25 +118,33 @@ func (p *Plugin) CreateVolume(
 	glog.V(5).Info("start to CreateVolume")
 	defer glog.V(5).Info("end to CreateVolume")
 
+	if req.Name == "" {
+		msg := "CreateVolume Name must be provided"
+		glog.Errorf("CreateVolume Name must be provided")
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if req.VolumeCapabilities == nil || len(req.VolumeCapabilities) == 0 {
+		msg := "CreateVolume Volume capabilities must be provided"
+		glog.Errorf(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	// build volume body
+	var fstype string
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
-	allocationUnitBytes := util.GiB
-	if req.CapacityRange != nil {
-		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
-		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
-		if volumebody.Size < 1 {
-			//Using default volume size
-			volumebody.Size = 1
-		}
-	} else {
-		//Using default volume size
-		volumebody.Size = 1
-	}
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
+		case "fstype":
+			fstype = v
+
 		case KParamProfile:
 			volumebody.ProfileId = v
 		case KParamAZ:
@@ -136,6 +156,25 @@ func (p *Plugin) CreateVolume(
 		case KParamSecondaryAZ:
 			secondaryAZ = v
 		}
+	}
+
+	if !util.IsSupportFstype(fstype) {
+		msg := (fmt.Sprintf("Volume create fstype[%s] not support.", fstype))
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+
+	allocationUnitBytes := util.GiB
+	if req.CapacityRange != nil {
+		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
+		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
+		if volumebody.Size < 1 {
+			//Using default volume size
+			volumebody.Size = 1
+		}
+	} else {
+		//Using default volume size
+		volumebody.Size = 1
 	}
 
 	contentSource := req.GetVolumeContentSource()
@@ -176,26 +215,30 @@ func (p *Plugin) CreateVolume(
 				"Volume already exists but is incompatible")
 		}
 	} else {
-		createVolume, err := Client.CreateVolume(volumebody)
+		createVolume, err := client.CreateVolume(volumebody)
 		if err != nil {
-			isExist, isCompatible, findV, findErr := FindVolume(volumebody)
-			if findErr != nil {
-				return nil, findErr
-			}
-
-			if !(isExist && isCompatible) {
-				glog.Error("failed to CreateVolume", err)
-				return nil, err
-			}
-
-			v = findV
-			glog.V(5).Infof("Although the return failed, it was actually successful. volume = %v", findV)
+			glog.Error("failed to CreateVolume", err)
+			return nil, err
 		} else {
 			v = createVolume
 		}
 	}
 
+	glog.V(5).Infof("waiting until volume is created.")
+	volStable, err := p.waitForVolStatusStable(v.Id)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+	if volStable.Status != "available" {
+		msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
+		glog.Errorf(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+
 	glog.V(5).Infof("opensds volume = %v", v)
+
 	// return volume info
 	volumeinfo := &csi.Volume{
 		CapacityBytes: v.Size * allocationUnitBytes,
@@ -207,6 +250,7 @@ func (p *Plugin) CreateVolume(
 			KVolumePoolId:    v.PoolId,
 			KVolumeProfileId: v.ProfileId,
 			KVolumeLvPath:    v.Metadata["lvPath"],
+			KVolumeFstype:    fstype,
 		},
 	}
 
@@ -214,11 +258,24 @@ func (p *Plugin) CreateVolume(
 	if enableReplication && !isExist {
 		volumebody.AvailabilityZone = secondaryAZ
 		volumebody.Name = SecondaryPrefix + req.Name
-		sVol, err := Client.CreateVolume(volumebody)
+		sVol, err := client.CreateVolume(volumebody)
 		if err != nil {
 			glog.Errorf("failed to create secondar volume: %v", err)
 			return nil, err
 		}
+
+		sVolStable, err := p.waitForVolStatusStable(sVol.Id)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+			glog.Errorf(msg)
+			return nil, status.Error(codes.Internal, msg)
+		}
+		if sVolStable.Status != "available" {
+			msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
+			glog.Errorf(msg)
+			return nil, status.Error(codes.Internal, msg)
+		}
+
 		replicaBody := &model.ReplicationSpec{
 			Name:              req.Name,
 			PrimaryVolumeId:   v.Id,
@@ -226,7 +283,7 @@ func (p *Plugin) CreateVolume(
 			ReplicationMode:   model.ReplicationModeSync,
 			ReplicationPeriod: 0,
 		}
-		replicaResp, err := Client.CreateReplication(replicaBody)
+		replicaResp, err := client.CreateReplication(replicaBody)
 		if err != nil {
 			glog.Errorf("Create replication failed: %v", err)
 			return nil, err
@@ -240,7 +297,7 @@ func (p *Plugin) CreateVolume(
 }
 
 func getReplicationByVolume(volId string) *model.ReplicationSpec {
-	replications, _ := Client.ListReplications()
+	replications, _ := client.ListReplications()
 	for _, r := range replications {
 		if volId == r.PrimaryVolumeId || volId == r.SecondaryVolumeId {
 			return r
@@ -254,23 +311,49 @@ func (p *Plugin) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (
 	*csi.DeleteVolumeResponse, error) {
+
 	glog.V(5).Info("start to DeleteVolume")
 	defer glog.V(5).Info("end to DeleteVolume")
+
+	if req.VolumeId == "" {
+		msg := "DeleteVolume Volume ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	volId := req.VolumeId
+
+	vol, err := client.GetVolume(volId)
+	if err != nil {
+		glog.Error("Get volume failed, ", err)
+		return nil, err
+	}
+
+	if vol == nil {
+		return nil, fmt.Errorf("The volume %s is already deleted.", volId)
+	}
 
 	r := getReplicationByVolume(volId)
 	if r != nil {
-		if err := Client.DeleteReplication(r.Id, nil); err != nil {
+		if err := client.DeleteReplication(r.Id, nil); err != nil {
+			glog.Error("Delete replication failed, ", err)
 			return nil, err
 		}
-		if err := Client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete primary volume failed, ", err)
 			return nil, err
 		}
-		if err := Client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete secondary volume failed, ", err)
 			return nil, err
 		}
 	} else {
-		if err := Client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+		if err := client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
+			glog.Error("Delete volume failed, ", err)
 			return nil, err
 		}
 	}
@@ -306,7 +389,7 @@ func isVolumePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpe
 	glog.V(5).Infof("start to isVolumePublished, canAtMultiNode = %v, attachReq = %v",
 		canAtMultiNode, attachReq)
 
-	attachments, err := Client.ListVolumeAttachments()
+	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		glog.V(5).Info("ListVolumeAttachments failed: " + err.Error())
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -352,14 +435,37 @@ func (p *Plugin) ControllerPublishVolume(
 	glog.V(5).Info("start to ControllerPublishVolume")
 	defer glog.V(5).Info("end to ControllerPublishVolume")
 
+	if req.VolumeId == "" {
+		msg := "ControllerPublishVolume Volume ID must be provided"
+		glog.Info(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if req.NodeId == "" {
+		msg := "ControllerPublishVolume Node ID must be provided"
+		glog.Info(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
+	fstype, ok := req.VolumeContext[KVolumeFstype]
+	if !ok {
+		msg := "ControllerPublishVolume fstype must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
 	//check volume is exist
-	volSpec, errVol := Client.GetVolume(req.VolumeId)
+	volSpec, errVol := client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
 		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	pool, err := Client.GetPool(volSpec.PoolId)
+	pool, err := client.GetPool(volSpec.PoolId)
 	if err != nil || pool == nil {
 		msg := fmt.Sprintf("the pool %s is not sxist", volSpec.PoolId)
 		glog.Error(msg)
@@ -367,37 +473,33 @@ func (p *Plugin) ControllerPublishVolume(
 	}
 
 	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
-	if protocol == "" {
-		// Default protocol is iscsi
-		protocol = "iscsi"
-	}
 
 	var initator string
-	hostName, wwpns, _, iqns := extractInfoFromNodeId(req.NodeId)
+	var nodeInfo = req.NodeId
 
 	switch protocol {
 	case connector.FcDriver:
-		if len(wwpns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no wwpn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		wwpns, err := extractFCInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			glog.Error(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 
 		initator = strings.Join(wwpns, ",")
 		break
 	case connector.IscsiDriver:
-		if len(iqns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no iqn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		iqn, err := extractISCSIInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			glog.Error(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 
-		initator = iqns[0]
+		initator = iqn
 		break
 	case connector.RbdDriver:
 		break
 	default:
-		msg := fmt.Sprintf("protocol cannot be %v", protocol)
+		msg := fmt.Sprintf("protocol:[%s] not support.", protocol)
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -405,7 +507,7 @@ func (p *Plugin) ControllerPublishVolume(
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: model.HostInfo{
-			Host:      hostName,
+			Host:      strings.Split(nodeInfo, ",")[0],
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
 			Initiator: initator,
@@ -432,7 +534,7 @@ func (p *Plugin) ControllerPublishVolume(
 	var attachSpec *model.VolumeAttachmentSpec
 
 	if nil == existAttachment {
-		newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
+		newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
 		if errAttach != nil {
 			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
 			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
@@ -450,11 +552,12 @@ func (p *Plugin) ControllerPublishVolume(
 			KPublishHostName:     attachSpec.Host,
 			KPublishAttachId:     attachSpec.Id,
 			KPublishAttachStatus: attachSpec.Status,
+			KVolumeFstype:        fstype,
 		},
 	}
 
 	if replicationId, ok := req.VolumeContext[KVolumeReplicationId]; ok {
-		r, err := Client.GetReplication(replicationId)
+		r, err := client.GetReplication(replicationId)
 		if err != nil {
 			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
 		}
@@ -466,7 +569,7 @@ func (p *Plugin) ControllerPublishVolume(
 		}
 
 		if nil == existAttachment {
-			newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
+			newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
 			if errAttach != nil {
 				msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
 				glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
@@ -483,62 +586,6 @@ func (p *Plugin) ControllerPublishVolume(
 	return resp, nil
 }
 
-func extractInfoFromNodeId(nodeId string) (string, []string, []string, []string) {
-	var hostName string
-	var wwpns []string
-	var wwnns []string
-	var iqns []string
-
-	glog.V(5).Info("nodeId: " + nodeId)
-	hostNameAndInitor := strings.Split(nodeId, ",")
-	hostNameAndInitorLen := len(hostNameAndInitor)
-
-	if hostNameAndInitorLen >= 1 {
-		hostName = hostNameAndInitor[0]
-	}
-
-	var previousParameter string
-	previousIndex := 0
-
-	for i := 1; i < hostNameAndInitorLen; i++ {
-		if strings.HasPrefix(hostNameAndInitor[i], connector.Wwpn+":") {
-			wwpns = append(wwpns, strings.Split(hostNameAndInitor[i], connector.Wwpn+":")[1])
-			previousParameter = connector.Wwpn
-			previousIndex = len(wwpns) - 1
-		} else {
-			if strings.HasPrefix(hostNameAndInitor[i], connector.Wwnn+":") {
-				wwnns = append(wwnns, strings.Split(hostNameAndInitor[i], connector.Wwnn+":")[1])
-				previousParameter = connector.Wwnn
-				previousIndex = len(wwnns) - 1
-			} else {
-				if strings.HasPrefix(hostNameAndInitor[i], connector.Iqn+":") {
-					iqns = append(iqns, strings.Split(hostNameAndInitor[i], connector.Iqn+":")[1])
-					previousParameter = connector.Iqn
-					previousIndex = len(iqns) - 1
-				} else {
-					switch previousParameter {
-					case connector.Wwpn:
-						wwpns[previousIndex] = wwpns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Wwnn:
-						wwnns[previousIndex] = wwnns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Iqn:
-						iqns[previousIndex] = iqns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					default:
-						glog.Error("The format of nodeId is incorrect")
-
-					}
-				}
-
-			}
-		}
-	}
-
-	return hostName, wwpns, wwnns, iqns
-}
-
 // ControllerUnpublishVolume implementation
 func (p *Plugin) ControllerUnpublishVolume(
 	ctx context.Context,
@@ -549,19 +596,41 @@ func (p *Plugin) ControllerUnpublishVolume(
 		req.VolumeId, req.NodeId, req.Secrets)
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
+	if req.VolumeId == "" {
+		msg := "ControllerPublishVolume Volume ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if req.NodeId == "" {
+		msg := "ControllerUnpublishVolume Node ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	//check volume is exist
-	volSpec, errVol := Client.GetVolume(req.VolumeId)
+	volSpec, errVol := client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
 		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	attachments, err := Client.ListVolumeAttachments()
+	if volSpec.Status == model.VolumeAvailable {
+		msg := fmt.Sprintf("volume %s has already been unpublished.", volSpec.Id)
+		glog.Error(msg)
+		return &csi.ControllerUnpublishVolumeResponse{}, nil
+	}
+
+	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
 	}
 
-	hostName, _, _, _ := extractInfoFromNodeId(req.NodeId)
+	hostName := strings.Split(req.NodeId, ",")[0]
 	var acts []*model.VolumeAttachmentSpec
 
 	for _, attachSpec := range attachments {
@@ -579,14 +648,11 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	for _, act := range acts {
-		err = Client.DeleteVolumeAttachment(act.Id, act)
-		if err != nil {
-			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+		if ok := UnpublishAttachmentList.isExist(act.Id); !ok {
+			glog.Infof("Add attachment id %s into unpublish attachment list.", act.Id)
+			UnpublishAttachmentList.Add(act)
+			UnpublishAttachmentList.PrintList()
 		}
-
-		glog.V(5).Infof("attachment %v has been successfully deleted", act.Id)
 	}
 
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
@@ -609,8 +675,12 @@ func (p *Plugin) ListVolumes(
 	glog.V(5).Info("start to ListVolumes")
 	defer glog.V(5).Info("end to ListVolumes")
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	// only support list all the volumes at present
-	volumes, err := Client.ListVolumes()
+	volumes, err := client.ListVolumes()
 	if err != nil {
 		return nil, err
 	}
@@ -651,7 +721,11 @@ func (p *Plugin) GetCapacity(
 	glog.V(5).Info("start to GetCapacity")
 	defer glog.V(5).Info("end to GetCapacity")
 
-	pools, err := Client.ListPools()
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
+	pools, err := client.ListPools()
 	if err != nil {
 		return nil, err
 	}
@@ -729,7 +803,7 @@ func (p *Plugin) ControllerGetCapabilities(
 // FindSnapshot implementation
 func FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnapshotSpec, error) {
 	isExist := false
-	snapshots, err := Client.ListVolumeSnapshots()
+	snapshots, err := client.ListVolumeSnapshots()
 
 	if err != nil {
 		glog.Error("List volume snapshots failed: ", err)
@@ -761,6 +835,10 @@ func (p *Plugin) CreateSnapshot(
 	defer glog.V(5).Info("end to CreateSnapshot")
 	glog.V(5).Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
 		req.Name, req.SourceVolumeId, req.Secrets, req.Parameters)
+
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
 
 	if 0 == len(req.Name) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
@@ -799,7 +877,7 @@ func (p *Plugin) CreateSnapshot(
 				"Snapshot already exists but is incompatible")
 		}
 	} else {
-		createSnapshot, err := Client.CreateVolumeSnapshot(snapReq)
+		createSnapshot, err := client.CreateVolumeSnapshot(snapReq)
 		if err != nil {
 			glog.Error("failed to CreateVolumeSnapshot", err)
 			return nil, err
@@ -847,11 +925,15 @@ func (p *Plugin) DeleteSnapshot(
 	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
 		req.SnapshotId, req.Secrets)
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	if 0 == len(req.SnapshotId) {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
 	}
 
-	err := Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
+	err := client.DeleteVolumeSnapshot(req.SnapshotId, nil)
 
 	if nil != err {
 		return nil, err
@@ -870,8 +952,12 @@ func (p *Plugin) ListSnapshots(
 	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
 
+	if client == nil {
+		return nil, status.Error(codes.InvalidArgument, "client is nil")
+	}
+
 	var opts map[string]string
-	allSnapshots, err := Client.ListVolumeSnapshots(opts)
+	allSnapshots, err := client.ListVolumeSnapshots(opts)
 	if nil != err {
 		return nil, err
 	}
@@ -1008,4 +1094,176 @@ func (p *Plugin) ListSnapshots(
 		Entries:   entries,
 		NextToken: nextToken,
 	}, nil
+}
+
+func (p *Plugin) waitForVolStatusStable(volumeID string) (*model.VolumeSpec, error) {
+
+	ticker := time.NewTicker(2 * time.Second)
+	timeout := time.After(5 * time.Minute)
+
+	defer ticker.Stop()
+	validVolumeStatus := []string{"error", "error_deleting", "error_restoring", "error_extending", "available", "in-use"}
+
+	for {
+		select {
+		case <-ticker.C:
+			vol, err := client.GetVolume(volumeID)
+			if err != nil {
+				return nil, fmt.Errorf("Get volume %s failed, errInfo: %v", volumeID, err)
+			}
+
+			if vol != nil && util.Contained(vol.Status, validVolumeStatus) {
+				return vol, nil
+			}
+
+		case <-timeout:
+			return nil, fmt.Errorf("timeout occured waiting for checking status of the volume %s", volumeID)
+		}
+	}
+}
+
+// AttachmentObj implementation
+type AttachmentObj struct {
+	l *list.List
+	m sync.Mutex
+	r sync.RWMutex
+}
+
+// NewList implementation
+func NewList() *AttachmentObj {
+	return &AttachmentObj{l: list.New()}
+}
+
+// UnpublishAttachmentList implementation
+var UnpublishAttachmentList *AttachmentObj
+
+// Add implementation
+func (q *AttachmentObj) Add(v interface{}) {
+	if v == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.PushBack(v)
+}
+
+// GetHead implementation
+func (q *AttachmentObj) GetHead() *list.Element {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Front()
+}
+
+// isExist implementation
+func (q *AttachmentObj) isExist(v interface{}) bool {
+	if q.GetLen() == 0 {
+		return false
+	}
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		if e.Value == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Delete implementation
+func (q *AttachmentObj) Delete(e *list.Element) {
+	if e == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.Remove(e)
+}
+
+// GetLen implementation
+func (q *AttachmentObj) GetLen() int {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Len()
+}
+
+// PrintList implementation
+func (q *AttachmentObj) PrintList() {
+	var attachmentIDList string
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		attachmentIDList = attachmentIDList + e.Value.(*model.VolumeAttachmentSpec).Id + ","
+	}
+	glog.Infof("The list of attachments in the context is %s", attachmentIDList)
+}
+
+// UnpublishRoutine implementation
+func UnpublishRoutine() {
+	for {
+		listLen := UnpublishAttachmentList.GetLen()
+		if listLen > 0 {
+			var next *list.Element
+			for e := UnpublishAttachmentList.GetHead(); e != nil; e = next {
+				next = e.Next()
+				act := e.Value.(*model.VolumeAttachmentSpec)
+
+				err := client.DeleteVolumeAttachment(act.Id, act)
+				if err != nil {
+					glog.Errorf("the volume %s failed to unpublish from node %s, error: %v.", act.VolumeId, act.Host, err)
+				} else {
+					waitVolumeAttachmentDeleted(act, e)
+				}
+				time.Sleep(10 * time.Second)
+			}
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func waitVolumeAttachmentDeleted(act *model.VolumeAttachmentSpec, e *list.Element) {
+	ticker := time.NewTicker(2 * time.Second)
+	timeout := time.After(5 * time.Minute)
+
+	for {
+		select {
+		case <-ticker.C:
+			attachment, _ := client.GetVolumeAttachment(act.Id)
+			if attachment != nil {
+				glog.Errorf("Waiting for the volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
+			} else {
+				glog.V(5).Infof("The volume: %s successfully to unpublish to node: %s", act.VolumeId, act.Host)
+				UnpublishAttachmentList.Delete(e)
+				return
+			}
+
+		case <-timeout:
+			glog.Errorf("timeout occured waiting for checking deletion of the volume attachment %s", act.Id)
+			return
+		}
+	}
+}
+
+func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "iqn") {
+			glog.Info("ISCSI initiator is ", v)
+			return v, nil
+		}
+	}
+
+	return "", errors.New("No ISCSI initiators found")
+}
+
+func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
+	var wwpns []string
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "node_name") {
+			wwpns = append(wwpns, strings.Split(v, ":")[1])
+		}
+	}
+
+	if len(wwpns) == 0 {
+		return nil, errors.New("No FC initiators found.")
+	}
+
+	glog.Info("FC initiators are ", wwpns)
+
+	return wwpns, nil
 }

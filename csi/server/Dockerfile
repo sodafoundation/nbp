@@ -11,7 +11,8 @@ RUN apt-get update && \
     apt-get -y install open-iscsi \
     sysfsutils \
     kmod \
-    ceph-common && \
+    ceph-common \
+    iputils-ping && \
     rm -rf /var/lib/apt/lists/*
 
 # Define default command

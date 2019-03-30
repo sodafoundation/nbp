@@ -43,7 +43,7 @@
 
 [[constraint]]
   name = "github.com/opensds/opensds"
-  version = "0.5.0"
+  version = "0.5.1"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"
