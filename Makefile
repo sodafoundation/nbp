@@ -72,7 +72,6 @@ dist: build
 	    cp -r $(BASE_DIR)/flexvolume/examples $(BUILD_TGT)/flexvolume/ && \
 	    cp -r $(BASE_DIR)/opensds-provisioner/deploy $(BUILD_TGT)/provisioner/ && \
 	    cp -r $(BASE_DIR)/opensds-provisioner/examples $(BUILD_TGT)/provisioner/ && \
-	    cp -r $(BASE_DIR)/service-broker/charts $(BUILD_TGT)/service-broker/ && \
 	    cp -r $(BASE_DIR)/service-broker/examples $(BUILD_TGT)/service-broker/ && \
 	    cp $(BASE_DIR)/LICENSE $(BUILD_TGT)/ && \
 	    zip -r $(DIST_DIR)/$(BUILD_TGT).zip $(BUILD_TGT) && \
