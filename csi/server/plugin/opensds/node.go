@@ -173,7 +173,6 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 // Symlink implementation
 func createSymlink(device, mountpoint string) error {
 	_, err := os.Lstat(mountpoint)
-
 	if err != nil && os.IsNotExist(err) {
 		glog.V(5).Infof("Mountpoint=%v does not exist", mountpoint)
 	} else {
@@ -190,7 +189,7 @@ func createSymlink(device, mountpoint string) error {
 
 	err = os.Symlink(device, mountpoint)
 	if err != nil {
-		glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+		glog.Errorf("failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
 		return err
 	}
 
@@ -298,7 +297,7 @@ func (p *Plugin) NodeStageVolume(
 		// Mount
 		mounted, err := connector.IsMounted(mountpoint)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to check mounted, %v", err)
+			msg := fmt.Sprintf("failed to check mounted, %v", err)
 			glog.Errorf(msg)
 			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
@@ -312,7 +311,7 @@ func (p *Plugin) NodeStageVolume(
 
 		err = connector.Mount(device, mountpoint, hopeFSType, mnt.MountFlags)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to mount, %v", err)
+			msg := fmt.Sprintf("failed to mount, %v", err)
 			glog.Errorf(msg)
 			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
@@ -321,7 +320,7 @@ func (p *Plugin) NodeStageVolume(
 		err = createSymlink(device, mountpoint)
 
 		if err != nil {
-			glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+			glog.Errorf("failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
 			return nil, err
 		}
 	}
@@ -375,7 +374,7 @@ func (p *Plugin) NodeUnstageVolume(
 		glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.StagingTargetPath)
 		err = connector.Umount(req.StagingTargetPath)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to Umount, %v", err)
+			msg := fmt.Sprintf("failed to Umount, %v", err)
 			glog.Info(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
@@ -463,7 +462,7 @@ func (p *Plugin) NodePublishVolume(
 		// Mount
 		mounted, err := connector.IsMounted(mountpoint)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to check mounted, %v", err)
+			msg := fmt.Sprintf("failed to check mounted, %v", err)
 			glog.Errorf(msg)
 			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
@@ -477,7 +476,7 @@ func (p *Plugin) NodePublishVolume(
 
 		err = connector.Mount(device, mountpoint, fsType, mountFlags)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to mount, %v", err)
+			msg := fmt.Sprintf("failed to mount, %v", err)
 			glog.Errorf(msg)
 			return nil, status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
@@ -485,7 +484,7 @@ func (p *Plugin) NodePublishVolume(
 		err = createSymlink(device, mountpoint)
 
 		if err != nil {
-			glog.Errorf("Failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
+			glog.Errorf("failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
 			return nil, err
 		}
 	}
@@ -535,7 +534,7 @@ func (p *Plugin) NodeUnpublishVolume(
 		glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.TargetPath)
 		err = connector.Umount(req.TargetPath)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to Umount, %v", err)
+			msg := fmt.Sprintf("failed to Umount, %v", err)
 			glog.Info(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
@@ -573,7 +572,7 @@ func (p *Plugin) NodeGetInfo(
 
 	hostName, err := connector.GetHostName()
 	if err != nil {
-		msg := fmt.Sprintf("Failed to get node name %v", err)
+		msg := fmt.Sprintf("failed to get node name %v", err)
 		glog.Error(msg)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
