@@ -264,7 +264,7 @@ func (p *Plugin) NodeStageVolume(
 	block := req.VolumeCapability.GetBlock()
 	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
-	if (nil != mnt) && (nil != block) {
+	if nil != mnt && nil != block {
 		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
 	}
 
@@ -364,7 +364,7 @@ func (p *Plugin) NodeUnstageVolume(
 	}
 
 	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
-		//check volume is unmounted
+		// check volume is unmounted
 		mounted, err := connector.IsMounted(req.StagingTargetPath)
 		if !mounted {
 			glog.Info("target path is already unmounted")
@@ -442,7 +442,7 @@ func (p *Plugin) NodePublishVolume(
 	block := req.VolumeCapability.GetBlock()
 	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
-	if (nil != mnt) && (nil != block) {
+	if nil != mnt && nil != block {
 		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
 	}
 

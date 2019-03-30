@@ -120,7 +120,7 @@ func IsSupportPotocol(protocol string) bool {
 
 // IsSupportFstype ...
 func IsSupportFstype(fstype string) bool {
-	supportFstypes := [...]string{"ext2", "ext3", "ext4", "cramfs", "minix"}
+	supportFstypes := [...]string{"ext2", "ext3", "ext4", "cramfs", "minix", ""}
 	for _, v := range supportFstypes {
 		if strings.ToLower(fstype) == v {
 			return true
