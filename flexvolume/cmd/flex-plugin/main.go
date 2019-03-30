@@ -46,6 +46,7 @@ import (
 	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/flexvolume/pkg/volume"
 	"github.com/opensds/opensds/contrib/connector"
+	"github.com/opensds/opensds/contrib/connector/iscsi"
 	_ "github.com/opensds/opensds/contrib/connector/rbd"
 	"github.com/opensds/opensds/pkg/model"
 )
@@ -79,10 +80,7 @@ func (plugin *OpenSDSPlugin) GetVolumeName(opts interface{}) Result {
 	opt := opts.(*OpenSDSOptions)
 	volId := opt.VolumeId
 
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return Fail(errors.New(fmt.Sprintf("get client failed, %s", err.Error())))
-	}
+	client := opensds.GetClient("", "")
 	vol, err := client.GetVolume(volId)
 
 	if err != nil {
@@ -99,11 +97,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	opt := opts.(*OpenSDSOptions)
 	volID := opt.VolumeId
 
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return Fail(errors.New(fmt.Sprintf("get client failed, %s", err.Error())))
-	}
-
+	client := opensds.GetClient("", "")
 	vol, errVol := client.GetVolume(volID)
 	if errVol != nil {
 		return Fail(errors.New("volume not exist."))
@@ -141,14 +135,18 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	}
 
 	//create attachment to indicate the volume is been processed.
-	localIqn, _ := connector.NewConnector("iscsi").GetInitiatorInfo()
+	iqns, _ := iscsi.GetInitiator()
+	localIqn := ""
+	if len(iqns) > 0 {
+		localIqn = iqns[0]
+	}
 
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: volID,
 		HostInfo: model.HostInfo{
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
-			Ip:        connector.GetHostIP(),
+			Ip:        connector.GetHostIp(),
 			Host:      hostname,
 			Initiator: localIqn,
 		},
@@ -192,11 +190,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 }
 
 func (plugin *OpenSDSPlugin) Detach(volumeId string) Result {
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return Fail(errors.New(fmt.Sprintf("get client failed, %s", err.Error())))
-	}
-
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return Fail(err.Error())
@@ -256,11 +250,7 @@ func (plugin *OpenSDSPlugin) MountDevice(mountDir string, device string, opts in
 	}
 	act.Metadata["baseMountPath"] = mountDir
 
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return Fail(errors.New(fmt.Sprintf("get client failed, %s", err.Error())))
-	}
-
+	client := opensds.GetClient("", "")
 	_, err = client.UpdateVolumeAttachment(act.Id, act)
 	if err != nil {
 		return Fail(err.Error())
@@ -345,11 +335,7 @@ func (plugin *OpenSDSPlugin) WaitForDetach(device string) Result {
 }
 
 func getAttachmentByVolumeId(volumeId string) *model.VolumeAttachmentSpec {
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return nil
-	}
-
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return nil
@@ -368,11 +354,7 @@ func getAttachmentByVolumeId(volumeId string) *model.VolumeAttachmentSpec {
 }
 
 func getAttachmentByDevice(device string) *model.VolumeAttachmentSpec {
-	client, err := opensds.GetClient("", "")
-	if err != nil {
-		return nil
-	}
-
+	client := opensds.GetClient("", "")
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		return nil

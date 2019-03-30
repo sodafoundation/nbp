@@ -76,31 +76,11 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: ospassword
-            - name: PASSWORD_ENCRYPTER
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: passwordencrypter
-            - name: ENABLE_ENCRYPTED
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: enableEncrypted
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: ostenantname
-            - name: PASSWORD_ENCRYPTER
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: passwordencrypter
-            - name: ENABLE_ENCRYPTED
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: enableEncrypted
             - name: OS_PROJECT_NAME
               valueFrom:
                 configMapKeyRef:
@@ -118,9 +98,6 @@ spec:
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
-            - name: volume-devices-dir
-              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
-              mountPropagation: "Bidirectional"
             - name: pods-probe-dir
               mountPath: /dev
               mountPropagation: "HostToContainer"
@@ -128,16 +105,10 @@ spec:
               mountPath: /etc/iscsi/
             - name: ceph-dir
               mountPath: /etc/ceph/
-            - name: certificate-path
-              mountPath: /opt/opensds-security
       volumes:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/csi-opensdsplugin
-            type: DirectoryOrCreate
-        - name: volume-devices-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
@@ -158,8 +129,4 @@ spec:
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
-            type: DirectoryOrCreate
-        - name: certificate-path
-          hostPath:
-            path: /opt/opensds-security
             type: DirectoryOrCreate

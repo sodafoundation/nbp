@@ -14,21 +14,16 @@
 
 package pwd
 
-import (
-	"fmt"
-)
-
-type PwdEncrypter interface {
+type PwdTool interface {
 	Encrypter(password string) (string, error)
 	Decrypter(code string) (string, error)
 }
 
-func NewPwdEncrypter(encrypter string) PwdEncrypter {
-	switch encrypter {
+func NewPwdTool(tool string) PwdTool {
+	switch tool {
 	case "aes":
-		return NewAES()
+		return &AES{}
 	default:
-		fmt.Println("Use default encryption tool: aes.")
-		return NewAES()
+		return &AES{}
 	}
 }

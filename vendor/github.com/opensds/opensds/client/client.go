@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/opensds/opensds/pkg/utils/constants"
@@ -47,27 +46,25 @@ type Client struct {
 // Config is a struct that defines some options for calling the Client.
 type Config struct {
 	Endpoint    string
+	CACert      string
 	AuthOptions AuthOptions
 }
 
 // NewClient method creates a new Client.
-func NewClient(c *Config) (*Client, error) {
+func NewClient(c *Config) *Client {
 	// If endpoint field not specified,use the default value localhost.
 	if c.Endpoint == "" {
 		c.Endpoint = constants.DefaultOpensdsEndpoint
 		fmt.Printf("Warnning: OpenSDS Endpoint is not specified using the default value(%s)\n", c.Endpoint)
 	}
 
-	// If https is enabled, CA cert file should be provided.
 	u, _ := url.Parse(c.Endpoint)
 	if u.Scheme == "https" {
-		cacert = constants.OpensdsCaCertFile
-		_, err := os.Stat(cacert)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("Cannot open file %s", cacert)
-			}
+		if c.CACert == "" {
+			fmt.Println("If https is enabled, CA cert file should be provided.")
+			return nil
 		}
+		cacert = c.CACert
 	}
 
 	var r Receiver
@@ -91,7 +88,7 @@ func NewClient(c *Config) (*Client, error) {
 		VolumeMgr:      NewVolumeMgr(r, c.Endpoint, t),
 		VersionMgr:     NewVersionMgr(r, c.Endpoint, t),
 		ReplicationMgr: NewReplicationMgr(r, c.Endpoint, t),
-	}, nil
+	}
 }
 
 // Reset method is defined to clean Client struct.
@@ -101,20 +98,15 @@ func (c *Client) Reset() *Client {
 }
 
 func processListParam(args []interface{}) (string, error) {
+	var filter map[string]string
+	var u string
 	var urlParam []string
-	var output string
 
-	// If args is empty, just return the output immeadiately.
-	if len(args) == 0 {
-		return "", nil
-	}
-	// Add some limits for input args parameter.
-	if len(args) != 1 {
-		return "", errors.New("args should only support one parameter")
-	}
-	filter, ok := args[0].(map[string]string)
-	if !ok {
-		return "", errors.New("args element type should be map[string]string")
+	if len(args) > 0 {
+		if len(args) > 1 {
+			return "", errors.New("only support one parameter that must be map[string]string")
+		}
+		filter = args[0].(map[string]string)
 	}
 
 	if filter != nil {
@@ -125,9 +117,10 @@ func processListParam(args []interface{}) (string, error) {
 			urlParam = append(urlParam, k+"="+v)
 		}
 	}
+
 	if len(urlParam) > 0 {
-		output = strings.Join(urlParam, "&")
+		u = strings.Join(urlParam, "&")
 	}
 
-	return output, nil
+	return u, nil
 }

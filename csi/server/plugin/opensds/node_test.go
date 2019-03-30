@@ -15,7 +15,6 @@
 package opensds
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -101,12 +100,10 @@ func TestNodeStageVolume(t *testing.T) {
 		},
 	}
 
-	attachmentId := "f2dda3d2-bf79-11e7-8665-f750b088f63e"
-
-	fakeReq.PublishContext = map[string]string{KPublishAttachId: attachmentId}
+	fakeReq.PublishContext = map[string]string{KPublishAttachId: "f2dda3d2-bf79-11e7-8665-f750b088f63e"}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
+	expectedErr = status.Error(codes.NotFound, "Volume does not exist")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
