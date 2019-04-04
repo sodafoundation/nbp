@@ -32,6 +32,7 @@ const (
 	KVolumeProfileId     = "profileId"
 	KVolumeLvPath        = "lvPath"
 	KVolumeReplicationId = "replicationId"
+	KVolumeFstype        = "fstype"
 )
 
 // CSI publish attribute keywords
@@ -61,4 +62,16 @@ const SecondaryPrefix = "secondary-"
 const (
 	// DefFSType default filesystem type
 	DefFSType = "ext4"
+)
+
+// Csi configuration parameters and values
+const (
+	// parameters
+	KCSIVolumeMode = "CSIVolumeMode"
+
+	// CSIVolumeMode = Filesystem
+	KCSIFilesystem = "Filesystem"
+
+	// CSIVolumeMode = Block
+	KCSIBlock = "Block"
 )

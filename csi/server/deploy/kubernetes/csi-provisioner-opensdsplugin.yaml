@@ -75,11 +75,26 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: osusername
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: passwordencrypter
             - name: OS_PASSWORD
               valueFrom:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: ospassword
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: enableEncrypted
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
@@ -99,6 +114,12 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+            - name: certificate-path
+              mountPath: /opt/opensds-security
       volumes:
         - name: socket-dir
           emptyDir:
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: DirectoryOrCreate
