@@ -15,8 +15,8 @@ spec:
         app: csi-nodeplugin-opensdsplugin
     spec:
       tolerations:
-	    - key: node-role.kubernetes.io/master
-		  effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
       serviceAccount: csi-nodeplugin
       hostNetwork: true
       containers:
