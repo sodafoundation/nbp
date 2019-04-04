@@ -14,3 +14,7 @@ data:
   ostenantname: admin
   osprojectname: admin
   osuserdomainid: default
+  passwordencrypter: aes
+  enableEncrypted: F
+  osuserdomainid: default
+

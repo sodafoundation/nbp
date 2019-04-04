@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/astaxie/beego"
-	c "github.com/opensds/opensds/client"
 	"github.com/opensds/nbp/cindercompatibleapi/converter"
+	c "github.com/opensds/opensds/client"
 )
 
 func init() {

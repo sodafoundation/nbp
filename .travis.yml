@@ -1,11 +1,11 @@
-dist: trusty
+dist: xenial
 sudo: false
 
 language: go
 go_import_path: github.com/opensds/nbp
 
 go:
-  - 1.9.x
+  - 1.11.x
   - tip
 
 env:
@@ -24,3 +24,7 @@ script:
   - go test -v github.com/opensds/nbp/csi/... -cover
   - go test -v github.com/opensds/nbp/flexvolume/... -cover
   - go test -v github.com/opensds/nbp/cindercompatibleapi/... -cover
+
+after_success:
+  # Clean OpenSDS northbound plugin built data
+  - make clean

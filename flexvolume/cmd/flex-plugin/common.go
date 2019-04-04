@@ -262,7 +262,7 @@ func FindLinkPath(device string) (string, error) {
 	listCmd := exec.Command("ls", "/dev/disk/by-id", "-l")
 	listCmdOut, err := listCmd.CombinedOutput()
 	if err != nil {
-		log.Printf("Could not find link path %f: %v\n", listCmdOut, err)
+		log.Printf("Could not find link path %s: %v\n", string(listCmdOut), err)
 		return "", err
 	}
 
