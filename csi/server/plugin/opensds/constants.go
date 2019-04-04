@@ -33,6 +33,7 @@ const (
 	KVolumeLvPath        = "lvPath"
 	KVolumeReplicationId = "replicationId"
 	KVolumeFstype        = "fstype"
+	KMultiAttach         = "multiAttach"
 )
 
 // CSI publish attribute keywords

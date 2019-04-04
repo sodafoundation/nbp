@@ -140,9 +140,10 @@ func (p *Plugin) CreateVolume(
 	volumebody.Name = req.Name
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
+
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
-		case "fstype":
+		case KVolumeFstype:
 			fstype = v
 
 		case KParamProfile:
@@ -155,6 +156,10 @@ func (p *Plugin) CreateVolume(
 			}
 		case KParamSecondaryAZ:
 			secondaryAZ = v
+		case KMultiAttach:
+			if strings.ToLower(v) == "true" {
+				volumebody.MultiAttach = true
+			}
 		}
 	}
 

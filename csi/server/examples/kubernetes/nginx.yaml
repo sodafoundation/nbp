@@ -8,6 +8,7 @@ metadata:
 provisioner: csi-opensdsplugin
 parameters:
   fsType: ext4
+  multiAttach: false
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -15,7 +16,7 @@ metadata:
   name: csi-pvc-opensdsplugin
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
