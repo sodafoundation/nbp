@@ -35,7 +35,6 @@ import (
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils"
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -131,7 +130,9 @@ func (p *Plugin) CreateVolume(
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "CreateVolume: the client is nil"
+		glog.Info(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	// build volume body
@@ -140,7 +141,7 @@ func (p *Plugin) CreateVolume(
 	volumebody.Name = req.Name
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
-
+	var attachMode = "rw"
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		case KVolumeFstype:
@@ -159,6 +160,10 @@ func (p *Plugin) CreateVolume(
 		case KMultiAttach:
 			if strings.ToLower(v) == "true" {
 				volumebody.MultiAttach = true
+			}
+		case KPublishAttachMode:
+			if strings.ToLower(v) == "ro" {
+				attachMode = "ro"
 			}
 		}
 	}
@@ -249,13 +254,15 @@ func (p *Plugin) CreateVolume(
 		CapacityBytes: v.Size * allocationUnitBytes,
 		VolumeId:      v.Id,
 		VolumeContext: map[string]string{
-			KVolumeName:      v.Name,
-			KVolumeStatus:    v.Status,
-			KVolumeAZ:        v.AvailabilityZone,
-			KVolumePoolId:    v.PoolId,
-			KVolumeProfileId: v.ProfileId,
-			KVolumeLvPath:    v.Metadata["lvPath"],
-			KVolumeFstype:    fstype,
+			KVolumeName:        v.Name,
+			KVolumeStatus:      v.Status,
+			KVolumeAZ:          v.AvailabilityZone,
+			KVolumePoolId:      v.PoolId,
+			KVolumeProfileId:   v.ProfileId,
+			KVolumeLvPath:      v.Metadata["lvPath"],
+			KVolumeFstype:      fstype,
+			KMultiAttach:       strconv.FormatBool(v.MultiAttach),
+			KPublishAttachMode: attachMode,
 		},
 	}
 
@@ -389,51 +396,50 @@ func isStringMapEqual(metadataA, metadataB map[string]string) bool {
 }
 
 // isVolumePublished Check if the volume is published and compatible
-func isVolumePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpec,
-	metadata map[string]string) (*model.VolumeAttachmentSpec, error) {
+func isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpec,
+	volMultiAttach bool) error {
+
 	glog.V(5).Infof("start to isVolumePublished, canAtMultiNode = %v, attachReq = %v",
 		canAtMultiNode, attachReq)
 
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
-		glog.V(5).Info("ListVolumeAttachments failed: " + err.Error())
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+		msg := fmt.Sprintf("ListVolumeAttachments failed: %v", err)
+		glog.V(5).Info(msg)
+		return status.Error(codes.FailedPrecondition, msg)
 	}
+
+	msg := fmt.Sprintf("The volume %s can be published.", attachReq.VolumeId)
 
 	for _, attachSpec := range attachments {
 		if attachSpec.VolumeId == attachReq.VolumeId {
-			if attachSpec.Host != attachReq.Host {
-				if !canAtMultiNode {
-					msg := fmt.Sprintf("the volume %s has been published to another node and does not have MULTI_NODE volume capability",
-						attachReq.VolumeId)
-					return nil, status.Error(codes.FailedPrecondition, msg)
-				}
-			} else {
-				// Opensds does not have volume_capability and readonly parameters,
-				// but needs to check other parameters to determine compatibility?
-				if attachSpec.Platform == attachReq.Platform &&
-					attachSpec.OsType == attachReq.OsType &&
-					attachSpec.Initiator == attachReq.Initiator &&
-					isStringMapEqual(attachSpec.Metadata, metadata) &&
-					attachSpec.AccessProtocol == attachReq.AccessProtocol {
-					glog.V(5).Info("Volume published and is compatible")
-
-					return attachSpec, nil
-				}
-
-				glog.Error("Volume published but is incompatible, incompatible attachement Id = " + attachSpec.Id)
-				return nil, status.Error(codes.AlreadyExists, "Volume published but is incompatible")
+			if attachSpec.Host == attachReq.Host {
+				msg := fmt.Sprintf("the volume %s is publishing to the current node %s and no need to publish again", attachReq.VolumeId, attachReq.Host)
+				glog.Infof(msg)
+				return status.Error(codes.FailedPrecondition, msg)
 			}
+			if !canAtMultiNode {
+				msg := fmt.Sprintf("the volume %s has been published to the node %s and kubernetes does not have MULTI_NODE volume capability", attachReq.VolumeId, attachSpec.Host)
+				glog.Infof(msg)
+				return status.Error(codes.FailedPrecondition, msg)
+			}
+			if !volMultiAttach {
+				msg := fmt.Sprintf("the volume %s has been published to the node %s, but the volume does not enable multiattach", attachReq.VolumeId, attachSpec.Host)
+				glog.Infof(msg)
+				return status.Error(codes.FailedPrecondition, msg)
+			}
+
+			glog.Info(msg)
+			return nil
 		}
 	}
 
-	glog.V(5).Info("Need to create a new attachment")
-	return nil, nil
+	glog.Info(msg)
+	return nil
 }
 
 // ControllerPublishVolume implementation
-func (p *Plugin) ControllerPublishVolume(
-	ctx context.Context,
+func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
 
@@ -441,19 +447,21 @@ func (p *Plugin) ControllerPublishVolume(
 	defer glog.V(5).Info("end to ControllerPublishVolume")
 
 	if req.VolumeId == "" {
-		msg := "ControllerPublishVolume Volume ID must be provided"
+		msg := "ControllerPublishVolume: Volume ID must be provided"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.NodeId == "" {
-		msg := "ControllerPublishVolume Node ID must be provided"
+		msg := "ControllerPublishVolume: Node ID must be provided"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "ControllerPublishVolume: the client is nil"
+		glog.Info(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	fstype, ok := req.VolumeContext[KVolumeFstype]
@@ -463,16 +471,25 @@ func (p *Plugin) ControllerPublishVolume(
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
+	attachMode, ok := req.VolumeContext[KPublishAttachMode]
+	if !ok {
+		glog.Info("ControllerPublishVolume: attachMode use default value: rw")
+		attachMode = "rw"
+	}
+
 	//check volume is exist
-	volSpec, errVol := client.GetVolume(req.VolumeId)
-	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+	volSpec, err := client.GetVolume(req.VolumeId)
+	if err != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s is not exist, error info: %v",
+			req.VolumeId, err)
+		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
 	pool, err := client.GetPool(volSpec.PoolId)
 	if err != nil || pool == nil {
-		msg := fmt.Sprintf("the pool %s is not sxist", volSpec.PoolId)
+		msg := fmt.Sprintf("the pool %s is not sxist, error info: %v",
+			volSpec.PoolId, err)
 		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
 	}
@@ -486,8 +503,10 @@ func (p *Plugin) ControllerPublishVolume(
 	case connector.FcDriver:
 		wwpns, err := extractFCInitiatorFromNodeInfo(nodeInfo)
 		if err != nil {
-			glog.Error(err.Error())
-			return nil, status.Error(codes.FailedPrecondition, err.Error())
+			msg := fmt.Sprintf("extract FC initiator from node info failed, %v",
+				err.Error())
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
 		initator = strings.Join(wwpns, ",")
@@ -495,8 +514,10 @@ func (p *Plugin) ControllerPublishVolume(
 	case connector.IscsiDriver:
 		iqn, err := extractISCSIInitiatorFromNodeInfo(nodeInfo)
 		if err != nil {
-			glog.Error(err.Error())
-			return nil, status.Error(codes.FailedPrecondition, err.Error())
+			msg := fmt.Sprintf("extract ISCSI initiator from node info failed, %v",
+				err.Error())
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
 		initator = iqn
@@ -504,7 +525,7 @@ func (p *Plugin) ControllerPublishVolume(
 	case connector.RbdDriver:
 		break
 	default:
-		msg := fmt.Sprintf("protocol:[%s] not support.", protocol)
+		msg := fmt.Sprintf("protocol:[%s] not support", protocol)
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -519,6 +540,7 @@ func (p *Plugin) ControllerPublishVolume(
 		},
 		Metadata:       req.VolumeContext,
 		AccessProtocol: protocol,
+		AttachMode:     attachMode,
 	}
 
 	mode := req.VolumeCapability.AccessMode.Mode
@@ -530,64 +552,62 @@ func (p *Plugin) ControllerPublishVolume(
 		canAtMultiNode = true
 	}
 
-	expectedMetadata := utils.MergeStringMaps(attachReq.Metadata, volSpec.Metadata)
-	existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
+	err = isVolumeCanBePublished(canAtMultiNode, attachReq, volSpec.MultiAttach)
 	if err != nil {
 		return nil, err
 	}
 
-	var attachSpec *model.VolumeAttachmentSpec
-
-	if nil == existAttachment {
-		newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
-		if errAttach != nil {
-			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		attachSpec = newAttachment
-	} else {
-		attachSpec = existAttachment
+	newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
+	if errAttach != nil {
+		msg := fmt.Sprintf("the volume %s failed to publish to node %s, error info: %v",
+			req.VolumeId, req.NodeId, errAttach)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	resp := &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{
-			KPublishHostIp:       attachSpec.Ip,
-			KPublishHostName:     attachSpec.Host,
-			KPublishAttachId:     attachSpec.Id,
-			KPublishAttachStatus: attachSpec.Status,
+			KPublishHostIp:       newAttachment.Ip,
+			KPublishHostName:     newAttachment.Host,
+			KPublishAttachId:     newAttachment.Id,
+			KPublishAttachStatus: newAttachment.Status,
 			KVolumeFstype:        fstype,
+			KMultiAttach:         attachMode,
 		},
 	}
 
 	if replicationId, ok := req.VolumeContext[KVolumeReplicationId]; ok {
 		r, err := client.GetReplication(replicationId)
 		if err != nil {
-			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
+			msg := fmt.Sprintf("failed to get replication: %v", err)
+			glog.Info(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
 		attachReq.VolumeId = r.SecondaryVolumeId
-		existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
+
+		secondaryVolume, err := client.GetVolume(attachReq.VolumeId)
+		if err != nil {
+			msg := fmt.Sprintf("failed to get secondary volume: %v", err)
+			glog.Info(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
+		err = isVolumeCanBePublished(canAtMultiNode, attachReq, secondaryVolume.MultiAttach)
 		if err != nil {
 			return nil, err
 		}
 
-		if nil == existAttachment {
-			newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
-			if errAttach != nil {
-				msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-				glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-				return nil, status.Error(codes.FailedPrecondition, msg)
-			}
-
-			attachSpec = newAttachment
-		} else {
-			attachSpec = existAttachment
+		newAttachment, errAttach := client.CreateVolumeAttachment(attachReq)
+		if errAttach != nil {
+			msg := fmt.Sprintf("failed to ControllerPublishVolume: the volume %s failed to publish to node %s, error info %v",
+				req.VolumeId, req.NodeId, errAttach)
+			glog.Errorf(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
-
-		resp.PublishContext[KPublishSecondaryAttachId] = attachSpec.Id
+		resp.PublishContext[KPublishSecondaryAttachId] = newAttachment.Id
 	}
+
 	return resp, nil
 }
 
@@ -614,13 +634,16 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := fmt.Sprintf("the client is nil")
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	//check volume is exist
 	volSpec, errVol := client.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
+		msg := fmt.Sprintf("the volume %s is not exist, err: %v", req.VolumeId, errVol)
+		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
@@ -632,22 +655,27 @@ func (p *Plugin) ControllerUnpublishVolume(
 
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
+		msg := fmt.Sprintf("failed to list volume attachments, %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	hostName := strings.Split(req.NodeId, ",")[0]
+
 	var acts []*model.VolumeAttachmentSpec
 
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostName {
 			acts = append(acts, attachSpec)
+			break
 		}
 	}
 
 	if r := getReplicationByVolume(req.VolumeId); r != nil {
 		for _, attachSpec := range attachments {
-			if attachSpec.VolumeId == r.SecondaryVolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
+			if attachSpec.VolumeId == r.SecondaryVolumeId && attachSpec.Host == hostName {
 				acts = append(acts, attachSpec)
+				break
 			}
 		}
 	}

@@ -106,7 +106,7 @@ func TestNodeStageVolume(t *testing.T) {
 	fakeReq.PublishContext = map[string]string{KPublishAttachId: attachmentId}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
+	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist, output format not supported", attachmentId))
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
