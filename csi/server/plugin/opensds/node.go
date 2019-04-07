@@ -492,7 +492,7 @@ func (p *Plugin) NodePublishVolume(
 	if nil == block {
 		// Bind mount
 		mountFlags := append(mnt.MountFlags, "bind")
-		glog.Infof("req.Readonly, %s", req.Readonly)
+		glog.Infof("req.Readonly, %v", req.Readonly)
 		if req.Readonly {
 			mountFlags = append(mountFlags, "ro")
 		}
