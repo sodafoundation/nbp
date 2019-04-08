@@ -81,31 +81,21 @@ func GetDefaultProfile() (*model.ProfileSpec, error) {
 }
 
 // FindVolume implementation
-func FindVolume(req *model.VolumeSpec) (bool, bool, *model.VolumeSpec, error) {
-	isExist := false
+func FindVolume(req *model.VolumeSpec) (*model.VolumeSpec, error) {
 	volumes, err := client.ListVolumes()
-
 	if err != nil {
-		glog.Error("List volumes failed: ", err)
-
-		return false, false, nil, err
+		msg := fmt.Sprintf("List volumes failed: ", err)
+		glog.Error(msg)
+		return nil, errors.New(msg)
 	}
 
 	for _, volume := range volumes {
 		if volume.Name == req.Name {
-			isExist = true
-
-			if (volume.Size == req.Size) && (volume.ProfileId == req.ProfileId) &&
-				(volume.AvailabilityZone == req.AvailabilityZone) &&
-				(volume.SnapshotId == req.SnapshotId) {
-				glog.V(5).Infof("Volume already exists and is compatible")
-
-				return true, true, volume, nil
-			}
+			return volume, nil
 		}
 	}
 
-	return isExist, false, nil, nil
+	return nil, nil
 }
 
 // CreateVolume implementation
@@ -208,30 +198,27 @@ func (p *Plugin) CreateVolume(
 		volumebody.AvailabilityZone = "default"
 	}
 
-	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
+	glog.V(5).Infof("CreateVolume volumebody: %+v", volumebody)
 
-	isExist, isCompatible, findVolume, err := FindVolume(volumebody)
+	volExist, err := FindVolume(volumebody)
 	if err != nil {
 		return nil, err
 	}
 
 	var v *model.VolumeSpec
 
-	if isExist {
-		if isCompatible {
-			v = findVolume
-		} else {
-			return nil, status.Error(codes.AlreadyExists,
-				"Volume already exists but is incompatible")
-		}
-	} else {
+	if volExist == nil {
 		createVolume, err := client.CreateVolume(volumebody)
 		if err != nil {
-			glog.Error("failed to CreateVolume", err)
-			return nil, err
-		} else {
-			v = createVolume
+			msg := fmt.Sprintf("failed to CreateVolume, %v", err)
+			glog.Error(msg)
+			return nil, errors.New(msg)
 		}
+
+		v = createVolume
+
+	} else {
+		v = volExist
 	}
 
 	glog.V(5).Infof("waiting until volume is created.")
@@ -267,7 +254,7 @@ func (p *Plugin) CreateVolume(
 	}
 
 	glog.V(5).Infof("resp volumeinfo = %v", volumeinfo)
-	if enableReplication && !isExist {
+	if enableReplication && volExist == nil {
 		volumebody.AvailabilityZone = secondaryAZ
 		volumebody.Name = SecondaryPrefix + req.Name
 		sVol, err := client.CreateVolume(volumebody)
@@ -416,7 +403,7 @@ func isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachme
 			if attachSpec.Host == attachReq.Host {
 				msg := fmt.Sprintf("the volume %s is publishing to the current node %s and no need to publish again", attachReq.VolumeId, attachReq.Host)
 				glog.Infof(msg)
-				return status.Error(codes.FailedPrecondition, msg)
+				return nil
 			}
 			if !canAtMultiNode {
 				msg := fmt.Sprintf("the volume %s has been published to the node %s and kubernetes does not have MULTI_NODE volume capability", attachReq.VolumeId, attachSpec.Host)
