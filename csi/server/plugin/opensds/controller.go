@@ -636,12 +636,6 @@ func (p *Plugin) ControllerUnpublishVolume(
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	if volSpec.Status == model.VolumeAvailable {
-		msg := fmt.Sprintf("volume %s has already been unpublished.", volSpec.Id)
-		glog.Error(msg)
-		return &csi.ControllerUnpublishVolumeResponse{}, nil
-	}
-
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		msg := fmt.Sprintf("failed to list volume attachments, %v", err)
