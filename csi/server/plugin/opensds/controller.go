@@ -148,6 +148,7 @@ func (p *Plugin) CreateVolume(
 		case KParamSecondaryAZ:
 			secondaryAZ = v
 		case KMultiAttach:
+			glog.Info(KMultiAttach + ":" + strings.ToLower(v))
 			if strings.ToLower(v) == "true" {
 				volumebody.MultiAttach = true
 			}
