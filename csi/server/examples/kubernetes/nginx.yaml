@@ -8,7 +8,7 @@ metadata:
 provisioner: csi-opensdsplugin
 parameters:
   fsType: ext4
-  multiAttach: false
+  multiAttach: f
   attachMode: rw
 ---
 apiVersion: v1

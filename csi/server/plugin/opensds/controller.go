@@ -132,6 +132,7 @@ func (p *Plugin) CreateVolume(
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
 	var attachMode = "rw"
+	glog.Infof("create volume parameters %+v", req.GetParameters())
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		case KVolumeFstype:
@@ -149,7 +150,7 @@ func (p *Plugin) CreateVolume(
 			secondaryAZ = v
 		case KMultiAttach:
 			glog.Info(KMultiAttach + ":" + strings.ToLower(v))
-			if strings.ToLower(v) == "true" {
+			if strings.ToLower(v) == "t" {
 				volumebody.MultiAttach = true
 			}
 		case KPublishAttachMode:
