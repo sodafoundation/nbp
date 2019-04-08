@@ -84,7 +84,7 @@ func GetDefaultProfile() (*model.ProfileSpec, error) {
 func FindVolume(req *model.VolumeSpec) (*model.VolumeSpec, error) {
 	volumes, err := client.ListVolumes()
 	if err != nil {
-		msg := fmt.Sprintf("List volumes failed: ", err)
+		msg := fmt.Sprintf("List volumes failed: %v", err)
 		glog.Error(msg)
 		return nil, errors.New(msg)
 	}
