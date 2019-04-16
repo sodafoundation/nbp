@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SHELL=/bin/bash
 BASE_DIR := $(shell pwd)
 BUILD_DIR := $(BASE_DIR)/build/out
 IMAGE_TAG := latest
