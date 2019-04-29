@@ -32,6 +32,7 @@ import (
 	_ "github.com/opensds/opensds/contrib/connector/fc"
 	_ "github.com/opensds/opensds/contrib/connector/iscsi"
 	_ "github.com/opensds/opensds/contrib/connector/rbd"
+	_ "github.com/opensds/opensds/contrib/connector/nvmeof"
 )
 
 var (

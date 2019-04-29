@@ -496,6 +496,15 @@ func (p *Plugin) ControllerPublishVolume(
 
 		initator = iqn
 		break
+	case connector.NvmeofDriver:
+		nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			glog.Error(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
+
+		initator = nqn
+		break
 	case connector.RbdDriver:
 		break
 	default:
@@ -1249,6 +1258,17 @@ func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
 	}
 
 	return "", errors.New("No ISCSI initiators found")
+}
+
+func extractNvmeofInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "nqn") {
+			glog.Info("Nvmeof initiator is ", v)
+			return v, nil
+		}
+	}
+
+	return "", errors.New("no nvmeof initiators found")
 }
 
 func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
