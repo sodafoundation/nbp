@@ -481,6 +481,13 @@ func TestCreateVolume(t *testing.T) {
 			KVolumeLvPath:    "",
 			KVolumeFstype:    "ext4",
 		},
+		AccessibleTopology: []*csi.Topology{
+			{
+				Segments: map[string]string{
+					TopologyZoneKey: "default",
+				},
+			},
+		},
 	}
 
 	expectedRs := &csi.CreateVolumeResponse{
