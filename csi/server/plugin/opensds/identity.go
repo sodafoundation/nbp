@@ -35,32 +35,31 @@ func (p *Plugin) Probe(
 }
 
 // GetPluginInfo implementation
-func (p *Plugin) GetPluginInfo(
-	ctx context.Context,
-	req *csi.GetPluginInfoRequest) (
-	*csi.GetPluginInfoResponse, error) {
-
+func (p *Plugin) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	glog.Info("start to GetPluginInfo")
 	defer glog.Info("end to GetPluginInfo")
 
 	return &csi.GetPluginInfoResponse{
 		Name:          PluginName,
 		VendorVersion: "",
-		Manifest:      nil,
 	}, nil
 }
 
 // GetPluginInfo implementation
-func (p *Plugin) GetPluginCapabilities(
-	ctx context.Context,
-	req *csi.GetPluginCapabilitiesRequest) (
-	*csi.GetPluginCapabilitiesResponse, error) {
+func (p *Plugin) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
-			&csi.PluginCapability{
+			{
 				Type: &csi.PluginCapability_Service_{
 					Service: &csi.PluginCapability_Service{
 						Type: csi.PluginCapability_Service_CONTROLLER_SERVICE,
+					},
+				},
+			},
+			{
+				Type: &csi.PluginCapability_Service_{
+					Service: &csi.PluginCapability_Service{
+						Type: csi.PluginCapability_Service_VOLUME_ACCESSIBILITY_CONSTRAINTS,
 					},
 				},
 			},

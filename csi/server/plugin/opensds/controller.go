@@ -194,8 +194,8 @@ func (p *Plugin) CreateVolume(
 		volumebody.ProfileId = defaultRrf.Id
 	}
 
-	if "" == volumebody.AvailabilityZone {
-		volumebody.AvailabilityZone = "default"
+	if "" == volumebody.AvailabilityZone && req.GetAccessibilityRequirements() != nil {
+		volumebody.AvailabilityZone = getZone(req.GetAccessibilityRequirements())
 	}
 
 	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
@@ -251,6 +251,14 @@ func (p *Plugin) CreateVolume(
 			KVolumeProfileId: v.ProfileId,
 			KVolumeLvPath:    v.Metadata["lvPath"],
 			KVolumeFstype:    fstype,
+		},
+
+		AccessibleTopology: []*csi.Topology{
+			{
+				Segments: map[string]string{
+					TopologyZoneKey: volumebody.AvailabilityZone,
+				},
+			},
 		},
 	}
 
@@ -1266,4 +1274,23 @@ func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
 	glog.Info("FC initiators are ", wwpns)
 
 	return wwpns, nil
+}
+
+func getZone(requirement *csi.TopologyRequirement) string {
+	if requirement == nil {
+		return ""
+	}
+	for _, topology := range requirement.GetPreferred() {
+		zone, exists := topology.GetSegments()[TopologyZoneKey]
+		if exists {
+			return zone
+		}
+	}
+	for _, topology := range requirement.GetRequisite() {
+		zone, exists := topology.GetSegments()[TopologyZoneKey]
+		if exists {
+			return zone
+		}
+	}
+	return ""
 }
