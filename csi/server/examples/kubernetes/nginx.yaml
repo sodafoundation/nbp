@@ -14,7 +14,6 @@ allowedTopologies:
   - key: opensds.nbp/zone
     values:
     - defaultZone
-	
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
