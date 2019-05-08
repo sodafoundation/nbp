@@ -54,6 +54,9 @@ docker: build
 	docker build csi/client -t opensdsio/csipluginclient:$(IMAGE_TAG)
 	docker build service-broker/cmd/service-broker -t opensdsio/service-broker:$(IMAGE_TAG)
 
+goimports:
+	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
+
 clean:
 	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds \
 		./service-broker/cmd/service-broker/service-broker
