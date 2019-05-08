@@ -98,14 +98,14 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 
 	vol, err := client.GetVolume(volId)
 	if nil != err || nil == vol {
-		msg := fmt.Sprintf("Volume does not exist, %v", err)
+		msg := fmt.Sprintf("volume does not exist, %v", err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
 	attachments, err := client.ListVolumeAttachments()
 	if nil != err {
-		msg := fmt.Sprintf("List volume attachments failed, %v", err)
+		msg := fmt.Sprintf("list volume attachments failed, %v", err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.NotFound, msg)
 	}
@@ -114,7 +114,7 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 
 	hostName, err := connector.GetHostName()
 	if err != nil {
-		msg := fmt.Sprintf("Faild to get host name %v", err)
+		msg := fmt.Sprintf("faild to get host name %v", err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
@@ -161,7 +161,7 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 		volConnector := connector.NewConnector(attachment.DriverVolumeType)
 
 		if volConnector == nil {
-			msg := fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType)
+			msg := fmt.Sprintf("unsupport driverVolumeType: %s", attachment.DriverVolumeType)
 			glog.Error(msg)
 			return status.Error(codes.FailedPrecondition, msg)
 		}
@@ -224,13 +224,13 @@ func (p *Plugin) NodeStageVolume(
 	defer glog.V(5).Info("end to NodeStageVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath || nil == req.VolumeCapability {
-		msg := "Volume_id/staging_target_path/volume_capability must be specified"
+		msg := "volume_id/staging_target_path/volume_capability must be specified"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		msg := "NodeStageVolume: the client is nil"
+		msg := "nodeStageVolume: the client is nil"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -382,7 +382,7 @@ func (p *Plugin) NodeUnstageVolume(
 	defer glog.V(5).Info("end to NodeUnstageVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath {
-		msg := "Volume_id/staging_target_path must be specified"
+		msg := "volume_id/staging_target_path must be specified"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -452,7 +452,7 @@ func (p *Plugin) NodePublishVolume(
 	defer glog.V(5).Info("end to NodePublishVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath || "" == req.TargetPath || nil == req.VolumeCapability {
-		msg := "Volume_id/staging_target_path/target_path/volume_capability must be specified"
+		msg := "volume_id/staging_target_path/target_path/volume_capability must be specified"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -556,7 +556,7 @@ func (p *Plugin) NodeUnpublishVolume(
 	defer glog.V(5).Info("end to NodeUnpublishVolume")
 
 	if "" == req.VolumeId || "" == req.TargetPath {
-		msg := "Volume_id/target_path must be specified"
+		msg := "volume_id/target_path must be specified"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -635,13 +635,13 @@ func (p *Plugin) NodeGetInfo(
 	for _, volDriverType := range volDriverTypes {
 		volDriver := connector.NewConnector(volDriverType)
 		if volDriver == nil {
-			glog.Errorf("Unsupport volDriver: %s", volDriverType)
+			glog.Errorf("unsupport volDriver: %s", volDriverType)
 			continue
 		}
 
 		initiator, err := volDriver.GetInitiatorInfo()
 		if err != nil {
-			glog.Errorf("Cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
+			glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
 			continue
 		}
 
@@ -649,7 +649,7 @@ func (p *Plugin) NodeGetInfo(
 	}
 
 	if len(initiators) == 0 {
-		msg := fmt.Sprintf("Cannot get any initiator for host %s", hostName)
+		msg := fmt.Sprintf("cannot get any initiator for host %s", hostName)
 		glog.Error(msg)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}

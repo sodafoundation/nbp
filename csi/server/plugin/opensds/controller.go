@@ -84,7 +84,7 @@ func GetDefaultProfile() (*model.ProfileSpec, error) {
 func FindVolume(req *model.VolumeSpec) (*model.VolumeSpec, error) {
 	volumes, err := client.ListVolumes()
 	if err != nil {
-		msg := fmt.Sprintf("List volumes failed: %v", err)
+		msg := fmt.Sprintf("list volumes failed: %v", err)
 		glog.Error(msg)
 		return nil, errors.New(msg)
 	}
@@ -108,19 +108,19 @@ func (p *Plugin) CreateVolume(
 	defer glog.V(5).Info("end to CreateVolume")
 
 	if req.Name == "" {
-		msg := "CreateVolume Name must be provided"
-		glog.Errorf("CreateVolume Name must be provided")
+		msg := "createVolume Name must be provided"
+		glog.Errorf(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.VolumeCapabilities == nil || len(req.VolumeCapabilities) == 0 {
-		msg := "CreateVolume Volume capabilities must be provided"
+		msg := "createVolume Volume capabilities must be provided"
 		glog.Errorf(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		msg := "CreateVolume: the client is nil"
+		msg := "createVolume: the client is nil"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -161,7 +161,7 @@ func (p *Plugin) CreateVolume(
 	}
 
 	if !util.IsSupportFstype(fstype) {
-		msg := (fmt.Sprintf("Volume create fstype[%s] not support.", fstype))
+		msg := (fmt.Sprintf("volume create fstype[%s] not support.", fstype))
 		glog.Errorf(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
@@ -226,12 +226,12 @@ func (p *Plugin) CreateVolume(
 	glog.V(5).Infof("waiting until volume is created.")
 	volStable, err := p.waitForVolStatusStable(v.Id)
 	if err != nil {
-		msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+		msg := fmt.Sprintf("failed to CreateVolume:errMsg: %v", err)
 		glog.Errorf(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
 	if volStable.Status != "available" {
-		msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
+		msg := fmt.Sprintf("failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
 		glog.Errorf(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
@@ -267,12 +267,12 @@ func (p *Plugin) CreateVolume(
 
 		sVolStable, err := p.waitForVolStatusStable(sVol.Id)
 		if err != nil {
-			msg := fmt.Sprintf("Failed to CreateVolume:errMsg: %v", err)
+			msg := fmt.Sprintf("failed to CreateVolume:errMsg: %v", err)
 			glog.Errorf(msg)
 			return nil, status.Error(codes.Internal, msg)
 		}
 		if sVolStable.Status != "available" {
-			msg := fmt.Sprintf("Failed to CreateVolume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
+			msg := fmt.Sprintf("failed to CreateVolume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
 			glog.Errorf(msg)
 			return nil, status.Error(codes.Internal, msg)
 		}
@@ -317,7 +317,7 @@ func (p *Plugin) DeleteVolume(
 	defer glog.V(5).Info("end to DeleteVolume")
 
 	if req.VolumeId == "" {
-		msg := "DeleteVolume Volume ID must be provided"
+		msg := "deleteVolume Volume ID must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -393,12 +393,12 @@ func isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachme
 
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
-		msg := fmt.Sprintf("ListVolumeAttachments failed: %v", err)
+		msg := fmt.Sprintf("listVolumeAttachments failed: %v", err)
 		glog.V(5).Info(msg)
 		return status.Error(codes.FailedPrecondition, msg)
 	}
 
-	msg := fmt.Sprintf("The volume %s can be published.", attachReq.VolumeId)
+	msg := fmt.Sprintf("the volume %s can be published.", attachReq.VolumeId)
 
 	for _, attachSpec := range attachments {
 		if attachSpec.VolumeId == attachReq.VolumeId {
@@ -436,26 +436,26 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 	defer glog.V(5).Info("end to ControllerPublishVolume")
 
 	if req.VolumeId == "" {
-		msg := "ControllerPublishVolume: Volume ID must be provided"
+		msg := "controllerPublishVolume: Volume ID must be provided"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.NodeId == "" {
-		msg := "ControllerPublishVolume: Node ID must be provided"
+		msg := "controllerPublishVolume: Node ID must be provided"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		msg := "ControllerPublishVolume: the client is nil"
+		msg := "controllerPublishVolume: the client is nil"
 		glog.Info(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	fstype, ok := req.VolumeContext[KVolumeFstype]
 	if !ok {
-		msg := "ControllerPublishVolume fstype must be provided"
+		msg := "controllerPublishVolume fstype must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -611,13 +611,13 @@ func (p *Plugin) ControllerUnpublishVolume(
 	defer glog.V(5).Info("end to ControllerUnpublishVolume")
 
 	if req.VolumeId == "" {
-		msg := "ControllerPublishVolume Volume ID must be provided"
+		msg := "controllerPublishVolume Volume ID must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.NodeId == "" {
-		msg := "ControllerUnpublishVolume Node ID must be provided"
+		msg := "controllerUnpublishVolume Node ID must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
