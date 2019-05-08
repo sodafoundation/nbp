@@ -1520,12 +1520,10 @@ func (c *Client) UpdateVolumeAttachment(ctx *c.Context, attachmentId string, att
 	if attachment.Metadata != nil {
 		result.Metadata = utils.MergeStringMaps(result.Metadata, attachment.Metadata)
 	}
-	// Update connectionData
-	// Debug
-	log.Infof("etcd: update volume attachment connection data from db: %v", result.ConnectionData)
-	log.Infof("etcd: update volume attachment connection data from target: %v", attachment.ConnectionData)
-
-	result.ConnectionData = attachment.ConnectionData
+	// Update onnectionData
+	for k, v := range attachment.ConnectionData {
+		result.ConnectionData[k] = v
+	}
 	// Set update time
 	result.UpdatedAt = time.Now().Format(constants.TimeFormat)
 
