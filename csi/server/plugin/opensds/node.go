@@ -235,7 +235,7 @@ func (p *Plugin) NodeStageVolume(
 
 	vol, attachment, err := getVolumeAndAttachment(volId, attachmentId)
 	if nil != err {
-		return nil, err
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	device := attachment.Mountpoint
@@ -359,7 +359,7 @@ func (p *Plugin) NodeUnstageVolume(
 
 	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
 	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {

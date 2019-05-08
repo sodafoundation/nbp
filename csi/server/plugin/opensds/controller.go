@@ -161,7 +161,7 @@ func (p *Plugin) CreateVolume(
 	if !util.IsSupportFstype(fstype) {
 		msg := (fmt.Sprintf("Volume create fstype[%s] not support.", fstype))
 		glog.Errorf(msg)
-		return nil, status.Error(codes.Internal, msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	allocationUnitBytes := util.GiB
@@ -334,7 +334,7 @@ func (p *Plugin) DeleteVolume(
 	}
 
 	if vol == nil {
-		return nil, fmt.Errorf("The volume %s is already deleted.", volId)
+		return &csi.DeleteVolumeResponse{}, nil
 	}
 
 	r := getReplicationByVolume(volId)
