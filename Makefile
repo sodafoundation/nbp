@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SHELL=/bin/bash
 BASE_DIR := $(shell pwd)
 BUILD_DIR := $(BASE_DIR)/build/out
 IMAGE_TAG := latest
@@ -52,6 +53,9 @@ docker: build
 	docker build csi/server -t opensdsio/csiplugin:$(IMAGE_TAG)
 	docker build csi/client -t opensdsio/csipluginclient:$(IMAGE_TAG)
 	docker build service-broker/cmd/service-broker -t opensdsio/service-broker:$(IMAGE_TAG)
+
+goimports:
+	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
 
 clean:
 	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds \
