@@ -32,19 +32,19 @@ prebuild:
 	mkdir -p  $(BUILD_DIR)
 
 csi.server.opensds: prebuild
-	go build -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
 
 csi.client.opensds: prebuild
-	go build -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
 
 flexvolume.server.opensds: prebuild
-	go build -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
 
 service-broker: prebuild
-	go build -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
 
 cindercompatibleapi: prebuild
-	go build -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
 
 docker: build
 	cp $(BUILD_DIR)/csi.server.opensds ./csi/server
