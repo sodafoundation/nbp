@@ -67,7 +67,7 @@ func init() {
 func GetDefaultProfile() (*model.ProfileSpec, error) {
 	profiles, err := client.ListProfiles()
 	if err != nil {
-		glog.Error("Get default profile failed: ", err)
+		glog.Error("get default profile failed: ", err)
 		return nil, err
 	}
 
@@ -109,19 +109,19 @@ func (p *Plugin) CreateVolume(
 
 	if req.Name == "" {
 		msg := "createVolume Name must be provided"
-		glog.Errorf(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.VolumeCapabilities == nil || len(req.VolumeCapabilities) == 0 {
 		msg := "createVolume Volume capabilities must be provided"
-		glog.Errorf(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
 		msg := "createVolume: the client is nil"
-		glog.Info(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
@@ -132,7 +132,7 @@ func (p *Plugin) CreateVolume(
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
 	var attachMode = "rw"
-	glog.Infof("create volume parameters %+v", req.GetParameters())
+	glog.V(5).Infof("create volume parameters %+v", req.GetParameters())
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		case KVolumeFstype:
@@ -148,11 +148,6 @@ func (p *Plugin) CreateVolume(
 			}
 		case KParamSecondaryAZ:
 			secondaryAZ = v
-		case KMultiAttach:
-			glog.Info(KMultiAttach + ":" + strings.ToLower(v))
-			if strings.ToLower(v) == "t" {
-				volumebody.MultiAttach = true
-			}
 		case KPublishAttachMode:
 			if strings.ToLower(v) == "ro" {
 				attachMode = "ro"
@@ -200,7 +195,7 @@ func (p *Plugin) CreateVolume(
 		volumebody.AvailabilityZone = "default"
 	}
 
-	glog.V(5).Infof("CreateVolume volumebody: %+v", volumebody)
+	glog.V(5).Infof("createVolume volumebody: %+v", volumebody)
 
 	volExist, err := FindVolume(volumebody)
 	if err != nil {
@@ -227,12 +222,12 @@ func (p *Plugin) CreateVolume(
 	volStable, err := p.waitForVolStatusStable(v.Id)
 	if err != nil {
 		msg := fmt.Sprintf("failed to CreateVolume:errMsg: %v", err)
-		glog.Errorf(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
 	if volStable.Status != "available" {
 		msg := fmt.Sprintf("failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
-		glog.Errorf(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
 
@@ -250,7 +245,6 @@ func (p *Plugin) CreateVolume(
 			KVolumeProfileId:   v.ProfileId,
 			KVolumeLvPath:      v.Metadata["lvPath"],
 			KVolumeFstype:      fstype,
-			KMultiAttach:       strconv.FormatBool(v.MultiAttach),
 			KPublishAttachMode: attachMode,
 		},
 	}
@@ -286,7 +280,7 @@ func (p *Plugin) CreateVolume(
 		}
 		replicaResp, err := client.CreateReplication(replicaBody)
 		if err != nil {
-			glog.Errorf("Create replication failed: %v", err)
+			glog.Errorf("create replication failed: %v", err)
 			return nil, err
 		}
 		volumeinfo.VolumeContext[KVolumeReplicationId] = replicaResp.Id
@@ -330,7 +324,7 @@ func (p *Plugin) DeleteVolume(
 
 	vol, err := client.GetVolume(volId)
 	if err != nil {
-		glog.Error("Get volume failed, ", err)
+		glog.Error("get volume failed, ", err)
 		return nil, err
 	}
 
@@ -341,20 +335,20 @@ func (p *Plugin) DeleteVolume(
 	r := getReplicationByVolume(volId)
 	if r != nil {
 		if err := client.DeleteReplication(r.Id, nil); err != nil {
-			glog.Error("Delete replication failed, ", err)
+			glog.Error("delete replication failed, ", err)
 			return nil, err
 		}
 		if err := client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
-			glog.Error("Delete primary volume failed, ", err)
+			glog.Error("delete primary volume failed, ", err)
 			return nil, err
 		}
 		if err := client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
-			glog.Error("Delete secondary volume failed, ", err)
+			glog.Error("delete secondary volume failed, ", err)
 			return nil, err
 		}
 	} else {
 		if err := client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
-			glog.Error("Delete volume failed, ", err)
+			glog.Error("delete volume failed, ", err)
 			return nil, err
 		}
 	}
@@ -394,7 +388,7 @@ func isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachme
 	attachments, err := client.ListVolumeAttachments()
 	if err != nil {
 		msg := fmt.Sprintf("listVolumeAttachments failed: %v", err)
-		glog.V(5).Info(msg)
+		glog.Error(msg)
 		return status.Error(codes.FailedPrecondition, msg)
 	}
 
@@ -409,12 +403,12 @@ func isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachme
 			}
 			if !canAtMultiNode {
 				msg := fmt.Sprintf("the volume %s has been published to the node %s and kubernetes does not have MULTI_NODE volume capability", attachReq.VolumeId, attachSpec.Host)
-				glog.Infof(msg)
+				glog.Error(msg)
 				return status.Error(codes.FailedPrecondition, msg)
 			}
 			if !volMultiAttach {
 				msg := fmt.Sprintf("the volume %s has been published to the node %s, but the volume does not enable multiattach", attachReq.VolumeId, attachSpec.Host)
-				glog.Infof(msg)
+				glog.Error(msg)
 				return status.Error(codes.FailedPrecondition, msg)
 			}
 
@@ -437,19 +431,19 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 
 	if req.VolumeId == "" {
 		msg := "controllerPublishVolume: Volume ID must be provided"
-		glog.Info(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.NodeId == "" {
 		msg := "controllerPublishVolume: Node ID must be provided"
-		glog.Info(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
 		msg := "controllerPublishVolume: the client is nil"
-		glog.Info(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
@@ -462,7 +456,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 
 	attachMode, ok := req.VolumeContext[KPublishAttachMode]
 	if !ok {
-		glog.Info("ControllerPublishVolume: attachMode use default value: rw")
+		glog.Error("controllerPublishVolume: attachMode use default value: rw")
 		attachMode = "rw"
 	}
 
@@ -477,7 +471,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 
 	pool, err := client.GetPool(volSpec.PoolId)
 	if err != nil || pool == nil {
-		msg := fmt.Sprintf("the pool %s is not sxist, error info: %v",
+		msg := fmt.Sprintf("the pool %s is not exist, error info: %v",
 			volSpec.PoolId, err)
 		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
@@ -561,7 +555,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 			KPublishAttachId:     newAttachment.Id,
 			KPublishAttachStatus: newAttachment.Status,
 			KVolumeFstype:        fstype,
-			KMultiAttach:         attachMode,
+			KPublishAttachMode:   attachMode,
 		},
 	}
 
@@ -569,7 +563,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		r, err := client.GetReplication(replicationId)
 		if err != nil {
 			msg := fmt.Sprintf("failed to get replication: %v", err)
-			glog.Info(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
@@ -578,7 +572,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		secondaryVolume, err := client.GetVolume(attachReq.VolumeId)
 		if err != nil {
 			msg := fmt.Sprintf("failed to get secondary volume: %v", err)
-			glog.Info(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
@@ -591,7 +585,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		if errAttach != nil {
 			msg := fmt.Sprintf("failed to ControllerPublishVolume: the volume %s failed to publish to node %s, error info %v",
 				req.VolumeId, req.NodeId, errAttach)
-			glog.Errorf(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 		resp.PublishContext[KPublishSecondaryAttachId] = newAttachment.Id
@@ -1259,12 +1253,12 @@ func waitVolumeAttachmentDeleted(act *model.VolumeAttachmentSpec, e *list.Elemen
 func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
 	for _, v := range strings.Split(nodeInfo, ",") {
 		if strings.Contains(v, "iqn") {
-			glog.Info("ISCSI initiator is ", v)
+			glog.V(5).Info("iSCSI initiator is ", v)
 			return v, nil
 		}
 	}
 
-	return "", errors.New("No ISCSI initiators found")
+	return "", errors.New("no ISCSI initiators found")
 }
 
 func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
@@ -1276,7 +1270,7 @@ func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
 	}
 
 	if len(wwpns) == 0 {
-		return nil, errors.New("No FC initiators found.")
+		return nil, errors.New("no FC initiators found.")
 	}
 
 	glog.Info("FC initiators are ", wwpns)

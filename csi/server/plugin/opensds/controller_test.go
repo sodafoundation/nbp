@@ -481,7 +481,6 @@ func TestCreateVolume(t *testing.T) {
 			KVolumeLvPath:      "",
 			KVolumeFstype:      "ext4",
 			KPublishAttachMode: "rw",
-			KMultiAttach:       "false",
 		},
 	}
 

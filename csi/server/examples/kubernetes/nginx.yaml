@@ -8,8 +8,8 @@ metadata:
 provisioner: csi-opensdsplugin
 parameters:
   fsType: ext4
-  multiAttach: f
   attachMode: rw
+  profile: 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

@@ -151,7 +151,7 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 	}
 
 	if 0 == len(paths) {
-		glog.V(5).Info("No more " + key)
+		glog.V(5).Info("no more " + key)
 		delete(attachment.Metadata, key)
 	} else {
 		attachment.Metadata[key] = strings.Join(paths, ";")
@@ -168,7 +168,7 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 
 		err := volConnector.Detach(attachment.ConnectionData)
 		if err != nil {
-			msg := fmt.Sprintf("detach falied, %v", err)
+			msg := fmt.Sprintf("detach failed, %v", err)
 			glog.Error(msg)
 			return status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
@@ -231,7 +231,7 @@ func (p *Plugin) NodeStageVolume(
 
 	if client == nil {
 		msg := "nodeStageVolume: the client is nil"
-		glog.Info(msg)
+		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
@@ -361,7 +361,7 @@ func (p *Plugin) NodeStageVolume(
 
 	_, err = client.UpdateVolume(vol.Id, vol)
 	if err != nil {
-		msg := fmt.Sprintf("update volume failed, %v", err)
+		msg := fmt.Sprintf("update volume failed: %v", err)
 		glog.Error(msg)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
@@ -585,7 +585,7 @@ func (p *Plugin) NodeUnpublishVolume(
 		err = connector.Umount(req.TargetPath)
 		if err != nil {
 			msg := fmt.Sprintf("failed to Umount, %v", err)
-			glog.Info(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
