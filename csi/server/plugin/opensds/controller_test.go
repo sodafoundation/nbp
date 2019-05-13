@@ -267,7 +267,7 @@ func TestDeleteSnapshot(t *testing.T) {
 	fakeReq := csi.DeleteSnapshotRequest{}
 
 	rs, err := fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+	expectedErr := status.Error(codes.InvalidArgument, "snapshot id cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)

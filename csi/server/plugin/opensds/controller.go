@@ -108,19 +108,19 @@ func (p *Plugin) CreateVolume(
 	defer glog.V(5).Info("end to CreateVolume")
 
 	if req.Name == "" {
-		msg := "createVolume Name must be provided"
+		msg := "volume name must be provided when creating volume"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if req.VolumeCapabilities == nil || len(req.VolumeCapabilities) == 0 {
-		msg := "createVolume Volume capabilities must be provided"
+		msg := "volume capabilities must be provided when creating volume"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		msg := "createVolume: the client is nil"
+		msg := "the client is nil when creating volume"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
@@ -194,7 +194,7 @@ func (p *Plugin) CreateVolume(
 		volumebody.AvailabilityZone = "default"
 	}
 
-	glog.V(5).Infof("createVolume volumebody: %+v", volumebody)
+	glog.V(5).Infof("volumebody: %+v", volumebody)
 
 	volExist, err := FindVolume(volumebody)
 	if err != nil {
@@ -206,7 +206,7 @@ func (p *Plugin) CreateVolume(
 	if volExist == nil {
 		createVolume, err := client.CreateVolume(volumebody)
 		if err != nil {
-			msg := fmt.Sprintf("failed to CreateVolume, %v", err)
+			msg := fmt.Sprintf("failed to create volume, %v", err)
 			glog.Error(msg)
 			return nil, errors.New(msg)
 		}
@@ -220,12 +220,12 @@ func (p *Plugin) CreateVolume(
 	glog.V(5).Infof("waiting until volume is created.")
 	volStable, err := p.waitForVolStatusStable(v.Id)
 	if err != nil {
-		msg := fmt.Sprintf("failed to CreateVolume:errMsg: %v", err)
+		msg := fmt.Sprintf("failed to create volume:errMsg: %v", err)
 		glog.Error(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
 	if volStable.Status != "available" {
-		msg := fmt.Sprintf("failed to CreateVolume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
+		msg := fmt.Sprintf("failed to create volume: volume %s status %s is invalid.", volStable.Id, volStable.Status)
 		glog.Error(msg)
 		return nil, status.Error(codes.Internal, msg)
 	}
@@ -265,7 +265,7 @@ func (p *Plugin) CreateVolume(
 			return nil, status.Error(codes.Internal, msg)
 		}
 		if sVolStable.Status != "available" {
-			msg := fmt.Sprintf("failed to CreateVolume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
+			msg := fmt.Sprintf("failed to create volume: volume %s status %s is invalid.", sVolStable.Id, sVolStable.Status)
 			glog.Errorf(msg)
 			return nil, status.Error(codes.Internal, msg)
 		}
@@ -870,7 +870,7 @@ func (p *Plugin) CreateSnapshot(
 		}
 	}
 
-	glog.Infof("opensds CreateVolumeSnapshot request body: %v", snapReq)
+	glog.Infof("opensds create volumeSnapshot request body: %v", snapReq)
 	var snapshot *model.VolumeSnapshotSpec
 	isExist, isCompatible, findSnapshot, err := FindSnapshot(snapReq)
 
@@ -883,12 +883,12 @@ func (p *Plugin) CreateSnapshot(
 			snapshot = findSnapshot
 		} else {
 			return nil, status.Error(codes.AlreadyExists,
-				"Snapshot already exists but is incompatible")
+				"snapshot already exists but is incompatible")
 		}
 	} else {
 		createSnapshot, err := client.CreateVolumeSnapshot(snapReq)
 		if err != nil {
-			glog.Error("failed to CreateVolumeSnapshot", err)
+			glog.Error("failed to create volume snapshot", err)
 			return nil, err
 		}
 
@@ -931,7 +931,7 @@ func (p *Plugin) DeleteSnapshot(
 	*csi.DeleteSnapshotResponse, error) {
 
 	defer glog.V(5).Info("end to DeleteSnapshot")
-	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
+	glog.V(5).Infof("start to delete snapshot, snapshot id: %v, delete snapshot secrets: %v!",
 		req.SnapshotId, req.Secrets)
 
 	if client == nil {
@@ -939,7 +939,7 @@ func (p *Plugin) DeleteSnapshot(
 	}
 
 	if 0 == len(req.SnapshotId) {
-		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+		return nil, status.Error(codes.InvalidArgument, "snapshot id cannot be empty")
 	}
 
 	err := client.DeleteVolumeSnapshot(req.SnapshotId, nil)
