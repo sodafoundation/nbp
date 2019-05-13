@@ -137,7 +137,6 @@ func (p *Plugin) CreateVolume(
 		switch strings.ToLower(k) {
 		case KVolumeFstype:
 			fstype = v
-
 		case KParamProfile:
 			volumebody.ProfileId = v
 		case KParamAZ:
