@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SHELL=/bin/bash
 BASE_DIR := $(shell pwd)
 BUILD_DIR := $(BASE_DIR)/build/out
 IMAGE_TAG := latest
@@ -31,19 +32,19 @@ prebuild:
 	mkdir -p  $(BUILD_DIR)
 
 csi.server.opensds: prebuild
-	go build -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
 
 csi.client.opensds: prebuild
-	go build -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
 
 flexvolume.server.opensds: prebuild
-	go build -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
 
 service-broker: prebuild
-	go build -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
 
 cindercompatibleapi: prebuild
-	go build -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
 
 docker: build
 	cp $(BUILD_DIR)/csi.server.opensds ./csi/server
@@ -52,6 +53,9 @@ docker: build
 	docker build csi/server -t opensdsio/csiplugin:$(IMAGE_TAG)
 	docker build csi/client -t opensdsio/csipluginclient:$(IMAGE_TAG)
 	docker build service-broker/cmd/service-broker -t opensdsio/service-broker:$(IMAGE_TAG)
+
+goimports:
+	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
 
 clean:
 	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds \

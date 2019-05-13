@@ -23,13 +23,14 @@ import (
 	"os"
 	"time"
 
+	"strings"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/client/proxy"
 	"github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var (
