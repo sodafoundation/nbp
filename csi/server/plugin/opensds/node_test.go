@@ -81,7 +81,7 @@ func TestNodeStageVolume(t *testing.T) {
 	fakeReq := csi.NodeStageVolumeRequest{}
 
 	_, err := fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/volume_capability must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path/volume_capability must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -106,7 +106,7 @@ func TestNodeStageVolume(t *testing.T) {
 	fakeReq.PublishContext = map[string]string{KPublishAttachId: attachmentId}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
+	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist, output format not supported", attachmentId))
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -119,7 +119,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 	fakeReq := csi.NodeUnstageVolumeRequest{}
 
 	_, err := fakePlugin.NodeUnstageVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -132,7 +132,7 @@ func TestNodePublishVolume(t *testing.T) {
 	fakeReq := csi.NodePublishVolumeRequest{}
 
 	_, err := fakePlugin.NodePublishVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/target_path/volume_capability must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path/target_path/volume_capability must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -145,7 +145,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 	fakeReq := csi.NodeUnpublishVolumeRequest{}
 
 	_, err := fakePlugin.NodeUnpublishVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/target_path must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/target_path must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
