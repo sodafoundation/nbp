@@ -24,6 +24,7 @@ import (
 const (
 	// PluginName setting
 	PluginName = "csi-opensdsplugin"
+	FakeIQN    = "fakeIqn"
 )
 
 // Plugin define
