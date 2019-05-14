@@ -23,7 +23,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (p *opensdsProvisioner) Delete(volume *v1.PersistentVolume) error {

@@ -42,6 +42,7 @@ const (
 	KPublishAttachId          = "AttachmentId"
 	KPublishSecondaryAttachId = "SecondaryAttachmentId"
 	KPublishAttachStatus      = "AttachmentStatus"
+	KPublishAttachMode        = "attachmode"
 )
 
 // Opensds Attachment metadata keywords

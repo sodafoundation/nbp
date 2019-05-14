@@ -267,7 +267,7 @@ func TestDeleteSnapshot(t *testing.T) {
 	fakeReq := csi.DeleteSnapshotRequest{}
 
 	rs, err := fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+	expectedErr := status.Error(codes.InvalidArgument, "snapshot id cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -473,13 +473,14 @@ func TestCreateVolume(t *testing.T) {
 		CapacityBytes: util.GiB,
 		VolumeId:      "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		VolumeContext: map[string]string{
-			KVolumeName:      "sample-volume",
-			KVolumeStatus:    "available",
-			KVolumeAZ:        "default",
-			KVolumePoolId:    "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			KVolumeProfileId: "1106b972-66ef-11e7-b172-db03f3689c9c",
-			KVolumeLvPath:    "",
-			KVolumeFstype:    "ext4",
+			KVolumeName:        "sample-volume",
+			KVolumeStatus:      "available",
+			KVolumeAZ:          "default",
+			KVolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			KVolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+			KVolumeLvPath:      "",
+			KVolumeFstype:      "ext4",
+			KPublishAttachMode: "rw",
 		},
 	}
 

@@ -15,6 +15,7 @@
 package opensds
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -47,13 +48,16 @@ func init() {
 func getVolumeAndAttachment(volumeId string, attachmentId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
 	vol, err := client.GetVolume(volumeId)
 	if nil != err || nil == vol {
-		return nil, nil, status.Error(codes.NotFound, "Volume does not exist")
+		msg := fmt.Sprintf("volume %s does not exist, %v", volumeId, err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
 	attachment, err := client.GetVolumeAttachment(attachmentId)
 	if nil != err || nil == attachment {
-		return nil, nil, status.Error(codes.FailedPrecondition,
-			fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
+		msg := fmt.Sprintf("the volume attachment %s does not exist, %v", attachmentId, err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	return vol, attachment, nil
@@ -61,8 +65,6 @@ func getVolumeAndAttachment(volumeId string, attachmentId string) (*model.Volume
 
 // updateAttachment Update attachment
 func updateAttachment(mountpoint string, key string, attachment *model.VolumeAttachmentSpec) error {
-	var err error
-
 	// update volume Attachmentment
 	paths := strings.Split(attachment.Metadata[key], ";")
 	isExist := false
@@ -77,16 +79,18 @@ func updateAttachment(mountpoint string, key string, attachment *model.VolumeAtt
 	if !isExist {
 		paths = append(paths, mountpoint)
 		attachment.Metadata[key] = strings.Join(paths, ";")
-		_, err = client.UpdateVolumeAttachment(attachment.Id, attachment)
+		_, err := client.UpdateVolumeAttachment(attachment.Id, attachment)
 		if err != nil {
-			return status.Error(codes.FailedPrecondition, "update volume attachmentment failed")
+			msg := fmt.Sprintf("update volume attachmentment failed, %v", err)
+			glog.Error(msg)
+			return status.Error(codes.FailedPrecondition, msg)
 		}
 	}
 
 	return nil
 }
 
-// getVolumeAndAttachmentByVolumeId Get volume and attachment with volumeId
+// getVolumeAndAttachmentByVolumeId Get volume and attachment by volumeId
 func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
 	if r := getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[KAttachedVolumeId]
@@ -94,19 +98,23 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 
 	vol, err := client.GetVolume(volId)
 	if nil != err || nil == vol {
-		return nil, nil, status.Error(codes.NotFound, "Volume does not exist")
+		msg := fmt.Sprintf("volume does not exist, %v", err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
 	attachments, err := client.ListVolumeAttachments()
 	if nil != err {
-		return nil, nil, status.Error(codes.FailedPrecondition, "List volume attachments failed")
+		msg := fmt.Sprintf("list volume attachments failed, %v", err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
 	var attachment *model.VolumeAttachmentSpec
-	hostName, err := connector.GetHostName()
 
+	hostName, err := connector.GetHostName()
 	if err != nil {
-		msg := fmt.Sprintf("Faild to get host name %v", err)
+		msg := fmt.Sprintf("faild to get host name %v", err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
@@ -118,45 +126,51 @@ func getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSpec, *model.V
 		}
 	}
 
+	if attachment == nil {
+		msg := fmt.Sprintf("attachment is not exist")
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
 	return vol, attachment, nil
 }
 
 // delTargetPathInAttachment Delete a targetPath (stagingTargetPath) from the attachment
 func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key string, TargetPath string) error {
-	if nil == attachment {
+	targetPathList, exist := attachment.Metadata[key]
+	if !exist {
 		return nil
 	}
 
-	if _, exist := attachment.Metadata[key]; !exist {
-		return nil
-	}
-
-	var modifyPaths []string
-	paths := strings.Split(attachment.Metadata[key], ";")
+	paths := strings.Split(targetPathList, ";")
 	for index, path := range paths {
 		if path == TargetPath {
-			modifyPaths = append(paths[:index], paths[index+1:]...)
+			paths = append(paths[:index], paths[index+1:]...)
 			break
 		}
 	}
 
-	if (1 == len(modifyPaths) && 0 == len(modifyPaths[0])) || (0 == len(modifyPaths)) {
-		glog.V(5).Info("No more " + key)
+	if 0 == len(paths) {
+		glog.V(5).Info("no more " + key)
 		delete(attachment.Metadata, key)
 	} else {
-		attachment.Metadata[key] = strings.Join(modifyPaths, ";")
+		attachment.Metadata[key] = strings.Join(paths, ";")
 	}
 
 	if KStagingTargetPath == key {
 		volConnector := connector.NewConnector(attachment.DriverVolumeType)
 
 		if volConnector == nil {
-			return status.Error(codes.FailedPrecondition, fmt.Sprintf("Unsupport driverVolumeType: %s", attachment.DriverVolumeType))
+			msg := fmt.Sprintf("unsupport driverVolumeType: %s", attachment.DriverVolumeType)
+			glog.Error(msg)
+			return status.Error(codes.FailedPrecondition, msg)
 		}
 
 		err := volConnector.Detach(attachment.ConnectionData)
 		if err != nil {
-			return status.Errorf(codes.FailedPrecondition, "%s", err.Error())
+			msg := fmt.Sprintf("detach failed, %v", err)
+			glog.Error(msg)
+			return status.Errorf(codes.FailedPrecondition, "%s", msg)
 		}
 
 		attachment.Mountpoint = "-"
@@ -164,7 +178,9 @@ func delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key strin
 
 	_, err := client.UpdateVolumeAttachment(attachment.Id, attachment)
 	if err != nil {
-		return status.Error(codes.FailedPrecondition, "update volume attachment failed")
+		msg := "update volume attachment failed"
+		glog.Error(msg)
+		return status.Error(codes.FailedPrecondition, msg)
 	}
 
 	return nil
@@ -203,15 +219,20 @@ func (p *Plugin) NodeStageVolume(
 	*csi.NodeStageVolumeResponse, error) {
 
 	// Check REQUIRED field
-	glog.V(5).Info("start to NodeStageVolume, Volume_id: " + req.VolumeId + ", staging_target_path: " + req.StagingTargetPath)
+	glog.V(5).Info("start to NodeStageVolume, Volume_id: " + req.VolumeId +
+		", staging_target_path: " + req.StagingTargetPath)
 	defer glog.V(5).Info("end to NodeStageVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath || nil == req.VolumeCapability {
-		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/volume_capability must be specified")
+		msg := "volume_id/staging_target_path/volume_capability must be specified"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "nodeStageVolume: the client is nil"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	volId := req.VolumeId
@@ -251,7 +272,7 @@ func (p *Plugin) NodeStageVolume(
 
 		devicePath, err := volConnector.Attach(attachment.ConnectionData)
 		if nil != err || 0 == len(devicePath) || "-" == devicePath {
-			msg := fmt.Sprintf("failed to find device: %s", err.Error())
+			msg := fmt.Sprintf("failed to find device: %v", err)
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
@@ -264,7 +285,9 @@ func (p *Plugin) NodeStageVolume(
 	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
 	if nil != mnt && nil != block {
-		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
+		msg := "volumeMode cannot be both Block and Filesystem"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if nil == vol.Metadata {
@@ -275,20 +298,25 @@ func (p *Plugin) NodeStageVolume(
 		vol.Metadata[KCSIVolumeMode] = "Filesystem"
 		// Format
 		hopeFSType := req.PublishContext[KVolumeFstype]
-		fmt.Println("fsType is ", hopeFSType)
+		glog.Infof("fsType is %s", hopeFSType)
 
 		if mnt.FsType != "" {
+			glog.Infof("use system fsType %s", mnt.FsType)
 			hopeFSType = mnt.FsType
 		}
 
 		curFSType, err := connector.GetFSType(device)
 		if err != nil {
-			return nil, status.Error(codes.Aborted, err.Error())
+			msg := err.Error()
+			glog.Error(msg)
+			return nil, status.Error(codes.Aborted, msg)
 		}
 
 		if curFSType == "" {
 			if err := connector.Format(device, hopeFSType); err != nil {
-				return nil, status.Error(codes.Aborted, fmt.Sprintf("failed to mkfs: %v", err.Error()))
+				msg := fmt.Sprintf("failed to mkfs: %v", err.Error())
+				glog.Error(msg)
+				return nil, status.Error(codes.Aborted, msg)
 			}
 		} else {
 			glog.Infof("Device: %s has been formatted yet. fsType: %s", device, curFSType)
@@ -320,8 +348,9 @@ func (p *Plugin) NodeStageVolume(
 		err = createSymlink(device, mountpoint)
 
 		if err != nil {
-			glog.Errorf("failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
-			return nil, err
+			msg := fmt.Sprintf("failed to create a link: oldname=%v, newname=%v, err %v", device, mountpoint, err)
+			glog.Error(msg)
+			return nil, status.Error(codes.Aborted, msg)
 		}
 	}
 
@@ -332,7 +361,9 @@ func (p *Plugin) NodeStageVolume(
 
 	_, err = client.UpdateVolume(vol.Id, vol)
 	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, "update volume failed")
+		msg := fmt.Sprintf("update volume failed: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
 	glog.V(5).Info("NodeStageVolume success")
@@ -346,15 +377,20 @@ func (p *Plugin) NodeUnstageVolume(
 	*csi.NodeUnstageVolumeResponse, error) {
 
 	// Check REQUIRED field
-	glog.V(5).Info("start to NodeUnstageVolume, Volume_id: " + req.VolumeId + ", staging_target_path: " + req.StagingTargetPath)
+	glog.V(5).Info("start to NodeUnstageVolume, Volume_id: " + req.VolumeId +
+		", staging_target_path: " + req.StagingTargetPath)
 	defer glog.V(5).Info("end to NodeUnstageVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath {
-		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path must be specified")
+		msg := "volume_id/staging_target_path must be specified"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "client is nil"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
@@ -365,6 +401,12 @@ func (p *Plugin) NodeUnstageVolume(
 	if KCSIFilesystem == vol.Metadata[KCSIVolumeMode] {
 		// check volume is unmounted
 		mounted, err := connector.IsMounted(req.StagingTargetPath)
+		if err != nil {
+			msg := fmt.Sprintf("check volume is unmounted failed, %v", err)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
 		if !mounted {
 			glog.Info("target path is already unmounted")
 			return &csi.NodeUnstageVolumeResponse{}, nil
@@ -374,8 +416,8 @@ func (p *Plugin) NodeUnstageVolume(
 		glog.Infof("[NodeUnpublishVolume] mountpoint:%s", req.StagingTargetPath)
 		err = connector.Umount(req.StagingTargetPath)
 		if err != nil {
-			msg := fmt.Sprintf("failed to Umount, %v", err)
-			glog.Info(msg)
+			msg := fmt.Sprintf("failed to umount, %v", err)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
@@ -383,8 +425,9 @@ func (p *Plugin) NodeUnstageVolume(
 	if KCSIBlock == vol.Metadata[KCSIVolumeMode] {
 		_, err = exec.Command("rm", "-rf", req.StagingTargetPath).CombinedOutput()
 		if err != nil {
-			glog.Errorf("rm -rf %v failed, return error:%v\n", req.StagingTargetPath, err)
-			return nil, err
+			msg := fmt.Sprintf("rm -rf %v failed, return error:%v", req.StagingTargetPath, err)
+			glog.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 	}
 
@@ -392,12 +435,6 @@ func (p *Plugin) NodeUnstageVolume(
 	if err != nil {
 		return nil, err
 	}
-
-	//	vol.Status = model.VolumeAvailable
-	//	_, err = client.UpdateVolume(vol.Id, vol)
-	//	if err != nil {
-	//		return nil, status.Error(codes.FailedPrecondition, "update volume failed")
-	//	}
 
 	glog.V(5).Info("NodeUnstageVolume success")
 	return &csi.NodeUnstageVolumeResponse{}, nil
@@ -410,15 +447,20 @@ func (p *Plugin) NodePublishVolume(
 	*csi.NodePublishVolumeResponse, error) {
 
 	// Check REQUIRED field
-	glog.V(5).Info("start to NodePublishVolume, Volume_id: " + req.VolumeId + ", staging_target_path: " + req.StagingTargetPath + ", target_path: " + req.TargetPath)
+	glog.V(5).Info("start to NodePublishVolume, Volume_id: " + req.VolumeId +
+		", staging_target_path: " + req.StagingTargetPath + ", target_path: " + req.TargetPath)
 	defer glog.V(5).Info("end to NodePublishVolume")
 
 	if "" == req.VolumeId || "" == req.StagingTargetPath || "" == req.TargetPath || nil == req.VolumeCapability {
-		return nil, status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/target_path/volume_capability must be specified")
+		msg := "volume_id/staging_target_path/target_path/volume_capability must be specified"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "client is nil"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	volId := req.VolumeId
@@ -442,20 +484,23 @@ func (p *Plugin) NodePublishVolume(
 	glog.V(5).Infof("VolumeCapability Mount=%+v, Block=%+v\n", mnt, block)
 
 	if nil != mnt && nil != block {
-		return nil, status.Error(codes.InvalidArgument, "volumeMode cannot be both Block and Filesystem")
+		msg := "volumeMode cannot be both Block and Filesystem"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if nil == block {
 		// Bind mount
 		mountFlags := append(mnt.MountFlags, "bind")
-		fmt.Println("req.Readonly", req.Readonly)
+		glog.Infof("req.Readonly, %v", req.Readonly)
 		if req.Readonly {
 			mountFlags = append(mountFlags, "ro")
 		}
 
 		fsType := req.PublishContext[KVolumeFstype]
-		fmt.Println("fsType is ", fsType)
+		glog.Infof("fsType is %s", fsType)
 		if mnt.FsType != "" {
+			glog.Infof("use system fsType %s", mnt.FsType)
 			fsType = mnt.FsType
 		}
 
@@ -484,12 +529,13 @@ func (p *Plugin) NodePublishVolume(
 		err = createSymlink(device, mountpoint)
 
 		if err != nil {
-			glog.Errorf("failed to create a link: oldname=%v, newname=%v\n", device, mountpoint)
-			return nil, err
+			msg := fmt.Sprintf("failed to create a link: oldname=%v, newname=%v, %v", device, mountpoint, err)
+			glog.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 	}
 
-	// Mount
+	// update volume attachment
 	err = updateAttachment(mountpoint, KTargetPath, attachment)
 	if err != nil {
 		return nil, err
@@ -510,11 +556,15 @@ func (p *Plugin) NodeUnpublishVolume(
 	defer glog.V(5).Info("end to NodeUnpublishVolume")
 
 	if "" == req.VolumeId || "" == req.TargetPath {
-		return nil, status.Error(codes.InvalidArgument, "Volume_id/target_path must be specified")
+		msg := "volume_id/target_path must be specified"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	if client == nil {
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "client is nil"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	vol, attachment, err := getVolumeAndAttachmentByVolumeId(req.VolumeId)
@@ -535,7 +585,7 @@ func (p *Plugin) NodeUnpublishVolume(
 		err = connector.Umount(req.TargetPath)
 		if err != nil {
 			msg := fmt.Sprintf("failed to Umount, %v", err)
-			glog.Info(msg)
+			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 	}
@@ -566,8 +616,9 @@ func (p *Plugin) NodeGetInfo(
 	defer glog.Info("end to GetNodeInfo")
 
 	if client == nil {
-		fmt.Println("client is nil")
-		return nil, status.Error(codes.InvalidArgument, "client is nil")
+		msg := "client is nil"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	hostName, err := connector.GetHostName()
@@ -584,13 +635,13 @@ func (p *Plugin) NodeGetInfo(
 	for _, volDriverType := range volDriverTypes {
 		volDriver := connector.NewConnector(volDriverType)
 		if volDriver == nil {
-			glog.Errorf("Unsupport volDriver: %s", volDriverType)
+			glog.Errorf("unsupport volDriver: %s", volDriverType)
 			continue
 		}
 
 		initiator, err := volDriver.GetInitiatorInfo()
 		if err != nil {
-			glog.Errorf("Cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
+			glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
 			continue
 		}
 
@@ -598,7 +649,7 @@ func (p *Plugin) NodeGetInfo(
 	}
 
 	if len(initiators) == 0 {
-		msg := fmt.Sprintf("Cannot get any initiator for host %s", hostName)
+		msg := fmt.Sprintf("cannot get any initiator for host %s", hostName)
 		glog.Error(msg)
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
