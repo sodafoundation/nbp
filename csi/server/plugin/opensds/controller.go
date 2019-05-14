@@ -847,7 +847,7 @@ func (c *Plugin) CreateSnapshot(
 	} else {
 		createSnapshot, err := c.Cli.CreateVolumeSnapshot(snapReq)
 		if err != nil {
-			glog.Error("failed to create volume snapshot: %v", err)
+			glog.Errorf("failed to create volume snapshot: %v", err)
 			return nil, err
 		}
 
