@@ -117,7 +117,7 @@ func (p *Plugin) getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSp
 	}
 
 	if attachment == nil {
-		msg := fmt.Sprintf("attachment is not exist")
+		msg := fmt.Sprintf("attachment does not exist")
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
@@ -281,9 +281,7 @@ func (p *Plugin) NodeStageVolume(
 	if nil == block {
 		vol.Metadata[KCSIVolumeMode] = "Filesystem"
 		// Format
-		hopeFSType := req.PublishContext[KVolumeFstype]
-		glog.Infof("fsType is %s", hopeFSType)
-
+		hopeFSType := "ext4"
 		if mnt.FsType != "" {
 			glog.Infof("use system fsType %s", mnt.FsType)
 			hopeFSType = mnt.FsType
@@ -469,8 +467,7 @@ func (p *Plugin) NodePublishVolume(
 			mountFlags = append(mountFlags, "ro")
 		}
 
-		fsType := req.PublishContext[KVolumeFstype]
-		glog.V(5).Infof("fsType is %s", fsType)
+		fsType := "ext4"
 		if mnt.FsType != "" {
 			glog.Infof("use system fsType %s", mnt.FsType)
 			fsType = mnt.FsType

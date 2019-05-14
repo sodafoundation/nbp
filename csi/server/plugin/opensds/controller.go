@@ -44,12 +44,6 @@ import (
 //                            Controller Service                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-func init() {
-	UnpublishAttachmentList = NewList()
-	c := &Plugin{}
-	go c.UnpublishRoutine()
-}
-
 // GetDefaultProfile implementation
 func (c *Plugin) GetDefaultProfile() (*model.ProfileSpec, error) {
 	profiles, err := c.Cli.ListProfiles()
@@ -107,7 +101,6 @@ func (c *Plugin) CreateVolume(
 	}
 
 	// build volume body
-	var fstype string
 	volumebody := &model.VolumeSpec{}
 	volumebody.Name = req.Name
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
@@ -116,8 +109,6 @@ func (c *Plugin) CreateVolume(
 	glog.V(5).Infof("create volume parameters %+v", req.GetParameters())
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
-		case KVolumeFstype:
-			fstype = v
 		case KParamProfile:
 			volumebody.ProfileId = v
 		case KParamAZ:
@@ -133,12 +124,6 @@ func (c *Plugin) CreateVolume(
 				attachMode = "ro"
 			}
 		}
-	}
-
-	if !util.IsSupportFstype(fstype) {
-		msg := fmt.Sprintf("volume creation fstype: %s is not support.", fstype)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	allocationUnitBytes := util.GiB
@@ -224,7 +209,6 @@ func (c *Plugin) CreateVolume(
 			KVolumePoolId:      v.PoolId,
 			KVolumeProfileId:   v.ProfileId,
 			KVolumeLvPath:      v.Metadata["lvPath"],
-			KVolumeFstype:      fstype,
 			KPublishAttachMode: attachMode,
 		},
 	}
@@ -341,7 +325,7 @@ func (c *Plugin) DeleteVolume(
 
 // isStringMapEqual implementation
 func isStringMapEqual(metadataA, metadataB map[string]string) bool {
-	glog.V(5).Infof("start to determine whether the two map structures are equal, metadataA = %v, metadataB = %v!",
+	glog.V(5).Infof("start to check if two map structures are equal, metadataA = %v, metadataB = %v!",
 		metadataA, metadataB)
 	if len(metadataA) != len(metadataB) {
 		glog.V(5).Infof("len(metadataA)(%v) != len(metadataB)(%v) ",
@@ -365,7 +349,7 @@ func isStringMapEqual(metadataA, metadataB map[string]string) bool {
 func (c *Plugin) isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpec,
 	volMultiAttach bool) error {
 
-	glog.V(5).Infof("start to judge whether volume can be published, canAtMultiNode = %v, attachReq = %v",
+	glog.V(5).Infof("start to check if volume can be published, canAtMultiNode = %v, attachReq = %v",
 		canAtMultiNode, attachReq)
 
 	attachments, err := c.Cli.ListVolumeAttachments()
@@ -424,13 +408,6 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	fstype, ok := req.VolumeContext[KVolumeFstype]
-	if !ok {
-		msg := "fstype must be provided"
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
 	attachMode, ok := req.VolumeContext[KPublishAttachMode]
 	if !ok {
 		glog.Info("attach mode will use default value: rw")
@@ -440,7 +417,7 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 	//check volume is exist
 	volSpec, err := c.Cli.GetVolume(req.VolumeId)
 	if err != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist: %v",
+		msg := fmt.Sprintf("the volume %s does not exist: %v",
 			req.VolumeId, err)
 		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
@@ -448,7 +425,7 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 
 	pool, err := c.Cli.GetPool(volSpec.PoolId)
 	if err != nil || pool == nil {
-		msg := fmt.Sprintf("the pool %s is not exist: %v",
+		msg := fmt.Sprintf("the pool %s does not exist: %v",
 			volSpec.PoolId, err)
 		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
@@ -518,7 +495,7 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 
 	newAttachment, errAttach := c.Cli.CreateVolumeAttachment(attachReq)
 	if errAttach != nil {
-		msg := fmt.Sprintf("the volume %s is failed to publish to node %s, error info: %v",
+		msg := fmt.Sprintf("the volume %s is failed to be published to node %s, error info: %v",
 			req.VolumeId, req.NodeId, errAttach)
 		glog.Error(msg)
 		return nil, status.Error(codes.Internal, msg)
@@ -530,7 +507,6 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 			KPublishHostName:     newAttachment.Host,
 			KPublishAttachId:     newAttachment.Id,
 			KPublishAttachStatus: newAttachment.Status,
-			KVolumeFstype:        fstype,
 			KPublishAttachMode:   attachMode,
 		},
 	}
@@ -559,7 +535,7 @@ func (c *Plugin) ControllerPublishVolume(ctx context.Context,
 
 		newAttachment, errAttach := c.Cli.CreateVolumeAttachment(attachReq)
 		if errAttach != nil {
-			msg := fmt.Sprintf("the volume %s failed to publish to node %s, error info %v",
+			msg := fmt.Sprintf("the volume %s failed to be published to node %s, error info %v",
 				req.VolumeId, req.NodeId, errAttach)
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
@@ -595,7 +571,7 @@ func (c *Plugin) ControllerUnpublishVolume(
 	//check volume is exist
 	volSpec, errVol := c.Cli.GetVolume(req.VolumeId)
 	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist: %v", req.VolumeId, errVol)
+		msg := fmt.Sprintf("the volume %s does not exist: %v", req.VolumeId, errVol)
 		glog.Error(msg)
 		return nil, status.Error(codes.NotFound, msg)
 	}
@@ -847,7 +823,7 @@ func (c *Plugin) CreateSnapshot(
 	} else {
 		createSnapshot, err := c.Cli.CreateVolumeSnapshot(snapReq)
 		if err != nil {
-			glog.Error("failed to create volume snapshot: %v", err)
+			glog.Errorf("failed to create volume snapshot: %v", err)
 			return nil, err
 		}
 
@@ -1159,6 +1135,7 @@ func (q *AttachmentObj) PrintList() {
 
 // UnpublishRoutine implementation
 func (c *Plugin) UnpublishRoutine() {
+	UnpublishAttachmentList = NewList()
 	for {
 		listLen := UnpublishAttachmentList.GetLen()
 		if listLen > 0 {

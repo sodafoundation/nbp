@@ -39,12 +39,20 @@ type Service interface {
 	csi.NodeServer
 }
 
-func NewServer() (Service, error) {
-	client, err := opensdsClient.GetClient("", "")
+func NewServer(endpoint, authStrategy string) (Service, error) {
+	// get opensds client
+	client, err := opensdsClient.GetClient(endpoint, authStrategy)
 	if client == nil || err != nil {
 		glog.Errorf("get opensds client failed: %v", err)
 		return nil, err
 	}
 
-	return &Plugin{Cli: client}, nil
+	p := &Plugin{Cli: client}
+
+	// When there are multiple volumes unmount at the same time,
+	// it will cause conflicts related to the state machine,
+	// so start a watch list to let the volumes unmount one by one.
+	go p.UnpublishRoutine()
+
+	return p, nil
 }

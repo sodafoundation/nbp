@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// Initialize the driver
-	pluginServer, err := plugin.NewServer()
+	pluginServer, err := plugin.NewServer(opensdsEndpoint, opensdsAuthStrategy)
 	if err != nil {
 		glog.Errorf("failed to initialize the driver: %v", err)
 		os.Exit(1)
