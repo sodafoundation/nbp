@@ -14,15 +14,36 @@
 
 package opensds
 
+import (
+	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/golang/glog"
+	opensdsClient "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/opensds/client"
+)
+
 const (
 	// PluginName setting
 	PluginName = "csi-opensdsplugin"
-	FakeIQN    = "fakeIqn"
 )
 
 // Plugin define
 type Plugin struct {
+	Cli *client.Client
 }
 
-type FakePlugin struct {
+// Service Define CSI Interface
+type Service interface {
+	csi.IdentityServer
+	csi.ControllerServer
+	csi.NodeServer
+}
+
+func NewServer() (Service, error) {
+	client, err := opensdsClient.GetClient("", "")
+	if client == nil || err != nil {
+		glog.Errorf("get opensds client failed: %v", err)
+		return nil, err
+	}
+
+	return &Plugin{Cli: client}, nil
 }

@@ -17,6 +17,7 @@ package util
 const (
 	// NameSpace for CSI
 	NameSpace = "csi"
+
 	// CSI endpoint environment variable name
 	CSIEndpoint = "CSI_ENDPOINT"
 	// CSI default endpoint
@@ -24,10 +25,12 @@ const (
 
 	// Opensds endpoint environment variable name
 	OpensdsEndpoint = "OPENSDS_ENDPOINT"
-	// Opensds auth strategy
-	OpensdsAuthStrategy = "OPENSDS_AUTH_STRATEGY"
 	// Opensds default endpoint
 	OpensdsDefaultEndpoint = "http://localhost:50040"
+
+	// Opensds auth strategy
+	OpensdsAuthStrategy        = "OPENSDS_AUTH_STRATEGY"
+	OpensdsDefaultAuthStrategy = "noauth"
 
 	//  Opensds Secondary AZ
 	OpensdsSecondaryAZ        = "OPENSDS_SECONDARY_AZ"

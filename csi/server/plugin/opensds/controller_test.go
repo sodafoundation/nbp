@@ -26,6 +26,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
+	"github.com/opensds/opensds/client"
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -33,13 +34,40 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var fakePlugin *Plugin
+var fakeCtx context.Context
+
 func init() {
-	client.VolumeMgr = fv
+	client := &client.Client{}
+
+	client.VolumeMgr = &c.VolumeMgr{
+		Receiver: NewFakeVolumeReceiver(),
+	}
+
+	client.ReplicationMgr = &c.ReplicationMgr{
+		Receiver: NewFakeReplicationReceiver(),
+		Endpoint: "0.0.0.0",
+		TenantId: "123456",
+	}
+	fakePlugin = &Plugin{Cli: client}
+	fakeCtx = context.Background()
 }
 
-var fv = &c.VolumeMgr{
-	Receiver: NewFakeVolumeReceiver(),
+func NewFakeReplicationReceiver() c.Receiver {
+	return &fakeReplicationReceiver{}
 }
+
+type fakeReplicationReceiver struct{}
+
+func (*fakeReplicationReceiver) Recv(
+	string,
+	method string,
+	in interface{},
+	out interface{},
+) error {
+	return nil
+}
+
 var (
 	ByteVolume = `{
 		"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
@@ -215,12 +243,10 @@ func TestControllerGetCapabilities(t *testing.T) {
 }
 
 func TestCreateSnapshot(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.CreateSnapshotRequest{}
 
 	rs, err := fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
+	expectedErr := status.Error(codes.InvalidArgument, "snapshot name cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -228,7 +254,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 	fakeReq.Name = "volume00"
 	rs, err = fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
+	expectedErr = status.Error(codes.InvalidArgument, "source volume ID cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -262,8 +288,6 @@ func TestCreateSnapshot(t *testing.T) {
 }
 
 func TestDeleteSnapshot(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.DeleteSnapshotRequest{}
 
 	rs, err := fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
@@ -288,8 +312,6 @@ func TestDeleteSnapshot(t *testing.T) {
 }
 
 func TestListSnapshots(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	ptypesTime, err := ptypes.TimestampProto(time.Unix(0, 1536167248000000000))
 	if err != nil {
 		t.Errorf("failed to ListSnapshots: %v\n", err)
@@ -428,7 +450,7 @@ func TestListSnapshots(t *testing.T) {
 	fakeReq.MaxEntries = 1
 	fakeReq.StartingToken = "k"
 	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.Aborted, "parsing the startingToken failed")
+	expectedErr = status.Error(codes.Aborted, "parsing the starting token failed")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -436,8 +458,6 @@ func TestListSnapshots(t *testing.T) {
 }
 
 func TestCreateVolume(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.CreateVolumeRequest{
 		Name: "sample-volume",
 		VolumeCapabilities: []*csi.VolumeCapability{
@@ -501,5 +521,4 @@ func TestIsStringMapEqual(t *testing.T) {
 	if !ret {
 		t.Errorf("expected: true, actual: %v\n", ret)
 	}
-
 }

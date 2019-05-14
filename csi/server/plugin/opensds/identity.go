@@ -21,8 +21,8 @@ func (p *Plugin) Probe(
 	req *csi.ProbeRequest) (
 	*csi.ProbeResponse, error) {
 
-	glog.Info("start to Probe")
-	defer glog.Info("end to Probe")
+	glog.Info("start to probe")
+	defer glog.Info("end to probe")
 
 	_, err := sdscontroller.GetClient("", "")
 	if err != nil {
@@ -40,8 +40,8 @@ func (p *Plugin) GetPluginInfo(
 	req *csi.GetPluginInfoRequest) (
 	*csi.GetPluginInfoResponse, error) {
 
-	glog.Info("start to GetPluginInfo")
-	defer glog.Info("end to GetPluginInfo")
+	glog.Info("start to get plugin info")
+	defer glog.Info("end to get plugin info")
 
 	return &csi.GetPluginInfoResponse{
 		Name:          PluginName,
@@ -50,7 +50,7 @@ func (p *Plugin) GetPluginInfo(
 	}, nil
 }
 
-// GetPluginInfo implementation
+// GetPluginCapabilities implementation
 func (p *Plugin) GetPluginCapabilities(
 	ctx context.Context,
 	req *csi.GetPluginCapabilitiesRequest) (
