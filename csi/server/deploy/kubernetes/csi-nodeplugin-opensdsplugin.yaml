@@ -50,7 +50,7 @@ spec:
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
-            - "-v8"
+            - "--v=8"
           env:
             - name: CSI_ENDPOINT
               value: unix://var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock

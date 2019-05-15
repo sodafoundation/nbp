@@ -15,6 +15,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,27 +33,22 @@ import (
 )
 
 func main() {
+	flag.Set("alsologtostderr", "true")
 	// Open OpenSDS dock service log file.
 	util.InitLogs()
 	defer util.FlushLogs()
 
+	var csiEndpoint, opensdsEndpoint, opensdsAuthStrategy string
 	// CSI endpoint
-	csiEndpoint := util.CSIDefaultEndpoint
-	if v, ok := os.LookupEnv(util.CSIEndpoint); ok {
-		csiEndpoint = v
-	}
+	flag.StringVar(&csiEndpoint, "csiEndpoint", util.CSIDefaultEndpoint, "CSI Endpoint")
 
 	// opensds endpoint
-	opensdsEndpoint := util.OpensdsDefaultEndpoint
-	if v, ok := os.LookupEnv(util.OpensdsEndpoint); ok {
-		opensdsEndpoint = v
-	}
+	flag.StringVar(&opensdsEndpoint, "opensdsEndpoint", util.OpensdsDefaultEndpoint, "OpenSDS Endpoint")
 
 	// opensds auth strategy
-	opensdsAuthStrategy := util.OpensdsDefaultAuthStrategy
-	if v, ok := os.LookupEnv(util.OpensdsAuthStrategy); ok {
-		opensdsAuthStrategy = v
-	}
+	flag.StringVar(&opensdsAuthStrategy, "opensdsAuthStrategy", util.OpensdsDefaultAuthStrategy, "OpenSDS Auth Strategy")
+
+	flag.Parse()
 
 	// Get CSI Endpoint Listener
 	lis, err := util.GetCSIEndPointListener(csiEndpoint)

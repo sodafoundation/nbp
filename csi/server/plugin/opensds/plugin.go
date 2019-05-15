@@ -15,9 +15,9 @@
 package opensds
 
 import (
-	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	opensdsClient "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/opensds/client"
 )
 
@@ -29,17 +29,10 @@ const (
 
 // Plugin define
 type Plugin struct {
-	Cli *client.Client
+	Client *client.Client
 }
 
-// Service Define CSI Interface
-type Service interface {
-	csi.IdentityServer
-	csi.ControllerServer
-	csi.NodeServer
-}
-
-func NewServer(endpoint, authStrategy string) (Service, error) {
+func NewServer(endpoint, authStrategy string) (plugin.Service, error) {
 	// get opensds client
 	client, err := opensdsClient.GetClient(endpoint, authStrategy)
 	if client == nil || err != nil {
@@ -47,7 +40,7 @@ func NewServer(endpoint, authStrategy string) (Service, error) {
 		return nil, err
 	}
 
-	p := &Plugin{Cli: client}
+	p := &Plugin{Client: client}
 
 	// When there are multiple volumes unmount at the same time,
 	// it will cause conflicts related to the state machine,

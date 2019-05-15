@@ -49,7 +49,7 @@ func init() {
 		Endpoint: "0.0.0.0",
 		TenantId: "123456",
 	}
-	fakePlugin = &Plugin{Cli: client}
+	fakePlugin = &Plugin{Client: client}
 	fakeCtx = context.Background()
 }
 

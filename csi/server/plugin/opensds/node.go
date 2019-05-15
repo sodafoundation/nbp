@@ -36,14 +36,14 @@ import (
 
 // getVolumeAndAttachment Get volume and attachment with volumeId and attachmentId
 func (p *Plugin) getVolumeAndAttachment(volumeId string, attachmentId string) (*model.VolumeSpec, *model.VolumeAttachmentSpec, error) {
-	vol, err := p.Cli.GetVolume(volumeId)
+	vol, err := p.Client.GetVolume(volumeId)
 	if nil != err || nil == vol {
 		msg := fmt.Sprintf("volume %s does not exist: %v", volumeId, err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
-	attachment, err := p.Cli.GetVolumeAttachment(attachmentId)
+	attachment, err := p.Client.GetVolumeAttachment(attachmentId)
 	if nil != err || nil == attachment {
 		msg := fmt.Sprintf("the volume attachment %s does not exist: %v", attachmentId, err)
 		glog.Error(msg)
@@ -69,7 +69,7 @@ func (p *Plugin) updateAttachment(mountpoint string, key string, attachment *mod
 	if !isExist {
 		paths = append(paths, mountpoint)
 		attachment.Metadata[key] = strings.Join(paths, ";")
-		_, err := p.Cli.UpdateVolumeAttachment(attachment.Id, attachment)
+		_, err := p.Client.UpdateVolumeAttachment(attachment.Id, attachment)
 		if err != nil {
 			msg := fmt.Sprintf("update volume attachmentment failed: %v", err)
 			glog.Error(msg)
@@ -86,14 +86,14 @@ func (p *Plugin) getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSp
 		volId = r.Metadata[KAttachedVolumeId]
 	}
 
-	vol, err := p.Cli.GetVolume(volId)
+	vol, err := p.Client.GetVolume(volId)
 	if nil != err || nil == vol {
 		msg := fmt.Sprintf("volume does not exist: %v", err)
 		glog.Error(msg)
 		return nil, nil, status.Error(codes.NotFound, msg)
 	}
 
-	attachments, err := p.Cli.ListVolumeAttachments()
+	attachments, err := p.Client.ListVolumeAttachments()
 	if nil != err {
 		msg := fmt.Sprintf("list volume attachments failed: %v", err)
 		glog.Error(msg)
@@ -166,7 +166,7 @@ func (p *Plugin) delTargetPathInAttachment(attachment *model.VolumeAttachmentSpe
 		attachment.Mountpoint = "-"
 	}
 
-	_, err := p.Cli.UpdateVolumeAttachment(attachment.Id, attachment)
+	_, err := p.Client.UpdateVolumeAttachment(attachment.Id, attachment)
 	if err != nil {
 		msg := fmt.Sprintf("update volume attachment failed: %v", err)
 		glog.Error(msg)
@@ -231,7 +231,7 @@ func (p *Plugin) NodeStageVolume(
 			r.Metadata = make(map[string]string)
 		}
 		r.Metadata[KAttachedVolumeId] = volId
-		if _, err := p.Cli.UpdateReplication(r.Id, r); err != nil {
+		if _, err := p.Client.UpdateReplication(r.Id, r); err != nil {
 			msg := fmt.Sprintf("update replication %s failed: %v", r.Id, err)
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
@@ -341,7 +341,7 @@ func (p *Plugin) NodeStageVolume(
 		return nil, status.Error(codes.Aborted, err.Error())
 	}
 
-	_, err = p.Cli.UpdateVolume(vol.Id, vol)
+	_, err = p.Client.UpdateVolume(vol.Id, vol)
 	if err != nil {
 		msg := fmt.Sprintf("update volume failed: %v", err)
 		glog.Error(msg)
