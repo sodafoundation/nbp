@@ -54,10 +54,6 @@ func main() {
 		opensdsAuthStrategy = v
 	}
 
-	// Set Env
-	os.Setenv(util.OpensdsEndpoint, opensdsEndpoint)
-	os.Setenv(util.OpensdsAuthStrategy, opensdsAuthStrategy)
-
 	// Get CSI Endpoint Listener
 	lis, err := util.GetCSIEndPointListener(csiEndpoint)
 	if err != nil {

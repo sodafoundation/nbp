@@ -156,7 +156,7 @@ func (c *Plugin) CreateVolume(
 		volumebody.ProfileId = defaultRrf.Id
 	}
 
-	if "" == volumebody.AvailabilityZone {
+	if volumebody.AvailabilityZone == "" {
 		volumebody.AvailabilityZone = "default"
 	}
 

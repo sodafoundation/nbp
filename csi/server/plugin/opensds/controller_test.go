@@ -499,7 +499,6 @@ func TestCreateVolume(t *testing.T) {
 			KVolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			KVolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
 			KVolumeLvPath:      "",
-			KVolumeFstype:      "ext4",
 			KPublishAttachMode: "rw",
 		},
 	}
