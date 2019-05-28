@@ -25,6 +25,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	. "github.com/kubernetes-csi/csi-test/driver"
+	. "github.com/kubernetes-csi/csi-test/utils"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/client"
 	c "github.com/opensds/opensds/client"
