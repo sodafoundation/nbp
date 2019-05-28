@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: opensds-pvc-restore
 spec:
-  storageClassName: csi-sc-opensdsplugin-1
+  storageClassName: nginx-sc
   dataSource:
     name: new-snapshot-demo
     kind: VolumeSnapshot

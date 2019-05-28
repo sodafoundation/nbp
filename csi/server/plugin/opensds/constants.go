@@ -32,7 +32,6 @@ const (
 	KVolumeProfileId     = "profileId"
 	KVolumeLvPath        = "lvPath"
 	KVolumeReplicationId = "replicationId"
-	KVolumeFstype        = "fstype"
 )
 
 // CSI publish attribute keywords
@@ -42,6 +41,7 @@ const (
 	KPublishAttachId          = "AttachmentId"
 	KPublishSecondaryAttachId = "SecondaryAttachmentId"
 	KPublishAttachStatus      = "AttachmentStatus"
+	KPublishAttachMode        = "attachmode"
 )
 
 // Opensds Attachment metadata keywords

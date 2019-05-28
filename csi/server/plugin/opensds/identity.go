@@ -1,10 +1,11 @@
 package opensds
 
 import (
-	"runtime"
+	"fmt"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
+	sdscontroller "github.com/opensds/nbp/client/opensds"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,24 +21,27 @@ func (p *Plugin) Probe(
 	req *csi.ProbeRequest) (
 	*csi.ProbeResponse, error) {
 
-	glog.Info("start to Probe")
-	defer glog.Info("end to Probe")
+	glog.Info("start to probe")
+	defer glog.Info("end to probe")
 
-	switch runtime.GOOS {
-	case "linux":
-		return &csi.ProbeResponse{}, nil
-	default:
-		msg := "unsupported operating system:" + runtime.GOOS
+	_, err := sdscontroller.GetClient("", "")
+	if err != nil {
+		msg := fmt.Sprintf("failed to communicate with opensds client, %v", err)
 		glog.Error(msg)
-		// csi.Error_NodeProbeError_MISSING_REQUIRED_HOST_DEPENDENCY
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
+
+	return &csi.ProbeResponse{}, nil
 }
 
 // GetPluginInfo implementation
-func (p *Plugin) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	glog.Info("start to GetPluginInfo")
-	defer glog.Info("end to GetPluginInfo")
+func (p *Plugin) GetPluginInfo(
+	ctx context.Context,
+	req *csi.GetPluginInfoRequest) (
+	*csi.GetPluginInfoResponse, error) {
+
+	glog.Info("start to get plugin info")
+	defer glog.Info("end to get plugin info")
 
 	return &csi.GetPluginInfoResponse{
 		Name:          PluginName,
@@ -45,8 +49,12 @@ func (p *Plugin) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoReques
 	}, nil
 }
 
-// GetPluginInfo implementation
-func (p *Plugin) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+// GetPluginCapabilities implementation
+func (p *Plugin) GetPluginCapabilities(
+	ctx context.Context,
+	req *csi.GetPluginCapabilitiesRequest) (
+	*csi.GetPluginCapabilitiesResponse, error) {
+
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
 			{

@@ -6,14 +6,13 @@ kind: StorageClass
 metadata:
   name: csi-sc-opensdsplugin
 provisioner: csi-opensdsplugin
-volumeBindingMode: WaitForFirstConsumer
 parameters:
-  fsType: ext4
+  attachMode: rw
 allowedTopologies:
 - matchLabelExpressions:
-  - key: opensds.nbp/zone
+  - key: topology.csi-opensdsplugin/zone
     values:
-    - defaultZone
+    - default
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -21,7 +20,7 @@ metadata:
   name: csi-pvc-opensdsplugin
 spec:
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 1Gi
