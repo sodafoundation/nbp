@@ -337,11 +337,12 @@ func (mounter *NsenterMounter) SafeMakeDir(subdir string, base string, perm os.F
 }
 
 func (mounter *NsenterMounter) GetMountRefs(pathname string) ([]string, error) {
-	pathExists, pathErr := PathExists(pathname)
-	if !pathExists || IsCorruptedMnt(pathErr) {
+	exists, err := mounter.ExistsPath(pathname)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return []string{}, nil
-	} else if pathErr != nil {
-		return nil, fmt.Errorf("Error checking path %s: %v", pathname, pathErr)
 	}
 	hostpath, err := mounter.ne.EvalSymlinks(pathname, true /* mustExist */)
 	if err != nil {

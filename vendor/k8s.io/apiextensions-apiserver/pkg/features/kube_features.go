@@ -18,7 +18,6 @@ package features
 
 import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/component-base/featuregate"
 )
 
 const (
@@ -33,38 +32,31 @@ const (
 	// beta: v1.9
 	//
 	// CustomResourceValidation is a list of validation methods for CustomResources
-	CustomResourceValidation featuregate.Feature = "CustomResourceValidation"
-
-	// owner: @roycaihw, @sttts
-	// alpha: v1.14
-	//
-	// CustomResourcePublishOpenAPI enables publishing of CRD OpenAPI specs.
-	CustomResourcePublishOpenAPI featuregate.Feature = "CustomResourcePublishOpenAPI"
+	CustomResourceValidation utilfeature.Feature = "CustomResourceValidation"
 
 	// owner: @sttts, @nikhita
 	// alpha: v1.10
 	// beta: v1.11
 	//
 	// CustomResourceSubresources defines the subresources for CustomResources
-	CustomResourceSubresources featuregate.Feature = "CustomResourceSubresources"
+	CustomResourceSubresources utilfeature.Feature = "CustomResourceSubresources"
 
 	// owner: @mbohlool, @roycaihw
 	// alpha: v1.13
 	//
 	// CustomResourceWebhookConversion defines the webhook conversion for Custom Resources.
-	CustomResourceWebhookConversion featuregate.Feature = "CustomResourceWebhookConversion"
+	CustomResourceWebhookConversion utilfeature.Feature = "CustomResourceWebhookConversion"
 )
 
 func init() {
-	utilfeature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
+	utilfeature.DefaultFeatureGate.Add(defaultKubernetesFeatureGates)
 }
 
 // defaultKubernetesFeatureGates consists of all known Kubernetes-specific feature keys.
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
-var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	CustomResourceValidation:        {Default: true, PreRelease: featuregate.Beta},
-	CustomResourceSubresources:      {Default: true, PreRelease: featuregate.Beta},
-	CustomResourceWebhookConversion: {Default: false, PreRelease: featuregate.Alpha},
-	CustomResourcePublishOpenAPI:    {Default: false, PreRelease: featuregate.Alpha},
+var defaultKubernetesFeatureGates = map[utilfeature.Feature]utilfeature.FeatureSpec{
+	CustomResourceValidation:        {Default: true, PreRelease: utilfeature.Beta},
+	CustomResourceSubresources:      {Default: true, PreRelease: utilfeature.Beta},
+	CustomResourceWebhookConversion: {Default: false, PreRelease: utilfeature.Alpha},
 }

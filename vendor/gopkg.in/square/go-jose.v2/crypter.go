@@ -151,9 +151,6 @@ func NewEncrypter(enc ContentEncryption, rcpt Recipient, opts *EncrypterOptions)
 		if reflect.TypeOf(rawKey) != reflect.TypeOf([]byte{}) {
 			return nil, ErrUnsupportedKeyType
 		}
-		if encrypter.cipher.keySize() != len(rawKey.([]byte)) {
-			return nil, ErrInvalidKeySize
-		}
 		encrypter.keyGenerator = staticKeyGenerator{
 			key: rawKey.([]byte),
 		}

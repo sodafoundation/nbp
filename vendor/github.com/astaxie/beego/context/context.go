@@ -201,7 +201,6 @@ type Response struct {
 	http.ResponseWriter
 	Started bool
 	Status  int
-	Elapsed time.Duration
 }
 
 func (r *Response) reset(rw http.ResponseWriter) {
