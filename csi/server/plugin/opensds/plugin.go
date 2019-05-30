@@ -23,8 +23,9 @@ import (
 
 const (
 	// PluginName setting
-	PluginName = "csi-opensdsplugin"
-	FakeIQN    = "fakeIqn"
+	PluginName      = "csi-opensdsplugin"
+	FakeIQN         = "fakeIqn"
+	TopologyZoneKey = "topology." + PluginName + "/zone"
 )
 
 // Plugin define

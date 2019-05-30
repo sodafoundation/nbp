@@ -617,6 +617,12 @@ func (p *Plugin) NodeGetInfo(
 
 	return &csi.NodeGetInfoResponse{
 		NodeId: nodeId,
+		// driver works only on this zone
+		AccessibleTopology: &csi.Topology{
+			Segments: map[string]string{
+				TopologyZoneKey: DefaultAvailabilityZone,
+			},
+		},
 	}, nil
 }
 
