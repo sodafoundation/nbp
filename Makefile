@@ -33,6 +33,9 @@ prebuild:
 
 csi.server.opensds: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
+	# nvme-cli should has been installed by hotpot related shell in /opt/nvme-cli-1.8.1, if not, 
+	#you can download and make install  it manually
+	cp -a /opt/nvme-cli-1.8.1 ./csi/server/
 
 csi.client.opensds: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
@@ -59,7 +62,8 @@ goimports:
 
 clean:
 	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds \
-		./service-broker/cmd/service-broker/service-broker
+		./service-broker/cmd/service-broker/service-broker \
+		./csi/server/nvme-cli-1.8.1
 
 version:
 	@echo ${VERSION}

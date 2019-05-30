@@ -485,6 +485,17 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		break
 	case connector.RbdDriver:
 		break
+	case connector.NvmeofDriver:
+                nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
+                if err != nil {
+                        msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
+                                err.Error())
+                        glog.Error(msg)
+                        return nil, status.Error(codes.FailedPrecondition, msg)
+                }
+
+		initator = nqn
+		break;
 	default:
 		msg := fmt.Sprintf("protocol:%s not support", protocol)
 		glog.Error(msg)
@@ -1221,6 +1232,17 @@ func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
 	}
 
 	return "", errors.New("no ISCSI initiators found")
+}
+
+func extractNvmeofInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+        for _, v := range strings.Split(nodeInfo, ",") {
+                if strings.Contains(v, "nqn") {
+                        glog.V(5).Info("Nvmeof initiator is ", v)
+                        return v, nil
+                }
+        }
+
+        return "", errors.New("no Nvmeof initiators found")
 }
 
 func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
