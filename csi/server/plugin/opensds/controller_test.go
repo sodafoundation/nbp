@@ -49,6 +49,9 @@ func init() {
 		Endpoint: "0.0.0.0",
 		TenantId: "123456",
 	}
+	client.ProfileMgr = &c.ProfileMgr{
+		Receiver: NewFakeProfileReceiver(),
+	}
 	fakePlugin = &Plugin{Client: client}
 	fakeCtx = context.Background()
 }
@@ -79,6 +82,15 @@ var (
 		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
 		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
 	}`
+
+	ByteProfile = `{
+	
+			"id": "1106b972-66ef-11e7-b172-db03f3689c9c",
+			"name": "default",
+			"description": "default policy",
+			"storageType": "block"
+		
+}`
 
 	ByteVolumes = `[
 		{
@@ -180,6 +192,21 @@ func (*fakeVolumeReceiver) Recv(
 		return errors.New("inputed method format not supported")
 	}
 
+	return nil
+}
+
+func NewFakeProfileReceiver() c.Receiver {
+	return &fakeProfileReceiver{}
+}
+
+type fakeProfileReceiver struct{}
+
+func (*fakeProfileReceiver) Recv(string, method string, in, out interface{}) error {
+	if strings.ToUpper(method) == "GET" {
+		if err := json.Unmarshal([]byte(ByteProfile), out); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -473,7 +500,7 @@ func TestCreateVolume(t *testing.T) {
 		Parameters: map[string]string{
 			"profile":          "1106b972-66ef-11e7-b172-db03f3689c9c",
 			"availabilityzone": "default",
-			"fstype":           "ext4",
+			"storageType":      "block",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
