@@ -110,6 +110,11 @@ func (p *Plugin) CreateVolume(
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		case KParamProfile:
+			if v == "" {
+				msg := "profile id cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
 			volumebody.ProfileId = v
 		case KParamAZ:
 			volumebody.AvailabilityZone = v
@@ -145,15 +150,6 @@ func (p *Plugin) CreateVolume(
 		if snapshot != nil {
 			volumebody.SnapshotId = snapshot.GetSnapshotId()
 		}
-	}
-
-	if "" == volumebody.ProfileId {
-		defaultRrf, err := p.GetDefaultProfile()
-		if err != nil {
-			return nil, err
-		}
-
-		volumebody.ProfileId = defaultRrf.Id
 	}
 
 	if volumebody.AvailabilityZone == "" && req.GetAccessibilityRequirements() != nil {
@@ -809,6 +805,11 @@ func (p *Plugin) CreateSnapshot(
 		switch strings.ToLower(k) {
 		// TODO: support profile name
 		case KParamProfile:
+			if v == "" {
+				msg := "profile id cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
 			snapReq.ProfileId = v
 		}
 	}

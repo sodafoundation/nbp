@@ -8,6 +8,7 @@ metadata:
 provisioner: csi-opensdsplugin
 parameters:
   attachMode: rw
+  profile: 123
 allowedTopologies:
 - matchLabelExpressions:
   - key: topology.csi-opensdsplugin/zone
