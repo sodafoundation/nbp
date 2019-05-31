@@ -4,7 +4,8 @@ metadata:
   name: csi-sc-opensdsplugin-block
 provisioner: csi-opensdsplugin
 parameters:
-
+  profile: abc
+  storageType: block
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

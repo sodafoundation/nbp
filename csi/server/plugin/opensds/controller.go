@@ -106,10 +106,16 @@ func (p *Plugin) CreateVolume(
 	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
 	var enableReplication = false
 	var attachMode = "rw"
+	var storageType string
 	glog.V(5).Infof("create volume parameters %+v", req.GetParameters())
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		case KParamProfile:
+			if v == "" {
+				msg := "profile id cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
 			volumebody.ProfileId = v
 		case KParamAZ:
 			volumebody.AvailabilityZone = v
@@ -123,7 +129,27 @@ func (p *Plugin) CreateVolume(
 			if strings.ToLower(v) == "ro" {
 				attachMode = "ro"
 			}
+		case kStorageType:
+			if v == "" {
+				msg := "storage type cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
+			storageType = v
 		}
+	}
+
+	prf, err := p.Client.GetProfile(volumebody.ProfileId)
+	if err != nil {
+		msg := fmt.Sprintf("get profile %s failed", volumebody.ProfileId)
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if storageType != prf.StorageType {
+		msg := fmt.Sprintf("the input storage type %s and storage type %s in profile %s are inconsistent", storageType, prf.StorageType, volumebody.ProfileId)
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	allocationUnitBytes := util.GiB
@@ -145,15 +171,6 @@ func (p *Plugin) CreateVolume(
 		if snapshot != nil {
 			volumebody.SnapshotId = snapshot.GetSnapshotId()
 		}
-	}
-
-	if "" == volumebody.ProfileId {
-		defaultRrf, err := p.GetDefaultProfile()
-		if err != nil {
-			return nil, err
-		}
-
-		volumebody.ProfileId = defaultRrf.Id
 	}
 
 	if volumebody.AvailabilityZone == "" && req.GetAccessibilityRequirements() != nil {
@@ -809,6 +826,11 @@ func (p *Plugin) CreateSnapshot(
 		switch strings.ToLower(k) {
 		// TODO: support profile name
 		case KParamProfile:
+			if v == "" {
+				msg := "profile id cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
 			snapReq.ProfileId = v
 		}
 	}

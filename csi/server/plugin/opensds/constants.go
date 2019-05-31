@@ -32,6 +32,7 @@ const (
 	KVolumeProfileId     = "profileId"
 	KVolumeLvPath        = "lvPath"
 	KVolumeReplicationId = "replicationId"
+	kStorageType         = "storagetype"
 )
 
 // CSI publish attribute keywords
