@@ -54,7 +54,7 @@ func GetCSIEndPoint(csiEndpoint string) (string, error) {
 	csiEndpoint = strings.TrimSpace(csiEndpoint)
 
 	if csiEndpoint == "" {
-		err := errors.New("CSIEndpoint is empty")
+		err := errors.New("csi endpoint is empty")
 		log.Fatalf("%v", err)
 		return csiEndpoint, err
 	}

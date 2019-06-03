@@ -14,15 +14,39 @@
 
 package opensds
 
+import (
+	"github.com/golang/glog"
+	opensdsClient "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/csi/server/plugin"
+	"github.com/opensds/opensds/client"
+)
+
 const (
 	// PluginName setting
-	PluginName = "csi-opensdsplugin"
-	FakeIQN    = "fakeIqn"
+	PluginName      = "csi-opensdsplugin"
+	FakeIQN         = "fakeIqn"
+	TopologyZoneKey = "topology." + PluginName + "/zone"
 )
 
 // Plugin define
 type Plugin struct {
+	Client *client.Client
 }
 
-type FakePlugin struct {
+func NewServer(endpoint, authStrategy string) (plugin.Service, error) {
+	// get opensds client
+	client, err := opensdsClient.GetClient(endpoint, authStrategy)
+	if client == nil || err != nil {
+		glog.Errorf("get opensds client failed: %v", err)
+		return nil, err
+	}
+
+	p := &Plugin{Client: client}
+
+	// When there are multiple volumes unmount at the same time,
+	// it will cause conflicts related to the state machine,
+	// so start a watch list to let the volumes unmount one by one.
+	go p.UnpublishRoutine()
+
+	return p, nil
 }
