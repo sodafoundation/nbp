@@ -26,6 +26,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
+	"github.com/opensds/opensds/client"
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
@@ -33,13 +34,43 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var fakePlugin *Plugin
+var fakeCtx context.Context
+
 func init() {
-	client.VolumeMgr = fv
+	client := &client.Client{}
+
+	client.VolumeMgr = &c.VolumeMgr{
+		Receiver: NewFakeVolumeReceiver(),
+	}
+
+	client.ReplicationMgr = &c.ReplicationMgr{
+		Receiver: NewFakeReplicationReceiver(),
+		Endpoint: "0.0.0.0",
+		TenantId: "123456",
+	}
+	client.ProfileMgr = &c.ProfileMgr{
+		Receiver: NewFakeProfileReceiver(),
+	}
+	fakePlugin = &Plugin{Client: client}
+	fakeCtx = context.Background()
 }
 
-var fv = &c.VolumeMgr{
-	Receiver: NewFakeVolumeReceiver(),
+func NewFakeReplicationReceiver() c.Receiver {
+	return &fakeReplicationReceiver{}
 }
+
+type fakeReplicationReceiver struct{}
+
+func (*fakeReplicationReceiver) Recv(
+	string,
+	method string,
+	in interface{},
+	out interface{},
+) error {
+	return nil
+}
+
 var (
 	ByteVolume = `{
 		"id": "bd5b12a8-a101-11e7-941e-d77981b584d8",
@@ -51,6 +82,15 @@ var (
 		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
 		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
 	}`
+
+	ByteProfile = `{
+	
+			"id": "1106b972-66ef-11e7-b172-db03f3689c9c",
+			"name": "default",
+			"description": "default policy",
+			"storageType": "block"
+		
+}`
 
 	ByteVolumes = `[
 		{
@@ -155,6 +195,21 @@ func (*fakeVolumeReceiver) Recv(
 	return nil
 }
 
+func NewFakeProfileReceiver() c.Receiver {
+	return &fakeProfileReceiver{}
+}
+
+type fakeProfileReceiver struct{}
+
+func (*fakeProfileReceiver) Recv(string, method string, in, out interface{}) error {
+	if strings.ToUpper(method) == "GET" {
+		if err := json.Unmarshal([]byte(ByteProfile), out); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func TestControllerGetCapabilities(t *testing.T) {
 	var fakePlugin = &Plugin{}
 	var fakeCtx = context.Background()
@@ -215,12 +270,10 @@ func TestControllerGetCapabilities(t *testing.T) {
 }
 
 func TestCreateSnapshot(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.CreateSnapshotRequest{}
 
 	rs, err := fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
+	expectedErr := status.Error(codes.InvalidArgument, "snapshot name cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -228,7 +281,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 	fakeReq.Name = "volume00"
 	rs, err = fakePlugin.CreateSnapshot(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
+	expectedErr = status.Error(codes.InvalidArgument, "source volume ID cannot be empty")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -262,8 +315,6 @@ func TestCreateSnapshot(t *testing.T) {
 }
 
 func TestDeleteSnapshot(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.DeleteSnapshotRequest{}
 
 	rs, err := fakePlugin.DeleteSnapshot(fakeCtx, &fakeReq)
@@ -288,8 +339,6 @@ func TestDeleteSnapshot(t *testing.T) {
 }
 
 func TestListSnapshots(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	ptypesTime, err := ptypes.TimestampProto(time.Unix(0, 1536167248000000000))
 	if err != nil {
 		t.Errorf("failed to ListSnapshots: %v\n", err)
@@ -428,7 +477,7 @@ func TestListSnapshots(t *testing.T) {
 	fakeReq.MaxEntries = 1
 	fakeReq.StartingToken = "k"
 	rs, err = fakePlugin.ListSnapshots(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.Aborted, "parsing the startingToken failed")
+	expectedErr = status.Error(codes.Aborted, "parsing the starting token failed")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -436,8 +485,6 @@ func TestListSnapshots(t *testing.T) {
 }
 
 func TestCreateVolume(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.CreateVolumeRequest{
 		Name: "sample-volume",
 		VolumeCapabilities: []*csi.VolumeCapability{
@@ -453,7 +500,7 @@ func TestCreateVolume(t *testing.T) {
 		Parameters: map[string]string{
 			"profile":          "1106b972-66ef-11e7-b172-db03f3689c9c",
 			"availabilityzone": "default",
-			"fstype":           "ext4",
+			"storageType":      "block",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
@@ -479,8 +526,14 @@ func TestCreateVolume(t *testing.T) {
 			KVolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			KVolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
 			KVolumeLvPath:      "",
-			KVolumeFstype:      "ext4",
 			KPublishAttachMode: "rw",
+		},
+		AccessibleTopology: []*csi.Topology{
+			{
+				Segments: map[string]string{
+					TopologyZoneKey: "default",
+				},
+			},
 		},
 	}
 
@@ -501,5 +554,4 @@ func TestIsStringMapEqual(t *testing.T) {
 	if !ret {
 		t.Errorf("expected: true, actual: %v\n", ret)
 	}
-
 }

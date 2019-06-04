@@ -32,7 +32,7 @@ const (
 	KVolumeProfileId     = "profileId"
 	KVolumeLvPath        = "lvPath"
 	KVolumeReplicationId = "replicationId"
-	KVolumeFstype        = "fstype"
+	kStorageType         = "storagetype"
 )
 
 // CSI publish attribute keywords
@@ -59,6 +59,8 @@ const (
 
 // volume prefix
 const SecondaryPrefix = "secondary-"
+
+const DefaultAvailabilityZone = "default"
 
 const (
 	// DefFSType default filesystem type

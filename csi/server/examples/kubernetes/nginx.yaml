@@ -7,9 +7,14 @@ metadata:
   name: csi-sc-opensdsplugin
 provisioner: csi-opensdsplugin
 parameters:
-  fsType: ext4
   attachMode: rw
-  profile: 
+  profile: abc
+  storageType: block
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.csi-opensdsplugin/zone
+    values:
+    - default
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

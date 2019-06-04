@@ -22,10 +22,8 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/csi/server/plugin"
-	"github.com/opensds/nbp/csi/server/plugin/opensds"
+	plugin "github.com/opensds/nbp/csi/server/plugin/opensds"
 	"github.com/opensds/nbp/csi/util"
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
@@ -34,76 +32,45 @@ import (
 	_ "github.com/opensds/opensds/contrib/connector/rbd"
 )
 
-var (
-	csiEndpoint         string
-	opensdsEndpoint     string
-	opensdsAuthStrategy string
-)
-
-func init() {
-	flag.Set("alsologtostderr", "true")
-}
-
 func main() {
-
-	flag.CommandLine.Parse([]string{})
+	flag.Set("alsologtostderr", "true")
 	// Open OpenSDS dock service log file.
 	util.InitLogs()
 	defer util.FlushLogs()
 
-	cmd := &cobra.Command{
-		Use:   "OpenSDS",
-		Short: "CSI based OpenSDS driver",
-		Run: func(cmd *cobra.Command, args []string) {
-			handle()
-		},
-	}
+	var csiEndpoint, opensdsEndpoint, opensdsAuthStrategy string
+	// CSI endpoint
+	flag.StringVar(&csiEndpoint, "csiEndpoint", util.CSIDefaultEndpoint, "CSI Endpoint")
 
-	// the endpoint variable priority is flag, ENV and default.
-	cmd.Flags().AddGoFlagSet(flag.CommandLine)
+	// opensds endpoint
+	flag.StringVar(&opensdsEndpoint, "opensdsEndpoint", util.OpensdsDefaultEndpoint, "OpenSDS Endpoint")
 
-	csiEp := util.CSIDefaultEndpoint
-	opensdsEp := util.OpensdsDefaultEndpoint
-	if ep, ok := os.LookupEnv(util.CSIEndpoint); ok {
-		csiEp = ep
-	}
-	if ep, ok := os.LookupEnv(util.OpensdsEndpoint); ok {
-		opensdsEp = ep
-	}
-	cmd.PersistentFlags().StringVar(&csiEndpoint, "csiEndpoint", csiEp, "CSI Endpoint")
-	cmd.PersistentFlags().StringVar(&opensdsEndpoint, "opensdsEndpoint", opensdsEp, "OpenSDS Endpoint")
-	cmd.PersistentFlags().StringVar(&opensdsAuthStrategy, "opensdsAuthStrategy", "", "OpenSDS Auth Strategy")
+	// opensds auth strategy
+	flag.StringVar(&opensdsAuthStrategy, "opensdsAuthStrategy", util.OpensdsDefaultAuthStrategy, "OpenSDS Auth Strategy")
 
-	cmd.ParseFlags(os.Args[1:])
-	if err := cmd.Execute(); err != nil {
-		glog.Errorf("failed to execute: %v", err)
-		os.Exit(1)
-	}
-
-	os.Exit(0)
-}
-
-func handle() {
-
-	// Set Env
-	os.Setenv(util.OpensdsEndpoint, opensdsEndpoint)
-	os.Setenv(util.OpensdsAuthStrategy, opensdsAuthStrategy)
+	flag.Parse()
 
 	// Get CSI Endpoint Listener
 	lis, err := util.GetCSIEndPointListener(csiEndpoint)
 	if err != nil {
 		glog.Errorf("failed to listen: %v", err)
+		os.Exit(1)
+	}
+
+	// Initialize the driver
+	pluginServer, err := plugin.NewServer(opensdsEndpoint, opensdsAuthStrategy)
+	if err != nil {
+		glog.Errorf("failed to initialize the driver: %v", err)
+		os.Exit(1)
 	}
 
 	// New Grpc Server
 	s := grpc.NewServer()
 
 	// Register CSI Service
-	var defaultplugin plugin.Service = &opensds.Plugin{}
-	conServer := &server{plugin: defaultplugin}
-	csi.RegisterIdentityServer(s, conServer)
-	csi.RegisterControllerServer(s, conServer)
-	csi.RegisterNodeServer(s, conServer)
+	csi.RegisterIdentityServer(s, pluginServer)
+	csi.RegisterControllerServer(s, pluginServer)
+	csi.RegisterNodeServer(s, pluginServer)
 
 	// Register reflection Service
 	reflection.Register(s)
