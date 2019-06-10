@@ -611,7 +611,7 @@ func (p *Plugin) NodeGetInfo(
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	nodeId := hostName + "," + strings.Join(initiators, ",")
+	nodeId := hostName + "," + strings.Join(initiators, ",") + "," + connector.GetHostIP()
 
 	glog.Infof("node info is %s", nodeId)
 
