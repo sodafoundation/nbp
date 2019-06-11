@@ -6,9 +6,9 @@ apiVersion: v1
 metadata:
   name: csi-configmap-opensdsplugin
 data:
-  opensdsendpoint: http://10.239.48.173:50040
-  opensdsauthstrategy: noauth
-  osauthurl: http://10.239.48.173/identity
+  opensdsendpoint: http://127.0.0.1:50040
+  opensdsauthstrategy: keystone
+  osauthurl: http://127.0.0.1/identity
   osusername: admin
   ospassword: opensds@123
   ostenantname: admin
