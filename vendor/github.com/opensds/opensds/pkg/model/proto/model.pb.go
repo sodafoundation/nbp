@@ -6,11 +6,12 @@ package proto
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2647,7 +2648,7 @@ func (m *DetachVolumeOpts) GetContext() string {
 	return ""
 }
 
-// DreateFileShareAclOpts is a structure which indicates all required properties for creating a file share.
+// DeleteFileShareAclOpts is a structure which indicates all required properties for creating a file share.
 type DeleteFileShareAclOpts struct {
 	// The uuid of the file share, optional when creating.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

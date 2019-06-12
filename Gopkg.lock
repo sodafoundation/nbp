@@ -160,7 +160,7 @@
   version = "v0.2.0"
 
 [[projects]]
-  digest = "1:23f77354dd0bfec335d5fa03cc52d370408b082c09204a1f50664c58dae4edd1"
+  digest = "1:80230022ab481c6688b237550bc45017d9d2abfc19e4916e2ce344d24f613a6d"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -172,7 +172,7 @@
     "pagination",
   ]
   pruneopts = "NUT"
-  revision = "754e57e7867bfa48062ff2a237caad538085700a"
+  revision = "3ad89c4ea008e0e0b729720040b0be25a35d4615"
 
 [[projects]]
   digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
@@ -283,7 +283,7 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:22c46bfeae77186f5e94c5668c9234400c238b51e70679e9eab701d4c372aae3"
+  digest = "1:34deacae3676540bc0c99e073b3f5af6a401c3fa2f79bff7d13f50cc06cbef50"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -305,8 +305,8 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "221e8fa5e21b5fa2975cab2eb5e6f762f1e5660c"
-  version = "v0.5.3"
+  revision = "06c05820af14f27b4f2cb5a09a9675f43b60305d"
+  version = "v0.5.4"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
