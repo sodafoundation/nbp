@@ -33,8 +33,9 @@ prebuild:
 
 csi.server.opensds: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
-	# nvme-cli should has been installed by hotpot related shell in /opt/nvme-cli-1.8.1, if not, 
-	#you can download and make install  it manually
+	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
+	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
+	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
 	cp -a /opt/nvme-cli-1.8.1 ./csi/server/
 
 csi.client.opensds: prebuild
