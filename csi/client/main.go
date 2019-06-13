@@ -315,14 +315,14 @@ func volumeCreate() {
 	rand.Seed(time.Now().Unix())
 	volumename := fmt.Sprintf("csivolume-%v", rand.Int())
 
-	param := map[string]string{opensds.KParamSecondaryAZ: util.OpensdsDefaultSecondaryAZ}
+	param := map[string]string{opensds.ParamSecondaryAZ: util.OpensdsDefaultSecondaryAZ}
 	// add to param map if the replication is set.
 	if enableReplication {
-		param[opensds.KParamEnableReplication] = "true"
+		param[opensds.ParamEnableReplication] = "true"
 	}
 	// set the secondary az
 	if v, ok := os.LookupEnv(util.OpensdsSecondaryAZ); ok {
-		param[opensds.KParamSecondaryAZ] = v
+		param[opensds.ParamSecondaryAZ] = v
 	}
 	volumeinfo, err := controller.CreateVolume(context.Background(), volumename, nil, nil,
 		param, nil)

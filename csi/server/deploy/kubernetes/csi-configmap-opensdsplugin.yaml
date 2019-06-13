@@ -7,7 +7,8 @@ metadata:
   name: csi-configmap-opensdsplugin
 data:
   opensdsendpoint: http://127.0.0.1:50040
-  opensdsauthstrategy: keystone
+  opensdsauthstrategy: noauth
+  opensdsstoragetype: block
   osauthurl: http://127.0.0.1/identity
   osusername: admin
   ospassword: opensds@123
@@ -17,4 +18,5 @@ data:
   passwordencrypter: aes
   enableEncrypted: F
   osuserdomainid: default
+
 

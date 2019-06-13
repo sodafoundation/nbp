@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,66 +15,85 @@
 package opensds
 
 // K8s storage class parameter keywords
-
 const (
-	KParamProfile           = "profile"
-	KParamAZ                = "availabilityzone"
-	KParamEnableReplication = "enablereplication"
-	KParamSecondaryAZ       = "secondaryavailabilityzone"
+	ParamProfile           = "profile"
+	ParamEnableReplication = "enableReplication"
+	ParamSecondaryAZ       = "secondaryAvailabilityZone"
 )
 
 // CSI volume attribute keywords
 const (
-	KVolumeName          = "name"
-	KVolumeStatus        = "status"
-	KVolumeAZ            = "availabilityZone"
-	KVolumePoolId        = "poolId"
-	KVolumeProfileId     = "profileId"
-	KVolumeLvPath        = "lvPath"
-	KVolumeReplicationId = "replicationId"
-	kStorageType         = "storagetype"
+	VolumeName          = "name"
+	VolumeStatus        = "status"
+	VolumeAZ            = "availabilityZone"
+	VolumePoolId        = "poolId"
+	VolumeProfileId     = "profileId"
+	VolumeLvPath        = "lvPath"
+	VolumeReplicationId = "replicationId"
+	StorageType         = "storageType"
 )
 
 // CSI publish attribute keywords
 const (
-	KPublishHostIp            = "HostIp"
-	KPublishHostName          = "HostName"
-	KPublishAttachId          = "AttachmentId"
-	KPublishSecondaryAttachId = "SecondaryAttachmentId"
-	KPublishAttachStatus      = "AttachmentStatus"
-	KPublishAttachMode        = "attachmode"
+	PublishHostIp            = "hostIp"
+	PublishHostName          = "hostName"
+	PublishAttachId          = "attachmentId"
+	PublishSecondaryAttachId = "secondaryAttachmentId"
+	PublishAttachStatus      = "attachmentStatus"
+	PublishAttachMode        = "attachMode"
 )
 
 // Opensds Attachment metadata keywords
 const (
-	KTargetPath        = "targetPath"
-	KStagingTargetPath = "stagingTargetPath"
+	TargetPath        = "targetPath"
+	StagingTargetPath = "stagingTargetPath"
 )
 
 // Opensds replication metadata keywords
 const (
-	KAttachedVolumeId = "attachedVolumeId"
-	KAttachedId       = "attachedId"
+	AttachedVolumeId = "attachedVolumeId"
+	AttachedId       = "attachedId"
 )
 
 // volume prefix
 const SecondaryPrefix = "secondary-"
 
-const DefaultAvailabilityZone = "default"
-
 const (
-	// DefFSType default filesystem type
-	DefFSType = "ext4"
+	// default filesystem type
+	DefFSType               = "ext4"
+	DefaultAvailabilityZone = "default"
 )
 
 // Csi configuration parameters and values
 const (
 	// parameters
-	KCSIVolumeMode = "CSIVolumeMode"
+	CSIVolumeMode = "CSIVolumeMode"
 
 	// CSIVolumeMode = Filesystem
-	KCSIFilesystem = "Filesystem"
+	CSIFilesystem = "Filesystem"
 
 	// CSIVolumeMode = Block
-	KCSIBlock = "Block"
+	CSIBlock = "Block"
 )
+
+// fileshare constant parameters
+const (
+	ShareName       = "shareName"
+	ShareAZ         = "shareAZ"
+	ShareStatus     = "shareStatus"
+	SharePoolId     = "sharePoolId"
+	ShareProfileId  = "shareProfileId"
+	ShareProtocol   = "shareProtocol"
+	NFS             = "nfs"
+	IpIdx           = 2
+	ExportLocations = "exportLocations"
+	FileShareName   = "fileShareName"
+)
+
+// PluginName setting
+const (
+	FakeIQN    = "fakeIqn"
+	PluginName = "csi-opensdsplugin"
+)
+
+var TopologyZoneKey = "topology." + PluginName + "/zone"

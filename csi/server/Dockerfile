@@ -12,6 +12,8 @@ RUN apt-get update && \
     sysfsutils \
     kmod \
     ceph-common \
+    nfs-common \
+    gawk \
     iputils-ping && \
     rm -rf /var/lib/apt/lists/*
 

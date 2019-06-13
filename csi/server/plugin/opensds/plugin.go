@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,32 +16,33 @@ package opensds
 
 import (
 	"github.com/golang/glog"
-	opensdsClient "github.com/opensds/nbp/client/opensds"
+	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/opensds/client"
 )
 
-const (
-	// PluginName setting
-	PluginName      = "csi-opensdsplugin"
-	FakeIQN         = "fakeIqn"
-	TopologyZoneKey = "topology." + PluginName + "/zone"
-)
-
 // Plugin define
 type Plugin struct {
-	Client *client.Client
+	PluginStorageType string
+	Client            *client.Client
+	VolumeClient      *Volume
+	FileShareClient   *FileShare
 }
 
-func NewServer(endpoint, authStrategy string) (plugin.Service, error) {
+func NewServer(endpoint, authStrategy, storageType string) (plugin.Service, error) {
 	// get opensds client
-	client, err := opensdsClient.GetClient(endpoint, authStrategy)
+	client, err := opensds.GetClient(endpoint, authStrategy)
 	if client == nil || err != nil {
 		glog.Errorf("get opensds client failed: %v", err)
 		return nil, err
 	}
 
-	p := &Plugin{Client: client}
+	p := &Plugin{
+		PluginStorageType: storageType,
+		Client:            client,
+		VolumeClient:      NewVolume(client),
+		FileShareClient:   NewFileshare(client),
+	}
 
 	// When there are multiple volumes unmount at the same time,
 	// it will cause conflicts related to the state machine,
