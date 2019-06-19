@@ -52,7 +52,14 @@ func init() {
 	client.ProfileMgr = &c.ProfileMgr{
 		Receiver: NewFakeProfileReceiver(),
 	}
-	fakePlugin = &Plugin{Client: client}
+
+	fakePlugin = &Plugin{
+		Client: client,
+		VolumeClient: &Volume{
+			Client: client,
+		},
+		PluginStorageType: VolumeStorageType,
+	}
 	fakeCtx = context.Background()
 }
 
@@ -498,14 +505,20 @@ func TestCreateVolume(t *testing.T) {
 			},
 		},
 		Parameters: map[string]string{
-			"profile":          "1106b972-66ef-11e7-b172-db03f3689c9c",
-			"availabilityzone": "default",
-			"storageType":      "block",
+			"profile":     "1106b972-66ef-11e7-b172-db03f3689c9c",
+			"storageType": "block",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
 				Snapshot: &csi.VolumeContentSource_SnapshotSource{
 					SnapshotId: "3769855c-a102-11e7-b772-17b880d2f537",
+				},
+			},
+		},
+		AccessibilityRequirements: &csi.TopologyRequirement{
+			Preferred: []*csi.Topology{
+				&csi.Topology{
+					Segments: map[string]string{TopologyZoneKey: DefaultAvailabilityZone},
 				},
 			},
 		},
@@ -520,13 +533,13 @@ func TestCreateVolume(t *testing.T) {
 		CapacityBytes: util.GiB,
 		VolumeId:      "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		VolumeContext: map[string]string{
-			KVolumeName:        "sample-volume",
-			KVolumeStatus:      "available",
-			KVolumeAZ:          "default",
-			KVolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			KVolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
-			KVolumeLvPath:      "",
-			KPublishAttachMode: "rw",
+			VolumeName:        "sample-volume",
+			VolumeStatus:      "available",
+			VolumeAZ:          "default",
+			VolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			VolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
+			VolumeLvPath:      "",
+			PublishAttachMode: "rw",
 		},
 		AccessibleTopology: []*csi.Topology{
 			{

@@ -29,6 +29,7 @@ import (
 
 	_ "github.com/opensds/opensds/contrib/connector/fc"
 	_ "github.com/opensds/opensds/contrib/connector/iscsi"
+	_ "github.com/opensds/opensds/contrib/connector/nfs"
 	_ "github.com/opensds/opensds/contrib/connector/rbd"
 )
 
@@ -38,7 +39,7 @@ func main() {
 	util.InitLogs()
 	defer util.FlushLogs()
 
-	var csiEndpoint, opensdsEndpoint, opensdsAuthStrategy string
+	var csiEndpoint, opensdsEndpoint, opensdsAuthStrategy, opensdsStorageType string
 	// CSI endpoint
 	flag.StringVar(&csiEndpoint, "csiEndpoint", util.CSIDefaultEndpoint, "CSI Endpoint")
 
@@ -47,6 +48,9 @@ func main() {
 
 	// opensds auth strategy
 	flag.StringVar(&opensdsAuthStrategy, "opensdsAuthStrategy", util.OpensdsDefaultAuthStrategy, "OpenSDS Auth Strategy")
+
+	// storageType file or block
+	flag.StringVar(&opensdsStorageType, "storageType", plugin.VolumeStorageType, "OpenSDS plugin storage type")
 
 	flag.Parse()
 
@@ -57,8 +61,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	if opensdsStorageType != plugin.VolumeStorageType && opensdsStorageType != plugin.FileshareStorageType {
+		msg := "storage type must be block or file"
+		glog.Error(msg)
+		os.Exit(1)
+	}
+
+	glog.Infof("current opensds plugin storage type: %s", opensdsStorageType)
+
 	// Initialize the driver
-	pluginServer, err := plugin.NewServer(opensdsEndpoint, opensdsAuthStrategy)
+	pluginServer, err := plugin.NewServer(opensdsEndpoint, opensdsAuthStrategy, opensdsStorageType)
 	if err != nil {
 		glog.Errorf("failed to initialize the driver: %v", err)
 		os.Exit(1)

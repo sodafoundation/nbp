@@ -64,6 +64,7 @@ spec:
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "--storageType=$(OPENSDS_STORAGE_TYPE)"
             - "--v=8"
           env:
             - name: CSI_ENDPOINT
@@ -73,6 +74,11 @@ spec:
                 configMapKeyRef:
                   name: csi-configmap-opensdsplugin
                   key: opensdsendpoint
+            - name: OPENSDS_STORAGE_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin
+                  key: opensdsstoragetype
             - name: OPENSDS_AUTH_STRATEGY
               valueFrom:
                 configMapKeyRef:
