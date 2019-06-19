@@ -283,13 +283,14 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:34deacae3676540bc0c99e073b3f5af6a401c3fa2f79bff7d13f50cc06cbef50"
+  digest = "1:3ffc0f288ef891061021c68942a910475ad382ace04c8bbcd362607ebf0a7045"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
     "contrib/connector",
     "contrib/connector/fc",
     "contrib/connector/iscsi",
+    "contrib/connector/nfs",
     "contrib/connector/rbd",
     "contrib/drivers/utils/config",
     "pkg/context",
@@ -305,8 +306,8 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "06c05820af14f27b4f2cb5a09a9675f43b60305d"
-  version = "v0.5.4"
+  revision = "d3b51b3e437e27f363bb4ce28282d285982e6def"
+  version = "v0.5.5"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
@@ -982,6 +983,7 @@
     "github.com/opensds/opensds/contrib/connector",
     "github.com/opensds/opensds/contrib/connector/fc",
     "github.com/opensds/opensds/contrib/connector/iscsi",
+    "github.com/opensds/opensds/contrib/connector/nfs",
     "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/db/drivers/etcd",
