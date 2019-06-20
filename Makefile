@@ -36,7 +36,8 @@ csi.server.opensds: prebuild
 	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
 	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
 	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
-	cp -a /opt/nvme-cli-1.8.1 ./csi/server/
+	cd ..
+	cp -a ./nvme-cli-1.8.1 ./csi/server/
 
 csi.client.opensds: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
