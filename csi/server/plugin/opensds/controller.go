@@ -754,6 +754,17 @@ func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
 	return "", errors.New("no ISCSI initiators found")
 }
 
+func extractNvmeofInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+        for _, v := range strings.Split(nodeInfo, ",") {
+                if strings.Contains(v, "nqn") {
+                        glog.V(5).Info("Nvmeof initiator is ", v)
+                        return v, nil
+                }
+        }
+
+         return "", errors.New("no Nvmeof initiators found")
+}
+
 func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
 	var wwpns []string
 	for _, v := range strings.Split(nodeInfo, ",") {
