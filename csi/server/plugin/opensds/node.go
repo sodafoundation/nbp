@@ -171,7 +171,7 @@ func (p *Plugin) NodeGetInfo(
 
 	var initiators []string
 
-	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver}
+	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver}
 
 	for _, volDriverType := range volDriverTypes {
 		volDriver := connector.NewConnector(volDriverType)
