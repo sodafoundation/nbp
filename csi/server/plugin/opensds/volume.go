@@ -302,6 +302,17 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 		break
 	case connector.RbdDriver:
 		break
+	case connector.NvmeofDriver:
+                nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
+                if err != nil {
+                        msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
+                                err.Error())
+                        glog.Error(msg)
+                        return nil, status.Error(codes.FailedPrecondition, msg)
+                }
+
+ 		initator = nqn
+		break;
 	default:
 		msg := fmt.Sprintf("protocol:%s not support", protocol)
 		glog.Error(msg)
@@ -309,6 +320,8 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 	}
 
 	ipIdx := 2
+	// here insert nqn into node info so, ipIdx should be 3
+	ipIdx ++
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: model.HostInfo{

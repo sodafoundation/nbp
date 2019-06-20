@@ -109,7 +109,7 @@ func GetCSIClientConn(csiEndpoint string) (*grpc.ClientConn, error) {
 
 // IsSupportPotocol ...
 func IsSupportProtocol(protocol string) bool {
-	supportProtocols := [...]string{connector.FcDriver, connector.IscsiDriver}
+	supportProtocols := [...]string{connector.FcDriver, connector.IscsiDriver,connector.NvmeofDriver}
 	for _, v := range supportProtocols {
 		if strings.ToLower(protocol) == v {
 			return true
