@@ -76,14 +76,14 @@ func (p *Plugin) CreateVolume(
 
 func checkInputParameters(params map[string]string) error {
 	if params == nil {
-		return errors.New("volume creation parameters cannot be nil")
+		return errors.New("input parameters cannot be nil")
 	}
 
 	keyList := []string{ParamProfile, ParamEnableReplication, ParamSecondaryAZ, PublishAttachMode, StorageType}
 
 	for k, _ := range params {
 		if !util.Contained(k, keyList) {
-			return fmt.Errorf("invalid volume creation paramter key: %s. It should be one of %s,%s,%s,%s,%s",
+			return fmt.Errorf("invalid input paramter key: %s. It should be one of %s,%s,%s,%s,%s",
 				k, ParamProfile, ParamEnableReplication, ParamSecondaryAZ, PublishAttachMode, StorageType)
 		}
 	}
@@ -148,7 +148,7 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	if req.GetNodeId() == "" {
+	if req.NodeId == "" {
 		msg := "node ID must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
@@ -540,7 +540,6 @@ func (p *Plugin) ListSnapshots(
 
 		filterResult = snapshotsFilterById
 		break
-	case (0 != snapshotIDLen) && (0 != sourceVolumeIdLen):
 	case (0 != snapshotIDLen) && (0 != sourceVolumeIdLen):
 		for _, snapshot := range snapshotsFilterById {
 			if snapshot.VolumeId == sourceVolumeId {
