@@ -162,7 +162,7 @@ func (p *Plugin) NodeGetInfo(
 	glog.Info("start to get node info")
 	defer glog.Info("end to get node info")
 
-	hostName, err := connector.GetHostName()
+	hostName, err := p.Mounter.GetHostName()
 	if err != nil {
 		msg := fmt.Sprintf("failed to get node name: %v", err)
 		glog.Error(msg)
@@ -171,7 +171,7 @@ func (p *Plugin) NodeGetInfo(
 
 	var initiators []string
 
-	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver}
+	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver, connector.SampleDriver}
 
 	for _, volDriverType := range volDriverTypes {
 		volDriver := connector.NewConnector(volDriverType)
@@ -195,7 +195,7 @@ func (p *Plugin) NodeGetInfo(
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	nodeId := hostName + "," + strings.Join(initiators, ",") + "," + connector.GetHostIP()
+	nodeId := hostName + "," + strings.Join(initiators, ",") + "," + p.Mounter.GetHostIP()
 
 	glog.Infof("node info is %s", nodeId)
 

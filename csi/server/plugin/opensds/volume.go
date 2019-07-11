@@ -36,11 +36,15 @@ const (
 )
 
 type Volume struct {
-	Client *client.Client
+	Client  *client.Client
+	Mounter connector.Mounter
 }
 
-func NewVolume(c *client.Client) *Volume {
-	return &Volume{Client: c}
+func NewVolume(c *client.Client, Mounter connector.Mounter) *Volume {
+	return &Volume{
+		Client:  c,
+		Mounter: Mounter,
+	}
 }
 
 func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
@@ -106,6 +110,12 @@ func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeRe
 			msg := fmt.Sprintf("create volume failed: %v", err)
 			glog.Error(msg)
 			return nil, status.Error(codes.Internal, msg)
+		}
+	} else {
+		// Should fail when requesting to create a volume with already existing name and different capacity.
+		if volExist.Size != volumebody.Size {
+			return nil, status.Error(codes.AlreadyExists,
+				fmt.Sprintf("create a volume with already existing name and different capacity"))
 		}
 	}
 
@@ -303,25 +313,29 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 	case connector.RbdDriver:
 		break
 	case connector.NvmeofDriver:
-                nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
-                if err != nil {
-                        msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
-                                err.Error())
-                        glog.Error(msg)
-                        return nil, status.Error(codes.FailedPrecondition, msg)
-                }
+		nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
+				err.Error())
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
 
- 		initator = nqn
-		break;
+		initator = nqn
+		break
+	case connector.SampleDriver:
+		break
 	default:
 		msg := fmt.Sprintf("protocol:%s not support", protocol)
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	ipIdx := 2
-	// here insert nqn into node info so, ipIdx should be 3
-	ipIdx ++
+	ip, err := extractIpFromNodeInfo(nodeInfo)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: model.HostInfo{
@@ -329,7 +343,7 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
 			Initiator: initator,
-			Ip:        strings.Split(nodeInfo, ",")[ipIdx],
+			Ip:        ip,
 		},
 		Metadata:       req.VolumeContext,
 		AccessProtocol: protocol,
@@ -751,7 +765,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 		}
 
 		// Mount
-		mounted, err := connector.IsMounted(mountpoint)
+		mounted, err := v.Mounter.IsMounted(mountpoint)
 		if err != nil {
 			msg := fmt.Sprintf("failed to check mounted: %v", err)
 			glog.Errorf(msg)
@@ -765,7 +779,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 
 		glog.Info("mounting...")
 
-		err = connector.Mount(device, mountpoint, fsType, mountFlags)
+		err = v.Mounter.Mount(device, mountpoint, fsType, mountFlags)
 		if err != nil {
 			msg := fmt.Sprintf("failed to mount: %v", err)
 			glog.Errorf(msg)
@@ -799,7 +813,7 @@ func (v *Volume) NodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) (*csi.
 
 	if CSIFilesystem == vol.Metadata[CSIVolumeMode] {
 		// check volume is unmounted
-		mounted, err := connector.IsMounted(req.TargetPath)
+		mounted, err := v.Mounter.IsMounted(req.TargetPath)
 		if !mounted {
 			glog.Info("target path is already unmounted")
 			return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -807,7 +821,7 @@ func (v *Volume) NodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) (*csi.
 
 		// Umount
 		glog.V(5).Infof("mountpoint:%s", req.TargetPath)
-		err = connector.Umount(req.TargetPath)
+		err = v.Mounter.Umount(req.TargetPath)
 		if err != nil {
 			msg := fmt.Sprintf("failed to umount: %v", err)
 			glog.Error(msg)
