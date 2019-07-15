@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cd ../..
+BASE_DIR=`pwd`
+apt-get update && apt-get install -y git make curl wget libltdl7 libseccomp2 libffi-dev gawk sudo
+wget https://storage.googleapis.com/golang/go1.12.1.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.12.1.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+echo 'export GOPATH=$HOME/gopath' >> /etc/profile
+source /etc/profile
+cd $HOME
+mkdir -p gopath/src/github.com/opensds/nbp
+cd gopath/src/github.com/opensds/nbp
+cp -r ${BASE_DIR}/* .
+make docker
+cp csi/server/csi.server.opensds ${BASE_DIR}/csi/server
+cp -a csi/server/nvme-cli-1.8.1 ${BASE_DIR}/csi/server
