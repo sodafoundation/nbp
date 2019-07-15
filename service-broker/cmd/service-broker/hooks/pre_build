@@ -1,4 +1,3 @@
-############service-broker
 #!/bin/bash
 cd ../../..
 BASE_DIR=`pwd`
