@@ -154,6 +154,16 @@ func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
+	if req.GetVolumeCapability() == nil {
+		msg := "volume capability must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+
+	if req.GetReadonly() {
+		return nil, status.Error(codes.AlreadyExists, "read only volumes are not supported")
+	}
+
 	glog.V(5).Infof("plugin information %#v", p)
 	glog.V(5).Infof("current storage type: %s", p.PluginStorageType)
 
@@ -193,11 +203,29 @@ func (p *Plugin) ControllerUnpublishVolume(
 }
 
 // ValidateVolumeCapabilities implementation
-func (p *Plugin) ValidateVolumeCapabilities(
-	ctx context.Context,
+func (p *Plugin) ValidateVolumeCapabilities(ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest) (
 	*csi.ValidateVolumeCapabilitiesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+
+	volId := req.GetVolumeId()
+	if volId == "" {
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	if req.GetVolumeCapabilities() == nil {
+		return nil, status.Error(codes.InvalidArgument, "")
+	}
+
+	vol, err := p.Client.GetVolume(volId)
+	if vol == nil || err != nil {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
+
+	return &csi.ValidateVolumeCapabilitiesResponse{
+		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
+			VolumeCapabilities: req.VolumeCapabilities,
+		},
+	}, nil
 }
 
 // ListVolumes implementation
@@ -293,6 +321,13 @@ func (p *Plugin) ControllerGetCapabilities(
 				Type: &csi.ControllerServiceCapability_Rpc{
 					Rpc: &csi.ControllerServiceCapability_RPC{
 						Type: csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
+					},
+				},
+			},
+			&csi.ControllerServiceCapability{
+				Type: &csi.ControllerServiceCapability_Rpc{
+					Rpc: &csi.ControllerServiceCapability_RPC{
+						Type: csi.ControllerServiceCapability_RPC_PUBLISH_READONLY,
 					},
 				},
 			},
@@ -426,12 +461,17 @@ func (p *Plugin) DeleteSnapshot(
 	glog.V(5).Infof("start to delete snapshot, snapshot id: %v, delete snapshot secrets: %v!",
 		req.SnapshotId, req.Secrets)
 
-	if 0 == len(req.SnapshotId) {
+	snpId := req.GetSnapshotId()
+	if snpId == "" {
 		return nil, status.Error(codes.InvalidArgument, "snapshot id cannot be empty")
 	}
 
-	err := p.Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
+	snp, _ := p.Client.GetVolumeSnapshot(snpId)
+	if snp == nil {
+		return &csi.DeleteSnapshotResponse{}, nil
+	}
 
+	err := p.Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
 	if nil != err {
 		msg := fmt.Sprintf("delete snapshot failed: %v", err)
 		glog.Error(msg)
@@ -488,14 +528,14 @@ func (p *Plugin) ListSnapshots(
 		break
 	case (0 == snapshotIDLen) && (0 != sourceVolumeIdLen):
 		if len(snapshotsFilterByVolumeId) <= 0 {
-			return nil, status.Error(codes.NotFound, fmt.Sprintf("no snapshot with source volume id %s", sourceVolumeId))
+			return &csi.ListSnapshotsResponse{Entries: []*csi.ListSnapshotsResponse_Entry{}}, nil
 		}
 
 		filterResult = snapshotsFilterByVolumeId
 		break
 	case (0 != snapshotIDLen) && (0 == sourceVolumeIdLen):
 		if len(snapshotsFilterById) <= 0 {
-			return nil, status.Error(codes.NotFound, fmt.Sprintf("no snapshot with id %s", snapshotId))
+			return &csi.ListSnapshotsResponse{Entries: []*csi.ListSnapshotsResponse_Entry{}}, nil
 		}
 
 		filterResult = snapshotsFilterById
@@ -687,28 +727,24 @@ func (p *Plugin) UnpublishRoutine() {
 
 					if err := p.Client.DeleteVolumeAttachment(act.Id, act); err != nil {
 						glog.Errorf("%s failed to unpublish: %v", act.Id, err)
-					} else {
-						waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
-							return p.Client.GetVolumeAttachment(id)
-						}, e)
 					}
+
+					waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
+						return p.Client.GetVolumeAttachment(id)
+					}, e)
 
 				// delete fileshare access control list if storage type is file
 				case *model.FileShareAclSpec:
 					act := e.Value.(*model.FileShareAclSpec)
 
 					if err := p.Client.DeleteFileShareAcl(act.Id); err != nil {
-						if strings.Contains(err.Error(), "Not Found") {
-							glog.Infof("delete attachment %s successfully", act.Id)
-							UnpublishAttachmentList.Delete(e)
-						} else {
-							glog.Errorf("%s failed to unpublish: %v", act.Id, err)
-						}
-					} else {
-						waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
-							return p.Client.GetFileShareAcl(id)
-						}, e)
+						glog.Errorf("%s failed to unpublish: %v", act.Id, err)
 					}
+
+					waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
+						return p.Client.GetFileShareAcl(id)
+					}, e)
+
 				}
 
 				time.Sleep(10 * time.Second)
@@ -726,15 +762,24 @@ func waitAttachmentDeleted(id string, f func(string) (interface{}, error), e *li
 	for {
 		select {
 		case <-ticker.C:
-			_, err := f(id)
+			v, _ := f(id)
 
-			if err != nil && strings.Contains(err.Error(), "Not Found") {
-				glog.Infof("delete attachment %s successfully", id)
-				UnpublishAttachmentList.Delete(e)
-				return
-			} else {
-				glog.Errorf("delete attachment failed: %v", err)
+			switch v.(type) {
+			case *model.VolumeAttachmentSpec:
+				if v.(*model.VolumeAttachmentSpec) == nil {
+					glog.Infof("delete attachment %s successfully", id)
+					UnpublishAttachmentList.Delete(e)
+					return
+				}
+			case *model.FileShareAclSpec:
+				if v.(*model.FileShareAclSpec) == nil {
+					glog.Infof("delete attachment %s successfully", id)
+					UnpublishAttachmentList.Delete(e)
+					return
+				}
 			}
+
+			glog.Errorf("delete attachment %#v failed", v)
 
 		case <-timeout:
 			glog.Errorf("waiting to delete %s timeout", id)
@@ -755,14 +800,14 @@ func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
 }
 
 func extractNvmeofInitiatorFromNodeInfo(nodeInfo string) (string, error) {
-        for _, v := range strings.Split(nodeInfo, ",") {
-                if strings.Contains(v, "nqn") {
-                        glog.V(5).Info("Nvmeof initiator is ", v)
-                        return v, nil
-                }
-        }
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "nqn") {
+			glog.V(5).Info("Nvmeof initiator is ", v)
+			return v, nil
+		}
+	}
 
-         return "", errors.New("no Nvmeof initiators found")
+	return "", errors.New("no Nvmeof initiators found")
 }
 
 func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
@@ -780,6 +825,17 @@ func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
 	glog.V(5).Infof("FC initiators are %s", wwpns)
 
 	return wwpns, nil
+}
+
+func extractIpFromNodeInfo(nodeInfo string) (string, error) {
+	for _, v := range strings.Split(nodeInfo, ",") {
+		ip := net.ParseIP(v)
+		if ip != nil {
+			return v, nil
+		}
+	}
+
+	return "", errors.New("cannot find valid ip address")
 }
 
 func getZone(requirement *csi.TopologyRequirement) string {

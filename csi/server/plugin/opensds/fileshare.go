@@ -34,11 +34,15 @@ const (
 )
 
 type FileShare struct {
-	Client *client.Client
+	Client  *client.Client
+	Mounter connector.Mounter
 }
 
-func NewFileshare(c *client.Client) *FileShare {
-	return &FileShare{Client: c}
+func NewFileshare(c *client.Client, Mounter connector.Mounter) *FileShare {
+	return &FileShare{
+		Client:  c,
+		Mounter: Mounter,
+	}
 }
 
 func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {

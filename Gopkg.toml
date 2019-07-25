@@ -77,6 +77,10 @@
   name = "k8s.io/client-go"
   version = "kubernetes-1.13.0-beta.1"
 
+[[constraint]]
+  name = "github.com/kubernetes-csi/csi-test"
+  version = "1.1.0"
+
 [prune]
   non-go = true
   go-tests = true

@@ -19,6 +19,7 @@ import (
 	"github.com/opensds/nbp/client/opensds"
 	"github.com/opensds/nbp/csi/server/plugin"
 	"github.com/opensds/opensds/client"
+	"github.com/opensds/opensds/contrib/connector"
 )
 
 // Plugin define
@@ -27,6 +28,7 @@ type Plugin struct {
 	Client            *client.Client
 	VolumeClient      *Volume
 	FileShareClient   *FileShare
+	Mounter           connector.Mounter
 }
 
 func NewServer(endpoint, authStrategy, storageType string) (plugin.Service, error) {
@@ -40,8 +42,9 @@ func NewServer(endpoint, authStrategy, storageType string) (plugin.Service, erro
 	p := &Plugin{
 		PluginStorageType: storageType,
 		Client:            client,
-		VolumeClient:      NewVolume(client),
-		FileShareClient:   NewFileshare(client),
+		VolumeClient:      NewVolume(client, connector.GetCommonMounter()),
+		FileShareClient:   NewFileshare(client, connector.GetCommonMounter()),
+		Mounter:           connector.GetCommonMounter(),
 	}
 
 	// When there are multiple volumes unmount at the same time,
