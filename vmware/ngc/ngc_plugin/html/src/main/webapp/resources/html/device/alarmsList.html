@@ -1,0 +1,153 @@
+<!doctype html>
+<html style="height: 100%">
+
+	<head>
+		<meta charset="utf-8" />
+		<title>Device Alarm</title>
+		<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css" />
+		<link rel="stylesheet" href="../../../assets/css/table.css" />
+		<link rel="stylesheet" href="../../../assets/css/style.css" />
+		<link rel="stylesheet" href="../../../assets/css/icstyle.css" />
+		<link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css" />
+		<link rel="stylesheet" href="../../../assets/css/jqtree.css" />
+
+		<script src="../../../assets/jquery-1.10.2.min.js"></script>
+		<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+		<script src="../../../resources/js/common/web-platform.js"></script>
+		<script src="../../../resources/js/common/jquery-util.js"></script>
+		<script src="../../../resources/js/common/jquery.bigpage.js"></script>
+		<script src="../../../resources/js/common/basic-table.js"></script>
+		<style type="text/css">
+			table thead tr th,
+			table tbody tr td {
+				white-space: nowrap;
+			}
+		</style>
+		<script type="text/javascript">
+			//加载完之后,立即请求数据
+			$(document).ready(function() {
+				// 初始页面组件,比如禁用按钮,绑定事件
+				bindEvent();
+				// 加载表格数据
+				initData();
+				$(window).resize(function() {
+					parent.$("#storagealarmTab").width($("#storagealarmTable").width());
+				});
+			});
+
+			function initData() {
+				var request = new Object();
+				request = GetRequest();
+				parent.$("#divLoadingAlarm").show();
+				var url = parent.url + parent.deviceId + "?start=" + request["start"] + "&count=" + request["pagesize"] +
+					"&filterType=" + request["filterType"] + "&filterValue=" + request["filterValue"] + "&t=" + new Date();
+				var lunReq = new req(url, "");
+				var lunhandler = new handler(function doSuccess(resp) {
+					if(resp.errorCode) {
+						parent.$("#divLoadingAlarm").hide();
+						parent.$("#diverrorAlarm").text(resp.errorDesc).show();
+						return;
+					}
+					resp.data.forEach(function(item, index, array) {
+						item.startTime = new Date(item.startTime);
+					})
+					a2t("#storagealarmTable tbody", "#clone", resp.data);
+					//scroll("storagealarmTab", "alarmTableDiv", 1, parent.divhead_id, "storagealarmTable");
+					//format date to local format
+					var interval = setInterval(function() {
+						if($("#storagealarmTable").width() > 0) {
+							parent.$("#storagealarmTab").width($("#storagealarmTable").width());
+							clearInterval(interval);
+						}
+					}, 10);
+					parent.$("#divLoadingAlarm").hide();
+				}, function doFailed() {
+					parent.$("#divLoadingAlarm").hide();
+				});
+				sendMsg(lunReq, lunhandler);
+			}
+			/**
+			 * 仅仅提供单选按钮,并不提供批量快照/备份功能, 如果提供也不再通过checkbox的方式
+			 */
+			function bindEvent() {
+				$("#storagealarmTable tbody tr").bind("click", function(event) { // 行的点击事件
+					// 修改相关样式
+					$("#storagealarmTable tbody tr td").css("background-color", "#FFFFFF"); // 删除其他选中行的背景样式
+					$(this).find('td').each(function(i) {
+						$(this).css("background-color", "#abcefc");
+					});
+				});
+			}
+
+			function scroll(viewid, scrollid, size, divhead_id, tabid) {
+				if(parent.$("#" + divhead_id).length > 0) {
+					parent.$("#" + divhead_id).width($("#" + tabid).width());
+					return;
+				}
+				// 获取滚动条容器  
+				var scroll = parent.document.getElementById(scrollid);
+				// 将表格拷贝一份 
+				var tb2 = parent.document.getElementById(viewid).cloneNode(true);
+
+				var $table = $(parent.document.getElementById(viewid));
+				if($table.find("input[type='checkbox']").length > 0) { //这是一个空表(只有表头没有数据)
+					var id = $(tb2).find("input[type='checkbox']:first").attr("id");
+					$table.find("input[type='checkbox']:first").removeAttr("id");
+					$(tb2).find("input[type='checkbox']:first").attr("id", id);
+				}
+				// 将拷贝得到的表格中非表头行删除  
+				for(var i = tb2.rows.length; i > size; i--) {
+					// 每次删除数据行的第一行  
+					tb2.deleteRow(size);
+				}
+				var top = parent.$("#" + viewid).offset().top;
+				var left = parent.$("#" + viewid).offset().left;
+				var bak = parent.document.createElement("div");
+				// 将div添加到滚动条容器中  
+				scroll.appendChild(bak);
+				// 将拷贝得到的表格在删除数据行后添加到创建的div中 
+				bak.appendChild(tb2);
+				bak.setAttribute("id", divhead_id);
+				// 设置创建的div的position属性为absolute,即绝对定于滚动条容器（滚动条容器的position属性必须为relative）
+				//bak.style.position = "absolute";width: scroll.scrollWidth;
+				bak.style.position = "fixed";
+				$(bak).css({
+					"left": left,
+					"top": top,
+					width: $("#" + tabid).width(),
+					backgroundColor: "#cfc",
+					display: "block"
+				});
+				parent.$("#" + viewid).find("th").each(function() {
+					this.innerHTML = "";
+				});
+			}
+
+			function GetRequest() {
+				var url = location.search; //获取url中"?"符后的字串   
+				var theRequest = new Object();
+				if(url.indexOf("?") != -1) {
+					var str = url.substr(1);
+					strs = str.split("&");
+					for(var i = 0; i < strs.length; i++) {
+						theRequest[strs[i].split("=")[0]] = unescape(strs[i].split("=")[1]);
+					}
+				}
+				return theRequest;
+			}
+		</script>
+	</head>
+
+	<body style="height: 100%">
+		<table id="storagealarmTable" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;">
+			<tbody class="tableBody">
+				<tr id="clone" style="display: none;">
+					<td name="level" title="" width="20%" align="left"></td>
+					<td name="description" title="" width="50%" align="left"></td>
+					<td name="startTime" title="" width="30%" align="left" style="border-right: 0px;"></td>
+				</tr>
+			</tbody>
+		</table>
+	</body>
+
+</html>

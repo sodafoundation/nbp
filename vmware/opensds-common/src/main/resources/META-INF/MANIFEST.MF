@@ -1,0 +1,38 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenAPI
+Bundle-SymbolicName: org.opensds.vmware.common
+Bundle-Version: 1.0.0
+Bundle-Vendor: Huawei
+Bundle-ClassPath: .
+Tool: Bundlor 1.1.0.RELEASE
+Export-Package: org.opensds.vmware.common,
+ org.opensds.vmware.common.exceptions,
+ org.opensds.vmware.common.adapters.thirdparty.oceanstor,
+ org.opensds.vmware.common.models
+Import-Package: javax.crypto,
+ javax.crypto.spec,
+ javax.naming,
+ javax.naming.directory,
+ javax.naming.event,
+ javax.naming.ldap,
+ javax.naming.spi,
+ javax.net,
+ javax.net.ssl,
+ javax.security.auth.x500,
+ net.sf.cglib.core,
+ net.sf.cglib.proxy,
+ net.sf.cglib.reflect,
+ org.apache.commons.logging
+
+
+
+
+
+
+
+
+
+
+
+

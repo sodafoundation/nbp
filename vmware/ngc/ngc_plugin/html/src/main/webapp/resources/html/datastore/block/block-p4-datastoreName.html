@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html style="    background-color: white">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>Set a Datastore Name</title>
+	<style type="text/css">
+html
+{
+	background-color: white;
+}
+input::-ms-clear {
+	display: none;
+}
+    input[type="text"]{
+        border:none;
+        outline: none;
+        box-shadow:inset 0 1px 3px #FFF;
+        text-indent:6px;
+        border-radius:0px;
+        transition:none;
+        border-bottom:1px solid #C3C3C3;
+        background:linear-gradient(180deg,transparent 95%,#0094d2 0) no-repeat;
+        background-size: 0% 100%;
+        transition-property:background-size;
+        transition-duration:0.2s;
+        transition-timing-function: ease;
+        transition-delay: initial;
+    }
+input[type="text"]:focus{
+        background-size:100% 100%;
+    }
+    select {
+    border: none;
+    border-bottom: 1px solid #C3C3C3;
+    outline: none;
+    background-color: #fafafa;
+}
+.dataStoreNameTable{
+    font-size: .9rem;
+    font-weight: 400;
+    line-height: 1rem;
+    letter-spacing: normal;
+    margin-top: 0;
+    border: 1px solid #ccc;
+    border-radius: .125rem;
+    overflow-y: auto;
+    background-color: #fafafa;
+    word-wrap: break-word;
+    padding-left: 4px;
+}
+tr{
+height:37px;
+}
+</style>
+	<script src="../../../../assets/jquery-1.10.2.min.js"></script>
+	<script
+			src="../../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+	<script
+			src="../../../../resources/js/common/web-platform.js"></script>
+	<script
+			src="../../../../resources/js/common/jquery-util.js"></script>
+	<script type="text/javascript">
+	var bool = false;
+
+	$(document).ready(function(){
+
+		parent.$("#nextStep").prop("disabled","disabled");
+		parent.$("#nextStep").css("background","#57C7FF");
+		parent.$("#nextStep").val("CREATE");
+		$("#datastoreName").val(parent.datastoreName);
+		dealNextStep();
+		if (parent.isDsNameRepeat) {
+			$("#error").css("display","block");
+			$("#pointOutInfo").text(parent.dsNameRepeatInfo);
+		} else {
+			$("#error").css("display","none");
+		}
+        $("#datastoreName").bind("input propertychange", function () {
+            parent.isDsNameRepeat = false;
+            $("#error").css("display","none");
+            for (var index = 0; index < this.value.length; index++) {
+                //[a-zA-Z0-9-_.\u4e00-\u9fa5] 这个是可用支持中文和小数点
+                if (!(/^[a-zA-Z0-9-_]$/.test(this.value.charAt(index)))) {
+                    this.value = this.value.substring(0, index);
+                }
+            }
+            parent.datastoreName = this.value;
+            dealNextStep();
+        });
+		$("#datastoreName").focus();
+	});
+	function dealNextStep() {
+		if(parent.datastoreName != "" || parent.isCreateDatastore ==false) {
+			parent.$("#nextStep").prop("disabled","");
+			parent.$("#nextStep").css("background","#007cbb");
+		}
+		else {
+			parent.$("#nextStep").prop("disabled","disabled");
+			parent.$("#nextStep").css("background","#57C7FF");
+		}
+	}
+
+</script>
+</head>
+<body>
+<div  style="padding-left: 5px;padding-top: 5px;">
+	<table class="dataStoreNameTable" cellspacing="0" cellpadding="1">
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr id="dsname">
+
+			<td colspan="2" style="padding-left: 2px;width: 150px;" >Datastore name</td>
+			<td colspan="2" style="width:480px;">
+				<input type="text" id="datastoreName" maxLength="42" style="width:363px;margin-right:40px;"/>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+		<tr id="error" style="display:none;">
+			<td>
+				<img src="../../../../assets/images/red.png"  style="vertical-align:bottom;"></img>
+				<span id="pointOutInfo"></span>
+			</td>
+		</tr>
+	</table>
+</div>
+</body>
+</html>
+    
