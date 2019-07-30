@@ -78,11 +78,9 @@
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>yavijava</groupId>
+			<groupId>com.toastcoders</groupId>
 			<artifactId>yavijava</artifactId>
 			<version>6.0.05</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/third_party_groupware/yavijava-6.0.05.jar</systemPath>
 		</dependency>
     </dependencies>
 
