@@ -1,0 +1,3 @@
+echo step one....
+cd ngc_plugin/makefile/
+ant -buildfile ngc_part0.xml

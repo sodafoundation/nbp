@@ -1,0 +1,17 @@
+/** ������lunTab.html��snapshot.html����ҳ�����ʽ */
+html,body,div{
+    margin: 0px;
+    padding: 0px;
+}
+html{
+	width: 100%;
+}
+body{
+	overflow-x: hidden;
+}
+table{
+	table-layout: fixed;
+}
+#cloneLun{
+	display:none;
+}
