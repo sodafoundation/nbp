@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <project name="ngc" basedir="" default="main">
     <property name="root" value="../"/>
-     <property name="ngc.dir" value="../../ngc_register/ngcplugin"/>
+     <property name="ngc.dir" value="../../ngc-register/ngcplugin"/>
     <property name="esdk.dir" value="${ngc.dir}/esdk"/>
     <property environment="env"/>
     <property name="VSPHERE_SDK_HOME" value="${env.VSPHERE_SDK_HOME}"/>
