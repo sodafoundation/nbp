@@ -4,7 +4,7 @@
 	<div style="text-align: center;">
 		<br/>
 		<br/>
-		<a id="delete.confirm.title" style="text-align: center;">Do you really want to remove the device?</a>
+		<a id="delete.confirm.title" style="text-align: center;">Do you really want to remove the storage?</a>
 		<br/>
 		<br/>
 		<button id="confirm" class="pure-button" style="">YES</button>
@@ -202,7 +202,7 @@
 							deviceId = resp.data;
 							$("#title").text("Success");
 							$("#diaLogBox").css("visibility","visible");
-							$("#sucWords").html("Delete device successfully! <br/> Please refresh the current page!");
+							$("#sucWords").html("Delete storage successfully! <br/> Please refresh the current page!");
 							$("#sucDiv").show();
 						}
 						else
@@ -215,7 +215,7 @@
 					}, function doError() {
 						$("#title").text("Error");
 						$("#diaLogBox").css("visibility","visible");
-						$("#errWords").html("Delete device failed!");
+						$("#errWords").html("Delete storage failed!");
 						$("#errDiv").show();
 					});
 					sendMsg(deviceReq, devhandler);

@@ -6,14 +6,14 @@
 
 <div class="centerdiv">
     <div style="left:0px;top:4px;width:293px;height:56px;">
-        <h3 style="left:0px;top:1px;">Config device</h3>
-        <h4 style="left:0px;top:32px;">Edit the device information</h4>
+        <h3 style="left:0px;top:1px;">Config Storage Platform</h3>
+        <h4 style="left:0px;top:32px;">Edit the storage platform information</h4>
     </div>
 
     <form id="deviceEditForm" class="pure-form pure-form-aligned storage-form" action="/ui/esdk/rest/device">
         <fieldset>
             <div class="pure-control-group" >
-                <label for="deviceType" id="deviceType">Device Type</label>
+                <label for="deviceType" id="deviceType">Storage Platform Type</label>
                 <input name="deviceType" type="text" autocomplete="off" readonly="readonly"/>
             </div>
             <div class="pure-control-group">
@@ -94,7 +94,7 @@
 </body>
 <head>
     <meta charset="utf-8"/>
-    <title>Modify Device</title>
+    <title>Modify Storage Platform</title>
     <link rel="stylesheet" href="../../../assets/css/pure-min.css">
     <link rel="stylesheet" href="../../../assets/css/add-device.css">
     <script src="../../../assets/jquery-1.10.2.min.js"></script>
@@ -481,7 +481,7 @@
                 }, function doError(resp) {
                     $("#title").text("Error");
                     $("#diaLogBox").css("visibility", "visible");
-                    $("#errWords").html("Get device information failed!");
+                    $("#errWords").html("Get storage information failed!");
                     $("#errDiv").show();
                     commonResetFunc();
                     $(".storagesubmit:visible").prop("disabled", false);
@@ -506,7 +506,7 @@
                        // deviceId = resp.result;
                         $("#title").text("Success");
                         $("#diaLogBox").css("visibility", "visible");
-                        $("#sucWords").html("Config device successfully!");
+                        $("#sucWords").html("Config storage successfully!");
                         $("#sucDiv").show();
                     } else {
                         $("#title").text("Error");
@@ -518,7 +518,7 @@
                 }, function doError(resp) {
                     $("#title").text("Error");
                     $("#diaLogBox").css("visibility", "visible");
-                    $("#errWords").html("Config device failed!");
+                    $("#errWords").html("Config storage failed!");
                     $("#errDiv").show();
                     commonResetFunc();
                 });

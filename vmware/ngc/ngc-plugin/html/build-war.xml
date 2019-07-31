@@ -25,17 +25,17 @@
     <property name="REGEXP2" value="\2_\1.properties"/>
 
     <!-- Import the definition of mxmlc-macro -->
-  <!--   <import file="${VSPHERE_SDK_HOME}/resources/flex-macros.xml"/> -->
+    <import file="${env.VSPHERE_SDK_HOME}/resources/flex-macros.xml"/>
 
     <!-- Check SDK setup -->
-   <!--  <target name="check-sdk" description="==> Do not select this internal target.">
+    <target name="check-sdk" description="==> Do not select this internal target.">
         <available file="${FLEX_HOME}/frameworks/libs/player/11.5/playerglobal.swc" property="flex-sdk-ok"/>
         <fail unless="flex-sdk-ok" message="Flex SDK setup incomplete!
 ${line.separator} Cannot find file ${FLEX_HOME}/frameworks/libs/player/11.5/playerglobal.swc
 ${line.separator} This file is required to compile for Flash Player 11.5 and must be added to your setup
 ${line.separator} Download http://fpdownload.macromedia.com/get/flashplayer/installers/archive/playerglobal/playerglobal11_5.swc
 ${line.separator} Then rename it playerglobal.swc and move it to ${FLEX_HOME}/frameworks/libs/player/11.5/"/>
-    </target> -->
+    </target> 
 
     <!-- clean the generated build files -->
     <target name="clean"
@@ -49,22 +49,21 @@ ${line.separator} Then rename it playerglobal.swc and move it to ${FLEX_HOME}/fr
          ECLIPSE NOTE: the Flex project builder does NOT compile resources, so you
          must run this compile-resources target each time your resources change.   -->
 		 
-<!--     <target name="compile-resources" depends="check-sdk"
+   <target name="compile-resources" 
             description="==> Select this target alone to compile resources in Eclipse">
-        <property file="${BUILD_DIR}/bundles.properties"/> -->
+        <property file="${BUILD_DIR}/bundles.properties"/>
 
         <!-- default US version -->
-       <!--  <mxmlc-macro>
+         <mxmlc-macro>
             <arg line="-locale=en_US"/>
             <arg line="-source-path+=${SRC_DIR}/locale/{locale}"/>
             <arg line="-output=${WEBAPP_DIR}/locales/${PROJECT_NAME}-en_US.swf"/>
             <arg line="-include-resource-bundles ${BUNDLE_NAME}"/>
         </mxmlc-macro>
- -->
         <!-- Generate resource bundles for the other required locales
              with a copy of the US version for now  -->
 
-       <!--  <copy file="${WEBAPP_DIR}/locales/${PROJECT_NAME}-en_US.swf"
+         <copy file="${WEBAPP_DIR}/locales/${PROJECT_NAME}-en_US.swf"
               tofile="${WEBAPP_DIR}/locales/${PROJECT_NAME}-de_DE.swf"/>
         <copy file="${WEBAPP_DIR}/locales/${PROJECT_NAME}-en_US.swf"
               tofile="${WEBAPP_DIR}/locales/${PROJECT_NAME}-fr_FR.swf"/>
@@ -76,17 +75,17 @@ ${line.separator} Then rename it playerglobal.swc and move it to ${FLEX_HOME}/fr
               tofile="${WEBAPP_DIR}/locales/${PROJECT_NAME}-zh_CN.swf"/>
         <copy file="${SRC_DIR}/locale/com_soda_storage_devices.properties"
               tofile="${WEBAPP_DIR}/locales/com_soda_storage_devices.properties"/>
- -->
+
         <!-- Copy + rename all properties file to webapp for future compatibility -->
-<!-- 
+
         <copy todir="${WEBAPP_DIR}/locales" failonerror="false">
             <fileset dir="${SRC_DIR}/locale"/>
             <mapper type="regexp" from="${REGEXP1}" to="${REGEXP2}"/>
         </copy>
-    </target> -->
+    </target>
 
     <!-- Create the war bundle. -->
-    <target name="make-war-bundle" depends="clean"
+    <target name="make-war-bundle" depends="clean, compile-resources"
             description="==> This target is not needed within Eclipse, see the SDK Tutorial.">
         <mkdir dir="${BUILD_DIR}"/>
 
