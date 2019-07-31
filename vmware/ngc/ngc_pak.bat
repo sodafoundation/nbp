@@ -1,7 +1,7 @@
 @echo on 
 echo step one....
-cd ngc_plugin/makefile/
+cd ngc-plugin/makefile/
 call ant -buildfile ngc_part0.xml
 echo step two....
-cd ../../ngc_register/
+cd ../../ngc-register/
 mvn package
