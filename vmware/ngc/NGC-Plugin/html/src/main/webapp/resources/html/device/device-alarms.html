@@ -1,0 +1,351 @@
+<!doctype html>
+<html style="height: 100%">
+<head>
+<meta charset="utf-8" />
+<title>Device Alarm</title>
+<style type="text/css">
+.search_Input {
+	line-height: 18px;
+	height: 16px;
+}
+table thead tr th, table tbody tr td {
+	white-space: nowrap;
+}
+#alarmTableDiv {
+	background-image: url(../../../assets/images/gride_title.png);
+	font-weight:normal;
+	margin:0px;
+	padding:0px;
+	background-repeat:repeat-x;
+	vertical-align: bottom;
+}
+.help 
+{
+	right:0px;
+	background-image: url(../../../assets/images/help.png);
+	height:17px;
+	width:17px;
+}
+</style>
+<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css" />
+<link rel="stylesheet" href="../../../assets/css/table.css" />
+<link rel="stylesheet" href="../../../assets/css/style.css" />
+<link rel="stylesheet" href="../../../assets/css/icstyle.css" />
+<link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css" />
+<link rel="stylesheet" href="../../../assets/css/jqtree.css" />
+
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script src="../../../resources/js/common/jquery-util.js"></script>
+<script src="../../../resources/js/common/jquery.bigpage.js"></script>
+<script src="../../../resources/js/common/storage.plugin.js"></script>
+<script src="../../../resources/js/common/drag-table.js"></script>
+</head>
+<body style="height: 100%">
+	<div id="alarmMain" style="width: 100%; height: 100%; position: relative;">
+		<div id="help" url="alarminfo" class="help" style="position: absolute;"></div>
+		<div id="buttons" style="line-height: 22px; overflow: hidden; padding-bottom: 10px; padding-top: 18px;">
+			<div style="float: left">
+				<div class="plugin_button_main">
+					<input type="button" id="btnRefreshalarm" value="Refresh"/>
+				</div>
+			</div>
+			<div style="float: right">
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;display: none;">
+					<select id="filterType_alarm" class="filterType" style="height: 22px;vertical-align:top;">
+						<option value ="ALARMSOURCE">Alarm Source</option>
+						<option value ="LEVEL" selected="selected">Severity</option>
+					</select>
+				</div>
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<select id="alarmsource_filterValue_alarm" class="alarmsource_filterValue" name="filterValue" 
+							style="width: 155px;height: 22px;vertical-align:top;display: none;"> 
+						<option value="ALL">All</option>
+						<option value="StorageEngine">Storage Engine</option>
+						<option value="ManagementServer">Management Server</option>
+					</select>
+					<select id="level_filterValue_alarm" class="level_filterValue" name="filterValue" 
+							style="width: 155px;height: 22px;vertical-align:top;"> 
+						<option value="ALL">All</option>
+						<option value="CRITICAL">Critical</option>
+						<option value="MAJOR">Major</option>
+						<option value="WARNING">Warning</option>
+					</select>
+				</div>
+				<div class="plugin_button_main" style="float: left;margin-right: 1px;">
+					<input type="button" id="btnSearch" value="Search"/>
+				</div>
+			</div>
+		</div>
+		<div id="alarmTableDiv" style="position: relative; border: 1px solid #C0C0C0; border-top: 0 none;
+			overflow-y: hidden;overflow-x: hidden;">
+			<table id="storagealarmTab" class="tablesorter" style="table-layout: fixed;">
+				<thead class="tableHead">
+					<tr>
+						<th width="20%" align="left" title="Severity"style="background:none">Severity</th>
+						<th width="50%" align="left" title="Description">Description</th>
+						<th width="30%" align="left" title="Occurred On" style="border-right: 0px;">Occurred On</th>
+					</tr>
+				</thead>
+				<!-- <tbody id="tbody_alarm"></tbody> -->
+			</table>
+			<iframe id="tabFrame" frameborder="0" scrolling="auto" style="width: 100%;border: none;height: 100%;" src=""></iframe>
+			<div id="pager-tabFrame" style="height: 24px; width: 100%"></div>
+			<!-- <table id="alarmTableTbody" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;">
+				<tbody class="tableBody" id="">
+					<tr id="clone">
+						<th width="20%" align="left" title="Severity">Severity</th>
+						<th width="50%" align="left" title="Description">Description</th>
+						<th width="30%" align="left" title="starttime">Occurred On</th>
+					</tr>
+				</tbody>
+			</table> -->
+			<div id="divLoadingAlarm" class="loading_font"
+				style="position: absolute; top: 40px; left: 0px; background-color: #FFF; display: none;">
+				<span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+			</div>
+			<div id="diverrorAlarm" class="loading_font"
+				style="position: absolute; top: 35px; left: 0px; background-color: #FFF; display: none;">
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	var ns = org_opensds_storage_devices;
+	var url = ns.webContextPath + "/rest/data/storagealarms/";
+	var toPage = 1;
+	var pageSize = 100;
+	var divhead_id = "bak";
+	var filterType = "";
+	var filterValue = "";
+	//设备序列号
+	var deviceId = "";
+
+	var rowIndex = 0;
+	var status = 0;
+
+    function getParam(name) {
+        return (new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')
+                .exec(location.href) || [,""])[1].replace(/\+/g, '%20') || null;
+    }
+
+
+    $(document).ready(function() {
+		makeHelp();
+		deviceId = getParam("objectId");
+		//在css加载完成之前,每隔10ms表格重新布局一次,直到达到理想效果
+		var interval = setInterval(function(){
+			if ($("#alarmTableDiv").height() > 0) {
+				changesize();
+				if (status != 2)
+				{
+					$("#divLoadingAlarm").show();
+					status = 1;
+				}
+				clearInterval(interval);
+			}
+		}, 10);
+		bundleEvent();
+		$("#btnSearch").click();
+		
+		JPlaceHolder.init();
+		
+		$(window).resize(function(){
+			changesize();
+		});
+	});
+	
+	function loadAlarms(){
+		/* if ($("#" + divhead_id).length > 0) {
+			$("#" + divhead_id).width($("#alarmMain").width() - 2);
+		} */
+		if ($("#alarmTableDiv").width() > 0) {
+			$("#storagealarmTab").width($("#alarmMain").width() - 2);
+		}
+		
+		$('#tabFrame').prop("src", "");
+		$("#pager1").remove();
+		filterType = $("#filterType_alarm").val();
+		if ($("#alarmTableDiv").height() > 0) {
+			setTimeout(function(){
+				if (status != 1)
+				{
+					$("#divLoadingAlarm").show();
+					status = 2;
+				}
+			}, 30);
+		}
+		// 请求数据
+		$("#storagealarmTab").bigPage({
+			container : "pager1",
+			ajaxData : {
+				url : encodeURI(url + "count/" + deviceId +
+					"?filterType=" + filterType + "&filterValue=" + filterValue + "&t=" + new Date()),
+				params : {
+					loaddingId : "divLoadingAlarm",
+					errorloaddingId : "diverrorAlarm",
+					iframeId : "tabFrame",
+					data_url : ns.webContextPath + "/resources/html/device/alarmsList.html",
+					data_params : "&filterType=" + filterType + "&filterValue=" + filterValue
+				}
+			},
+			pageSize : pageSize,
+			toPage : toPage,
+			position : "down",
+			callback : null
+		});
+//		$("#storagealarmTab").forEach()
+	}
+	function alarmClickEvent() {
+		$("#storagealarmTab tr:gt(0)").bind("click", function(event) {
+			$(this).find("td").css("background-color","#abcefc");
+			$("#storagealarmTab tr:gt(0)").not($(this)).find("td").css("background-color","#FFFFFF");
+		});
+	}
+	function clearAlarmData() {
+		var tb = document.getElementById('storagealarmTab');
+		var rowNum = tb.rows.length;
+		for (var i = 1; i < rowNum; i++) {
+			tb.deleteRow(i);
+			rowNum = rowNum - 1;
+			i = i - 1;
+		}
+	}
+	function changesize() {
+		var divMainHeight = $("#alarmMain").height();
+		var divMainWidth = $("#alarmMain").width();
+		var tableFrameHeight = divMainHeight - 22 - 35 - 2 - 18;//
+		$("#alarmTableDiv").height(tableFrameHeight);
+		$("#alarmTableDiv").width(divMainWidth - 2);
+		//忙等框.
+		$("#divLoadingAlarm").width(divMainWidth - 4);
+		$("#divLoadingAlarm").height(tableFrameHeight - 35 - 2);
+		$("#diverrorAlarm").width(divMainWidth - 2);
+		$("#diverrorAlarm").height(tableFrameHeight - 20 - 2);
+		//iframe
+		$("#tabFrame").height(tableFrameHeight - 35 - 4 - 24);//
+	}
+	function hideBottomBorder() {
+		var h = $("#alarmTableDiv").height();
+		var h1 = $("#storagealarmTab").height();
+		if (h <= h1) {
+			//有滚动条
+			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
+			//修改表头宽度
+			var div = $("#alarmTableDiv").width() - $("#storagealarmTab").width();
+			$("#alarmheadDiv").css("display", "block");
+			$("#alarmheadDiv").width(div);
+		} else {
+			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
+			$("#alarmheadDiv").css("display", "none");
+		}
+	}
+	var JPlaceHolder = {
+	    //检测
+	    _check : function(){
+	        return 'placeholder' in document.createElement('input');
+	    },
+	    //初始化
+	    init : function(){
+	        if(!this._check()){
+	            this.fix();
+	        }
+	    },
+	    //修复
+	    fix : function(){
+	        jQuery(':input[placeholder]').each(function(index, element) {
+	            var self = $(this), txt = self.attr('placeholder');
+	            self.wrap($('<div></div>').css({position:'relative', zoom:'1', border:'none', background:'none', padding:'none', margin:'none'}));
+	            var pos = self.position(), h = self.outerHeight(true), paddingleft = self.css('padding-left');
+	            var holder = $('<span></span>').text(txt).css({position:'absolute', left:pos.left, top:pos.top, height:h, lienHeight:h, paddingLeft:paddingleft, color:'#aaa'}).appendTo(self.parent());
+	            self.focusin(function(e) {
+	                holder.hide();
+	            }).focusout(function(e) {
+	                if(!self.val()){
+	                    holder.show();
+	                }
+	            });
+	            holder.click(function(e) {
+	                holder.hide();
+	                self.focus();
+	            });
+	        });
+	    }
+	};
+	
+	function bundleEvent() {
+		$("#btnRefreshalarm").click(function() {
+		 $("#storagealarmTab tr:eq(0) th:eq(0)").width("20%");
+		 $("#storagealarmTab tr:eq(0) th:eq(1)").width("50%");
+		 $("#storagealarmTab tr:eq(0) th:eq(2)").width("30%");
+
+			$("#btnSearch").click();
+		});
+		
+		// 给告警搜索下拉框绑定change事件
+		$("#filterType_alarm").unbind(); 
+		$("#filterType_alarm").bind("change", function(){
+			if($('#filterType_alarm').val() == 'LEVEL')
+			{
+				$("#alarmsource_filterValue_alarm").css("display", "none");
+				$("#level_filterValue_alarm").css("display", "block");
+				$("#level_filterValue_alarm").get(0).options[0].selected = true;
+			}
+			else
+			{
+				$("#level_filterValue_alarm").css("display", "none");
+				$("#alarmsource_filterValue_alarm").css("display", "block");
+				$("#alarmsource_filterValue_alarm").get(0).options[0].selected = true; 
+			}
+		});
+		// 存储池查询按钮绑定点击事件
+		$("#btnSearch").bind("click", function(){
+			$("#divLoadingAlarm").show();
+			$("#diverrorAlarm").hide();
+			$("#btnRefreshalarm").prop("disabled","disabled");
+			$("#btnSearch").prop("disabled","disabled");
+			setTimeout(function() {
+				$("#btnRefreshalarm").prop("disabled","");
+				$("#btnSearch").prop("disabled","");
+			}, 500);
+			// 点击过查询后,刷新操作才会过滤查询
+			filterType = $("#filterType_alarm").val();
+			if(filterType == "ALARMSOURCE" )
+			{
+				filterValue = $("#alarmsource_filterValue_alarm").val();
+				if(filterValue != "StorageEngine" && filterValue != "ManagementServer")
+				{
+					filterValue = "";
+				}
+			}
+			else if(filterType == "LEVEL")
+			{
+				filterValue = $("#level_filterValue_alarm").val();
+//				if(filterValue == "WARNING")
+//				{
+//					filterValue = "3";
+//				}
+//				else if(filterValue == "MAJOR")
+//				{
+//					filterValue = "5";
+//				}
+//				else if(filterValue == "CRITICAL")
+//				{
+//					filterValue = "6";
+//				}
+//				else	
+//				{
+//					filterValue = "";
+//				}
+			}
+			loadAlarms();
+		});
+		/* $("#level_filterValue_alarm").bind("change", function() {
+			$("#btnSearch").click();
+		}); */
+	}
+	    var fun=dragTable_iframe;
+   fun("storagealarmTab","tabFrame","storagealarmTable" );
+</script>
+</html>

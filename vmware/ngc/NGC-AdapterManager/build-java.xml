@@ -1,0 +1,80 @@
+<project name="ngc-adapter-manager" default="make-jar-bundle" basedir="." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+	<description>
+        Ant build script to generate the ngc adapter manager jar
+    </description>
+
+    <!-- SDK folders should be set in environment variables -->
+    <property environment="env"/>
+    <property name="JAVA_HOME" value="${env.JAVA_HOME}"/>
+	<property name="ANT_HOME" value="${env.ANT_HOME}"/>
+	<path id="maven-ant-tasks.classpath" path="${ANT_HOME}/lib/maven-ant-tasks-2.1.3.jar" />
+			<typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+			           uri="antlib:org.apache.maven.artifact.ant"
+			           classpathref="maven-ant-tasks.classpath" />
+
+    <!-- name of the jar output file -->
+    <property name="JAR_FILE" value="ngc-adapter-manager.jar"/>
+
+    <property name="BUILD_DIR" value="${basedir}/target"/>
+    <property name="lib" value="${basedir}/lib"/>
+    <property name="CLASSES" value="${BUILD_DIR}/classes"/>
+    <property name="RES_DIR" value="${basedir}/src/main/resources"/>
+	<property name="NGC_PLUGIN_DIR" value="../NGC-Plugin"/>
+
+    <target name="clean" description="Do not select this internal target.">
+        <delete dir="${BUILD_DIR}"/>
+        <mkdir dir="${BUILD_DIR}/classes"/>
+    </target>
+
+	<target name="gather-dependencies-from-maven" depends="clean">
+			<artifact:dependencies filesetId="deps.fileset">
+				<pom file="pom.xml"/>
+			</artifact:dependencies>
+			<copy todir="${lib}">
+				<fileset refid="deps.fileset"/>
+				<mapper type="flatten"/>
+			</copy>
+	</target>
+
+    <target name="compile-java" depends="gather-dependencies-from-maven" description="Do not select this internal target.">
+        <path id="buildclasspath">
+            <fileset dir="${lib}" includes="*.jar"/>
+        </path>
+        <javac target="1.8" source="1.8" executable="${JAVA_HOME}/bin/javac" nowarn="true"
+               includeantruntime="false" destdir="${CLASSES}" fork="true" debug="on" classpathref="buildclasspath">
+            <src path="${basedir}/src/main/java"/>
+            <compilerarg line="-encoding UTF-8 "/>
+        </javac>
+    </target>
+
+    <!-- Build the jar -->
+    <target name="make-jar-bundle" depends="compile-java"
+            description="No need to use this script within Eclipse, use the native project builder!">
+        <!-- Add resources -->
+         <copy todir="${CLASSES}">
+            <fileset dir="${RES_DIR}"/>
+        </copy>
+
+        <unjar src="${lib}/commons-logging-1.2.jar" dest="${CLASSES}" />
+        <unjar src="${lib}/httpclient-4.5.9.jar" dest="${CLASSES}"/>
+        <unjar src="${lib}/httpcore-4.4.11.jar" dest="${CLASSES}"/>
+        <unjar src="${lib}/json-20180813.jar" dest="${CLASSES}"/>
+        <unjar src="${lib}/openstack4j-3.2.0.jar" dest="${CLASSES}"/>
+        <delete dir="{CLASSES}/META-INF" description="delete the third META-INF"/>
+        <delete dir="${BUILD_DIR}/classes/mozilla" description="delete the useless information"/>
+
+        <jar destfile="${BUILD_DIR}/${JAR_FILE}"
+             manifest="${RES_DIR}/META-INF/MANIFEST.MF"
+             basedir="${CLASSES}">
+        </jar>
+
+        <echo message="copy ngc adapter manager！"/>
+        <copy todir="${NGC_PLUGIN_DIR}\lib">
+            <fileset dir="${basedir}\target">
+                <include name="ngc-adapter-manager.jar"/>
+            </fileset>
+        </copy>
+
+    </target>
+
+</project>

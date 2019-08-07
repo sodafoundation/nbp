@@ -1,0 +1,814 @@
+<!doctype html>
+<html>
+<body>
+<!--<h3 id="header"><img src="../../../assets/images/addChassisIcon-2.png"/> Enter the new device information</h3>-->
+
+
+<div class="centerdiv">
+    <div style="left:0px;top:4px;width:293px;height:56px;">
+        <h3 style="left:0px;top:1px;">Config Storage Platform</h3>
+        <h4 style="left:0px;top:32px;">Edit the storage platform information</h4>
+    </div>
+
+    <form id="deviceEditForm" class="pure-form pure-form-aligned storage-form" action="/ui/opensds/rest/device">
+        <fieldset>
+            <div class="pure-control-group" >
+                <label for="deviceType" id="deviceType">Storage Platform Type</label>
+                <input name="deviceType" type="text" autocomplete="off" readonly="readonly"/>
+            </div>
+            <div class="pure-control-group">
+                <label for="ip" id="ip">IP Address</label>
+                <input name="ip" type="text" autocomplete="off"/>
+            </div>
+            <div class="pure-control-group">
+                <label for="port" id="port">Port</label>
+                <input name="port" type="text" autocomplete="off"/>
+            </div>
+            <div class="pure-control-group">
+                <label for="username" id="username">Username</label>
+                <input name="username" type="text" autocomplete="off"/>
+            </div>
+            <div class="pure-control-group">
+                <input name="password" type="password" style="display: none;"/><!-- 隐藏input来接受浏览器自动填充 -->
+                <label for="password" id="password">Password</label>
+                <input name="password_text" type="text" autocomplete="off"
+                       oncopy="return false;" onpaste="return false;" oncut="return false;"
+                       oncontextmenu="return false;"/>
+            </div>
+        </fieldset>
+        <fieldset>
+            <div class="pure-control-group aa" style="text-align: center;position:absolute;left:13px;top:450px;">
+                <!-- <label for="none"></label> -->
+                <div style="width: 100px;float: left;height: 50px;"></div>
+                <button type="submit" id="v3" class="pure-button pure-button-secondary storagesubmit">SUBMIT</button>
+                <button id="v5" class="pure-button pure-button-secondary" onclick="WEB_PLATFORM.closeDialog()">CANCEL
+                </button>
+            </div>
+        </fieldset>
+    </form>
+</div>
+<div class="popup" id="popupDiv"></div>
+<div id="ingDiv"
+     style="display: none;position: absolute;left:101px;top:15px;background-color:white;width:466px;height:441px;filter:alpha(opacity=20);-moz-opacity:0.8; opacity:0.8;  ">
+    	<span id="ing" style="position: absolute;left: 160px;top: 196px;font-size: 18px;font-family: Tahoma;
+    		color: #000000;z-index: 201;width: 173px;">Adding...please wait</span>
+    <img src="../../../assets/images/loading.gif" style="position: absolute;left: 327px;top: 197px;"/>
+
+</div>
+<!-- 对话框区域 -->
+<div id="diaLogBox" style="position: absolute;top: 140px;left: 165px;">
+    <!-- 对话框标题 -->
+    <div id="title"></div>
+    <!-- 执行成功 -->
+    <div id="sucDiv" class="alertBox">
+        <div class="alertWords sucWords" id="sucWords" style="word-break: break-all;font-size: 13px;">Successfully</div>
+        <input name="OpType" type="hidden" id="sucType" value=""/>
+        <hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#007cbb"/>
+        <div class="alertBtn">
+            <input id="sucOp" value="OK" type="button" style="color:white;">
+        </div>
+    </div>
+    <!-- 执行失败 -->
+    <div id="errDiv" class="alertBox">
+        <div class="alertWords errWords" id="errWords" style="word-break: break-all;font-size: 13px;">Failed</div>
+        <div id="errType" style="word-break: break-all;display: none;">Some error occurred during the add,please see
+            details in the Recent Tasks.
+        </div>
+        <hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#007cbb"/>
+        <div class="alertBtn">
+            <input id="errOp" value="OK" type="button" style="color:white">
+        </div>
+    </div>
+    <!-- 其他提示 -->
+    <div id="messageDiv" class="alertBox" style="position: relative;">
+        <div id="message" class="alertWords infWords" style="word-break: break-all;font-size: 13px;"></div>
+        <!-- <div style="margin: 10px 0px;padding:5px 4px 0px 10px;">Tips:</div>
+        <input type="text" id="message" readonly="readonly" style="border: none;width: 100%;padding-left: 4px;" value="" /> -->
+        <hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;"
+            color="#007cbb"/>
+        <div class="alertBtn">
+            <input id="messageOp" value="OK" type="button" style="color:white">
+        </div>
+    </div>
+</div>
+</body>
+<head>
+    <meta charset="utf-8"/>
+    <title>Modify Storage Platform</title>
+    <link rel="stylesheet" href="../../../assets/css/pure-min.css">
+    <link rel="stylesheet" href="../../../assets/css/add-device.css">
+    <script src="../../../assets/jquery-1.10.2.min.js"></script>
+    <script src="../../../resources/js/common/web-platform.js"></script>
+    <script src="../../../resources/js/common/jquery-util.js"></script>
+    <script src="../../../resources/js/common/json2.js"></script>
+    <style>
+
+    </style>
+    <style type="text/css">
+        .pure-control-group input[type="text"] {
+            border: none;
+            outline: none;
+            box-shadow: inset 0 1px 3px #FFF;
+            text-indent: 6px;
+            border-radius: 0px;
+            transition: none;
+            border-bottom: 1px solid #C3C3C3;
+            background: linear-gradient(180deg, transparent 95%, #0094d2 0) no-repeat;
+            background-size: 0% 100%;
+            transition-property: background-size;
+            transition-duration: 0.2s;
+            transition-timing-function: ease;
+            transition-delay: initial;
+        }
+
+        .pure-control-group input[type="text"]:focus {
+            background-size: 100% 100%;
+        }
+
+        .centerdiv {
+            position: absolute;
+            left: 126px;
+            top: 0px;
+        }
+
+        .selection {
+            padding-top: 20px;
+        }
+
+        .selection {
+
+            /*display: inline-block;*/
+            vertical-align: middle;
+            /*width: 10em;*/
+            margin: 0 1em 0 0;
+            font-size: 90%;
+        }
+
+        .selection label {
+            text-align: left;
+            display: inline-block;
+            vertical-align: middle;
+            width: 7em;
+            margin-right: 1em;
+
+
+        }
+
+        #header {
+            font-family: "宋体";
+            color: #3F3F3F;
+        }
+
+        select {
+            appearance: none;
+            -moz-appearance: none;
+            -webkit-appearance: none;
+            padding-right: 3px;
+            padding-left: 3px;
+            background: url("../../../assets/images/pulldown.png") no-repeat scroll right center transparent;
+            width: 300px;
+            height: 25px;
+            vertical-align: top;
+            border: none;
+            border-bottom: 1px solid #C3C3C3;
+            outline: none;
+
+
+        }
+
+        select::-ms-expand {
+            display: none;
+        }
+
+        select:focus {
+            border-bottom: 0px solid #C3C3C3;
+            background: #EFEFEF
+        }
+
+        input[type=checkbox] {
+            visibility: hidden;
+        }
+
+        .pure-control-group .checkbox {
+            width: 120px;
+            height: 30px;
+            background: #FFF;
+            margin: 1px 1px;
+
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .pure-control-group .checkbox:before {
+            content: 'Yes';
+            position: absolute;
+            top: 2px;
+            left: 196px;
+            height: 2px;
+            /*color: #26ca28;*/
+            color: #4baa34;
+            font-size: 15px;
+            /*font-weight:bold;*/
+        }
+
+        .pure-control-group .checkbox:after {
+            content: 'No';
+            position: absolute;
+            top: 2px;
+            left: 260px;
+            height: 2px;
+            color: #ddd;
+            font-size: 15px;
+            /*font-weight:bold;*/
+        }
+
+        .pure-control-group .checkbox .switcher {
+            display: block;
+            width: 40px;
+            height: 22px;
+            border-radius: 50px;
+
+            -webkit-transition: all .5s ease;
+            -moz-transition: all .5s ease;
+            -o-transition: all .5s ease;
+            -ms-transition: all .5s ease;
+            transition: all .5s ease;
+            cursor: pointer;
+            position: absolute;
+            top: 2px;
+            z-index: 1;
+            left: 188px;
+            background: #ddd;
+        }
+
+        .pure-control-group .checkbox input[type=checkbox]:checked + label {
+            left: 242px;
+            /*background: #26ca28;*/
+            background: #4baa34;
+        }
+
+
+        table thead tr td {
+            white-space: nowrap;
+        }
+
+        .popup {
+            border: 0px solid yellow;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            background-color: #FFFFFF;
+            filter: alpha(opacity=45);
+            opacity: 0.45;
+            display: none;
+            z-index: 200;
+        }
+
+        #overlay {
+            visibility: hidden;
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            z-index: 1000;
+            background-color: #FFFFFF;
+            filter: alpha(opacity=45);
+            opacity: 0.45;
+        }
+
+        #diaLogBox {
+            border: 1px solid #007cbb;
+            background-color: #FFF;
+            width: 360px;
+            left: 70px;
+            top: 45px;
+            position: absolute;
+            visibility: hidden;
+            z-index: 1001;
+        }
+
+        #title {
+            height: 25px;
+            text-align: left;
+            background-color: #007cbb;
+            color: white;
+            line-height: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            padding-left: 12px;
+        }
+
+        #messageDiv {
+            margin: 0px !important;
+            padding: 0px 15px;
+        }
+
+        .btnAlign {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .alertBox {
+            display: none;
+        }
+
+        .alertWords {
+            margin: 10px 0px;
+            padding: 20px 20px 20px 70px;
+            background-repeat: no-repeat;
+            background-position: 20px center;
+        }
+
+        .alertBtn {
+            margin-top: 5px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .infWords {
+            background-image: url('../../../assets/css/images/5.png');
+        }
+
+        .sucWords {
+            background-image: url('../../../assets/css/images/alert_success.png');
+        }
+
+        .errWords {
+            background-image: url('../../../assets/css/images/alert_failed.png');
+        }
+
+        .disabled {
+            color: gray;
+            cursor: not-allowed;
+        }
+
+        input[type="button"] {
+            width: 77px;
+            height: 22px;
+            /*background-image: url('../../../assets/css/images/btn_normal.png');*/
+            border: 0px;
+            padding-top: 1px;
+            font-family: Tahoma;
+            cursor: pointer;
+            letter-spacing: 1.44px;
+            border-color: #007cbb;
+            background: #007cbb;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 500;
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-size: 1em;
+            margin: 1em 0;
+            padding-left: 0px;
+            position: absolute;
+        }
+
+        h4 {
+            font-size: 0.9em;
+            margin: 0.5em 0;
+            padding-left: 0px;
+            font-weight: 400;
+            position: absolute;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+        function getParam(name) {
+            return (new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')
+                .exec(location.href) || [, ""])[1].replace(/\+/g, '%20') || null;
+        }
+
+        $(document).ready(function () {
+            // Namespace shortcut
+            var ns = org_opensds_storage_devices;
+            var targets = getParam("targets");
+
+            var result_ip = false;
+            var result_port = false;
+            var result_username = false;
+            var result_password = false;
+            var isFirstChg = true;
+            var pwd_store = "";
+            //var serversInfo = WEB_PLATFORM.getUserSession().serversInfo;
+
+
+            $("input[name='username']").val("");
+            $("input[name='password']").val("");
+            $("input[name='password_text']").val("");
+            $("input[name='ip']").focus();
+            bundleEvent();
+
+            var baseURL = ns.baseURL + "opensds/rest/device";
+
+
+            $("input[name ='ip']").css("background-color", "transparent");
+            $("input[name ='ip']").css("fontWeight", "bold");
+            $("input[name ='ip']").css("color", "black");
+            $("input[name ='ip']").attr("disabled", "disabled");
+
+            getDeviceInfo();
+
+
+            function getDeviceInfo() {
+                var url = baseURL +"/get?deviceID=" + targets;
+                var deviceReq = new req(url, null);
+                deviceReq.type = "GET";
+                deviceReq.contentType = "application/x-www-form-urlencoded";
+                var devhandler = new handler(function doSuccess(resp) {
+                    if (resp.status=="ok") {
+                        if (!isEmpObj(resp.data)) {
+                            var reData = resp.data;
+                            if (!isEmpObj(reData.deviceType)){
+                                $("input[name='deviceType']").val(reData.deviceType);
+                                $("input[name ='deviceType']").css("background-color", "transparent");
+                                $("input[name ='deviceType']").css("fontWeight", "bold");
+                                $("input[name ='deviceType']").css("color", "black");
+                              //  $("input[name ='deviceType']").attr("disabled", "disabled");
+                            }
+
+                            if (!isEmpObj(reData.port)) {
+                                $("input[name ='port']").val(reData.port);
+                                $("input[name ='port']").css("background-color", "transparent");
+                                $("input[name ='port']").css("fontWeight", "bold");
+                                $("input[name ='port']").css("color", "black");
+                                $("input[name ='port']").attr("disabled", "disabled");
+                                result_port = true;
+                            }
+                            if (!isEmpObj(reData.ip)) {
+                                $("input[name ='ip']").val(reData.ip);
+                                $("input[name ='ip']").css("background-color", "transparent");
+                                $("input[name ='ip']").css("fontWeight", "bold");
+                                $("input[name ='ip']").css("color", "black");
+                                $("input[name ='ip']").attr("disabled", "disabled");
+                                result_ip = true;
+                            }
+                            if (!isEmpObj(reData.username)) {
+                                $("input[name ='username']").val(reData.username);
+                                result_username = true;
+                            }
+                            if (!isEmpObj(reData.password)) {
+                                var pwd = reData.password;
+                                $("input[name ='password']").attr("value", pwd);
+                                $("input[name ='password']").val(pwd);
+                                $("input[name ='password_text']").val("●●●●●●●●●●");
+                                result_password = true;
+                            }
+                            $(".storagesubmit").focus();
+                        } else {
+                            $("#title").text("Error");
+                            $("#diaLogBox").css("visibility", "visible");
+                            $("#errWords").html("Response is empty!");
+                            $("#errDiv").show();
+                            commonResetFunc();
+                        }
+                    } else {
+                        $("#title").text("Error");
+                        $("#diaLogBox").css("visibility", "visible");
+                        $("#errWords").html(ns.getString(resp.msg));
+                        $("#errDiv").show();
+                        commonResetFunc();
+                    }
+                }, function doError(resp) {
+                    $("#title").text("Error");
+                    $("#diaLogBox").css("visibility", "visible");
+                    $("#errWords").html("Get storage information failed!");
+                    $("#errDiv").show();
+                    commonResetFunc();
+                    $(".storagesubmit:visible").prop("disabled", false);
+                });
+                sendMsg(deviceReq, devhandler);
+            }
+
+            // Submit button will send form data in JSON format
+            $(".storage-form").submit(function () {
+                pointBlur();
+                $("input[name='ip']").blur();
+                lock();
+                var $form = $(this), json = $form.serializeJson();
+                var jsonobj = $.parseJSON(json);
+                json = JSON.stringify(jsonobj);
+                var url = baseURL + "/update?deviceID=" + targets;
+                var deviceReq = new req(url, {json: json});
+                deviceReq.type = "PUT";
+                deviceReq.contentType = "application/x-www-form-urlencoded";
+                var devhandler = new handler(function doSuccess(resp) {
+                    if (resp.status=="ok") {
+                       // deviceId = resp.result;
+                        $("#title").text("Success");
+                        $("#diaLogBox").css("visibility", "visible");
+                        $("#sucWords").html("Config storage successfully!");
+                        $("#sucDiv").show();
+                    } else {
+                        $("#title").text("Error");
+                        $("#diaLogBox").css("visibility", "visible");
+                        $("#errWords").html(resp.msg);
+                        $("#errDiv").show();
+                        commonResetFunc();
+                    }
+                }, function doError(resp) {
+                    $("#title").text("Error");
+                    $("#diaLogBox").css("visibility", "visible");
+                    $("#errWords").html("Config storage failed!");
+                    $("#errDiv").show();
+                    commonResetFunc();
+                });
+                sendMsg(deviceReq, devhandler);
+                return false;
+            });
+
+            function bundleEvent() {
+
+                $(".storage-form :input:not(input[name='password'], input[name='password_text'])").bind("input propertychange", function () {
+                    if (isFirstChg) {
+                        $("input[name='password']").val("");
+                        $("input[name='password_text']").val("");
+                        result_password = false;
+                        isFirstChg = false;
+                    }
+                });
+                $(".storage-form :input[type='checkbox']").bind("click", function () {
+                    if (isFirstChg) {
+                        $("input[name='password']").val("");
+                        $("input[name='password_text']").val("");
+                        result_password = false;
+                        isFirstChg = false;
+                    }
+                });
+
+                $("input[name='ip']").bind("propertychange input", function () {
+                    var reg = /^((2[0-4]\d|25[0-5]|[01]?\d?\d)\.){3}(2[0-4]\d|25[0-5]|[01]?\d?\d)$/;
+                    for (var index = 0; index < this.value.length; index++) {
+                        if (!(/^([0-9]|\.)$/.test(this.value.charAt(index)))) {
+                            this.value = this.value.substring(0, index);
+                            break;
+                        }
+                    }
+                    if (!reg.test(this.value)) {
+                        result_ip = false;
+                    } else {
+                        result_ip = true;
+                    }
+                    isEnableSubmitButton();
+                }).bind("blur", function () {
+                    var reg = /^((2[0-4]\d|25[0-5]|[01]?\d?\d)\.){3}(2[0-4]\d|25[0-5]|[01]?\d?\d)$/;
+                    if (this.value == "" || this.value == "undefined") {
+                        result_ip = false;
+                    } else if (!reg.test(this.value)) {
+                        result_ip = false;
+                        //showMessage("IP必须由四段组成,每段范围:[0,255].<br />例:192.168.253.112.");
+                        showMessage("IP must be made up of four <br />sections,<br />range per segment:[0,255].<br />Example:192.168.253.112.");
+                        pointBlur();
+                    } else {
+                        result_ip = true;
+                    }
+                    isEnableSubmitButton();
+                });
+
+                $("input[name='port']").bind("propertychange input", function () {
+                    var reg = new RegExp("^[0-9]$");
+                    for (var index = 0; index < this.value.length; index++) {
+                        if (!/^[0-9]$/.test(this.value.charAt(index))) {
+                            this.value = this.value.substring(0, index);
+                            break;
+                        }
+                    }
+                    if (this.value == "" || this.value == "undefined") {
+                        result_port = false;
+                    } else if (parseInt(this.value) < 0 || parseInt(this.value) > 65535) {
+                        result_port = false;
+                        showMessage("Range of port:[0,65535].");
+                        $("input[name='port']").blur();
+                    } else {
+                        result_port = true;
+                    }
+                    isEnableSubmitButton();
+                });
+
+                $("input[name='username']").bind("propertychange input", function () {
+                    //大于32位则不能输入,中文算3个字符
+                    var value = $(this).val();
+                    var length = getLength(value);
+                    if (length > 32) {
+                        this.value = getByteVal(value, 32);
+                    }
+                    for (var index = 0; index < this.value.length; index++) {
+                        //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]$/.test(this.value.charAt(index)))) {
+                        if (/^[^\x00-\xff]$/.test(this.value.charAt(index))) {
+                            this.value = this.value.substring(0, index);
+                            break;
+                        }
+                    }
+                    //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/.test(this.value))) {
+                    if (this.value == "" || this.value == "undefined") {
+                        result_username = false;
+                    } else if (/^[^\x00-\xff]+$/.test(this.value)) {
+                        result_username = false;
+                    } else {
+                        result_username = true;
+                    }
+                    setTimeout(function () {
+                        $("input[name='password']").val(pwd_store);
+                    }, 30);
+                    isEnableSubmitButton();
+                }).bind("blur", function () {
+                    setTimeout(function () {
+                        $("input[name='password']").val(pwd_store);
+                    }, 30);
+                });
+
+                $("input[name='password_text']").bind("propertychange input", function () {
+                    if (this.value == "") {
+                        pwd_store = "";
+                        $("input[name='password']").val("");
+                        result_password = false;
+                        isEnableSubmitButton();
+                        return;
+                    }
+                    var $pwd = $("input[name='password']");
+                    var pwd = $pwd.val();
+                    var length_str = this.value.length;
+                    var last_word = this.value.charAt(length_str - 1);
+                    var round = "●";
+
+                    if (pwd.length >= length_str && length_str > 0) {
+                        //替换
+                        if (last_word != round) {
+                            if (length_str == 1) {
+                                pwd_store = last_word;
+                                $pwd.val(last_word);
+                                this.value = round;
+                            } else (length_str > 1)
+                            {
+                                pwd_store = pwd.substring(0, length_str - 1) + last_word;
+                                $pwd.val(pwd_store);
+                                this.value = this.value.substring(0, length_str - 1) + round;
+                            }
+                        } else {
+                            pwd_store = pwd.substring(0, length_str);
+                            $pwd.val(pwd_store);
+                        }
+                        return;
+                    }
+
+                    //大于32位则不能输入,中文算3个字符
+                    if (getLength(last_word) + getLength($pwd.val()) > 32) {
+                        this.value = this.value.substring(0, length_str - 1);
+                        last_word = "";
+                    }
+                    if (/^[^\x00-\xff]$/.test(last_word)) {
+                        this.value = this.value.substring(0, length_str - 1);
+                        last_word = "";
+                    }
+                    if (last_word != "") {
+                        pwd = pwd + last_word;
+                        $pwd.val(pwd);
+                        pwd_store = pwd;
+                        if (length_str == 1) {
+                            this.value = round;
+                        } else {
+                            this.value = this.value.substring(0, length_str - 1) + round;
+                        }
+                    }
+                    if (this.value == "" || this.value == "undefined") {
+                        result_password = false;
+                    } else if (/^[^\x00-\xff]+$/.test(pwd)) {
+                        result_password = false;
+                    } else {
+                        result_password = true;
+                    }
+                    isEnableSubmitButton();
+                });
+
+                $("#sucOp").click(function () {
+                    $(".alertBox").hide();
+                    $("#diaLogBox").css('visibility', 'hidden');
+                    $("#title").text("");
+                    unlock();
+                    WEB_PLATFORM.closeDialog();
+//				WEB_PLATFORM.sendNavigationRequest(viewId , deviceId);
+                });
+
+                $("#errOp").click(function () {
+                    $(".alertBox").hide();
+                    $("#diaLogBox").css('visibility', 'hidden');
+                    $("#title").text("");
+                    unlock();
+                });
+
+                $("#messageOp").click(function () {
+                    $(".alertBox").hide();
+                    $("#diaLogBox").css('visibility', 'hidden');
+                    $("#title").text("");
+                    $("#message").val("");
+                    unlock();
+                });
+            }
+
+            //锁屏
+            function lock() {
+                $("#popupDiv").show();
+                $("#ingDiv").show();
+            }
+
+            //解屏
+            function unlock() {
+                $("#popupDiv").hide();
+                $("#ingDiv").hide();
+            }
+
+            function showMessage(message) {
+                lock();
+                $(".alertBox").hide();
+                $("#title").text("Error");
+                $("#message").html(message);
+                $("#diaLogBox").css('visibility', 'visible');
+                $("#messageDiv").show();
+            }
+
+            function isEnableSubmitButton() {
+                if (result_ip && result_port && result_username && result_password
+                    && $("input[name='ip']:visible").val() != "" && $("input[name='port']:visible").val() != ""
+                    && $("input[name='username']:visible").val() != "" && $("input[name='password']:visible").val() != "") {
+                    if ($("#vstore").prop("checked") && $("input[name='vstorename']:visible").val() == "") {
+                        $(".storagesubmit:visible").prop("disabled", true);
+                    } else {
+                        $(".storagesubmit:visible").prop("disabled", false);
+                    }
+                } else {
+                    $(".storagesubmit:visible").prop("disabled", true);
+                }
+            }
+
+            function pointBlur() {
+                $("input[name='port']").blur();
+                $("input[name='username']").blur();
+                $("input[name='password_text']").blur();
+            }
+
+            function getLength(value) {
+                var byteValLen = 0;
+                var val = value.match(/./g);
+                if (null == val) {
+                    return byteValLen;
+                }
+                for (var i = 0; i < val.length; i++) {
+                    if (val[i].match(/[^\x00-\xff]/ig) != null) {
+                        byteValLen += 3;
+                    } else {
+                        byteValLen += 1;
+                    }
+                }
+                return byteValLen;
+            }
+
+            function getByteVal(value, max) {
+                var returnValue = "";
+                var byteValLen = 0;
+                var val = value.match(/./g);
+                if (null == val) {
+                    return returnValue;
+                }
+                for (var i = 0; i < val.length; i++) {
+                    if (val[i].match(/[^\x00-\xff]/ig) != null) {
+                        byteValLen += 3;
+                    } else {
+                        byteValLen += 1;
+                    }
+                    if (byteValLen > max) {
+                        break;
+                    }
+                    returnValue += val[i];
+                }
+                return returnValue;
+            }
+
+            //
+            function commonResetFunc() {
+                result_ip = true;
+                result_port = true;
+                result_username = true;
+                result_password = true;
+                isEnableSubmitButton();
+            }
+        });
+    </script>
+    <script>
+        if ($("#isnot").attr('checked')) {
+            var vstore = 1
+        } else {
+            var vstore = 0
+        }
+        ;
+    </script>
+</head>
+</html>
