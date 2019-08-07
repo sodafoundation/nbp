@@ -1,0 +1,92 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: NGCPlugin-service
+Bundle-SymbolicName: org.opensds.vmware.ngc.service
+Bundle-Version: 1.5.50
+Bundle-Vendor: OpenSDS
+Bundle-ClassPath: .
+Tool: Bundlor 1.1.0.RELEASE
+Export-Package: org.opensds.vmware.ngc.controller,
+ org.opensds.vmware.ngc.adapter,
+ org.opensds.vmware.ngc.config,
+ org.opensds.vmware.ngc.dao,
+ org.opensds.vmware.ngc.dao.impl,
+ org.opensds.vmware.ngc.entity,
+ org.opensds.vmware.ngc.expections,
+ org.opensds.vmware.ngc.model,
+ org.opensds.vmware.ngc.model.initiator,
+ org.opensds.vmware.ngc.service,
+ org.opensds.vmware.ngc.service.impl,
+ org.opensds.vmware.ngc.util,
+ org.opensds.vmware.ngc.task,
+ org.opensds.vmware.ngc.task.createDatastore,
+ org.opensds.vmware.ngc.base
+Import-Package: com.google.gson;version="2.3",
+ com.google.gson.annotations;version="2.3",
+ com.google.gson.internal;version="2.3",
+ com.google.gson.reflect;version="2.3",
+ com.google.gson.stream;version="2.3",
+ com.vmware.vim25;version="5.5.0",
+ com.vmware.vise.data;version="5.5.0",
+ com.vmware.vise.data.query;version="5.5.0",
+ com.vmware.vise.security;version="5.5.0",
+ com.vmware.vise.usersession;version="5.5.0",
+ com.vmware.vise.vim.data;version="5.5.0",
+ javax.crypto,
+ javax.crypto.spec,
+ javax.net.ssl,
+ javax.xml.parsers,
+ javax.xml.transform,
+ javax.xml.transform.dom,
+ javax.xml.transform.stream,
+ javax.xml.ws,
+ javax.xml.bind,
+ javax.annotation,
+ org.apache.commons.logging,
+ org.apache.commons.lang,
+ net.sf.cglib.core,
+ net.sf.cglib.proxy,
+ net.sf.cglib.reflect,
+ javax.servlet.http,
+ org.springframework.beans.factory,
+ org.springframework.beans.factory.annotation,
+ org.springframework.http,
+ org.springframework.stereotype,
+ org.springframework.web.bind.annotation,
+ org.springframework.scheduling.concurrent,
+ org.springframework.context,
+ org.springframework.beans,
+ org.springframework.scheduling,
+ org.springframework.core,
+ org.springframework.core.task,
+ org.springframework.core.convert.converter,
+ org.springframework.web.servlet.view,
+ org.springframework.web.servlet.view.json,
+ org.springframework.context.annotation,
+ org.springframework.cglib.core;resolution:=optional,
+ org.springframework.cglib.proxy;resolution:=optional,
+ org.springframework.cglib.reflect;resolution:=optional,
+ org.apache.http,
+ org.apache.http.client.methods,
+ org.apache.http.entity,
+ org.apache.http.impl.client,
+ org.apache.http.util,
+ org.opensds.vmware.ngc.exceptions,
+ org.opensds.vmware.ngc.common,
+ org.opensds.vmware.ngc.adapters.oceanstor,
+ org.opensds.vmware.ngc.adapters.opensds,
+ org.opensds.vmware.ngc.models,
+ org.json
+
+
+
+
+
+
+
+
+
+
+
+
+

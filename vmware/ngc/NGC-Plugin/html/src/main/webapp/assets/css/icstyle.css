@@ -1,0 +1,236 @@
+body {
+	margin:0px;
+	font-family: Tahoma;
+	font-size:12px;
+	padding:0px;
+}
+table {
+	font-family: Metropolis,Avenir Next,Helvetica Neue,Arial,sans-serif;
+	font-size:12px;
+	background-color:white;
+}
+font
+{
+	font-family: Tahoma;
+	font-size:12px;
+}
+html {
+	overflow-y:auto;
+}
+    select{
+        appearance: none;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        padding-right: 3px;
+        padding-left: 3px;
+        background: url("../../assets/images/pulldown.png") no-repeat scroll right center transparent;
+        width: 300px;
+        height: 25px;
+        vertical-align:top;
+        border:none;
+        border-bottom: 1px solid #C3C3C3;
+        outline:none;
+    }
+    select:focus{
+        border-bottom: 0px solid #C3C3C3;
+        background:#EFEFEF
+    }
+     select::-ms-expand {
+        display: none;
+    }
+    input[type="text"]{
+    border:none;
+    outline: none;
+    box-shadow:inset 0 1px 3px #FFF;
+    text-indent:6px;
+    border-radius:0px;
+    transition:none;
+    border-bottom:1px solid #C3C3C3;
+    background:linear-gradient(180deg,transparent 95%,#0094d2 0) no-repeat;
+    background-size: 0% 100%;
+    transition-property:background-size;
+    transition-duration:0.2s;
+    transition-timing-function: ease;
+    transition-delay: initial;
+     }
+     input[type="text"]:focus{
+      background-size:100% 100%;
+     }
+a:link, a:visited {
+    color: #0068FF;
+    text-decoration: none;
+}
+a:hover {
+	color: #0068FF;
+    text-decoration: none;
+}
+.btnClass{
+	margin-left: 12px;
+}
+.starDiv1{
+   width: 160px;
+   float: left;
+}
+.starDiv2{
+   float: left;
+   height: 26px;
+   text-align: center;
+   line-height: 24px;
+}
+.starDiv3{
+   width: 160px;
+   display:inline;
+}
+.starDiv4{
+   width:5px;
+   height: 26px;
+   text-align: center;
+   line-height: 24px;
+   display:inline;
+}
+.alertBox{
+
+}
+input[type="button"]
+{
+	width:60px;
+	height:25px;
+	/*background-image: url(images/btn_normal.png);*/
+	background: #007cbb;
+	border-color:#007cbb;
+	border-width:1px;
+    border-radius:4px;
+	padding-top:1px;
+	font-family: Metropolis,Avenir Next,Helvetica Neue,Arial,sans-serif;
+	font-size:12px;
+	text-align: center;
+	color:white;
+	cursor: pointer;
+	margin-left: 4px;
+}
+input[type="button"]:hover{
+background-color:#004a70;
+color:white;
+}
+th{ FONT-WEIGHT:normal}
+B{FONT-WEIGHT:normal}
+
+.triangle {
+	height: 0;
+	width: 0;
+	border: 10px solid #000;
+	border-color: transparent transparent #007cbb #007cbb;
+	border-style: dashed dashed solid solid;
+	float: left;
+}
+
+.triangle2 {
+	height: 0;
+	width: 0;
+	border: 10px solid #000;
+	border-color: transparent transparent #006192 #006192;
+	border-style: dashed dashed solid solid;
+	float: left;
+}
+
+.loading_font
+{
+	font-size: 22px;
+	color: gray;
+	text-align: center;
+}
+
+.plugin_button_main
+{
+	cursor:pointer;
+}
+.plugin_button_div
+{
+	display:inline-block;
+	float:left;
+}
+.plugin_button_main .button_left
+{
+	width:2px;
+	height:22px;
+	background-image:url(images/btn_plugin.png);
+	background-position:0px 0px;
+	background-repeat: no-repeat;
+}
+.plugin_button_main .button_center
+{
+	height:22px;
+	line-height:22px;
+	min-width: 25px;
+	background-image:url(images/btn_plugin.png);
+	background-position:0px -22px;
+	background-repeat:repeat-x;
+	text-align:center;
+	padding-left:13px;
+	padding-right:13px;
+}
+
+.plugin_button_main .button_right
+{
+	width:2px;
+	height:22px;
+	background-image:url(images/btn_plugin.png);
+	background-position:0px -44px;
+	background-repeat: no-repeat;
+}
+.about_main
+{
+	clear: both;
+}
+.about_main .about_top
+{
+	width:500px;
+	height:11px;
+	background-image: url(images/about_top.png);
+	background-repeat: no-repeat;
+}
+.about_main .about_center
+{
+	width:500px;
+	background-image:url(images/about_center.png);
+	background-repeat: repeat-y;
+}
+.about_main .about_bottom
+{
+	width: 500px;
+	height:11px;
+	background-image: url(images/about_bottom.png);
+	background-repeat: no-repeat;
+}
+h6
+{
+	font-size: 12px;
+	font-family: Tohoma;
+	font-weight: normal;
+	margin-left: 60px;
+}
+h5
+{
+	font-size:12px;
+	font-family: Tohoma;
+	font-weight: bold;
+	margin-left: 30px;
+	margin-top:10px;
+}
+h2{
+	font-size:14px;
+	font-family: Tohoma;
+	font-weight: normal;
+	text-algin:left;
+}
+.dg_main_left{
+	font-size: 12px;
+	font-family: Tohoma;
+	color:#7f7f7f;
+    margin: 5px 5px 5px 5px;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 5px;
+
+    padding-left: 5px
+}

@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html style="    background-color: white">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Select File System Version</title>
+<style type="text/css">
+html
+{
+	background-color: threedface;
+}
+</style>
+<script src="../../../../assets/jquery-1.10.2.min.js"></script>
+<script
+	src="../../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script
+	src="../../../../resources/js/common/web-platform.js"></script>
+<script
+	src="../../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+		//shieldCombinationKey();
+		parent.$("#nextStep").prop("disabled", "disabled");
+		parent.$("#nextStep").css("background","#57C7FF");
+		$("input[type='radio']").each(function(){
+			if(this.value == parent.fileVersion) {
+				$(this).attr("checked","true");
+				parent.$("#nextStep").prop("disabled", "");
+				parent.$("#nextStep").css("background","#007cbb");
+			}
+			if (parent.fileVersion == "VMFS3")
+			{
+				$("#versionBlock").css("display","block");
+				$("#blockSize").val(parent.blockSize);
+			}
+			else
+			{
+				$("#versionBlock").css("display","none");
+			}
+		});
+		$("input[type='radio']").click(function(){
+			parent.$("#nextStep").prop("disabled", "");
+			parent.$("#nextStep").css("background","#007cbb");
+			parent.fileVersion = this.value;
+			if (this.value == "VMFS3")
+			{
+				$("#versionBlock").css("display","block");
+			}
+			else
+			{
+				$("#versionBlock").css("display","none");
+			}
+		});
+		$("#version6").click(function(){
+			parent.fileVersion = "VMFS6";
+			$("#radio3").attr("checked","true");
+			$("#versionBlock").css("display","none");
+		});
+		$("#version5").click(function(){
+			parent.fileVersion = "VMFS5";
+			$("#radio1").attr("checked","true");
+			$("#versionBlock").css("display","none");
+		});
+
+		$("#version3").click(function(){
+			parent.fileVersion = "VMFS3";
+			$("#radio2").attr("checked","true");
+			$("#versionBlock").css("display","block");
+		});
+
+
+		$("#blockSize").change(function(){
+			parent.blockSize = this.value;
+		});
+	});
+</script>
+</head>
+<body>
+
+<div style="padding-left: 20px;">
+
+	<table cellpadding="1" cellspacing="1" >
+		<tr>
+			<td style="white-space:nowrap;" colspan="2">
+				<span style="font-size:1.1em;font-weight:500;font-family: Tahoma;">File System Version:</span>
+			</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>
+				<input id="radio3" type="radio" name="type" value="VMFS6"style="margin:0px"/>
+			</td>
+			<td>
+				<label for="radio3" style="font-size:0.9em;font-weight:500;cursor: Default;font-family: Tahoma;">VMFS-6</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+			<td>
+				<label for="radio3" style="font-size:0.7em;font-weight:400;font-family: Tahoma;">If this option is selected, additional functions, such as support for 2 TB, can be enabled. The ESXi earlier than 6.5 does not support VMFS-6.</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input id="radio1" type="radio" name="type" value="VMFS5"style="margin:0px"/>
+			</td>
+			<td>
+				<label for="radio1" style="font-size:0.9em;font-weight:500;cursor: Default;font-family: Tahoma;">VMFS-5</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+			<td>
+				<label for="radio1" style="font-size:0.7em;font-weight:400;font-family: Tahoma;">If this option is selected, additional functions, such as support for 2 TB, can be enabled. The ESXi earlier than 5.0 does not support VMFS-5.</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input id="radio2" type="radio" name="type" value="VMFS3" disabled style="margin:0px"/>
+			</td>
+			<td>
+				<label for="radio2" style="font-size:0.9em;font-weight:500;cursor: Default;font-family: Tahoma;">VMFS-3</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+			<td>
+				<label for="radio2"style="font-size:0.7em;font-weight:400;font-family: Tahoma;">Select this option if hosts of earlier versions need to access the Datastore.</label>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				&nbsp;
+			</td>
+			<td colspan="3">
+				<div id="versionBlock" style="display:none;">
+					<table cellpadding="1" cellspacing="2">
+						<tr>
+							<td style="white-space:nowrap;">
+								Maximum file size:&nbsp;&nbsp;
+							</td>
+							<td>
+								<select id="blockSize">
+									<option value ="1">256 GB, Block size:1 MB</option>  
+									<option value ="2">512 GB, Block size:2 MB</option>  
+									<option value="4">1024 GB, Block size:4 MB</option>  
+									<option value="8">2048 GB, Block size:8 MB</option>  					
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								&nbsp;
+							</td>
+							<td>Larger files require larger blocks. The minimum disk space used by a file equals to the size of the file system block.</td>							
+					</table>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
+</body>
+</html>

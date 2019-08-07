@@ -1,0 +1,56 @@
+<project name="ngc-plugin-service" default="make-jar-bundle">
+    <description>
+        Ant build script example for the Java service 'chassisa-service'.
+        The output is a bundle in target/chassisa-service.jar that can be
+        copied in the "plugins" folder of the plugin-package.
+        -----------------------------------------------------------------------
+        NOTE: you don't need to use this command-line script within Eclipse/STS
+        use the project builder instead. See the SDK Tutorial for more info.
+        -----------------------------------------------------------------------
+    </description>
+
+    <!-- SDK folders should be set in environment variables -->
+    <property environment="env"/>
+    <property name="VSPHERE_SDK_HOME" value="${env.VSPHERE_SDK_HOME}"/>
+    <property name="JAVA_HOME" value="${env.JAVA_HOME}"/>
+
+    <!-- name of the jar output file -->
+    <property name="JAR_FILE" value="ngc-services.jar"/>
+
+    <property name="BUILD_DIR" value="${basedir}/target"/>
+    <property name="CLASSES" value="${BUILD_DIR}/classes"/>
+    <property name="RES_DIR" value="${basedir}/src/main/resources"/>
+
+    <target name="clean" description="Do not select this internal target.">
+        <delete dir="${BUILD_DIR}"/>
+        <mkdir dir="${BUILD_DIR}/classes"/>
+        <mkdir dir="${BUILD_DIR}/classes/config"/>
+    </target>
+
+    <target name="compile-java" depends="clean" description="Do not select this internal target.">
+        <echo message="${VSPHERE_SDK_HOME}"/>
+        <path id="buildclasspath">
+            <fileset dir="./lib/" includes="*.jar"/>
+            <fileset dir="${VSPHERE_SDK_HOME}/libs/" includes="*.jar"/>
+        </path>
+        <javac target="1.8" source="1.8" executable="${JAVA_HOME}/bin/javac" nowarn="true"
+               includeantruntime="false" destdir="${CLASSES}" fork="true" debug="on" classpathref="buildclasspath">
+            <src path="${basedir}/src/main/java"/>
+            <compilerarg line="-encoding UTF-8 "/>
+        </javac>
+    </target>
+
+    <!-- Build the jar -->
+    <target name="make-jar-bundle" depends="compile-java"
+            description="No need to use this script within Eclipse, use the native project builder!">
+        <!-- Add resources -->
+        <copy todir="${CLASSES}">
+            <fileset dir="${RES_DIR}"/>
+        </copy>
+
+        <jar destfile="${BUILD_DIR}/${JAR_FILE}"
+             manifest="${RES_DIR}/META-INF/MANIFEST.MF"
+             basedir="${CLASSES}"/>
+    </target>
+</project>
+

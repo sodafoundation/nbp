@@ -1,0 +1,32 @@
+<style>
+.dg_main_left {
+	padding-top:5px;
+	padding-left:15px;
+	line-height:90%;
+}
+.dg_top_down{
+	top:25px;
+	position: absolute;
+}
+.top {
+	width:100%;
+	height: 60px;
+	background-color: white;
+}
+html,body{
+	margin:0px;
+	height:100%;
+}
+.filterDiv{
+	border-top:1px solid black;
+	width:100%;
+	height:2px;
+	background-color:white;
+}
+.filterDiv1{
+	border-top:1px buttonshadow;
+	width:100%;
+	height:1px;
+	background-color:buttonshadow;
+}
+</style>

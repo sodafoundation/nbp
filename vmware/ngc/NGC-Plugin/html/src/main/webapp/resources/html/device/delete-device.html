@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+	<body>
+	<div style="text-align: center;">
+		<br/>
+		<br/>
+		<a id="delete.confirm.title" style="text-align: center;">Do you really want to remove the storage?</a>
+		<br/>
+		<br/>
+		<button id="confirm" class="pure-button" style="">YES</button>
+		<button id="canel" class="pure-button" >CANCEL</button>
+	</div>
+	<!-- 对话框区域 -->
+	<div id="diaLogBox">
+		<!-- 对话框标题 -->
+		<div id="title"></div>
+		<!-- 执行成功 -->
+		<div id="sucDiv" class="alertBox">
+			<div class="alertWords sucWords" id="sucWords" style="word-break: break-all;font-size: 13px;">Successfully</div>
+			<input name="OpType" type="hidden" id="sucType" value="" />
+			<hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#007cbb"/>
+			<div class="alertBtn">
+				<input id="sucOp" value="OK" type="button" style="color:white;">
+			</div>
+		</div>
+		<!-- 执行失败 -->
+		<div id="errDiv" class="alertBox">
+			<div class="alertWords errWords" id="errWords" style="word-break: break-all;font-size: 13px;">Failed</div>
+			<div id="errType" style="word-break: break-all;display: none;">Some error occurred during the add,please see details in the Recent Tasks.</div>
+			<hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#007cbb"/>
+			<div class="alertBtn">
+				<input id="errOp" value="OK" type="button" style="color:white;">
+			</div>
+		</div>
+		<!-- 其他提示 -->
+		<div id="messageDiv" class="alertBox" style="position: relative;">
+			<div id="message" class="alertWords infWords" style="word-break: break-all;font-size: 13px;"></div>
+			<!-- <div style="margin: 10px 0px;padding:5px 4px 0px 10px;">Tips:</div>
+			<input type="text" id="message" readonly="readonly" style="border: none;width: 100%;padding-left: 4px;" value="" /> -->
+			<hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;" color="#007cbb"/>
+			<div class="alertBtn">
+				<input id="messageOp" value="OK" type="button" style="color:white;">
+			</div>
+		</div>
+	</div>
+	</body>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="../../../assets/css/pure-min.css">
+		<link rel="stylesheet" href="../../../assets/css/add-device.css">
+		<script type="text/javascript" src="../../js/common/web-platform.js" ></script>
+		<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js" ></script>
+		<script src="../../../resources/js/common/jquery-util.js"></script>
+		<script src="../../../resources/js/common/json2.js"></script>
+		<style type="text/css">
+		div .pure-button{
+			border-width:1px;
+			border-radius:4px;
+			border-color:#007cbb;
+			width: 75px;
+			height: 40px;
+			cursor:pointer;
+			outline:none;
+			font-family:Microsoft YaHei;
+			font-size: 12px;
+			margin-top: 10px;
+			margin-left: 15px;
+			text-align: center;
+			padding: 0px;
+		}
+		div .pure-button[id=canel] {
+			background: #FFFFFF;
+			color:blue;
+		}
+		div .pure-button[id=confirm] {
+			background: #007cbb;
+			color:white;
+		}
+		div .pure-button[id=canel] :focus {
+			background: #FFFFFF;
+			color:1B456B;
+		}
+		div .pure-button[id=confirm] :focus {
+			background: #1B456B;
+			color:white;
+		}
+		table thead tr td {
+			white-space: nowrap;
+		}
+		.popup {
+			border: 0px solid yellow;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			width: 100%;
+			height: 100%;
+			background-color: #FFFFFF;
+			filter: alpha(opacity=45);
+			opacity: 0.45;
+			display: none;
+			z-index: 200;
+		}
+		#overlay{
+			visibility:hidden;
+			position: absolute;
+			left: 0px;
+			top: 0px;
+			width: 100%;
+			height: 100%;
+			text-align: center;
+			z-index: 1000;
+			background-color: #FFFFFF;
+			filter:alpha(opacity=45);
+			opacity: 0.45;
+		}
+		#diaLogBox {
+			border: 1px solid #007cbb;
+			background-color: #FFF;
+			width: 360px;
+			left:35px;
+			top:5px;
+			position:absolute;
+			visibility:hidden;
+			z-index: 1001;
+		}
+		#title {
+			height: 25px;
+			text-align:left;
+			background-color: #007cbb;
+			color: white;
+			line-height: 25px;
+			font-size: 14px;
+			font-weight: bold;
+			padding-left: 12px;
+		}
+		#messageDiv{
+			margin: 0px !important;
+			padding: 0px 15px;
+		}
+		.btnAlign{
+			text-align: center;
+			margin-top: 10px;
+			margin-bottom: 5px;
+		}
+		.alertBox{
+			display:none;
+		}
+		.alertWords{
+			margin: 10px 0px;
+			padding: 20px 20px 20px 80px;
+			background-repeat: no-repeat;
+			background-position: 20px center;
+		}
+		.alertBtn{
+			margin-top: 5px;
+			margin-bottom: 5px;
+			text-align: center;
+		}
+		.infWords{
+			background-image: url('../../../assets/css/images/5.png');
+		}
+		.sucWords{
+			background-image: url('../../../assets/css/images/alert_success.png');
+		}
+		.errWords{
+			background-image:url('../../../assets/css/images/alert_failed.png');
+		}
+		input[type="button"]
+		{
+			width:77px;
+			height:22px;
+			/*background-image: url('../../../assets/css/images/btn_normal.png');*/
+			border:0px;
+			padding-top:1px;
+			font-family: Tahoma;
+			cursor: pointer;
+			border-color: #007cbb;
+    		background: #007cbb;
+    		font-size: 12px;
+    		text-align: center;
+   		 	font-weight: 500;
+   		 	border-radius: 2px;
+		}
+		</style>
+		<script>
+			function getParam(name) {
+     			return (new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')
+                		.exec(location.href) || [,""])[1].replace(/\+/g, '%20') || null;
+    		}
+
+			var targets = getParam("targets");
+			$(document).ready(function() {
+				$("#confirm").click(function(){
+					var destinationURL = org_opensds_storage_devices.baseURL + "opensds/rest/device/delete"
+											+ "?deviceID=" + targets;
+					var deviceReq = new req(destinationURL, null);
+					deviceReq.type = "DELETE";
+					deviceReq.contentType = "application/x-www-form-urlencoded";
+					var devhandler = new handler(function doSuccess(resp) {
+						if (resp.status=="ok") {
+							deviceId = resp.data;
+							$("#title").text("Success");
+							$("#diaLogBox").css("visibility","visible");
+							$("#sucWords").html("Delete storage successfully! <br/> Please refresh the current page!");
+							$("#sucDiv").show();
+						}
+						else
+						{
+							$("#title").text("Error");
+							$("#diaLogBox").css("visibility","visible");
+							$("#errWords").html(resp.msg);
+							$("#errDiv").show();
+						}
+					}, function doError() {
+						$("#title").text("Error");
+						$("#diaLogBox").css("visibility","visible");
+						$("#errWords").html("Delete storage failed!");
+						$("#errDiv").show();
+					});
+					sendMsg(deviceReq, devhandler);
+				});
+
+				$("#sucOp").click(function(){
+					$("#diaLogBox").css('visibility', 'hidden');
+					WEB_PLATFORM.closeDialog();
+				});
+
+				$("#errOp").click(function(){
+					$("#diaLogBox").css('visibility', 'hidden');
+					WEB_PLATFORM.closeDialog();
+				});
+
+				$("#messageOp").click(function(){
+					$("#diaLogBox").css('visibility', 'hidden');
+					WEB_PLATFORM.closeDialog();
+				});
+
+				$("#canel").click(function(){
+					WEB_PLATFORM.closeDialog();
+				});
+			});
+
+		</script>
+	</head>
+</html>

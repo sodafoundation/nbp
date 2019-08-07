@@ -1,0 +1,873 @@
+<!doctype html>
+<html style="height: 100%">
+<head>
+<meta charset="utf-8" />
+<title>Device Resource</title>
+<style type="text/css">
+.search_Input {
+	line-height: 18px;
+	height: 16px;
+}
+.tableHead th{
+
+    border-left: 1px;
+}
+table thead tr th,table tbody tr td {
+	white-space: nowrap;
+}
+#poolTableDiv,#lunTableDiv {
+	background-image: url(../../../assets/images/gride_title.png);
+	font-weight:normal;
+	margin:0px;
+	padding:0px;
+	background-repeat:repeat-x;
+	vertical-align: bottom;
+}
+.help 
+{
+	right:0px;
+	background-image: url(../../../assets/images/help.png);
+	height:17px;
+	width:17px;
+}
+select{
+        appearance: none;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        padding-right: 3px;
+        padding-left: 3px;
+        background: url("../../assets/images/pulldown.png") no-repeat scroll right center transparent;
+        width: 300px;
+        height: 25px;
+        vertical-align:top;
+        border:none;
+        border-bottom: 1px solid #C3C3C3;
+        outline:none;
+}
+     select:focus{
+    border-bottom: 0px solid #C3C3C3;
+    background:#EFEFEF
+    }
+    input[type=text]{
+    	padding-top:4px;
+        border:none;
+        outline: none;
+        box-shadow:inset 0 1px 3px #FFF;
+        text-indent:6px;
+        border-radius:0px;
+        transition:none;
+        border-bottom:1px solid #C3C3C3;
+        background:linear-gradient(180deg,transparent 95%,#0094d2 0) no-repeat;
+        background-size: 0% 100%;
+        transition-property:background-size;
+        transition-duration:0.2s;
+        transition-timing-function: ease;
+        transition-delay: initial;
+    }
+    input[type=text]:focus{
+    background-size: 100% 100%;
+    }
+
+
+</style>
+<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css" />
+<link rel="stylesheet" href="../../../assets/css/table.css" />
+<link rel="stylesheet" href="../../../assets/css/style.css" />
+<link rel="stylesheet" href="../../../assets/css/icstyle.css" />
+<link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css" />
+<link rel="stylesheet" href="../../../assets/css/jqtree.css" />
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script src="../../../resources/js/common/jquery-util.js"></script>
+<script src="../../../resources/js/common/jquery.bigpage.js"></script>
+<script src="../../../resources/js/common/storage.plugin.js"></script>
+<script src="../../../resources/js/common/drag-table.js"></script>
+
+</head>
+<body style="height: 100%">
+	<div id="poolMain" style="width: 100%; height: 100%; position: relative;">
+		<div id="help" url="pool" class="help" style="position: absolute;"></div>
+		<div id="buttons" style="line-height: 22px; overflow: hidden; padding-bottom: 10px; padding-top: 18px;">
+			<div style="float: left">
+				<div class="plugin_button_main">
+					<input type="button" id="btnRefreshPool" value="Refresh"/>
+				</div>
+			</div>
+			<div style="float: right;width:398px;">
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<select id="filterType_pool" class="filterType" style="width: 155px;height: 22px;vertical-align:top;"> 
+						<option value="NAME">Name</option>
+						<option value="ID">ID</option>
+						<option value="HEALTHSTATUS" style="font-size: 12px;">Health status</option>
+						<option value="RUNNINGSTATUS">Running status</option>
+					</select>
+				</div>
+				<div id="nameId_filterValue_poolDiv" class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<input type="text" class="search_Input" id="nameId_filterValue_pool" maxlength="32" placeholder="Keyword"
+						onkeydown="if(event.keyCode=='13')$('#btnSearchPool').click()" style="width: 149px;vertical-align:top;"/>
+				</div>
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<select id="healthStatus_filterValue_pool" class="healthStatus_filterValue" name="filterValue" 
+							style="width: 155px;height: 22px;vertical-align:top;display: none;"> 
+						<option value="ALL">All</option>
+						<option value="NORMAL">Normal</option>
+						<option value="FAULT">Fault</option>
+						<option value="DEGRADED">Degraded</option>
+					</select>
+					<select id="runStatus_filterValue_pool" class="runStatus_filterValue" name="filterValue" 
+							style="width: 155px;height: 22px;vertical-align:top;display: none;"> 
+						<option value="ALL">All</option>
+						<option value="PRE_COPY">Precopy</option>
+						<option value="RECONSTRUCTION">Reconstruction</option>
+						<option value="ONLINE">Online</option>
+						<option value="OFFLINE">Offline</option>
+					</select>
+				</div>
+				<!-- <div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<input type="text" id="keywordPool" class="search_Input" name="keyword" placeholder="Keyword"/>
+				</div> -->
+				<div class="plugin_button_main" style="float: left;margin-right: 1px;">
+					<input type="button" id="btnSearchPool" value="Search"/>
+				</div>
+			</div>
+			
+		</div>
+		<div id="poolTableDiv" style="position: relative;border: 1px solid #C0C0C0;border-top: 0 none;overflow-y: hidden;overflow-x: hidden;padding: 0px;">
+			<table id="storagepoolTableHead" class="tablesorter" style="table-layout: fixed;cellspacing: 0; cellpadding: 0">
+				<thead class="tableHead">
+					<tr>
+						<th width="23%" align="left" title="Name"style="background:none;">Name</th>
+						<th width="11%" align="left" title="ID">ID</th>
+						<th width="11%" align="left" title="Health Status">Health Status</th>
+						<th width="11%" align="left" title="Running Status">Running Status</th>
+						<th style="text-align: left; padding-left: 4px;" width="22%" align="left" title="Total Capacity">Total
+							Capacity</th>
+						<th id="lastTd1" style="text-align: left; padding-left: 4px;" width="22%" align="left" title="Free Capacity">Free
+							Capacity</th>
+						<th width="11%" align="right" title="Usage Type">Usage Type</th>
+					</tr>
+				</thead>
+				<!-- <tbody id="tbody_pool"></tbody> -->
+			</table>
+			<iframe id="tabFrame_pool" frameborder="0" scrolling="auto" style="width: 100%;border: none;height: 100%;" src=""></iframe>
+			<div id="pager-tabFrame_pool" style="height: 24px; width: 100%"></div>
+			<div id="divLoadingPool" class="loading_font"
+				style="position: absolute; top: 35px; left: 0px; background-color: #FFF; display: none;">
+				<span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+			</div>
+			<div id="diverrorPool" class="loading_font"
+				style="position: absolute; top: 35px; left: 0px; background-color: #FFF; display: none;">
+			</div>
+		</div>
+		
+		<div id="lunTitle" style="padding-top: 10px; padding-bottom: 0px;">
+			<span style="font-weight: bold;">Storage Pool Details</span>
+		</div>
+		<div id="lunTitle2" style="padding-top: 10px; padding-bottom: 0px;">
+			<div style="height: 20px; width: 100%;">
+				<div style="height: 20px; background-color: #007cbb; float: left;">
+					<span style="line-height: 20px; padding-left: 8px;color:white" id="poolDetailTabSpan">LUNs</span>
+				</div>
+				<div class="triangle"></div>
+			</div>
+			<div style="width: 100%;height: 1px;float: left;margin-top: -1px;border-top: 1px solid #BDBDBD;"></div>
+		</div>
+		<div id="buttonsLUN" style="padding-top: 10px;padding-bottom: 10px;height: 22px;line-height: 22px;">
+			<div style="float: left;disabled: disabled;">
+				<div class="plugin_button_main">
+					<!-- <div class="plugin_button_div button_left"></div>
+					<div class="plugin_button_div button_center">Refresh</div>
+					<div class="plugin_button_div button_right"></div> -->
+					<input type="button" id="btnRefreshLun" value="Refresh"/>
+				</div>
+			</div>
+			<div style="float: right;width:398px;">
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;width: 155px;">
+					<select id="filterType_lun" class="filterType" style="width: 155px;height: 22px;vertical-align:top;">
+						<option value="NAME">Name</option>
+						<option value="ID">ID</option>
+						<option value="HEALTHSTATUS" style="font-size: 12px">Health status</option>
+						<option value="RUNNINGSTATUS">Running status</option>
+						<!-- d00456872 add -->
+						<option value="MAPPING">Mapping</option>
+					</select>
+				</div>
+				<div id="nameId_filterValue_lunDiv" class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<input type="text" class="search_Input" id="nameId_filterValue_lun" maxlength="32" placeholder="Keyword"
+						onkeydown="if(event.keyCode=='13')$('#btnSearchLun').click()" style="width: 149px;vertical-align:top;"/>
+				</div>
+				<div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<select id="healthStatus_filterValue_lun" class="healthStatus_filterValue" name="filterValue" 
+						style="width: 155px;height: 22px;vertical-align:top;display: none;"> 
+						<option value="ALL">All</option>
+						<option value="NORMAL">Normal</option>
+						<option value="FAULT">Fault</option>
+					</select>
+					<select id="runStatus_filterValue_lun" class="runStatus_filterValue" class="runStatus_filterValue" 
+						style="width: 155px;height: 22px;vertical-align:top;display: none;"> 
+						<option value="ALL">All</option>
+						<option value="ONLINE">Online</option>
+						<option value="OFFLINE">Offline</option>
+					</select>
+					<!-- d00456872 add -->
+					<select id="mapping_filterValue_lun" class="maping_filterValue"
+							style="width: 155px;height: 22px;vertical-align:top;display: none;">
+						<option value="ALL">All</option>
+						<option value="MAPPED">True</option>
+						<option value="UNMAPPED">False</option>
+					</select>
+				</div>
+				<!-- <div class="plugin_button_main" style="float: left;margin-right: 5px;">
+					<input type="text" id="keywordLun" name="keyword" placeholder="Keyword"/>
+				</div> -->
+				<div class="plugin_button_main" style="float: left;margin-right: 1px;">
+					<input type="button" id="btnSearchLun" value="Search"/>
+				</div>
+			</div>
+		</div>
+		<div id="lunTableDiv" style="position: relative; border: 1px solid #C0C0C0; border-top: 0 none;overflow-y: hidden;overflow-x: hidden;padding: 0px;">
+			<table id="storagelunTableHead" class="tablesorter" style="table-layout: fixed;cellspacing: 0; cellpadding: 0">
+				<thead class="tableHead">
+					<tr>
+						<th width="22%" align="left" title="Name"style="background:none">Name</th>
+						<th width="5%" align="left" title="ID">ID</th>
+						<th width="10%" align="left" title="Health Status">Health Status</th>
+						<th class="hideField" width="10%" align="left" title="Running Status">Running Status</th>
+						<th class="hideField" width="7%" align="left" title="Type">Type</th>
+						<th width="10%" align="left" style="text-align: left; padding-left: 4px;" title="Capacity">Capacity</th>
+						<th class="hideField" width="10%" align="left" style="text-align: left; padding-left: 4px;" title="Allocated Capacity">Allocated
+							Capacity</th>
+						<th width="17%" align="left" title="Owning Storage Pool">Owning Storage Pool</th>
+						<th class="mappingTh" id="lastTd2" width="9%" align="left" title="Mapping" style="border-right: 0px;">Mapping</th>
+					</tr>
+				</thead>
+				<!-- <tbody id="tbody_lun"></tbody> -->
+			</table>
+			<iframe id="tabFrame_lun" frameborder="0" scrolling="auto" style="width: 100%;border: none;height: 100%;" src=""></iframe>
+			<div id="pager-tabFrame_lun" style="height: 24px; width: 100%"></div>
+			<div id="divLoadingLun" class="loading_font"
+				style="position: absolute; top: 35px; left: 0px; background-color: #FFF; display: none;">
+				<span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+			</div>
+			<div id="diverrorLun" class="loading_font"
+				style="position: absolute; top: 20px; left: 0px; background-color: #FFF; display: none;">
+			</div>
+		</div>
+	</div>
+</body>
+
+<script type="text/javascript">
+
+
+
+	var ns = org_opensds_storage_devices;
+	var url_pool = ns.webContextPath + "/rest/data/storagepoolList/";
+	var url_lun = ns.webContextPath + "/rest/data/storagelunByPoolId/";
+
+	var toPage_pool = 1;
+	var toPage_lun = 1;
+	var pageSize_pool = 100;
+	var pageSize_lun = 100;
+	var divhead_id_pool = "bak_pool";
+	var divhead_id_lun = "bak_lun";
+	//设备序列号
+	var deviceId = "";
+	//存储池ID
+	var storagePoolId = "";
+	var filterType_pool = "";
+	var filterValue_pool = "";
+	var filterType_lun = "";
+	var filterValue_lun = "";
+
+	var rowIndex = 0;
+	var status = 0;
+	var loadpage2_data_params = "";
+
+	//nfs
+    var url_fs = ns.webContextPath + "/rest/nfsdata/storageFsByPoolId/";
+    var poolUsageType = "lun";
+
+    function getParam(name) {
+        return (new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')
+                .exec(location.href) || [,""])[1].replace(/\+/g, '%20') || null;
+    }
+
+	$(document).ready(function() {
+		makeHelp();
+		deviceId = getParam("objectId");
+
+		//在css加载完成之前,每隔10ms表格重新布局一次,直到达到理想效果
+		var interval = setInterval(function(){
+			if ($("#poolTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+				changesize();
+				if (status != 2)
+				{
+					$("#divLoadingPool").show();
+					status = 1;
+				}
+				clearInterval(interval);
+			}
+		}, 10);
+		bundleEvent();
+		$("#btnSearchPool").click();
+		JPlaceHolder.init();
+		$(window).resize(function(){
+			changesize();
+		});
+	});
+function initSelect() {
+	var url = ns.webContextPath + "/rest/data/deviceModel/" + deviceId+"?t=" + new Date();
+	$.ajax({
+		async:false,
+		type:"get",
+		url:encodeURI(url),
+		contentType:"application/json",
+		success:function(resp){
+			if(resp.errorCode){
+				$("#divLoadingPool").hide();
+				$("#diverrorPool").show().text(resp.errorDesc);
+			}
+			var pool_selection = document.getElementById("filterType_pool");
+			var modelType=resp.data;
+			if(modelType.indexOf("Dorado") > -1 && pool_selection.options.length ==4)
+			{
+				pool_selection.remove(3);
+				pool_selection.remove(2);
+			}
+		},
+		error:function(XMLHttpRequest, textStatus, errorThrown){
+			alert(XMLHttpRequest.status);
+            alert(XMLHttpRequest.readyState);
+            alert(textStatus);
+		}
+	});
+}
+	function bundleEvent() {
+		//以下为存储池的绑定事件
+		$("#filterType_pool").unbind(); 
+		$("#filterType_pool").bind("change", function(){
+			$("#nameId_filterValue_pool").val("");
+			if($("#filterType_pool").val() == "HEALTHSTATUS")
+			{
+				$("#nameId_filterValue_poolDiv").hide();
+				$("#runStatus_filterValue_pool").hide();
+				$("#healthStatus_filterValue_pool").show();
+				$("#healthStatus_filterValue_pool").get(0).options[0].selected = true; 
+			}
+			else if($("#filterType_pool").val() == "RUNNINGSTATUS")
+			{
+				$("#nameId_filterValue_poolDiv").hide();
+				$("#healthStatus_filterValue_pool").hide();
+				$("#runStatus_filterValue_pool").show();
+				$("#runStatus_filterValue_pool").get(0).options[0].selected = true; 
+			}
+			else
+			{
+				$("#healthStatus_filterValue_pool").hide();
+				$("#runStatus_filterValue_pool").hide();
+				$("#nameId_filterValue_poolDiv").show();
+			}
+		});
+		
+		$("#btnRefreshPool").click(function() {
+		 $("#storagepoolTableHead tr:eq(0) th:eq(0)").width("23%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(1)").width("11%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(2)").width("11%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(3)").width("11%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(4)").width("22%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(5)").width("22%");
+		 $("#storagepoolTableHead tr:eq(0) th:eq(6)").width("11%");
+
+			$("#btnSearchPool").click();
+		});
+		
+		$("#btnSearchPool").click(function() {
+			$("#divLoadingPool").show();
+		    $("#diverrorPool").hide();
+			$("#btnRefreshPool").prop("disabled","disabled");
+			$("#btnSearchPool").prop("disabled", "disabled");
+			setTimeout(function() {
+				$("#btnRefreshPool").prop("disabled","");
+				$("#btnSearchPool").prop("disabled", "");
+			}, 500);
+			//点击过查询后,刷新操作才会过滤查询
+			filterType_pool = $("#filterType_pool").val();
+			if(filterType_pool == "NAME" || filterType_pool == "ID")
+			{
+				filterValue_pool = $("#nameId_filterValue_pool").val();
+				//filterValue_pool = encodeURI(filterValue_pool);
+			}
+			else if(filterType_pool == "HEALTHSTATUS")
+			{
+				filterValue_pool = $("#healthStatus_filterValue_pool").val();
+				if(filterValue_pool == "NORMAL")
+				{
+					//filterValue_pool = "1";
+				}
+				else if(filterValue_pool == "FAULT")
+				{
+					//filterValue_pool = "2";
+				}
+				else if(filterValue_pool == "DEGRADED")
+				{
+					//filterValue_pool = "5";
+				}
+				else	
+				{
+					filterValue_pool = "";
+				}
+			}
+			else if(filterType_pool == "RUNNINGSTATUS")
+			{
+				filterValue_pool = $("#runStatus_filterValue_pool").val();
+				if(filterValue_pool == "ONLINE")
+				{
+					//filterValue_pool = "27";
+				}
+				else if(filterValue_pool == "OFFLINE")
+				{
+					//filterValue_pool = "28";
+				}
+				else if(filterValue_pool == "PRE_COPY")
+				{
+					//filterValue_pool = "14";
+				}
+				else if(filterValue_pool == "RECONSTRUCTION")
+				{
+					//filterValue_pool = "16";
+				}
+				else
+				{
+					filterValue_pool = "";
+				}
+			}
+			initSelect();
+			loadPools();
+		});
+		
+		//以下为Lun的绑定事件
+		$("#filterType_lun").unbind(); 
+		$("#filterType_lun").bind("change", function(){
+			$("#nameId_filterValue_lun").val("");
+			if($('#filterType_lun').val() == 'HEALTHSTATUS')
+			{
+				$("#nameId_filterValue_lunDiv").hide();
+				$("#runStatus_filterValue_lun").hide();
+				$("#mapping_filterValue_lun").hide();
+				$("#healthStatus_filterValue_lun").show();
+				$("#healthStatus_filterValue_lun").get(0).options[0].selected = true; 
+			}
+			else if($('#filterType_lun').val() == 'RUNNINGSTATUS')
+			{
+				$("#nameId_filterValue_lunDiv").hide();
+				$("#healthStatus_filterValue_lun").hide();
+				$("#mapping_filterValue_lun").hide();
+				$("#runStatus_filterValue_lun").show();
+				$("#runStatus_filterValue_lun").get(0).options[0].selected = true; 
+			}
+			else if($('#filterType_lun').val() == 'MAPPING'){
+				$("#nameId_filterValue_lunDiv").hide();
+				$("#healthStatus_filterValue_lun").hide();
+				$("#runStatus_filterValue_lun").hide();
+				$("#mapping_filterValue_lun").show();
+				$("#mapping_filterValue_lun").get(0).options[0].selected = true;
+			}
+			else
+			{
+				$("#healthStatus_filterValue_lun").hide();
+				$("#runStatus_filterValue_lun").hide();
+				$("#mapping_filterValue_lun").hide();
+				$("#nameId_filterValue_lunDiv").show();
+			}
+		});
+		
+		$("#btnRefreshLun").click(function() {
+			 $("#storagelunTableHead tr:eq(0) th:eq(0)").width("22%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(1)").width("5%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(2)").width("10%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(3)").width("10%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(4)").width("7%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(5)").width("10%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(6)").width("10%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(7)").width("17%");
+			 $("#storagelunTableHead tr:eq(0) th:eq(8)").width("9%");
+
+			$("#btnSearchLun").click();
+		});
+		$("#btnSearchLun").click(function() {
+			$("#divLoadingLun").show();
+			$("#diverrorLun").hide()
+			$("#btnRefreshLun").prop("disabled","disabled");
+			$("#btnSearchLun").prop("disabled", "disabled");
+			setTimeout(function() {
+				$("#btnRefreshLun").prop("disabled","");
+				$("#btnSearchLun").prop("disabled", "");
+			}, 500);
+			//点击过查询后,刷新操作才会过滤查询
+			filterType_lun = $("#filterType_lun").val();
+			if(filterType_lun == "NAME" || filterType_lun == "ID")
+			{
+				filterValue_lun = trim($("#nameId_filterValue_lun").val());
+				//filterValue_lun = encodeURI(filterValue_lun);
+			}
+			else if(filterType_lun == "HEALTHSTATUS")
+			{
+				filterValue_lun = $("#healthStatus_filterValue_lun").val();
+
+				if(filterValue_lun == "NORMAL")
+				{
+					//filterValue_lun="1";
+				}
+				else if(filterValue_lun == "FAULT")
+				{
+					//filterValue_lun="2";
+				}
+				else
+				{
+					filterValue_lun="";
+				}
+			}
+			else if(filterType_lun == "RUNNINGSTATUS")
+			{
+				filterValue_lun = $("#runStatus_filterValue_lun").val();
+				if(filterValue_lun == "ONLINE")
+				{
+					//filterValue_lun="27";
+				}
+				else if(filterValue_lun == "OFFLINE")
+				{
+					//filterValue_lun="28";
+				}
+				else
+				{
+					filterValue_lun="";
+				}
+			}
+			//d00456872 add:
+			else if(filterType_lun == "MAPPING"){
+				filterValue_lun = $("#mapping_filterValue_lun").val();
+				if(filterValue_lun == "ALL"){
+					filterValue_lun = "";
+				}
+			}
+			loadLunsOrFs();
+		});
+	}
+	
+	function loadPools(){
+		/* if ($("#" + divhead_id_pool).length > 0) {
+			$("#" + divhead_id_pool)[0].style.width = $("#poolMain").width() - 2;
+		} */
+		if ($("#poolTableDiv").width() > 0) {
+			$("#storagepoolTableHead").width($("#poolMain").width() - 2);
+		}
+		storagePoolId = "";
+		$('#tabFrame_lun').prop("src", "");
+		$('#tabFrame_pool').prop("src", "");
+		$("#pager1").remove();
+		$("#pager2").remove();
+		$("#divLoadingLun").css("display", "none");
+		
+		$("#healthStatus_filterValue_lun").css("display", "none");
+		$("#runStatus_filterValue_lun").css("display", "none");
+		$("#nameId_filterValue_lunDiv").css("display", "block");
+		filterType_pool = $('#filterType_pool').val();
+		$("#filterType_lun").get(0).options[0].selected = true;
+		// 打开遮盖
+		if ($("#poolTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+			setTimeout(function(){
+				if (status != 1)
+				{
+					$("#divLoadingPool").show();
+					status = 2;
+				}
+			}, 30);
+		}
+		// 请求数据
+		var url = url_pool + "count/" + deviceId + "?filterType=" + filterType_pool + "&filterValue=" + filterValue_pool + "&t=" + new Date();
+		$("#storagepoolTableHead").bigPage({
+			container : "pager1",
+			ajaxData : {
+				url : encodeURI(url),
+				params : {
+					loaddingId : "divLoadingPool",
+					errorloaddingId : "diverrorPool",
+					iframeId : "tabFrame_pool",
+					data_url : ns.webContextPath + "/resources/html/device/storagePoolsList.html",
+					data_params : "&deviceId=" + deviceId + "&filterType=" + filterType_pool + "&filterValue=" + filterValue_pool
+				}
+			},
+			pageSize : pageSize_pool,
+			toPage : toPage_pool,
+			position : "down",
+			callback : null
+		});
+
+
+	}
+	
+	function loadLunsOrFs() {
+		loadpage2_data_params = "&deviceId=" + deviceId + "&storagePoolId=" + storagePoolId
+								+ "&filterType=" + filterType_lun + "&filterValue=" + filterValue_lun;
+		if (storagePoolId == "")
+		{
+			$("#divLoadingLun").css("display", "none");
+			return;
+		}
+		if ($("#lunTableDiv").width() > 0) {
+			$("#storagelunTableHead").width($("#poolMain").width() - 2);
+		}
+		$('#tabFrame_lun').prop("src", "");
+		$("#pager2").remove();
+		filterType_lun = $('#filterType_lun').val();
+
+		var urlForLoad = "";
+		var dataUrl = "";
+		if (poolUsageType == "lun") {
+            urlForLoad = url_lun + "count/" + deviceId + "?storagePoolId=" + storagePoolId + "&filterType=" + filterType_lun +
+            "&filterValue=" + filterValue_lun + "&t=" + new Date();
+            dataUrl = ns.webContextPath + "/resources/html/device/lunsList.html";
+		} else if (poolUsageType == "fs") {
+		    urlForLoad = url_fs + "count/" + deviceId + "?storagePoolId=" + storagePoolId + "&filterType=" + filterType_lun +
+                "&filterValue=" + filterValue_lun + "&t=" + new Date();
+		    dataUrl = ns.webContextPath + "/resources/html/device/fileSystemList.html"
+		}
+
+		// 请求数据
+		$("#storagelunTableHead").bigPage({
+			container : "pager2",
+			ajaxData : {
+				url : encodeURI(urlForLoad),
+				params : {
+					loaddingId : "divLoadingLun",
+					errorloaddingId : "diverrorLun",
+					iframeId : "tabFrame_lun",
+					data_url : dataUrl,
+					data_params : loadpage2_data_params
+				}
+			},
+			pageSize : pageSize_lun,
+			toPage : toPage_lun,
+			position : "down",
+			callback : function() {
+				if (storagePoolId == "")
+				{
+					$("#tabFrame_lun")[0].contentWindow.$("#storagelunTable").remove();
+					$("#pager2").remove();
+					return;
+				}
+			}
+		});
+	}
+
+	function poolClickEvent() {
+		$("#storagepoolTableHead tr:gt(0)").unbind("click");
+		$("#storagepoolTableHead tr:gt(0)").bind("click", function(event) {
+			$(this).find("td").css("background-color","#abcefc");
+			$("#storagepoolTableHead tr:gt(0)").not($(this)).find("td").css("background-color","#FFFFFF");
+			storagePoolId = $(this).find('td:eq(1)').text();
+			var useType = $(this).find('td:eq(6)').text();
+			if(useType == "FILESYSTEM"){
+				$("#filterType_lun option:first").attr("selected",'selected');
+				$("#nameId_filterValue_lun").text("");
+			}
+			loadLunsOrFs();
+		});
+	}
+	function clearPoolData() {
+		storagePoolId = "";
+		var tb = document.getElementById('storagepoolTableHead');
+		var rowNum = tb.rows.length;
+		for (var i = 1; i < rowNum; i++) {
+			tb.deleteRow(i);
+			rowNum = rowNum - 1;
+			i = i - 1;
+		}
+	}
+	function clearLunData() {
+		var tb = document.getElementById('storagelunTableHead');
+		var rowNum = tb.rows.length;
+		for (var i = 1; i < rowNum; i++) {
+			tb.deleteRow(i);
+			rowNum = rowNum - 1;
+			i = i - 1;
+		}
+	}
+	function changesize() {
+		var divMainHeight = $("#poolMain").height();
+		var divMainWidth = $("#poolMain").width();
+
+		//24--按钮行高,24--分页,35/16--表头,10--padding,20--pool/lun线高,1,2--border
+		var height = divMainHeight - (24 * 2 + 35 * 2 + 9 * 2 + 20 * 2 + 18);
+		var poolHeight = height / 2;
+		var lunHeight = height - poolHeight;
+		$("#poolTableDiv").height(poolHeight);
+		$("#divLoadingPool").height(poolHeight - 35 - 4);
+		$("#tabFrame_pool").height(poolHeight - 35 - 4 - 24);
+
+		var lunTableDivTop = poolHeight + 10 + 73 + 17 + 20 + 20 + 3;
+		$("#lunTableDiv").height(lunHeight);
+		$("#divLoadingLun").height(lunHeight - 35 - 4);
+		$("#tabFrame_lun").height(lunHeight - 35 - 4 - 24);
+		//2--左右border
+		$("#divLoadingPool").width(divMainWidth - 2);
+		$("#divLoadingLun").width(divMainWidth - 2);
+		
+		$("#diverrorPool").height(lunHeight - 35 - 4);
+		$("#diverrorLun").height(lunHeight - 35 - 4);
+		
+		$("#diverrorLun").width(divMainWidth - 2);
+		$("#diverrorPool").width(divMainWidth - 2);
+	}
+	function hideBottomBorder() {
+		var h = $("#storagepoolTableDiv").height();
+		var h1 = $("#storagepoolTable").height();
+
+		if (h <= h1) {
+			//有滚动条
+			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
+			//修改表头宽度
+			var div = $("#poolTableDiv").width() - $("#storagepoolTable").width();
+			$("#poolheadDiv").css("display", "block");
+			$("#poolheadDiv").width(div);
+		} else {
+			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
+			//$("#poolheadDiv").css("display", "none");
+			var div = $("#poolTableDiv").width() - $("#storagepoolTable").width();
+			$("#poolheadDiv").css("display", "block");
+			$("#poolheadDiv").width(div);
+		}
+	}
+	function hideLunBottomBorder() {
+		var h = $("#storagelunTableDiv").height();
+		var h1 = $("#storagelunTable").height();
+		if (h <= h1) {
+			//有滚动条
+			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
+			//修改表头宽度
+			var div = $("#lunTableDiv").width() - $("#storagelunTable").width();
+			$("#lunheadDiv").css("display", "block");
+			$("#lunheadDiv").width(div);
+		} else {
+			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
+			//$("#lunheadDiv").css("display", "none");
+			var div = $("#lunTableDiv").width() - $("#storagelunTable").width();
+			$("#lunheadDiv").css("display", "block");
+			$("#lunheadDiv").width(div);
+		}
+	}
+	var JPlaceHolder = {
+   	    //检测
+   	    _check : function(){
+   	        return 'placeholder' in document.createElement('input');
+   	    },
+   	    //初始化
+   	    init : function(){
+   	        if(!this._check()){
+   	            this.fix();
+   	        }
+   	    },
+   	    //修复
+   	    fix : function(){
+   	        jQuery(':input[placeholder]').each(function(index, element) {
+   	            var self = $(this), txt = self.attr('placeholder');
+   	            self.wrap($('<div></div>').css({position:'relative', zoom:'1', border:'none', background:'none', padding:'none', margin:'none'}));
+   	            var pos = self.position(), h = self.outerHeight(true), paddingleft = self.css('padding-left');
+   	            var holder = $('<span></span>').text(txt).css(
+   	            		{position:'absolute', left:pos.left, top:pos.top, height:h, lienHeight:h, paddingLeft:paddingleft, color:'#aaa'}).appendTo(self.parent());
+   	            self.focusin(function(e) {
+   	                holder.hide();
+   	            }).focusout(function(e) {
+   	                if(!self.val()){
+   	                    holder.show();
+   	                }
+   	            });
+   	            holder.click(function(e) {
+   	                holder.hide();
+   	                self.focus();
+   	            });
+   	        });
+   	    }
+   	};
+	function trim(str){
+	    return str.replace(/(^\s*)|(\s*$)/g, "");
+	}
+
+
+	</script>
+
+
+<script type="text/javascript">
+	  var Table;
+   // var iframe01 = document.getElementById("tabFrame_pool");
+   // var Table =  window.frames["iframe01"].document.getElementById("storagepoolTable");
+    var tTD; //用来存储当前更改宽度的Table Cell,避免快速移动鼠标的问题
+    var TableHead = document.getElementById("storagepoolTableHead");
+    var iframe01;
+    var Table;
+		//添加表头拖动拉长缩短
+	    for (j = 0; j < TableHead.rows[0].cells.length; j++) {
+        TableHead.rows[0].cells[j].onmousedown = function () {
+               iframe01 = document.getElementById("tabFrame_pool");
+                Table =  iframe01.contentWindow.document.getElementById('storagePoolTable');
+            tTD = this;
+            if (event.offsetX > tTD.offsetWidth - 10) {
+                tTD.mouseDown = true;
+                tTD.oldX = event.x;
+                tTD.oldWidth = tTD.offsetWidth;
+            }
+//记录Table宽度
+//table = tTD; while (table.tagName != ‘TABLE') table = table.parentElement;
+//tTD.tableWidth = table.offsetWidth;
+        };
+        TableHead.rows[0].cells[j].onmouseup = function () {
+
+            if (tTD == undefined) tTD = this;
+            tTD.mouseDown = false;
+            tTD.style.cursor = 'default';
+        };
+        TableHead.rows[0].cells[j].onmouseout= function (){
+            if(tTD.mouseDown == true){
+               if (tTD == undefined) tTD = this;
+               tTD.mouseDown = false;
+               tTD.style.cursor = 'default';
+            }
+
+        }
+        TableHead.rows[0].cells[j].onmousemove = function () {
+
+            if (event.offsetX > this.offsetWidth - 10)
+                this.style.cursor = 'col-resize';
+            else
+                this.style.cursor = 'default';
+            if (tTD == undefined) tTD = this;
+//调整宽度
+            if (tTD.mouseDown != null && tTD.mouseDown == true) {
+                tTD.style.cursor = 'default';
+                if (tTD.oldWidth + (event.x - tTD.oldX) > 0)
+                    tTD.width = tTD.oldWidth + (event.x - tTD.oldX);
+//调整列宽
+                tTD.style.width = tTD.width;
+                tTD.style.cursor = 'col-resize';
+//调整该列中的每个Cell
+                TableHead = tTD;
+               // Table=$("#storagepoolTable");
+
+                while (Table.tagName != 'TABLE') Table = Table.parentElement;
+                for (j = 0; j < Table.rows.length; j++) {
+                    Table.rows[j].cells[tTD.cellIndex].width = tTD.width;
+                }
+//调整整个表
+//table.width = tTD.tableWidth + (tTD.offsetWidth – tTD.oldWidth);
+//table.style.width = table.width;
+            }
+        };
+    }
+    var fun=dragTable_iframe;
+   fun("storagelunTableHead","tabFrame_lun","storagelunTable");
+	</script>
+
+
+
+</html>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<pluginPackage id="org.opensds.vmware.ngc" version="1.0.0" type="html" name="OpenSDS NGC Plugin"
+      description="OpenSDS Next Generation Center Plugin" vendor="OpenSDS Community">
+   <dependencies>
+      <!-- Minimum vSphere Client version compatible with this plugin -->
+      <pluginPackage id="com.vmware.vsphere.client" version="5.5.0" />
+   </dependencies>
+   <bundlesOrder>
+      <!-- List the bundles from the /plugins directory in loading order: 3rd party
+         libraries first, them java service bundles and finally UI bundles.
+         Bundle Ids must match the Bundle-SymbolicName in each plugin's MANIFEST.MF
+      -->
+        <bundle id="org.opensds.vmware.common" />
+        <bundle id="com.vmware.wsvim25" />
+        <bundle id="org.opensds.vmware.ngc.service" />
+        <bundle id="org.opensds.vmware.ngc.ui" />
+
+   </bundlesOrder>
+</pluginPackage>

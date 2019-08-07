@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>OpenSDS NGC Plugin Register Page</title>
+    <link rel="icon" type="image/x-icon" href="/icon/favicon.ico">
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/css/bootstrapValidator.css"/>
+
+    <script type="text/javascript" src="/js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/js/bootstrapValidator.js"></script>
+</head>
+<body class="row" onload="clearForm()" onunload="clearForm()">
+<div class="col-sm-3"></div>
+<div class="col-sm-6">
+    <div style="text-align: center; margin-top: 30px;">
+        <img src="/icon/openSDS.png" style="width:205px; height:75px; text-align: center;">
+        <h1 > vSphere Plugin Register Page</h1>
+    </div>
+    <br>
+    <div>
+        <li>If you want to
+            <span th:if="${VCenterInfo.registerFlag == '0'}" style="color: #428bca;">register</span>
+            <span th:if="${VCenterInfo.registerFlag == '1'}" style="color: #d9534f;">unregister</span>
+            the Next Generation Client(NGC) plugin, please provide a valid vCenter Server IP, user name and password.
+        </li>
+    </div>
+    <div calss="divider"></div>
+    <hr style="margin-top: 15px; margin-bottom: 30px;">
+    <center>
+        <form id="ngcForm"  class="form-horizontal" onkeydown="if(event.keyCode==13){return false;}"
+              accept-charset="utf-8" method="post" th:action="@{/action}" th:object="${VCenterInfo}">
+            <div class="form-group" style="width:600px">
+                <label class="col-sm-4 control-label" for="vCenterIp" >vCenter server ip</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" id ="vCenterIp" th:field="*{vCenterIp}"
+                           placeholder="input vcenter ip" name ="vCenterIp" >
+                </div>
+            </div>
+            <br>
+            <div class="form-group" style="width:600px">
+                <label class="col-sm-4 control-label" for="vCenterUser">User name</label>
+                <div class="col-sm-8">
+                    <input type="text" class="form-control" id ="vCenterUser"
+                           placeholder="input vcenter username" name ="vCenterUser"  data-bv-m>
+                </div>
+              <!--  <label style="color:red" th:if="${#fields.hasErrors('vCenterUser')}" th:errors="*{vCenterUser}">Name Error</label>-->
+            </div>
+            <br>
+            <div class="form-group" style="width:600px">
+                <label class="col-sm-4 control-label" for="vCenterPassword">User Password</label>
+                <div class="col-sm-8">
+                    <input type="password" class="form-control" id ="vCenterPassword"
+                           placeholder="input vcenter password" name ="vCenterPassword">
+                </div>
+               <!-- <label style="color:red" th:if="${#fields.hasErrors('vCenterPassword')}" th:errors="*{vCenterPassword}">Name Error</label>-->
+            </div>
+            <hr style="margin-top: 30px; margin-bottom: 15px;">
+            <div th:if="${VCenterInfo.registerFlag == '1'}" >
+                <li style="text-align: left; margin-bottom: 15px;">The NGC Plugin has already registered in
+                    <span th:text="*{vCenterIp}" style="color:#ac2925;"> </span>.
+                </li>
+            </div>
+            <div class="form-group" style="">
+                <button type="submit" name="action" class="btn btn-primary" th:if="${VCenterInfo.registerFlag == '0'}"
+                        value="register" id="register" style="width: 89px;" onclick="resgiter_click()">register</button>
+                <button type="submit" name="action" class="btn btn-danger"  th:if="${VCenterInfo.registerFlag == '1'}"
+                        value="unregister" id="unregister"  style="width: 89px;" onclick="unresgiter_click()">unregister</button>
+                <input type="reset" name="resetbtn" class="btn btn-warning" value="Reset" style="margin-left: 20px; width: 89px;"/>
+            </div>
+        </form>
+    </center>
+</div>
+<div class="col-sm-3"></div>
+<script type="text/javascript" th:inline="javascript">
+
+    $(document).ready(function() {
+        var vcenterInfo = [[${VCenterInfo}]];
+        if(vcenterInfo.vCenterIp != null && vcenterInfo.vCenterIp != ""
+            && vcenterInfo.registerFlag != null && vcenterInfo.registerFlag == "1") {
+            //$('#vCenterIp').attr("disabled","disabled");
+            console.log("this is regestered!");
+        } else {
+            $('#vCenterIp').removeAttr("disabled");
+            console.log("this is not regestered!");
+        }
+
+        $('#ngcForm')
+            .bootstrapValidator({
+                message: 'This value is not valid',
+                feedbackIcons: {
+                    valid: 'glyphicon glyphicon-ok',
+                    invalid: 'glyphicon glyphicon-remove',
+                    validating: 'glyphicon glyphicon-refresh'
+                },
+                fields: {
+                    vCenterIp : {
+                        message: 'The IP is not valid',
+                        validators :{
+                            notEmpty: {
+                                message: 'The IP is required and can\'t be empty.'
+                            },
+                            regexp: {
+                                regexp: /^(([1-9]?\d|1\d\d|2[0-4]\d|25[0-5])(\.(?!$)|(?=$))){4}$/,
+                                message: 'Please input the correct ip address format.'
+                            }
+                        }
+                    },
+                    vCenterUser : {
+                        message: 'The vCenter User is not valid',
+                        validators :{
+                            notEmpty: {
+                                message: 'The User name is required and can\'t be empty.'
+                            },
+                            stringLength: {
+                                min: 6,
+                                max: 61,
+                                message: 'The username must be more than 6 and less than 61 characters long'
+                            },
+                        }
+                    },
+                    vCenterPassword : {
+                        message: 'The vCenter password is not valid',
+                        validators :{
+                            notEmpty: {
+                                message: 'The password is required and can\'t be empty.'
+                            },
+                            stringLength: {
+                                min: 1,
+                                max: 61,
+                                message: 'The password must be more than 1 and less than 61 characters long'
+                            },
+                        }
+                    },
+                }
+            })
+    });
+    function clearForm() {
+        $('#ngcForm')[0].reset();
+    }
+
+    function resgiter_click() {
+       //$('#ngcForm')[0].reset();
+    }
+    function unresgiter_click() {
+        //$('#ngcForm')[0].reset();
+    }
+</script>
+</body>
+</html>

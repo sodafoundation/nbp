@@ -1,0 +1,120 @@
+/* tables */
+table.tablesorter {
+	font-family: Tahoma;
+	background-color: #FFFFFF;
+	margin:0px 0pt 0px;
+	font-size: 12px;
+	width: 100%;
+	text-align: left;
+	padding:0px;
+	border-collapse:collapse;
+}
+
+
+table.tablesorter thead tr th, table.tablesorter tfoot tr th {
+	/*background-image: url(../images/gride_title.png);
+	font-weight:normal;*/
+	/*border: 1px solid #FFF;
+	padding: 4px;*/
+	/*font-size: 12px;
+	margin:0px;
+	padding:0px;
+	padding-left:4px;
+	padding-right:3px;
+	background-repeat:repeat-x;
+	vertical-align: bottom;*/
+	border-bottom: 2px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #D9D9D9;
+	background: linear-gradient(#FFFFFF 0%,#FFFFFF 15%,#D9D9D9 15%, #D9D9D9 85%,#FFFFFF 85%,#FFFFFF 100%)no-repeat;
+	background-size:1px 100%;
+}
+table.tablesorter thead tr th{
+	border-right: 0px;
+        border-left: 0px;
+	border-top: 1px solid #D9D9D9;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+table.tablesorter thead tr th div{
+	white-space:nowrap;
+}
+table.tablesorter thead tr .header {
+	/*background-image: url(bg.gif);
+	background-repeat: no-repeat;
+	background-position: center right;
+	margin:0px;
+	padding:0px;
+	height: 17px;*/
+	cursor: pointer;
+}
+table.tablesorter tbody td {
+	color: #3D3D3D;
+	padding: 8px;
+	background-color: #FFF;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	/*border-left:1p solid #000;
+	border-right:1px solid #000;*/
+	border-bottom: 1px solid #D9D9D9;
+	text-align:left;
+}
+#lastTd{
+	border-right: 0 none;
+}
+
+table.tablesorter thead tr th:first-child, table.tablesorter tbody td:first-child{
+	border-left: 0 none;
+}
+table.tablesorter tbody tr:first-child td {
+	border-top: 0 none;
+}
+table.tablesorter tbody td div{
+	white-space:nowrap;
+}
+table.tablesorter tbody tr.odd td {
+	background-color:#F0F0F6;
+}
+table.tablesorter thead tr .headerSortUp {
+	background-image: url(asc.gif);
+	background-repeat:no-repeat;
+}
+table.tablesorter thead tr .headerSortDown {
+	background-image: url(desc.gif);
+	background-repeat:no-repeat;
+}
+table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
+background-color: #8dbdd8;
+}
+table thead B{
+	font-weight:normal;
+}
+table thead th{
+	height: 16px;
+	text-align:left;
+}
+input[type="checkbox"]
+{
+	margin:0px;
+	padding:0px;
+	width:15px;
+	height:15px;
+}
+table.tablesorter thead
+{
+	margin:0px;
+	padding:0px
+}
+
+.tablesorter-div
+{
+	width: 17px;
+	/*background-image: url(../images/gride_title.png);*/
+	background:#D9D9D9;
+	background-size:100% 100%;
+	margin:0px;
+	padding:0px;
+	background-repeat:repeat-x;
+	display: none;
+}
