@@ -69,28 +69,27 @@ class RestClient {
     }
 
     void login(String ip, int port, String user, String password) throws Exception {
-        if(this.osClient != null) {
-            logout();
-        }
-
-        if (this.request != null) {
-            this.request.close();
-        }
+		/*
+		 * if(this.osClient != null) { logout(); }
+		 * 
+		 * if (this.request != null) { this.request.close(); }
+		 */
 
         Request request = new Request(ip, port, new Handler());
         request.setHeaders("Content-Type", "application/json");
 
         String endPoint = String.format("http://%s:80/identity/v3", ip);
-        OSClientV3 osClient = OSFactory.builderV3()
-                .endpoint(endPoint)
-                .credentials(user, password, Identifier.byId("default"))
-                .scopeToProject(Identifier.byName(user), Identifier.byName("Default"))
-                .authenticate();
+		/*
+		 * OSClientV3 osClient = OSFactory.builderV3() .endpoint(endPoint)
+		 * .credentials(user, password, Identifier.byId("default"))
+		 * .scopeToProject(Identifier.byName(user), Identifier.byName("Default"))
+		 * .authenticate();
+		 */
         String tenantId = "adminTenant";
         request.setUrl(String.format("http://%s:%d/v1beta/%s", ip, port,tenantId));
-        request.setHeaders("X-Auth-Token", osClient.getToken().getId());
+        //request.setHeaders("X-Auth-Token", osClient.getToken().getId());
 
-        this.osClient = osClient;
+        //this.osClient = osClient;
         this.request = request;
     }
 
