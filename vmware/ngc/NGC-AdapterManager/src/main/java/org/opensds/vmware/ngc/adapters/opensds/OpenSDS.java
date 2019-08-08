@@ -35,7 +35,7 @@ class VolumeMOBuilder {
         String id = jsonObject.getString("id");
         String wwn = jsonObject.getString("id");
         ALLOC_TYPE allocType = ALLOC_TYPE.THIN;
-        long capacity = jsonObject.getLong("size");
+        long capacity = jsonObject.getLong("size")*1024*1024*1024;
 
         return new VolumeMO(name, id, wwn, allocType, capacity);
     }
@@ -46,8 +46,8 @@ class StoragePoolMOBuilder {
         String name = jsonObject.getString("name");
         String id = jsonObject.getString("id");
         POOL_TYPE type = (jsonObject.getString("storageType").equals("block")) ? POOL_TYPE.BLOCK : POOL_TYPE.FILE;
-        long totalCapacity = jsonObject.getLong("totalCapacity");
-        long freeCapacity = jsonObject.getLong("freeCapacity");
+        long totalCapacity = jsonObject.getLong("totalCapacity")*1024*1024*1024;
+        long freeCapacity = jsonObject.getLong("freeCapacity")*1024*1024*1024;
 
         return new StoragePoolMO(name, id, type, totalCapacity, freeCapacity);
     }
@@ -75,12 +75,14 @@ public class OpenSDS extends Storage {
     }
 
     public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
-        JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
+        // convert capacity from Bytes to GB
+    	capacity = capacity/(1024*1024*1024);
+    	JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
         return VolumeMOBuilder.build(volume);
     }
 
     public void deleteVolume(String volumeId) throws Exception {
-        client.deleteVolume(volumeId);
+       // client.deleteVolume(volumeId);
     }
 
     public List<VolumeMO> listVolumes() throws Exception {

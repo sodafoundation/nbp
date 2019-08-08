@@ -31,6 +31,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -50,6 +51,7 @@ public class Request {
     protected CloseableHttpClient client;
     protected RequestHandler handler;
     protected HashMap<String, String> headers;
+    protected Header responseHeaders[];
 
     public Request(String ip, int port, RequestHandler handler) throws Exception {
         this.ip = ip;
@@ -99,6 +101,7 @@ public class Request {
 
         HttpResponse response = this.client.execute(req);
         int responseCode = response.getStatusLine().getStatusCode();
+        this.responseHeaders = response.getAllHeaders();
 
         if (responseCode >= 300) {
             String reason = response.getStatusLine().getReasonPhrase();
@@ -129,5 +132,8 @@ public class Request {
     public Object delete(String url) throws Exception {
         HttpDelete httpDelete = new HttpDelete(this.url + url);
         return call(httpDelete);
+    }
+    public Header[] getResponseHeaders() {
+    	return this.responseHeaders; 
     }
 }

@@ -59,7 +59,6 @@
         <unjar src="${lib}/httpclient-4.5.9.jar" dest="${CLASSES}"/>
         <unjar src="${lib}/httpcore-4.4.11.jar" dest="${CLASSES}"/>
         <unjar src="${lib}/json-20180813.jar" dest="${CLASSES}"/>
-        <unjar src="${lib}/openstack4j-3.2.0.jar" dest="${CLASSES}"/>
         <delete dir="{CLASSES}/META-INF" description="delete the third META-INF"/>
         <delete dir="${BUILD_DIR}/classes/mozilla" description="delete the useless information"/>
 

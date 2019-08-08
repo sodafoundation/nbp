@@ -14,6 +14,7 @@
 
 package org.opensds.vmware.ngc.adapters.opensds;
 
+import org.apache.http.Header;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.json.JSONException;
@@ -24,9 +25,6 @@ import org.opensds.vmware.ngc.common.Request;
 import org.opensds.vmware.ngc.exceptions.NotAuthorizedException;
 import org.opensds.vmware.ngc.models.ALLOC_TYPE;
 
-import org.openstack4j.api.OSClient.OSClientV3;
-import org.openstack4j.model.common.Identifier;
-import org.openstack4j.openstack.OSFactory;
 
 class RestClient {
     class Handler implements Request.RequestHandler {
@@ -48,8 +46,7 @@ class RestClient {
     }
 
     private Request request;
-    private OSClientV3 osClient;
-
+    
     private int getErrorCode(JSONObject response) {
         return (int) response.getLong("code");
     }
@@ -67,42 +64,66 @@ class RestClient {
         }
         return true;
     }
-
-    void login(String ip, int port, String user, String password) throws Exception {
-        if(this.osClient != null) {
-            logout();
-        }
-
-        if (this.request != null) {
-            this.request.close();
-        }
-
-        Request request = new Request(ip, port, new Handler());
-        request.setHeaders("Content-Type", "application/json");
-
-        String endPoint = String.format("http://%s:80/identity/v3", ip);
-        OSClientV3 osClient = OSFactory.builderV3()
-                .endpoint(endPoint)
-                .credentials(user, password, Identifier.byId("default"))
-                .scopeToProject(Identifier.byName(user), Identifier.byName("Default"))
-                .authenticate();
-        String tenantId = "adminTenant";
-        request.setUrl(String.format("http://%s:%d/v1beta/%s", ip, port,tenantId));
-        request.setHeaders("X-Auth-Token", osClient.getToken().getId());
-
-        this.osClient = osClient;
-        this.request = request;
+    private String getAuthToken(Header[] headers) 
+    {
+    	for (Header header : headers) {
+    		if(header.getName().equals("X-Subject-Token"))
+    		{
+    			return header.getValue();
+    		}
+     	}
+    	return null;
     }
+
+	void login(String ip, int port, String user, String password) throws Exception {
+		JSONObject requestData = new JSONObject();
+		JSONObject userField = new JSONObject();
+		JSONObject domainField = new JSONObject();
+		JSONObject passwdField = new JSONObject();
+		JSONObject identityField = new JSONObject();
+		JSONArray passwdArray = new JSONArray();
+		JSONObject authField = new JSONObject();
+		JSONObject scopeField = new JSONObject();
+		JSONObject projectField = new JSONObject();
+		// create post body required for login
+		domainField.put("id", "default");
+		userField.put("name", "admin");
+		userField.put("password", password);
+		userField.put("domain", domainField);
+		passwdField.put("user", userField);
+		passwdArray.put("password");
+		identityField.put("methods", passwdArray);
+		identityField.put("password", passwdField);
+		authField.put("identity", identityField);
+		projectField.put("name", "admin");
+		projectField.put("domain", domainField);
+		scopeField.put("project", projectField);
+		authField.put("scope", scopeField);
+		requestData.put("auth", authField);
+		// prepare post request identity token service
+		Request request = new Request(ip, port, new Handler());
+		request.setHeaders("Content-Type", "application/json");
+		this.request = request;
+		request.setUrl(String.format("http://%s/identity/v3", ip));
+		request.post("/auth/tokens", requestData);
+		// get Headers and select Auth Token
+		Header[] headers = request.getResponseHeaders();
+		String token = getAuthToken(headers);
+		//set default request parameters
+		request.setHeaders("Content-Type", "application/json");
+		String tenantId = "adminTenant";
+		request.setUrl(String.format("http://%s:%d/v1beta/%s", ip, port, tenantId));
+		request.setHeaders("X-Auth-Token", token);
+		this.request = request;
+		
+	}
 
     void logout() {
         try {
-            osClient.identity().tokens().delete(osClient.getToken().getId());
-            request.delete("/identity/v3");
-            request.close();
+             request.close();
         } catch (Exception e) {
             // Ignore any exception here
         } finally {
-            osClient = null;
             request = null;
         }
     }
@@ -160,5 +181,11 @@ class RestClient {
     JSONObject getStoragePool(String poolId) throws Exception {
 
         return (JSONObject)request.get(String.format("/pools/%s", poolId));
+    }
+    public static void main( String[] args ) throws Exception
+    {
+    	RestClient client= new RestClient();
+    	client.login("192.168.20.159", 50040, "admin", "opensds@123");
+    	
     }
 }
