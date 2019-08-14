@@ -162,8 +162,9 @@ class RestClient {
             volumeUrl = String.format("/block/volumes");
         }
         JSONArray response = (JSONArray)request.get(volumeUrl);
-        if (response.isEmpty()) {
-            return null;
+        if(response.isEmpty()) {
+            String msg = String.format("List Volumes error: No Volumes Found");
+            throw new Exception(msg);
         }
 
         return response;
@@ -171,8 +172,9 @@ class RestClient {
 
     JSONArray listStoragePools() throws Exception {
         JSONArray response = (JSONArray)request.get("/pools");
-        if (response.isEmpty()) {
-            return null;
+        if(response.isEmpty()) {
+             String msg = String.format("List Storage Pools error: No Pools Found");
+               throw new Exception(msg);
         }
 
         return response;
@@ -180,12 +182,69 @@ class RestClient {
 
     JSONObject getStoragePool(String poolId) throws Exception {
 
-        return (JSONObject)request.get(String.format("/pools/%s", poolId));
+        JSONObject response = (JSONObject)request.get(String.format("/pools/%s", poolId));
+        if (fail(response)) {
+            String msg = String.format("List Storage Pool %s error %d: %s",
+                    poolId, getErrorCode(response), getErrorMessage(response));
+            throw new Exception(msg);
+        }
+        return response;
     }
-    public static void main( String[] args ) throws Exception
-    {
-    	RestClient client= new RestClient();
-    	client.login("192.168.20.159", 50040, "admin", "opensds@123");
-    	
+
+    JSONObject attachVolume(String volumeId, String initiator, String initiatorIp) throws Exception {
+        JSONObject requestData = new JSONObject();
+        JSONObject hostInfo = new JSONObject();
+        requestData.put("volumeId", volumeId);
+        hostInfo.put("initiator", initiator);
+        hostInfo.put("ip", initiatorIp);
+        requestData.put("hostInfo", hostInfo);
+
+        JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
+
+        if (fail(response)) {
+            String msg = String.format("Attach volume %s error %d: %s",
+                    volumeId, getErrorCode(response), getErrorMessage(response));
+            throw new Exception(msg);
+        }
+        return response;
+    }
+
+    JSONObject detachVolume(String volumeId) throws Exception {
+        JSONArray response = (JSONArray)request.get("/block/attachments");
+        String attachmentId = "";
+
+        for(Object o: response) {
+            if(o instanceof JSONObject) {
+                JSONObject attachment = (JSONObject)o;
+                String volId = (String) attachment.get("volumeId");
+                if(volumeId.equals(volId)) {
+                    attachmentId = (String) attachment.get("id");
+                    break;
+                }
+            }
+        }
+        if(response.isEmpty() || attachmentId.isEmpty()) {
+         String msg = String.format("Detach volume %s error: No Attachment Found",
+                    volumeId);
+            throw new Exception(msg);
+        }
+
+        JSONObject responseDelete = (JSONObject)request.delete(String.format("/block/attachments/%s", attachmentId));
+        if (fail(responseDelete)) {
+            String msg = String.format("Detach volume %s error %d: %s",
+                    volumeId, getErrorCode(responseDelete), getErrorMessage(responseDelete));
+            throw new Exception(msg);
+        }
+
+        JSONObject requestData = new JSONObject();
+        requestData.put("status", "available");
+        JSONObject responsePut = (JSONObject)request.put(String.format("/block/volumes/%s", volumeId), requestData);
+
+        if (fail(responsePut)) {
+            String msg = String.format("Detach volume %s error %d: %s",
+                    volumeId, getErrorCode(responsePut), getErrorMessage(responsePut));
+            throw new Exception(msg);
+        }
+        return responseDelete;
     }
 }

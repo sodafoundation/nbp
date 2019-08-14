@@ -71,7 +71,7 @@ public class OpenSDS extends Storage {
     }
 
     public StorageMO getDeviceInfo() throws Exception {
-        return new StorageMO(name, "v1", "", "Available", "OpenSDS");
+        return new StorageMO("OpenSDS", "v1", "", "Available", "OpenSDS");
     }
 
     public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
@@ -133,8 +133,10 @@ public class OpenSDS extends Storage {
     }
 
     public void attachVolume(String volumeId, ConnectMO connect) throws Exception {
+        client.attachVolume(volumeId, connect.iscsiInitiator, connect.initiatorIp);
     }
 
     public void detachVolume(String volumeId, ConnectMO connect) throws Exception {
+        client.detachVolume(volumeId);
     }
 }

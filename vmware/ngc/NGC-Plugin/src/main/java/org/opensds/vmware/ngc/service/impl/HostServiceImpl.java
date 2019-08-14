@@ -160,6 +160,7 @@ public class HostServiceImpl extends VimCommonServiceImpl implements HostService
                         createHostName(hostMo, serverInfo),
                         HOST_OS_TYPE.ESXI,
                         ((StorageHostIscsiInitiator)iscsiInitiaor.get()).getIqn(),
+                        ((StorageHostIscsiInitiator)iscsiInitiaor.get()).getIp(),
                         wwqnList.toArray(new String[wwqnList.size()]),
                         ATTACH_MODE.RW,
                         ATTACH_PROTOCOL.ISCSI
@@ -322,6 +323,10 @@ public class HostServiceImpl extends VimCommonServiceImpl implements HostService
         List<StorageHostInitiator> initiatorList = new ArrayList<>();
         HostConfigInfo configInfo = getHostConfigInfo(hostMo, serverInfo);
         List<HostHostBusAdapter> hostBusAdapters = configInfo.getStorageDevice().getHostBusAdapter();
+        List<HostVirtualNic> listNics = configInfo.getNetwork().getVnic();
+        String hostIp = listNics.get(0).getSpec().getIp().getIpAddress();
+        logger.info(String.format("Virtual Nic IP is %s.", hostIp));
+
         for (HostHostBusAdapter adapter : hostBusAdapters) {
             StorageHostInitiator initiator;
             if (adapter instanceof HostInternetScsiHba) {
@@ -329,6 +334,7 @@ public class HostServiceImpl extends VimCommonServiceImpl implements HostService
                 HostInternetScsiHba iscsiHba = (HostInternetScsiHba) adapter;
                 initiator.setHbaType(ISCSI);
                 ((StorageHostIscsiInitiator) initiator).setIqn(iscsiHba.getIScsiName());
+                ((StorageHostIscsiInitiator) initiator).setIp(hostIp);
                 initiatorList.add(initiator);
             } else if (adapter instanceof HostFibreChannelHba) {
                 initiator = new StorageHostScsiInitiator();
