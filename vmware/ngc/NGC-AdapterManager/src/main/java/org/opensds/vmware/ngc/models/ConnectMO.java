@@ -18,6 +18,7 @@ public class ConnectMO {
     public String name;
     public HOST_OS_TYPE osType;
     public String iscsiInitiator;
+    public String initiatorIp;
     public String[] fcInitiators;
     public ATTACH_MODE attachMode;
     public ATTACH_PROTOCOL attachProtocol;
@@ -25,12 +26,14 @@ public class ConnectMO {
     public ConnectMO(String name,
                      HOST_OS_TYPE osType,
                      String iscsiInitiator,
+                     String initiatorIp,
                      String[] fcInitiators,
                      ATTACH_MODE attachMode,
                      ATTACH_PROTOCOL attachProtocol) {
         this.name = name;
         this.osType = osType;
         this.iscsiInitiator = iscsiInitiator;
+        this.initiatorIp = initiatorIp;
         this.fcInitiators = fcInitiators;
         this.attachMode = attachMode;
         this.attachProtocol = attachProtocol;
