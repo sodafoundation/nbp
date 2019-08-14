@@ -24,6 +24,9 @@ import org.json.JSONArray;
 import org.opensds.vmware.ngc.common.Request;
 import org.opensds.vmware.ngc.exceptions.NotAuthorizedException;
 import org.opensds.vmware.ngc.models.ALLOC_TYPE;
+import org.opensds.vmware.ngc.models.StorageMO;
+
+import static org.opensds.vmware.ngc.adapters.opensds.Constants.*;
 
 
 class RestClient {
@@ -46,6 +49,7 @@ class RestClient {
     }
 
     private Request request;
+    private StorageMO storage;
     
     private int getErrorCode(JSONObject response) {
         return (int) response.getLong("code");
@@ -86,7 +90,7 @@ class RestClient {
 		JSONObject scopeField = new JSONObject();
 		JSONObject projectField = new JSONObject();
 		// create post body required for login
-		domainField.put("id", "default");
+		domainField.put("id", OPENSDS_DOMAIN.getValue());
 		userField.put("name", user);
 		userField.put("password", password);
 		userField.put("domain", domainField);
@@ -95,27 +99,33 @@ class RestClient {
 		identityField.put("methods", passwdArray);
 		identityField.put("password", passwdField);
 		authField.put("identity", identityField);
-		projectField.put("name", "admin");
+		projectField.put("name", OPENSDS_TENANT.getValue());
 		projectField.put("domain", domainField);
 		scopeField.put("project", projectField);
 		authField.put("scope", scopeField);
 		requestData.put("auth", authField);
 		// prepare post request identity token service
 		Request request = new Request(ip, port, new Handler());
+		//set default request parameters
 		request.setHeaders("Content-Type", "application/json");
-		this.request = request;
 		request.setUrl(String.format("http://%s/identity/v3", ip));
-		request.post("/auth/tokens", requestData);
+
+		JSONObject response = (JSONObject)request.post("/auth/tokens", requestData);
+		if (fail(response)) {
+			String msg = String.format("Login User %s error %d: %s",
+					user, getErrorCode(response), getErrorMessage(response));
+			throw new Exception(msg);
+		}
 		// get Headers and select Auth Token
 		Header[] headers = request.getResponseHeaders();
 		String token = getAuthToken(headers);
-		//set default request parameters
-		request.setHeaders("Content-Type", "application/json");
-		String tenantId = "adminTenant";
-		request.setUrl(String.format("http://%s:%d/v1beta/%s", ip, port, tenantId));
+
+		String tenantId = response.getJSONObject("token").getJSONObject("project").getString("id");
 		request.setHeaders("X-Auth-Token", token);
 		this.request = request;
+		findDeviceInfo(ip, port);
 		
+		this.request.setUrl(String.format("http://%s:%d/%s/%s", ip, port, storage.model, tenantId));
 	}
 
     void logout() {
@@ -128,12 +138,30 @@ class RestClient {
         }
     }
 
-    JSONObject createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    void findDeviceInfo(String ip, int port) throws Exception {
+	    request.setUrl(String.format("http://%s:%d/v1beta", ip, port));
+	    JSONObject response = (JSONObject)request.get(String.format("/"));
+	    if (fail(response)) {
+            String msg = String.format("OpenSDS Device Info error %d: %s",
+                    getErrorCode(response), getErrorMessage(response));
+            throw new Exception(msg);
+        }
+	    storage = new StorageMO(OPENSDS_STORAGENAME.getValue(), response.getString("name"),
+	    "", response.getString("status"), OPENSDS_VENDOR.getValue());
+    }
+
+    StorageMO getDeviceInfo() {
+        return storage;
+    }
+
+    JSONObject createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("name", name);
-        requestData.put("Description", "Test Volume Creation");
         requestData.put("size", capacity);
-        requestData.put("AvailabilityZone", "default");
+        requestData.put("description", description);
+        String availabilityZone = OPENSDS_AVAILABILITYZONE.getValue();
+		if(!availabilityZone.isEmpty())
+			requestData.put("availabilityZone", availabilityZone);
 
         JSONObject response = (JSONObject)request.post("/block/volumes", requestData);
 
@@ -237,7 +265,7 @@ class RestClient {
         }
 
         JSONObject requestData = new JSONObject();
-        requestData.put("status", "available");
+        requestData.put("status", VOLUME_STATUS.AVAILABLE.getValue());
         JSONObject responsePut = (JSONObject)request.put(String.format("/block/volumes/%s", volumeId), requestData);
 
         if (fail(responsePut)) {

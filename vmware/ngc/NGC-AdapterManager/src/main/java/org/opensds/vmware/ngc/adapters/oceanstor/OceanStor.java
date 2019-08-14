@@ -197,7 +197,7 @@ public class OceanStor extends Storage {
         return new StorageMO(name, model, sn, status,"Huawei");
     }
 
-    public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    public VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
         return VolumeMOBuilder.build(volume);
     }

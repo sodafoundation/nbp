@@ -14,20 +14,8 @@
 
 package org.opensds.vmware.ngc.adapters.opensds;
 
+import java.util.Properties;
 
-enum ERROR_CODE {
-    VOLUME_NOT_EXIST(1077936859);
-
-    private long value;
-
-    private ERROR_CODE(long v) {
-        this.value = v;
-    }
-
-    public long getValue() {
-        return this.value;
-    }
-}
  enum UNIT_TYPE {
 
     /**
@@ -72,5 +60,52 @@ enum ERROR_CODE {
     {
         return this.scale;
     }
+}
 
+public enum Constants {
+	OPENSDS_TENANT,
+	OPENSDS_DOMAIN,
+	OPENSDS_AVAILABILITYZONE,
+	OPENSDS_STORAGENAME,
+	OPENSDS_VENDOR;
+
+	private static final String PATH = "/constants.properties";
+
+	private static Properties properties;
+
+	private String value;
+
+	private void init() {
+		if (properties == null) {
+			properties = new Properties();
+			try {
+				properties.load(this.getClass().getResourceAsStream(PATH));
+			}
+			catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		value = (String) properties.get(this.toString());
+	}
+
+	public String getValue() {
+		if (value == null) {
+			init();
+		}
+		return value;
+	}
+}
+
+enum VOLUME_STATUS {
+	AVAILABLE("available"), INUSE("inUse"), ERROR("error");
+
+	private String value;
+
+	private VOLUME_STATUS(String v) {
+		this.value = v;
+	}
+
+	public String getValue() {
+		return this.value;
+	}
 }

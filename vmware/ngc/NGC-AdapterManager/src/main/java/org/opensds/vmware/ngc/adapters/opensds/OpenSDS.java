@@ -15,19 +15,12 @@
 package org.opensds.vmware.ngc.adapters.opensds;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.entity.StringEntity;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.json.JSONArray;
-import org.opensds.vmware.ngc.common.Request;
+import org.json.JSONObject;
 import org.opensds.vmware.ngc.common.Storage;
 import org.opensds.vmware.ngc.models.*;
-
 
 class VolumeMOBuilder {
     static public VolumeMO build(JSONObject jsonObject) {
@@ -71,18 +64,18 @@ public class OpenSDS extends Storage {
     }
 
     public StorageMO getDeviceInfo() throws Exception {
-        return new StorageMO("OpenSDS", "v1", "", "Available", "OpenSDS");
+        return client.getDeviceInfo();
     }
 
-    public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    public VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         // convert capacity from Bytes to GB
     	capacity = capacity/(UNIT_TYPE.GB.getUnit());
-    	JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
+        JSONObject volume = client.createVolume(name, description, allocType, capacity, poolId);
         return VolumeMOBuilder.build(volume);
     }
 
     public void deleteVolume(String volumeId) throws Exception {
-       // client.deleteVolume(volumeId);
+        client.deleteVolume(volumeId);
     }
 
     public List<VolumeMO> listVolumes() throws Exception {
