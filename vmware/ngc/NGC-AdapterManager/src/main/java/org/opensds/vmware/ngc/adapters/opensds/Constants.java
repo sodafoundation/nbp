@@ -14,6 +14,7 @@
 
 package org.opensds.vmware.ngc.adapters.opensds;
 
+
 enum ERROR_CODE {
     VOLUME_NOT_EXIST(1077936859);
 
@@ -26,4 +27,52 @@ enum ERROR_CODE {
     public long getValue() {
         return this.value;
     }
+}
+ enum UNIT_TYPE {
+
+    /**
+     * byte
+     */
+    Byte(1L),
+
+    /**
+     * KB
+     */
+    KB(1024L),
+
+    /**
+     * MB
+     */
+    MB(1024L * 1024L),
+
+    /**
+     * GB
+     */
+    GB(1024L * 1024L * 1024L),
+
+    /**
+     * TB
+     */
+    TB(1024L * 1024L * 1024L * 1024L),
+
+    /**
+     * PB
+     */
+    PB(1024L * 1024L * 1024L * 1024L * 1024L);
+
+    private long scale;
+
+    UNIT_TYPE(long scale)
+    {
+        this.scale = scale;
+    }
+
+
+    public long getUnit()
+    {
+        return this.scale;
+    }
+
+
+    
 }

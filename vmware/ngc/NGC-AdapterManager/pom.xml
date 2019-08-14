@@ -29,13 +29,7 @@
 	    <artifactId>json</artifactId>
 	    <version>20180813</version>
 	</dependency>
-	<!-- https://mvnrepository.com/artifact/org.pacesys/openstack4j -->
 	<dependency>
-	    <groupId>org.pacesys</groupId>
-	    <artifactId>openstack4j</artifactId>
-	    <version>3.2.0</version>
-	</dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
