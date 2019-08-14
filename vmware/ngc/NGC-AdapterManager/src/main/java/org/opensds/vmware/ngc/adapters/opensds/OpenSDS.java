@@ -71,7 +71,7 @@ public class OpenSDS extends Storage {
     }
 
     public StorageMO getDeviceInfo() throws Exception {
-        return new StorageMO("OpenSDS", "v1", "", "Available", "OpenSDS");
+        return client.getDeviceInfo();
     }
 
     public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
@@ -82,7 +82,7 @@ public class OpenSDS extends Storage {
     }
 
     public void deleteVolume(String volumeId) throws Exception {
-       // client.deleteVolume(volumeId);
+        client.deleteVolume(volumeId);
     }
 
     public List<VolumeMO> listVolumes() throws Exception {
