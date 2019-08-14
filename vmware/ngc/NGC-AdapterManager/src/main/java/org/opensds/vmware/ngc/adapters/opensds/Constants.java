@@ -15,19 +15,6 @@
 package org.opensds.vmware.ngc.adapters.opensds;
 
 
-enum ERROR_CODE {
-    VOLUME_NOT_EXIST(1077936859);
-
-    private long value;
-
-    private ERROR_CODE(long v) {
-        this.value = v;
-    }
-
-    public long getValue() {
-        return this.value;
-    }
-}
  enum UNIT_TYPE {
 
     /**

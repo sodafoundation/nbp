@@ -17,6 +17,7 @@ package org.opensds.vmware.ngc.model.initiator;
 public class StorageHostIscsiInitiator extends StorageHostInitiator {
 
     private String iqn;
+    private String ip;
 
     public String getIqn()
     {
@@ -27,4 +28,12 @@ public class StorageHostIscsiInitiator extends StorageHostInitiator {
     {
         this.iqn = iqn;
     }
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
 }
