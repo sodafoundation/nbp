@@ -87,7 +87,7 @@ class RestClient {
 		JSONObject projectField = new JSONObject();
 		// create post body required for login
 		domainField.put("id", "default");
-		userField.put("name", "admin");
+		userField.put("name", user);
 		userField.put("password", password);
 		userField.put("domain", domainField);
 		passwdField.put("user", userField);
