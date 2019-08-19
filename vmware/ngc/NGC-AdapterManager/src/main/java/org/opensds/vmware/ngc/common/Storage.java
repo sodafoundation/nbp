@@ -28,7 +28,7 @@ public abstract class Storage {
     public abstract void login(String ip, int port, String user, String password) throws Exception;
     public abstract void logout();
     public abstract StorageMO getDeviceInfo() throws Exception;
-    public abstract VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception;
+    public abstract VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception;
     public abstract void deleteVolume(String volumeId) throws Exception;
     public abstract List<VolumeMO> listVolumes() throws Exception;
     public abstract List<VolumeMO> listVolumes(String poolId) throws Exception;

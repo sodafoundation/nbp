@@ -66,6 +66,7 @@ public class CreateLunTask extends AbstractTask implements TaskExecution {
             createTaskList(taskInfoList, TaskInfoConst.Type.TASK_CREATE_LUN);
             volumeMO = storage.createVolume(
                     datastoreInfo.getLunName(),
+                    datastoreInfo.getLunDescription(),
                     datastoreInfo.getAllocType().equals("thin")? ALLOC_TYPE.THIN :  ALLOC_TYPE.THICK,
                     CapacityUtil.converGBToByte(datastoreInfo.getLunCapacity()),
                     datastoreInfo.getStoragePoolId());

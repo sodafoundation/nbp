@@ -154,11 +154,14 @@ class RestClient {
         return storage;
     }
 
-    JSONObject createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    JSONObject createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("name", name);
         requestData.put("size", capacity);
-        requestData.put("AvailabilityZone", OPENSDS_AVAILABILITYZONE.getValue());
+        requestData.put("description", description);
+        String availabilityZone = OPENSDS_AVAILABILITYZONE.getValue();
+		if(!availabilityZone.isEmpty())
+			requestData.put("availabilityZone", availabilityZone);
 
         JSONObject response = (JSONObject)request.post("/block/volumes", requestData);
 
