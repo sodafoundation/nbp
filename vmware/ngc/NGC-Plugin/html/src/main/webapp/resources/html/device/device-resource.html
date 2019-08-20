@@ -271,9 +271,7 @@ select{
 	var pageSize_lun = 100;
 	var divhead_id_pool = "bak_pool";
 	var divhead_id_lun = "bak_lun";
-	//设备序列号
 	var deviceId = "";
-	//存储池ID
 	var storagePoolId = "";
 	var filterType_pool = "";
 	var filterValue_pool = "";
@@ -297,7 +295,7 @@ select{
 		makeHelp();
 		deviceId = getParam("objectId");
 
-		//在css加载完成之前,每隔10ms表格重新布局一次,直到达到理想效果
+		//Before the css loading is completed, re-lay the table every 10ms until the desired effect is achieved.
 		var interval = setInterval(function(){
 			if ($("#poolTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
 				changesize();
@@ -344,7 +342,6 @@ function initSelect() {
 	});
 }
 	function bundleEvent() {
-		//以下为存储池的绑定事件
 		$("#filterType_pool").unbind(); 
 		$("#filterType_pool").bind("change", function(){
 			$("#nameId_filterValue_pool").val("");
@@ -391,7 +388,6 @@ function initSelect() {
 				$("#btnRefreshPool").prop("disabled","");
 				$("#btnSearchPool").prop("disabled", "");
 			}, 500);
-			//点击过查询后,刷新操作才会过滤查询
 			filterType_pool = $("#filterType_pool").val();
 			if(filterType_pool == "NAME" || filterType_pool == "ID")
 			{
@@ -446,7 +442,6 @@ function initSelect() {
 			loadPools();
 		});
 		
-		//以下为Lun的绑定事件
 		$("#filterType_lun").unbind(); 
 		$("#filterType_lun").bind("change", function(){
 			$("#nameId_filterValue_lun").val("");
@@ -504,7 +499,7 @@ function initSelect() {
 				$("#btnRefreshLun").prop("disabled","");
 				$("#btnSearchLun").prop("disabled", "");
 			}, 500);
-			//点击过查询后,刷新操作才会过滤查询
+
 			filterType_lun = $("#filterType_lun").val();
 			if(filterType_lun == "NAME" || filterType_lun == "ID")
 			{
@@ -574,7 +569,7 @@ function initSelect() {
 		$("#nameId_filterValue_lunDiv").css("display", "block");
 		filterType_pool = $('#filterType_pool').val();
 		$("#filterType_lun").get(0).options[0].selected = true;
-		// 打开遮盖
+		
 		if ($("#poolTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
 			setTimeout(function(){
 				if (status != 1)
@@ -584,7 +579,7 @@ function initSelect() {
 				}
 			}, 30);
 		}
-		// 请求数据
+		// Request data
 		var url = url_pool + "count/" + deviceId + "?filterType=" + filterType_pool + "&filterValue=" + filterValue_pool + "&t=" + new Date();
 		$("#storagepoolTableHead").bigPage({
 			container : "pager1",
@@ -634,7 +629,7 @@ function initSelect() {
 		    dataUrl = ns.webContextPath + "/resources/html/device/fileSystemList.html"
 		}
 
-		// 请求数据
+		// Request data
 		$("#storagelunTableHead").bigPage({
 			container : "pager2",
 			ajaxData : {
@@ -698,7 +693,6 @@ function initSelect() {
 		var divMainHeight = $("#poolMain").height();
 		var divMainWidth = $("#poolMain").width();
 
-		//24--按钮行高,24--分页,35/16--表头,10--padding,20--pool/lun线高,1,2--border
 		var height = divMainHeight - (24 * 2 + 35 * 2 + 9 * 2 + 20 * 2 + 18);
 		var poolHeight = height / 2;
 		var lunHeight = height - poolHeight;
@@ -710,7 +704,7 @@ function initSelect() {
 		$("#lunTableDiv").height(lunHeight);
 		$("#divLoadingLun").height(lunHeight - 35 - 4);
 		$("#tabFrame_lun").height(lunHeight - 35 - 4 - 24);
-		//2--左右border
+
 		$("#divLoadingPool").width(divMainWidth - 2);
 		$("#divLoadingLun").width(divMainWidth - 2);
 		
@@ -725,9 +719,6 @@ function initSelect() {
 		var h1 = $("#storagepoolTable").height();
 
 		if (h <= h1) {
-			//有滚动条
-			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
-			//修改表头宽度
 			var div = $("#poolTableDiv").width() - $("#storagepoolTable").width();
 			$("#poolheadDiv").css("display", "block");
 			$("#poolheadDiv").width(div);
@@ -743,9 +734,6 @@ function initSelect() {
 		var h = $("#storagelunTableDiv").height();
 		var h1 = $("#storagelunTable").height();
 		if (h <= h1) {
-			//有滚动条
-			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
-			//修改表头宽度
 			var div = $("#lunTableDiv").width() - $("#storagelunTable").width();
 			$("#lunheadDiv").css("display", "block");
 			$("#lunheadDiv").width(div);
@@ -758,17 +746,14 @@ function initSelect() {
 		}
 	}
 	var JPlaceHolder = {
-   	    //检测
    	    _check : function(){
    	        return 'placeholder' in document.createElement('input');
    	    },
-   	    //初始化
    	    init : function(){
    	        if(!this._check()){
    	            this.fix();
    	        }
    	    },
-   	    //修复
    	    fix : function(){
    	        jQuery(':input[placeholder]').each(function(index, element) {
    	            var self = $(this), txt = self.attr('placeholder');
@@ -800,13 +785,10 @@ function initSelect() {
 
 <script type="text/javascript">
 	  var Table;
-   // var iframe01 = document.getElementById("tabFrame_pool");
-   // var Table =  window.frames["iframe01"].document.getElementById("storagepoolTable");
-    var tTD; //用来存储当前更改宽度的Table Cell,避免快速移动鼠标的问题
+    var tTD; 
     var TableHead = document.getElementById("storagepoolTableHead");
     var iframe01;
     var Table;
-		//添加表头拖动拉长缩短
 	    for (j = 0; j < TableHead.rows[0].cells.length; j++) {
         TableHead.rows[0].cells[j].onmousedown = function () {
                iframe01 = document.getElementById("tabFrame_pool");
@@ -817,9 +799,6 @@ function initSelect() {
                 tTD.oldX = event.x;
                 tTD.oldWidth = tTD.offsetWidth;
             }
-//记录Table宽度
-//table = tTD; while (table.tagName != ‘TABLE') table = table.parentElement;
-//tTD.tableWidth = table.offsetWidth;
         };
         TableHead.rows[0].cells[j].onmouseup = function () {
 
@@ -842,25 +821,20 @@ function initSelect() {
             else
                 this.style.cursor = 'default';
             if (tTD == undefined) tTD = this;
-//调整宽度
+
             if (tTD.mouseDown != null && tTD.mouseDown == true) {
                 tTD.style.cursor = 'default';
                 if (tTD.oldWidth + (event.x - tTD.oldX) > 0)
                     tTD.width = tTD.oldWidth + (event.x - tTD.oldX);
-//调整列宽
                 tTD.style.width = tTD.width;
                 tTD.style.cursor = 'col-resize';
-//调整该列中的每个Cell
+
                 TableHead = tTD;
-               // Table=$("#storagepoolTable");
 
                 while (Table.tagName != 'TABLE') Table = Table.parentElement;
                 for (j = 0; j < Table.rows.length; j++) {
                     Table.rows[j].cells[tTD.cellIndex].width = tTD.width;
                 }
-//调整整个表
-//table.width = tTD.tableWidth + (tTD.offsetWidth – tTD.oldWidth);
-//table.style.width = table.width;
             }
         };
     }

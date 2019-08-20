@@ -1,5 +1,5 @@
 /**
- * 获取提交Value
+ * add Value
  * @return
  */
 function getAllDocumentData() {
@@ -15,7 +15,7 @@ function getAllDocumentData() {
 }
 
 /**
- * 验证
+ * validate data
  * @param doms
  * @return
  */
@@ -30,7 +30,7 @@ function validateForm(doms){
 			{
 				domName = changeToLowercase(domName);
 			}
-			//验证必填
+			// required
 			var req = $("#"+dom).prop("required");
 			if (jqDom.prop("required") == "true") {
 				if (!val || val == "") {
@@ -42,7 +42,7 @@ function validateForm(doms){
 					return false;
 				}
 			}
-			//验证密码长度
+			//Verify password length
 			if (jqDom.prop("passwordLength") == "true") {
 				if (val.length < 8) {
 					var info = pageParam.validate.passwordLength;
@@ -55,7 +55,7 @@ function validateForm(doms){
 					return false;
 				}
 			}
-			//验证用户名长度
+			//Verify username length
 			if(jqDom.prop("usernameLength") == "true")
 			{
 				if(val.length > 32) {
@@ -64,7 +64,7 @@ function validateForm(doms){
 					return false;
 				}
 			}
-			//验证特殊字符(字母中文或_开头,由数字、字母、中文、_和-组成,且不能为空)
+			//Verify special characters
 			if (jqDom.prop("special") == "true") {
 				if (!checkSpecialCharacters(val)) {
 					var info = pageParam.validate.special.replace("[xxx]", domName)
@@ -73,7 +73,7 @@ function validateForm(doms){
 					return false;
 				}
 			}
-			//验证IP
+			//checkIP
 			if (jqDom.prop("ip") == "true") {
 				var ipStatus = checkIP(val);
 				if (jqDom.prop("required") == "false"){
@@ -126,7 +126,7 @@ function validateForm(doms){
 	}
 }
 
-//首字母转换为小写,未考虑缩略语等不做转换
+//The first letter is converted to lowercase, no abbreviations are considered, etc.
 function changeToLowercase(word)
 {
 	var wordSplitStr = " "; 
@@ -143,11 +143,11 @@ function changeToLowercase(word)
 }
 
 /**
- * 检查IP
+ * check IP
  * @param ip
- * @return 0:不是正确的IP
- * 			1:IP格式不对（首位只能为1到223的整数,其余部分只能为0到255的整数,且首位不能为127末位不能为0.）
- * 			2:验证通过
+ * @return 0 not right IP
+ * 			1:The IP format is wrong.
+ * 			2:verificed passed
  */
 function checkIP(ip) { 
 	var exp = /^((\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5]))$/;
@@ -168,7 +168,7 @@ function checkIP(ip) {
 
 
 /**
- * 检查特殊字符（字母中文或_开头,由数字、字母、中文、_和-组成,且不能为空）
+ * Check special characters (letter Chinese or _ at the beginning, consisting of numbers, letters, Chinese, _, and -, and cannot be empty)
  * @param val
  * @return
  */
@@ -178,7 +178,7 @@ function checkSpecialCharacters(val) {
 }
 
 /**
- * 检查特殊字符2（只能由数字、字母和特殊字符组成.）
+ * Check special characters2（Can only consist of numbers, letters, and special characters.）
  * @param val
  * @return
  */
@@ -188,7 +188,7 @@ function checkSpecialCharacters2(val) {
 }
 
 /**
- * 多选框列表的初始化
+ * init the check box 
  * @return
  */
 function init() {
@@ -208,38 +208,38 @@ function makeHelp()
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188722.html";
 			}else if(url=="2"){//LUNs
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188723.html";
-			}else if(url=="3"){//目标器
+			}else if(url=="3"){//target
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188724.html";
-			}else if(url=="4"){//虚拟机裸映射磁盘
+			}else if(url=="4"){//rdm
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188728.html";
-			}else if(url=="5"){//虚拟机磁盘
+			}else if(url=="5"){//vmdk
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188727.html";
-			}else if(url=="start"){//快速入门
+			}else if(url=="start"){//help start
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188709.html";
-			}else if(url=="mange_device"){//管理设备
+			}else if(url=="mange_device"){//device manager
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188712.html";
-			}else if(url=="discovery"){//发现设备
+			}else if(url=="discovery"){//find device
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188713.html";
-			}else if(url=="systeminfo"){//系统信息
+			}else if(url=="systeminfo"){//system info
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188717.html";
-			}else if(url=="pool"){//存储池信息
+			}else if(url=="pool"){//pool info
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188718.html";
-			}else if(url=="alarminfo"){//告警信息
+			}else if(url=="alarminfo"){//alarm info 
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188719.html";
 			}else if(url=="datastore_create"){
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188729.html";
-			}else if(url=="Mount"){//挂载
+			}else if(url=="Mount"){//mount 
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188730.html";
-			}else if(url=="unmount"){//卸载
+			}else if(url=="unmount"){//unmout 
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188731.html";
-			}else if(url=="snapshot"){//备份还原
+			}else if(url=="snapshot"){//shpshot backup
 				patt = "/web_help/en/en-us_bookmap_0041188707.htm#en-us_topic_0041188732.html";
 			}
 			window.open("/vsphere-client/opensds" + patt);
 	});
 	}
 /**
- * 设置页面多选框,rowNum为table行数
+ * set the checkbox for page
  * @param rowNum
  * @return
  */
@@ -248,7 +248,7 @@ function setPageCheckBox(rowNum){
 	var child = pageParam.chk.child;
 	var btn = parent.$("#btnDel");
 	parent.$("#" + all).unbind("click");
-	parent.$("#" + all).click(function(){
+	parent.$("#" + all).click(function(){ 
 		var chkAll = this.checked;
 		if (chkAll) {
 			parent.$("#btnDel").prop("disabled", "");
@@ -296,7 +296,7 @@ function setPageCheckBox(rowNum){
 }
 
 /**
- * 获取多选框选中的行的deviceId
+ * get deviceid from device ID
  * @return
  */
 function getDeviceIds()
@@ -311,7 +311,7 @@ function getDeviceIds()
 	return deviceIds;
 }
 /**
- * 获取多选框选中的行的LunId
+ * get lun id from check boxs
  * @return
  */
 function getMountLunIds()
@@ -326,7 +326,7 @@ function getMountLunIds()
 	return deviceIds;
 }
 /**
- * 获取多选框选中的行的LunName
+ * get lun name form mount luns
  * @return
  */
 function getMountLunNames()
@@ -341,7 +341,7 @@ function getMountLunNames()
 	return deviceIds;
 }
 /**
- * 获取多选框选中的行的LunWWN
+ * get lun wwn 
  * @return
  */
 function getMountLunWWNs()
@@ -356,7 +356,7 @@ function getMountLunWWNs()
 	return deviceIds;
 }
 /**
- * 获取多选框选中的行的deviceId
+ * get deviceIds
  * @return
  */
 function getMountLunDeviceIds()
@@ -372,31 +372,31 @@ function getMountLunDeviceIds()
 }
 function shieldCombinationKey() {
 	$(document).keydown(function () {
-		//屏蔽alt+'->'或'<-'
+		//shield alt+'->' or '<-'
         if ((window.event.altKey) && (window.event.keyCode == 37 || window.event.keyCode == 39)) {
             event.returnValue=false;  
         }
-		//屏蔽F5
+		//shield F5
 		if (event.keyCode==116) {
 			event.keyCode = 0;
 			event.returnValue = false;
 		}
-		//屏蔽 Ctrl+n  
+		//shield Ctrl+n  
 		if ((event.ctrlKey)&&(event.keyCode==78)){  
 			event.keyCode=0; 
 			event.returnValue=false;  
 		}  
-		//屏蔽 shift+F10
+		//shield shift+F10
 		if ((event.shiftKey)&&(event.keyCode==121)){  
 			event.keyCode=0; 
 			event.returnValue=false;  
 		}  
-		//屏蔽ctrl+c
+		//shield ctrl+c
 		if ((event.ctrlKey)&&(event.keyCode==67)){  
 			event.keyCode=0; 
 			event.returnValue=false;  
 		}  
-		//屏幕ctrl+v
+		//shield ctrl+v
 		if ((event.ctrlKey)&&(event.keyCode==86)){  
 			event.keyCode=0; 
 			event.returnValue=false;  

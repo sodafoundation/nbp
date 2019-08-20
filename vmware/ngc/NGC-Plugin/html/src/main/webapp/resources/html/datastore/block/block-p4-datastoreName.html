@@ -79,7 +79,6 @@ height:37px;
             parent.isDsNameRepeat = false;
             $("#error").css("display","none");
             for (var index = 0; index < this.value.length; index++) {
-                //[a-zA-Z0-9-_.\u4e00-\u9fa5] 这个是可用支持中文和小数点
                 if (!(/^[a-zA-Z0-9-_]$/.test(this.value.charAt(index)))) {
                     this.value = this.value.substring(0, index);
                 }

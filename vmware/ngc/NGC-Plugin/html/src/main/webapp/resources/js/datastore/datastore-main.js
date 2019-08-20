@@ -101,7 +101,6 @@ $(document).ready(function() {
 	// makeHelp();
 	// shieldCombinationKey();
 	$("#preStep").click(function() {
-		// 如果按钮被灰化,直接返回
 		if(this.disabled == true) {
 			return;
 		}
@@ -111,7 +110,6 @@ $(document).ready(function() {
 			handlePreAction("#dg_top_" + currentPage, "#dg_top_" + curPage, "#dg_main_left_" + currentPage, "#dg_main_left_" + curPage,"#img_main_left_"+currentPage,"#img_main_left_"+curPage);
 		} else {
 			if(datastoreType == "lunDatastore") {
-			    //创建lun时的页面控制 data:2018-12-10 author:qwx615620
 			    if (isCreateDatastore==false && currentPage == 5){
 			        handlePreAction("#dg_top_" + 7, "#dg_top_" + 4, "#dg_main_left_" + 7, "#dg_main_left_" + 4,"#img_main_left_"+7,"#img_main_left_"+4);
 			    } else {
