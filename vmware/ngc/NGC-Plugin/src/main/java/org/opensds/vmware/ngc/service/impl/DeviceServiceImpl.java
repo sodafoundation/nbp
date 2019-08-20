@@ -43,7 +43,7 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Autowired
     private VimObjectReferenceService vimObjectReferenceService;
-    @Autowired
+    @Autowired(required=false)
     private DeviceRepository deviceRepository;
 
     private static final String ERROR = "error";

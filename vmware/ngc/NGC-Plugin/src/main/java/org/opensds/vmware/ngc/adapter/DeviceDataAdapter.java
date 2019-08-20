@@ -41,12 +41,12 @@ public class DeviceDataAdapter implements DataProviderAdapter {
     @Autowired
     private VimObjectReferenceService objectRefService;
 
-    @Autowired
+    @Autowired(required=false)
     private DeviceRepository deviceRepository;
 
 
     @Override
-    public Response getData(RequestSpec request) {
+	public Response getData(RequestSpec request) {
         if (request == null) {
             throw new IllegalArgumentException("request must be non-null.");
         }
