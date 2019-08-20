@@ -46,11 +46,11 @@ public class DataAccessController  {
     private DataService dataService;
     @Autowired
     private ObjectReferenceService objectReferenceService;
-    @Autowired
+    @Autowired(required=false)
     private HostService hostService;
-    @Autowired
+    @Autowired(required=false)
     private DataCenterService dataCenterService;
-    @Autowired
+    @Autowired(required=false)
     private DeviceService deviceService;
 
     public DataAccessController() {

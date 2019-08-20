@@ -32,7 +32,7 @@ public class DatastoreController {
 
     private static final Log logger = LogFactory.getLog(DatastoreController.class);
 
-    @Autowired
+    @Autowired(required=false)
     private DatastoreService datastoreService;
 
 

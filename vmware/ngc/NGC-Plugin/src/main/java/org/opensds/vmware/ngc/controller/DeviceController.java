@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 public class DeviceController  {
     private static final Log logger = LogFactory.getLog(DeviceController.class);
-    @Autowired
+    @Autowired(required=false)
     private DeviceService deviceService;
     @Autowired
     private VimObjectReferenceService objectReferenceService;
