@@ -36,11 +36,6 @@ function isEmpObj(obj){
 	return obj == 'undefined' || obj == null || obj == "";
 }
 
-/**
- * isAsy默认true,type默认GET,dataType默认json,timeout默认30min
- * @param url 资源地址
- * @param data 查询参数
- */
 function req(url,data){
 	this.isAsy = true;
 	this.type = "GET";
@@ -50,18 +45,12 @@ function req(url,data){
 	//增大请求的超时时间
 	this.timeout = 30 * 60 * 1000;
 }
-/**
- * @param suc是处理成功的方法
- * @param err处理失败的方法
- */
+
 function handler(suc,err){
 	this.doSuccess = suc;
 	this.doError = err;
 }
-/**
- * @param req 请求信息对象
- * @param handler响应处理器
- */
+
 function sendMsg(req,handler){
     if(req.contentType == undefined || req.contentType == ""){
 		contentType = 'application/json';

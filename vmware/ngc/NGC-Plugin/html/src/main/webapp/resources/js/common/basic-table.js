@@ -1,4 +1,3 @@
-/* 下面是使表格能够全选的代码 **************************/
 function TabModel() {
 	this.thSel = "";
 	this.tbSel = "";
@@ -18,11 +17,11 @@ function initTabModel(tabModel){
 function bindEvent(tabModel){
 	$(tabModel.thSel).click(function(){
 		$.debug("selAll click 前的selCount: "+tabModel.selCount);
-		if($(this).prop("checked")){// 全选
+		if($(this).prop("checked")){
 			$(tbSel).prop("checked",true);
 			tabModel.selCount = tabModel.rowCount;
 		}
-		else{// 全不选
+		else{
 			$(tbSel).prop("checked",false);
 			tabModel.selCount = 0;
 		}
@@ -33,7 +32,7 @@ function bindEvent(tabModel){
 		if($(this).prop("checked")){
 			$.debug($(this).prop("id")+"选中....");
 			tabModel.selCount++;
-			if(tabModel.rowCount == tabModel.selCount)//不全选-->全选
+			if(tabModel.rowCount == tabModel.selCount)
 			{
 				$(thSel).prop("checked",true);
 			}
@@ -41,7 +40,7 @@ function bindEvent(tabModel){
 		else{
 			$.debug($(this).prop("id")+"取消....");
 			tabModel.selCount--;
-			if(tabModel.rowCount > tabModel.selCount)//全选-->不全选
+			if(tabModel.rowCount > tabModel.selCount)
 			{
 				$(thSel).prop("checked",false);
 			}
@@ -49,26 +48,21 @@ function bindEvent(tabModel){
 		$.debug("click 后的selCount: "+tabModel.selCount);
 	});
 }
-/* 下面是ROM转换  ************************/
-/**
- * @param objs 是要填充的对象数组,请在外部做非空校验
- * @param cloId 要克隆的行id选择器
- * @param tbsel 表格体的选择器
- */
+
 function a2t(tbsel,cloId,objs){
 	for ( var i = 0; i < objs.length; i++) {
-		var $lunRow = $(cloId).clone(true);// 克隆行
+		var $lunRow = $(cloId).clone(true);
 		$lunRow.attr("id", cloId + i);
-		obj2rel($lunRow, objs[i]);// 赋值
-		$(tbsel).append($lunRow);// 追加行
-		$lunRow.show();// 显示行
+		obj2rel($lunRow, objs[i]);
+		$(tbsel).append($lunRow);
+		$lunRow.show();
 	}
 }
-/** 将obj属性值填充给tr,对于属性顺序和td顺序无要求,但是是通过name属性值来匹配bean属性 **/
+
 function obj2rel($tr, obj) {
 	$tr.children("td").each(function(num, td) {
 		if(!isEmpObj($(td).attr("name"))){
-		    // chg 20181101 : ie11 compatibility bug
+		    //  ie11 compatibility bug
 		    if(isEmpObj( obj[$(td).attr("name")]) && obj[$(td).attr("name")] != false)
             {
             	td.innerHTML = "";
@@ -82,11 +76,11 @@ function obj2rel($tr, obj) {
 		}
 	});
 }
-/** table记录转为对象数组 */
+
 function t2a(tableId) {
 	var objList = new Array();
 	$(tableId).find("tbody tr").each(function(nun, tr) {
-		var length = $(tr).find(":checked").length;// 判断是否有选中行
+		var length = $(tr).find(":checked").length;
 		if (length > 0) {
 			var obj = r2o(tr);
 			objList.push(obj);
@@ -94,11 +88,11 @@ function t2a(tableId) {
 	});
 	return objList;
 }
-/** row转为obj */
+
 function r2o(tr) {
 	var obj = new Object();
 	$(tr).children("td").each(
-			function(num, td) {// 将每一行
+			function(num, td) {
 				if (!isEmpObj($(td).attr("name"))) {
 					obj[$(td).attr("name")] = td.innerHTML;
 				}

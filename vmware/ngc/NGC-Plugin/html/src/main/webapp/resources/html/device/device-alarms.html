@@ -119,7 +119,6 @@ table thead tr th, table tbody tr td {
 	var divhead_id = "bak";
 	var filterType = "";
 	var filterValue = "";
-	//设备序列号
 	var deviceId = "";
 
 	var rowIndex = 0;
@@ -134,7 +133,6 @@ table thead tr th, table tbody tr td {
     $(document).ready(function() {
 		makeHelp();
 		deviceId = getParam("objectId");
-		//在css加载完成之前,每隔10ms表格重新布局一次,直到达到理想效果
 		var interval = setInterval(function(){
 			if ($("#alarmTableDiv").height() > 0) {
 				changesize();
@@ -176,7 +174,7 @@ table thead tr th, table tbody tr td {
 				}
 			}, 30);
 		}
-		// 请求数据
+
 		$("#storagealarmTab").bigPage({
 			container : "pager1",
 			ajaxData : {
@@ -218,7 +216,6 @@ table thead tr th, table tbody tr td {
 		var tableFrameHeight = divMainHeight - 22 - 35 - 2 - 18;//
 		$("#alarmTableDiv").height(tableFrameHeight);
 		$("#alarmTableDiv").width(divMainWidth - 2);
-		//忙等框.
 		$("#divLoadingAlarm").width(divMainWidth - 4);
 		$("#divLoadingAlarm").height(tableFrameHeight - 35 - 2);
 		$("#diverrorAlarm").width(divMainWidth - 2);
@@ -230,9 +227,6 @@ table thead tr th, table tbody tr td {
 		var h = $("#alarmTableDiv").height();
 		var h1 = $("#storagealarmTab").height();
 		if (h <= h1) {
-			//有滚动条
-			//$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
-			//修改表头宽度
 			var div = $("#alarmTableDiv").width() - $("#storagealarmTab").width();
 			$("#alarmheadDiv").css("display", "block");
 			$("#alarmheadDiv").width(div);
@@ -242,17 +236,14 @@ table thead tr th, table tbody tr td {
 		}
 	}
 	var JPlaceHolder = {
-	    //检测
 	    _check : function(){
 	        return 'placeholder' in document.createElement('input');
 	    },
-	    //初始化
 	    init : function(){
 	        if(!this._check()){
 	            this.fix();
 	        }
 	    },
-	    //修复
 	    fix : function(){
 	        jQuery(':input[placeholder]').each(function(index, element) {
 	            var self = $(this), txt = self.attr('placeholder');
@@ -283,7 +274,6 @@ table thead tr th, table tbody tr td {
 			$("#btnSearch").click();
 		});
 		
-		// 给告警搜索下拉框绑定change事件
 		$("#filterType_alarm").unbind(); 
 		$("#filterType_alarm").bind("change", function(){
 			if($('#filterType_alarm').val() == 'LEVEL')
@@ -299,7 +289,7 @@ table thead tr th, table tbody tr td {
 				$("#alarmsource_filterValue_alarm").get(0).options[0].selected = true; 
 			}
 		});
-		// 存储池查询按钮绑定点击事件
+
 		$("#btnSearch").bind("click", function(){
 			$("#divLoadingAlarm").show();
 			$("#diverrorAlarm").hide();
@@ -309,7 +299,7 @@ table thead tr th, table tbody tr td {
 				$("#btnRefreshalarm").prop("disabled","");
 				$("#btnSearch").prop("disabled","");
 			}, 500);
-			// 点击过查询后,刷新操作才会过滤查询
+
 			filterType = $("#filterType_alarm").val();
 			if(filterType == "ALARMSOURCE" )
 			{

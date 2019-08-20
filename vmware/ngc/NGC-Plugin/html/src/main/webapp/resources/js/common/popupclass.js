@@ -1,5 +1,4 @@
-﻿//为数组Array添加一个push方法
-  //为数组的末尾加入一个对象
+﻿
   if(!Array.prototype.push)
   {
       Array.prototype.push=function ()
@@ -13,27 +12,22 @@
       }
  };
  
- //对G函数的参数进行处理
+
  function G()
  {
-    //定义一个数组用来保存参数
-     var elements=new Array();
-    //循环分析G中参数的内容
-   for(var i=0;i<arguments.length;i++)
+	 var elements=new Array();
+	 for(var i=0;i<arguments.length;i++)
     {
         var element=arguments[i];
         
-        //如果参数的类型为string,则获得以这个参数为ID的对象
         if(typeof element=='string')
          {
              element=document.getElementById(element);
          }
-         //如果参数的长度为1
          if(arguments.length==1)
         {
             return element;
        }
-        //将对象加入到数组的末尾
         elements.push(element);
      };
      return elements;
@@ -48,7 +42,6 @@ Function.prototype.bind=function (object)
      };
  };
  
- //绑定事件
 Function.prototype.bindAsEventListener=function (object)
  {
      var __method=this;
@@ -199,10 +192,6 @@ var Class=function ()
     return _class;
 };
 
-
-//改变百度空间的最顶端和最低端的div的id值
-//如果flag为begin,则为弹出状态的id值
-//如果flag为end,则为非弹出状态的id值,即原本的id值
 function space(flag)
 {
     if(flag=="begin")
@@ -226,60 +215,33 @@ function space(flag)
  };
 
 
-
-//**************************************************Popup类弹出窗口***************************************************************
-
 var Popup=new Class();
 
 Popup.prototype={ 
-        //弹出窗口中框架的name名称
+
        iframeIdName:'ifr_popup',
        initialize:function (config)
         {
-           //---------------弹出对话框的配置信息------------------
-           //contentType:设置内容区域为什么类型:1为另外一个html文件 | 2为自定义html字符串 | 3为confirm对话框 | 4为alert警告对话框
-           //isHaveTitle:是否显示标题栏
-            //scrollType:设置或获取对话框中的框架是否可被滚动
-            //isBackgroundCanClick:弹出对话框后,是否允许蒙布后的所有元素被点击.也就是如果为false的话,就会有全屏蒙布,如果为true的话,就会去掉全屏蒙布
-            //isSupportDraging:是否支持拖拽
-           //isShowShadow:是否现实阴影
-            //isReloadOnClose:是否刷新页面,并关闭对话框
-            //width:宽度
-            //height:高度
+          
            this.config=Object.extend({contentType:1,isHaveTitle:true,scrollType:'yes',isBackgroundCanClick:false,isSupportDraging:true,isShowShadow:true,isReloadOnClose:true,width:400,height:300},config||{});
             
-            //----------------对话框的参数值信息------------------------
-           //shadowWidth  :阴影的宽度
-            //contentUrl   :html链接页面
-           //contentHtml  :html内容
-           //callBack     :回调的函数名
-            //parameter    :回调的函数名中传的参数
-            //confirmCon   :对话框内容
-            //alertCon     :警告框内容
-           //someHiddenTag:页面中需要隐藏的元素列表,以逗号分割
-            //someHiddenEle:需要隐藏的元素的ID列表(和someToHidden的区别是:someHiddenEle是通过getElementById,而someToHidden是通过getElementByTagName,里面放的是对象)
-           //overlay      :
-            //coverOpacity :蒙布的透明值
+           
             this.info={shadowWidth:4,title:"",contentUrl:"",contentHtml:"",callBack:null,parameter:null,confirmCon:"",imagePath:"",alertCon:"",someHiddenTag:"select,object,embed",someHiddenEle:"",overlay:0,coverOpacity:40};
            
-           //设置颜色cColor:蒙布的背景, bColor:内容区域的背景, tColor:标题栏和边框的颜色,wColor:字体的背景色
             this.color={cColor:"#EEEEEE",bColor:"#FFFFFF",tColor:"#9c9c9c",wColor:"white"};
             
             this.dropClass=null;
             
-           //用来放置隐藏了的对象列表,在hiddenTag方法中第一次调用
             this.someToHidden=[];
            
-            //如果没有标题栏则不支持拖拽
+ 
             if(!this.config.isHaveTitle)
             {
                 this.config.isSupportDraging=false;
             }
-           //初始化
            this.iniBuild();
         },
         
-        //设置配置信息和参数内容
        setContent:function (arrt,val)
        {
            if(val!='')
@@ -326,30 +288,28 @@ Popup.prototype={
         },      
       build:function ()
         { 
-            //设置全屏蒙布的z-index
             var baseZIndex=10001+this.info.overlay*10;
-            //设置蒙布上的弹出窗口的z-index(比蒙布的z-index高2个值)
            var showZIndex=baseZIndex;
             
-            //定义框架名称
+
             this.iframeIdName='ifr_popup'+this.info.overlay;
             
-            //设置图片的主路径
+
            var path=contextPath+"/image/";
             
-            //关闭按钮
+
            var close='<input type="image" id="dialogBoxClose'+this.config.popId+'" src="'+path+'icon_close.png" border="0" style="width: 15px; height: 15px;" title="'+pageParam.button.close+'"/>';
            
-            //使用滤镜设置对象的透明度
+
             var cB='filter: alpha(opacity='+this.info.coverOpacity+');opacity:'+this.info.coverOpacity/100+';';
-            
-            //设置全屏的蒙布
+			
+
            var cover='<div id="dialogBoxBG'+this.config.popId+'" style="position:absolute;top:0px;left:0px;width:100%;height:100%;z-index:'+baseZIndex+';'+cB+'background-color:'+this.color.cColor+';display:none;"></div>';
             
-            //设置弹出的主窗口设置
+
            var mainBox='<div id="dialogBoxContent'+this.config.popId+'" style="display:none;z-index:'+showZIndex+';position:relative;width:'+this.config.width+'px;"><table style="border:1px solid '+this.color.tColor+';margin-top:0px;" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="'+this.color.bColor+'">';
            
-           //设置窗口标题栏
+           
             if(this.config.isHaveTitle)
             {
                 mainBox+='<tr style="height: 27px;" bgcolor="'+this.color.tColor+'"><td><table style="-moz-user-select:none;height:24px; margin-top:0px;" width="100%" border="0" cellpadding="0" cellspacing="0" ><tr>'+'<td><div style="width:10px;"></div></td><td id="dialogBoxTitle'+this.config.popId+'" style="color:'+this.color.wColor+';font-size:12px;font-weight:bold;width:100%;">'+this.info.title+'&nbsp;</td>'+'<td id="dialogClose'+this.config.popId+'" style="width: 1px;" align="center" valign="middle">'+close+'</td><td><div style="width:10px;"></div></td></tr></table></td></tr>';
@@ -359,10 +319,10 @@ Popup.prototype={
                mainBox+='<tr height="10"><td align="right">'+close+'</td></tr>';
            };
            
-            //设置窗口主内容区域
+           
             mainBox+='<tr style="height:'+this.config.height+'px" valign="top"><td id="dialogBody'+this.config.popId+'" style="position:relative;"></td></tr></table></div>'+'<div id="dialogBoxShadow'+this.config.popId+'" style="display:none;z-index:'+baseZIndex+';"></div>';
             
-            //如果有蒙布
+           
           if(!this.config.isBackgroundCanClick)
            {
                 G('dialogCase'+this.config.popId).innerHTML=cover+mainBox;
@@ -376,7 +336,7 @@ Popup.prototype={
            
            Event.observe(G('dialogBoxClose'+this.config.popId),"click",this.reset.bindAsEventListener(this),false);
             
-           //如果支持拖动,则设置拖动处理
+          
             if(this.config.isSupportDraging)
             {
                 dropClass=new Dragdrop(this.config.width,this.config.height,this.info.shadowWidth,this.config.isSupportDraging,this.config.contentType,this.config.popId);
@@ -389,8 +349,6 @@ Popup.prototype={
         
        lastBuild:function ()
        {
-            //设置confim对话框的具体内容
-        	//根据confirm判断image
         	var okWidth = 'width="55px"';
         	var cancelWidth = '';
         	if(lang.indexOf("zh") >= 0)
@@ -400,7 +358,7 @@ Popup.prototype={
         	var confirm='<div style="width:100%;height:100%;text-align:center;"><div style="height:auto;"><div style="font-size:12px;color:#000000;"><table width="100%" cellspacing="0" cellpadding="0" style="vertical-align: middle;text-align:left;height:'+(parseInt(this.config.height)-37)+'px;"><tr><td style="padding-left: 30px;padding-right: 10px;width: 41px;"><img src="'+this.info.imagePath+'"/></td><td style="padding-right: 30px;">'+this.info.confirmCon+'</td></tr></table></div></div><div style="width:100%;height:1px;float:left;margin-top:-1px;border-top:1px solid #BDBDBD"></div><div style="height: 28px;padding-top: 7px">'+
         				'<table cellpadding="0" cellspacing="0"><tr><td '+okWidth+' style="padding-right: 8px"><div class="plugin_button_main" id="dialogOk'+this.config.popId+'"><div class="plugin_button_div button_left"></div><div class="plugin_button_div button_center">'+pageParam.button.ok+'</div><div class="plugin_button_div button_right"></div></div></td>'+
         				'<td '+cancelWidth+'><div class="plugin_button_main" id="dialogCancel'+this.config.popId+'"><div class="plugin_button_div button_left"></div><div class="plugin_button_div button_center">'+pageParam.button.cancel+'</div><div class="plugin_button_div button_right"></div></div></td></tr></table></div></div>';
-            //设置alert对话框的具体内容
+           
             var innerDivHeight = parseInt(this.config.height)-45;
             var confirm1='<div style="width:100%;height:100%;text-align:center;"><div style="margin:20px 20px 0 20px;font-size:12px;line-height:16px;color:#000000;height:'+(parseInt(this.config.height)-80)+'px;">'+this.info.confirmCon+'</div><div style="width:100%;height:5px;"><hr/></div><div style="line-height:50px"><input id="dialogOk'+this.config.popId+'" type="button" disabled="disabled" value=" '+pageParam.button.ok+' "/>&nbsp;<input id="dialogCancel'+this.config.popId+'" type="button" value=" '+pageParam.button.cancel+' "/></div></div>';
          
@@ -409,7 +367,7 @@ Popup.prototype={
            var baseZIndex=10001+this.info.overlay*10;
            var coverIfZIndex=baseZIndex+4;
             
-            //判断内容类型决定窗口的主内容区域应该显示什么
+            
            if(this.config.contentType==1)
             {
                 var openIframe="<iframe width='100%' style='height:"+this.config.height+"px' name='"+this.iframeIdName+"' id='"+this.iframeIdName+"' src='"+this.info.contentUrl+"' frameborder='0' scrolling='"+this.config.scrollType+"'></iframe>";
@@ -460,7 +418,7 @@ Popup.prototype={
             };
         },
         
-       //重新加载弹出窗口的高度和内容
+       
         reBuild:function ()
         {
             G('dialogBody'+this.config.popId).height=G('dialogBody'+this.config.popId).clientHeight;
@@ -469,16 +427,16 @@ Popup.prototype={
         
         show:function ()
         {
-            //隐藏一些在info中制定的元素
+            
             this.hiddenSome();
-            //弹出窗口居中
+            
             this.middle();
-            //设置阴影
+            
             if(this.config.isShowShadow)
                 this.shadow();
         },
         
-        //设置回调函数
+        
         forCallback:function ()
        {
             return this.info.callBack(this.info.parameter);
@@ -489,7 +447,7 @@ Popup.prototype={
         	return this.info.closeCallBack();
         },
         
-        //为弹出窗口设置阴影
+        
         shadow:function ()
        {
             var oShadow=G('dialogBoxShadow'+this.config.popId);
@@ -502,7 +460,7 @@ Popup.prototype={
             oShadow['style']['width']=oDialog.offsetWidth;oShadow['style']['height']=oDialog.offsetHeight;
         },
        
-        //让弹出窗口居中显示
+        
         middle:function ()
         {
             if(!this.config.isBackgroundCanClick)
@@ -524,7 +482,7 @@ Popup.prototype={
             oDialog['style']['top']=sTop;
         },
        
-        //刷新页面,并关闭当前弹出窗口
+       
         reset:function ()
        {
             if(this.config.isReloadOnClose)
@@ -534,10 +492,8 @@ Popup.prototype={
           this.close();
       },
        
-      //指定弹窗的焦点
       focus:function()
       {
-      	//判断内容类型决定窗口的默认焦点应该在哪
           if(this.config.contentType==3)
            {
         	  $("#dialogCancel"+this.config.popId).attr("tabindex",0);
@@ -549,8 +505,7 @@ Popup.prototype={
           	   G('dialogYES'+this.config.popId).focus();
            }
       },
-      
-        //关闭当前弹出窗口
+
         close:function ()
         {
     	    var fucusId = document.activeElement.id;
@@ -566,10 +521,10 @@ Popup.prototype={
             this.showSome();
         },
         
-        //隐藏someHiddenTag和someHiddenEle中的所有元素
+
        hiddenSome:function ()
         {
-            //隐藏someHiddenTag中的所有元素
+
            var tag=this.info.someHiddenTag.split(",");
            if(tag.length==1&&tag[0]=="")
             {
@@ -579,7 +534,7 @@ Popup.prototype={
             {
               this.hiddenTag(tag[i]);
           };
-            //隐藏someHiddenEle中的所有逗号分割的ID的元素
+  
             var ids=this.info.someHiddenEle.split(",");
            if(ids.length==1&&ids[0]=="")
                 ids.length=0;
@@ -587,11 +542,11 @@ Popup.prototype={
             {
                 this.hiddenEle(ids[i]);
            };
-           //改变顶部和底部的div的id值为弹出状态的id值,祥见space的实现
+    
            space("begin");
        },
        
-       //隐藏一组元素
+   
        hiddenTag:function (tagName)
        {
            var ele=document.getElementsByTagName(tagName);
@@ -607,7 +562,7 @@ Popup.prototype={
             };
          },
         
-      //隐藏单个元素
+      
         hiddenEle:function (id)
        {
            var ele=document.getElementById(id);
@@ -618,8 +573,7 @@ Popup.prototype={
             }
          },
          
-         //将someToHidden中保存的隐藏元素全部显示
-         //并恢复顶部和底部的div为原来的id值
+       
         showSome:function ()
          {
             for(var i=0;i<this.someToHidden.length;i++)
@@ -632,7 +586,7 @@ Popup.prototype={
 
 
 
-//********************************************************Dragdrop类(拖拽动作)************************************************************
+//********************************************************Dragdrop class************************************************************
 
 var Dragdrop=new Class();
 
