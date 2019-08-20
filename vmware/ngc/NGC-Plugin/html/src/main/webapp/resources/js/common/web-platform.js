@@ -50,7 +50,6 @@ if (!org_opensds_storage_devices) {
     // The web context path to use for server requests
     // (same as the Web-ContextPath value in the plugin's MANIFEST.MF)
 
-    //fix: IN IE 11 , getClientType has the emerge error "不能执行已释放 Script 的代码";
     try{
         org_opensds_storage_devices.webContextPath = WEB_PLATFORM.getRootPath() + "/opensds";
     }
@@ -60,7 +59,6 @@ if (!org_opensds_storage_devices) {
     }
 
 
-    //fix: IN IE 11 , getClientType has the emerge error "不能执行已释放 Script 的代码";
     if (!WEB_PLATFORM){
         WEB_PLATFORM = self.top.document.getElementById("container_app");
     }
