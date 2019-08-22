@@ -46,6 +46,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
         try {
             File file = new File(DEVICE_DATA_FILE_PATH);
             if (!file.exists()) {
+				logger.error("Can not find the device_data file!");
                 return;
             }
             objectInputStream = new ObjectInputStream(new FileInputStream(file));
@@ -167,7 +168,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
         try {
             countDownLatch.await(5, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-
+			logger.error(e.getMessage());
         }
         executorService.shutdown();
     }

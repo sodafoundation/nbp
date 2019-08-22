@@ -52,7 +52,7 @@ table.tablesorter tbody td {
 	border-left:0px;
 	border-right:0px;
 }
-/*���α�����һ�е�border,����IE7��֧��:last-child��ʽ,�����ID��������*/
+
 #lastTd{
 	border-right: 0 none;
 }
