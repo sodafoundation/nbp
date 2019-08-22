@@ -25,15 +25,3 @@ Import-Package: javax.crypto,
  net.sf.cglib.proxy,
  net.sf.cglib.reflect,
  org.apache.commons.logging
-
-
-
-
-
-
-
-
-
-
-
-

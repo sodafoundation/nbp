@@ -59,10 +59,3 @@ Import-Package: org.opensds.vmware.ngc.controller,
  com.fasterxml.jackson.annotation,
  com.fasterxml.jackson.databind,
  com.fasterxml.jackson.core
-
-
-
-
-
-
-
