@@ -52,7 +52,7 @@ class RestClient {
         return error.getString("description");
     }
 
-    private boolean fail(JSONObject response) throws Exception {
+    private boolean isFailed(JSONObject response) throws Exception {
         long errorCode = getErrorCode(response);
         if (errorCode == -401) {
             throw new NotAuthorizedException(getErrorDescription(response));
@@ -76,7 +76,7 @@ class RestClient {
 
         JSONObject response = (JSONObject)request.post(
                 "/deviceManager/rest/xxxxx/sessions", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Login %s error %d: %s",
                     ip, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -115,7 +115,7 @@ class RestClient {
         }
 
         JSONObject response = (JSONObject)request.post("/lun", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create volume %s error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -131,7 +131,7 @@ class RestClient {
             return;
         }
 
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Delete volume %s error %d: %s",
                     volumeId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -147,7 +147,7 @@ class RestClient {
         }
 
         JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
-        if (fail(countResponse)) {
+        if (isFailed(countResponse)) {
             String msg = String.format("Get lun count error %d: %s",
                     getErrorCode(countResponse), getErrorDescription(countResponse));
             throw new Exception(msg);
@@ -167,7 +167,7 @@ class RestClient {
             }
 
             JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
-            if (fail(lunsResponse)) {
+            if (isFailed(lunsResponse)) {
                 String msg = String.format("Batch get luns error %d: %s",
                         getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
                 throw new Exception(msg);
@@ -188,7 +188,7 @@ class RestClient {
 
     JSONArray listStoragePools() throws Exception {
         JSONObject response = (JSONObject)request.get("/storagepool");
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get storage pools error %d: %s",
                     getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -203,7 +203,7 @@ class RestClient {
 
     JSONObject getStoragePool(String poolId) throws Exception {
         JSONObject response = (JSONObject)request.get(String.format("/storagepool/%s", poolId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get storage pool %s error %d: %s",
                     poolId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -215,7 +215,7 @@ class RestClient {
     private JSONObject getInitiator(String iniType, String initiator) throws Exception {
         String encoded = URLEncoder.encode(initiator.replace(":", "\\:"), "utf-8");
         JSONObject response = (JSONObject)request.get(String.format("/%s?filter=ID::%s", iniType, encoded));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get %s %s error %d: %s",
                     iniType, initiator, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -263,7 +263,7 @@ class RestClient {
         }
 
         JSONObject response = (JSONObject)request.post("/host", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create host %s error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -274,7 +274,7 @@ class RestClient {
 
     JSONObject getHostById(String id) throws Exception {
         JSONObject response = (JSONObject)request.get(String.format("/host/%s", id));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get host by ID %s error %d: %s",
                     id, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -286,7 +286,7 @@ class RestClient {
     JSONArray getHostsByLun(String lunId) throws Exception {
         JSONObject response = (JSONObject)request.get(
                 String.format("/host/associate?ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", lunId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get hosts by LUN ID %s error %d: %s",
                     lunId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -305,7 +305,7 @@ class RestClient {
         requestData.put("PARENTID", hostId);
 
         JSONObject response = (JSONObject)request.put(String.format("/%s/%s", type, initiator), requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Add initiator %s of type %s to host error %d: %s",
                     initiator, type, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -323,7 +323,7 @@ class RestClient {
     JSONArray getHostsByHostGroup(String hostGroupId) throws Exception {
         JSONObject response = (JSONObject)request.get(
                 String.format("/host/associate?ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s", hostGroupId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Batch query host in group %s error %d: %s",
                     hostGroupId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -341,7 +341,7 @@ class RestClient {
         requestData.put("NAME", name);
 
         JSONObject response = (JSONObject)request.post("/hostgroup", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create hostgroup %s error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -357,7 +357,7 @@ class RestClient {
         requestData.put("ASSOCIATEOBJID", hostId);
 
         JSONObject response = (JSONObject)request.post("/hostgroup/associate", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Associate host %s to hostgroup %s error %d: %s",
                     hostId,
                     hostGroupId,
@@ -370,7 +370,7 @@ class RestClient {
     JSONArray getHostGroupsByHost(String hostId) throws Exception {
         JSONObject response = (JSONObject)request.get(
                 String.format("/hostgroup/associate?ASSOCIATEOBJTYPE=21&ASSOCIATEOBJID=%s", hostId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Batch query hostgroup which host %s belongs to error %d: %s",
                     hostId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -388,7 +388,7 @@ class RestClient {
         requestData.put("NAME", name);
 
         JSONObject response = (JSONObject)request.post("/mappingview", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create mappingview %s error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -400,7 +400,7 @@ class RestClient {
     JSONArray getMappingViewsByHostGroup(String hostGroupId) throws Exception {
         JSONObject response = (JSONObject)request.get(
                 String.format("/mappingview/associate?ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s", hostGroupId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Batch query mappingview which hostgroup %s belongs to error %d: %s",
                     hostGroupId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -419,7 +419,7 @@ class RestClient {
         requestData.put("APPTYPE", 0);
 
         JSONObject response = (JSONObject)request.post("/lungroup", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create lungroup %s error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -431,7 +431,7 @@ class RestClient {
     JSONObject getLunGroupByMappingView(String mappingViewId) throws Exception {
         JSONObject response = (JSONObject)request.get(
                 String.format("/lungroup/associate?ASSOCIATEOBJTYPE=245&ASSOCIATEOBJID=%s", mappingViewId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Batch query lungroup associated to mappingview %s error %d: %s",
                     mappingViewId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -456,7 +456,7 @@ class RestClient {
         requestData.put("ASSOCIATEOBJID", lunId);
 
         JSONObject response = (JSONObject)request.post("/lungroup/associate", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Add lun %s to lungroup %s error %d: %s",
                     lunId,
                     lunGroupId,
@@ -469,7 +469,7 @@ class RestClient {
     void removeLunFromLunGroup(String lunId, String lunGroupId) throws Exception {
         JSONObject response = (JSONObject)request.delete(
                 String.format("/lungroup/associate?ID=%s&ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", lunGroupId, lunId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Remove lun %s from lungroup %s error %d: %s",
                     lunId,
                     lunGroupId,
@@ -486,7 +486,7 @@ class RestClient {
         requestData.put("ASSOCIATEOBJID", groupId);
 
         JSONObject response = (JSONObject)request.put("/mappingview/create_associate", requestData);
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Associate group %s to mappingview %s error %d: %s",
                     groupId,
                     mappingViewId,
@@ -499,7 +499,7 @@ class RestClient {
     JSONArray getLunGroupsByLun(String volumeId) throws Exception {
         JSONObject response = (JSONObject)this.request.get(
                 String.format("/lungroup/associate?ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", volumeId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get lungroup which lun %s belongs to error %d: %s",
                     volumeId, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -514,7 +514,7 @@ class RestClient {
 
     private JSONObject getObjectByName(String type, String name) throws Exception {
         JSONObject response = (JSONObject)request.get(String.format("/%s?filter=NAME::%s", type, name));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get %s by name %s error %d: %s",
                     type, name, getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
@@ -550,7 +550,7 @@ class RestClient {
 
     JSONObject getSystem() throws Exception {
         JSONObject response = (JSONObject)request.get("/system/");
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Get system info error %d: %s",
                     getErrorCode(response), getErrorDescription(response));
             throw new Exception(msg);
