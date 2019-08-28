@@ -168,7 +168,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
         try {
             countDownLatch.await(5, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-
+			logger.error(e.getMessage());
         }
         executorService.shutdown();
     }
