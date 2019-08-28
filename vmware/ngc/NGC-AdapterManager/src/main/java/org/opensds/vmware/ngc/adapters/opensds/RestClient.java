@@ -59,7 +59,7 @@ class RestClient {
         return response.getString("message");
     }
 
-    private boolean fail(JSONObject response) throws Exception {
+    private boolean isFailed(JSONObject response) throws Exception {
         if(!response.has("code"))
             return false;
         int errorCode = getErrorCode(response);
@@ -111,7 +111,7 @@ class RestClient {
 		request.setUrl(String.format("http://%s/identity/v3", ip));
 
 		JSONObject response = (JSONObject)request.post("/auth/tokens", requestData);
-		if (fail(response)) {
+		if (isFailed(response)) {
 			String msg = String.format("Login User %s error %d: %s",
 					user, getErrorCode(response), getErrorMessage(response));
 			throw new Exception(msg);
@@ -141,7 +141,7 @@ class RestClient {
     void findDeviceInfo(String ip, int port) throws Exception {
 	    request.setUrl(String.format("http://%s:%d/v1beta", ip, port));
 	    JSONObject response = (JSONObject)request.get(String.format("/"));
-	    if (fail(response)) {
+	    if (isFailed(response)) {
             String msg = String.format("OpenSDS Device Info error %d: %s",
                     getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
@@ -165,7 +165,7 @@ class RestClient {
 
         JSONObject response = (JSONObject)request.post("/block/volumes", requestData);
 
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Create volume %s error %d: %s",
                     name, getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
@@ -175,7 +175,7 @@ class RestClient {
 
     void deleteVolume(String volumeId) throws Exception {
         JSONObject response = (JSONObject)request.delete(String.format("/block/volumes/%s", volumeId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Delete volume %s error %d: %s",
                     volumeId, getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
@@ -211,7 +211,7 @@ class RestClient {
     JSONObject getStoragePool(String poolId) throws Exception {
 
         JSONObject response = (JSONObject)request.get(String.format("/pools/%s", poolId));
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("List Storage Pool %s error %d: %s",
                     poolId, getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
@@ -229,7 +229,7 @@ class RestClient {
 
         JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
 
-        if (fail(response)) {
+        if (isFailed(response)) {
             String msg = String.format("Attach volume %s error %d: %s",
                     volumeId, getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
@@ -258,7 +258,7 @@ class RestClient {
         }
 
         JSONObject responseDelete = (JSONObject)request.delete(String.format("/block/attachments/%s", attachmentId));
-        if (fail(responseDelete)) {
+        if (isFailed(responseDelete)) {
             String msg = String.format("Detach volume %s error %d: %s",
                     volumeId, getErrorCode(responseDelete), getErrorMessage(responseDelete));
             throw new Exception(msg);
@@ -268,7 +268,7 @@ class RestClient {
         requestData.put("status", VOLUME_STATUS.AVAILABLE.getValue());
         JSONObject responsePut = (JSONObject)request.put(String.format("/block/volumes/%s", volumeId), requestData);
 
-        if (fail(responsePut)) {
+        if (isFailed(responsePut)) {
             String msg = String.format("Detach volume %s error %d: %s",
                     volumeId, getErrorCode(responsePut), getErrorMessage(responsePut));
             throw new Exception(msg);

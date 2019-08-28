@@ -60,7 +60,7 @@
         <unjar src="${lib}/httpcore-4.4.11.jar" dest="${CLASSES}"/>
         <unjar src="${lib}/json-20180813.jar" dest="${CLASSES}"/>
         <delete dir="{CLASSES}/META-INF" description="delete the third META-INF"/>
-        <delete dir="${BUILD_DIR}/classes/mozilla" description="delete the useless information"/>
+        <delete dir="${BUILD_DIR}/classes/mozilla" description="delete the non-required information"/>
 
         <jar destfile="${BUILD_DIR}/${JAR_FILE}"
              manifest="${RES_DIR}/META-INF/MANIFEST.MF"

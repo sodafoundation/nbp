@@ -18,3 +18,6 @@ ant -buildfile build-java.xml
 echo step two....
 cd ../NGC-Plugin/makefile/
 ant -buildfile ngc_part0.xml
+echo step three....
+cd ../../ngc-register/
+mvn package

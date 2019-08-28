@@ -160,7 +160,7 @@ public class DeviceServiceImpl implements DeviceService {
             deviceInfo = deviceRepository.get(deviceId);
             if (deviceInfo != null) {
                 logger.info(String.format("DeviceInfo msg: %s!", deviceInfo.toString()));
-                Storage device = deviceRepository.getLoginedDeviceByIP(deviceInfo.ip);
+                Storage device = deviceRepository.getLoggedInDeviceByIP(deviceInfo.ip);
                 for (StoragePoolMO poolMO: device.listStoragePools()) {
                     if (poolMO.type == POOL_TYPE.BLOCK) {
                         StoragePoolInfo poolInfo = convertPoolMoToCommon(poolMO);
@@ -173,7 +173,7 @@ public class DeviceServiceImpl implements DeviceService {
             try {
                 if (e.getMessage().contains("unauthorized")) {
                     deviceRepository.update(deviceId, deviceInfo);
-                    Storage device = deviceRepository.getLoginedDeviceByIP(deviceInfo.ip);
+                    Storage device = deviceRepository.getLoggedInDeviceByIP(deviceInfo.ip);
                     for (StoragePoolMO poolMO: device.listStoragePools()) {
                         if (poolMO.type == POOL_TYPE.BLOCK) {
                             StoragePoolInfo poolInfo = convertPoolMoToCommon(poolMO);

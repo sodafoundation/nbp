@@ -93,7 +93,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
     }
 
     @Override
-    public Storage getLoginedDeviceByIP(String deviceIP) {
+    public Storage getLoggedInDeviceByIP(String deviceIP) {
         return LOGINED_DEVICE.get(deviceIP);
     }
 

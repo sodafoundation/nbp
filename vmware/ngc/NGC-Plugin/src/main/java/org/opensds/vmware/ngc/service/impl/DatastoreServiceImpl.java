@@ -54,7 +54,7 @@ public class DatastoreServiceImpl implements DatastoreService{
         ResultInfo resultInfo = new ResultInfo();
         if (datastoreInfo.getDeviceId() != null) {
             DeviceInfo deviceInfo = deviceRepository.get(datastoreInfo.getDeviceId());
-            storage = deviceRepository.getLoginedDeviceByIP(deviceInfo.ip);
+            storage = deviceRepository.getLoggedInDeviceByIP(deviceInfo.ip);
         }
         if (storage == null) {
             resultInfo.setMsg("The device is not exist.");
