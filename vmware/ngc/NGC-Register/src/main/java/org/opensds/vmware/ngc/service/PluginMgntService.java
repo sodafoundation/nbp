@@ -84,6 +84,7 @@ public class PluginMgntService {
             if (si.getExtensionManager().findExtension(pluginInfo.getPluginKey()) != null) {
                 return ErrorCode.ALREADY_REGISTER;
             }
+            // do register extension aciton
             result = regViservice.registerAction(si, localHostIp, pluginInfo);
             if (ErrorCode.SUCCESS.getErrodCode() != result.getErrodCode()) {
                 logger.error("The plugin register failed!");
@@ -100,13 +101,13 @@ public class PluginMgntService {
                 return ErrorCode.INVALID_LOGIN;
             }
             logger.error("Register plugin error, msg is " + ex.getMessage());
-            return ErrorCode.ALREADY_REGISTER;
+            return ErrorCode.CONNECT_FAIL;
         } catch (MalformedURLException ex) {
             logger.error("Can not create url for vCenter  " + vcInfo.getvCenterIp());
-            return ErrorCode.ALREADY_REGISTER;
+            return ErrorCode.CONNECT_FAIL;
         } catch (Exception ex) {
             logger.error("Write the register info error, msg is " + ex.getMessage());
-            return ErrorCode.ALREADY_REGISTER;
+            return ErrorCode.CONNECT_FAIL;
         }
     }
 
