@@ -21,6 +21,11 @@ public class VolumeMO {
     public ALLOC_TYPE allocType;
     public long capacity;
 
+    //add 0903
+    public long allocCapacity;
+    public StatusE status;
+    public String storagePoolId;
+
     public VolumeMO(String name, String id, String wwn, ALLOC_TYPE allocType, long capacity) {
         this.name = name;
         this.id = id;
@@ -28,4 +33,16 @@ public class VolumeMO {
         this.allocType = allocType;
         this.capacity = capacity;
     }
+
+    public static enum StatusE {
+
+        Normal(1),
+        Faulty(2);
+
+        private int value;
+        StatusE(int  value) {
+            this.value = value;
+        }
+    }
 }
+

@@ -12,21 +12,22 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-package org.opensds.vmware.ngc.exceptions;
+package org.opensds.vmware.ngc.models;
 
-public class HttpException extends Exception {
-    private long httpResponseCode;
+public class SnapshotMO {
+    public String name;
+    public String id;
+    public String healthStatus;
+    public long capacity;
+    public String parentID;
+    public String timeStamp;
 
-    public HttpException(long httpResponseCode, String message) {
-        super(message);
-        this.httpResponseCode = httpResponseCode;
-    }
-
-    public long getHttpResponseCode() {
-        return this.httpResponseCode;
-    }
-
-    public String toString() {
-        return String.format("HTTP exception with code %d: %s", this.httpResponseCode, super.toString());
+    public SnapshotMO(String name, String id, String healthStatus, long capacity, String parentID, String timeStamp) {
+        this.name = name;
+        this.id = id;
+        this.healthStatus = healthStatus;
+        this.capacity = capacity;
+        this.parentID = parentID;
+        this.timeStamp = timeStamp;
     }
 }

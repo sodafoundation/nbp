@@ -18,17 +18,23 @@
 
   <dependencies>
     <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-    <dependency>
-     <groupId>org.apache.httpcomponents</groupId>
-     <artifactId>httpclient</artifactId>
-     <version>4.5.9</version>
-    </dependency>
+	<dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.5.9</version>
+	</dependency>
     <!-- https://mvnrepository.com/artifact/org.json/json -->
-    <dependency>
-     <groupId>org.json</groupId>
-     <artifactId>json</artifactId>
-     <version>20180813</version>
-    </dependency>
+	<dependency>
+	    <groupId>org.json</groupId>
+	    <artifactId>json</artifactId>
+	    <version>20180813</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.pacesys/openstack4j -->
+	<dependency>
+	    <groupId>org.pacesys</groupId>
+	    <artifactId>openstack4j</artifactId>
+	    <version>3.2.0</version>
+	</dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

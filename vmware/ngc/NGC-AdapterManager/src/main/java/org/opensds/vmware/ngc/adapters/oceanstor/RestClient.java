@@ -20,11 +20,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.opensds.vmware.ngc.common.Request;
+import org.opensds.vmware.ngc.exceptions.HttpException;
 import org.opensds.vmware.ngc.exceptions.NotAuthorizedException;
 import org.opensds.vmware.ngc.models.ALLOC_TYPE;
 import org.opensds.vmware.ngc.models.HOST_OS_TYPE;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 class RestClient {
     class Handler implements Request.RequestHandler {
@@ -41,6 +46,17 @@ class RestClient {
     }
 
     private Request request;
+    String ip;
+    int port;
+    String user;
+    String password;
+
+    RestClient(String ip, int port, String user, String password) {
+        this.ip = ip;
+        this.port = port;
+        this.user = user;
+        this.password = password;
+    }
 
     private long getErrorCode(JSONObject response) {
         JSONObject error = response.getJSONObject("error");
@@ -61,7 +77,7 @@ class RestClient {
         return errorCode != 0;
     }
 
-    void login(String ip, int port, String user, String password) throws Exception {
+    void login() throws Exception {
         if (this.request != null) {
             this.request.close();
         }
@@ -102,11 +118,11 @@ class RestClient {
         }
     }
 
-    JSONObject createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    JSONObject createVolume(String name, ALLOC_TYPE allocType, Long capacity, String poolId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("NAME", name);
         requestData.put("PARENTID", poolId);
-        requestData.put("CAPACITY", capacity / 512);
+        requestData.put("CAPACITY", capacity.longValue() / 512);
 
         if (allocType == ALLOC_TYPE.THIN) {
             requestData.put("ALLOCTYPE", 1);
@@ -177,8 +193,7 @@ class RestClient {
                 break;
             }
 
-            JSONArray data = lunsResponse.getJSONArray("data");
-            for (Object lun: data) {
+            for (Object lun: lunsResponse.getJSONArray("data")) {
                 luns.put(lun);
             }
         }
@@ -479,10 +494,10 @@ class RestClient {
         }
     }
 
-    void associateGroupToMappingView(String groupId, int groupType, String mappingViewId) throws Exception {
+    void associateGroupToMappingView(String groupId, Integer groupType, String mappingViewId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("ID", mappingViewId);
-        requestData.put("ASSOCIATEOBJTYPE", groupType);
+        requestData.put("ASSOCIATEOBJTYPE", groupType.intValue());
         requestData.put("ASSOCIATEOBJID", groupId);
 
         JSONObject response = (JSONObject)request.put("/mappingview/create_associate", requestData);
@@ -557,5 +572,358 @@ class RestClient {
         }
 
         return response.getJSONObject("data");
+    }
+
+    JSONObject getVolumeById(String volumeId) throws Exception {
+        JSONObject response = (JSONObject)request.get(String.format("/lun/%s", volumeId));
+        if (isFailed(response)) {
+            String msg = String.format("Get lun by Id %s error %d: %s",
+                    volumeId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+
+        return response.getJSONObject("data");
+    }
+
+    JSONArray listSnapshots(String volumeId) throws Exception {
+        JSONObject countResponse = (JSONObject)request.get(
+                String.format("/snapshot/count?filter=PARENTID::%s", volumeId));
+        if (isFailed(countResponse)) {
+            String msg = String.format("Get snapshot count of lun %s error %d: %s",
+                    volumeId, getErrorCode(countResponse), getErrorDescription(countResponse));
+            throw new Exception(msg);
+        }
+
+        JSONObject countData = countResponse.getJSONObject("data");
+        JSONArray snapshots = new JSONArray();
+
+        for (int i = 0; i < countData.getInt("COUNT"); i += 100) {
+            JSONObject snapshotsResponse = (JSONObject)request.get(
+                    String.format("/snapshot?filter=PARENTID::%s&range=[%d-%d]", volumeId, i, i + 100));
+            if (isFailed(snapshotsResponse)) {
+                String msg = String.format("Batch get snapshots of lun %s error %d: %s",
+                        volumeId, getErrorCode(snapshotsResponse), getErrorDescription(snapshotsResponse));
+                throw new Exception(msg);
+            }
+
+            if (!snapshotsResponse.has("data")) {
+                break;
+            }
+
+            for (Object snapshot: snapshotsResponse.getJSONArray("data")) {
+                snapshots.put(snapshot);
+            }
+        }
+
+        return snapshots;
+    }
+
+    private JSONObject createLunSnapshot(String volumeId, String name) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("NAME", name);
+        requestData.put("PARENTID", volumeId);
+
+        JSONObject response = (JSONObject)request.post("/snapshot", requestData);
+        if (isFailed(response)) {
+            String msg = String.format("Create snapshot %s for %s error %d: %s",
+                    name, volumeId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+
+        return response.getJSONObject("data");
+    }
+
+    private void activateLunSnapshot(String snapshotId) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("SNAPSHOTLIST", String.format("[%s]", snapshotId));
+
+        JSONObject response = (JSONObject)request.post("/snapshot/activate", requestData);
+        if (isFailed(response)) {
+            String msg = String.format("Activate snapshot %s error %d: %s",
+                    snapshotId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+    }
+
+    private void deactivateLunSnapshot(String snapshotId) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("ID", snapshotId);
+
+        JSONObject response = (JSONObject)request.put("/snapshot/stop", requestData);
+        if ((getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_EXIST.getValue()) ||
+                (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_ACTIVATED.getValue())) {
+            // Snapshot doesn't exist or isn't activated, return success
+            return;
+        }
+
+        if (isFailed(response)) {
+            String msg = String.format("deactivate snapshot %s error %d: %s",
+                    snapshotId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+    }
+
+    private void deleteLunSnapshot(String snapshotId) throws Exception {
+        JSONObject response = (JSONObject)request.delete(String.format("/snapshot/%s", snapshotId));
+        if (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_EXIST.getValue()) {
+            // Snapshot doesn't exist, return success
+            return;
+        }
+
+        if (isFailed(response)) {
+            String msg = String.format("Delete snapshot %s error %d: %s",
+                    snapshotId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+    }
+
+    void createVolumeSnapshot(String volumeId, String name) throws Exception {
+        JSONObject snapshot = createLunSnapshot(volumeId, name);
+        String snapshotId = snapshot.getString("ID");
+
+        try {
+            activateLunSnapshot(snapshotId);
+        } catch (Exception e) {
+            deleteLunSnapshot(snapshotId);
+            throw e;
+        }
+    }
+
+    void deleteVolumeSnapshot(String snapshotId) throws Exception {
+        deactivateLunSnapshot(snapshotId);
+        deleteLunSnapshot(snapshotId);
+    }
+
+    void rollbackVolumeSnapshot(String snapshotId, String rollbackSpeed) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("ID", snapshotId);
+        requestData.put("ROLLBACKSPEED", rollbackSpeed);
+
+        JSONObject response = (JSONObject)request.put(String.format("/snapshot/rollback"), requestData);
+        if (isFailed(response)) {
+            String msg = String.format("Rollback snapshot %s error %d: %s",
+                    snapshotId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+    }
+	
+	void expandVolume(String volumeId, long capacity) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("ID", volumeId);
+        requestData.put("CAPACITY", capacity / 512L);
+
+        JSONObject response = (JSONObject)request.put(String.format("/lun/expand"), requestData);
+        if (isFailed(response)) {
+            String msg = String.format("Expand volume %s error %d: %s",
+                    volumeId, getErrorCode(response), getErrorDescription(response));
+            throw new Exception(msg);
+        }
+    }
+}
+
+class RestClientWrapper {
+    private RestClient client;
+
+    RestClientWrapper() {
+        this.client = null;
+    }
+
+    void login(String ip, int port, String user, String password) throws Exception {
+        this.client = new RestClient(ip, port, user, password);
+        this.client.login();
+    }
+
+    void logout() {
+        if (this.client != null) {
+            this.client.logout();
+        }
+    }
+
+    private void noReturnWrapper(String methodName, Object... parameters) throws Exception {
+        if (this.client == null) {
+            throw new Exception("Didn't login to any storage");
+        }
+
+        List<Class> parameterTypes = new ArrayList<>();
+        for (Object object: parameters) {
+            parameterTypes.add(object.getClass());
+        }
+
+        Method method = RestClient.class.getDeclaredMethod(methodName, parameterTypes.toArray(new Class[0]));
+
+        try {
+                method.invoke(this.client, parameters);
+        } catch (Exception e) {
+            if (e instanceof NotAuthorizedException) {
+                this.client.login();
+                method.invoke(this.client, parameters);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private Object returnObjectWrapper(String methodName, Object... parameters) throws Exception {
+        if (this.client == null) {
+            throw new Exception("Didn't login to any storage");
+        }
+
+        List<Class> parameterTypes = new ArrayList<>();
+        for (Object object: parameters) {
+            parameterTypes.add(object.getClass());
+        }
+
+        Method method = RestClient.class.getDeclaredMethod(methodName, parameterTypes.toArray(new Class[0]));
+
+        try {
+            return method.invoke(this.client, parameters);
+        } catch (InvocationTargetException e) {
+            if (e.getTargetException() instanceof NotAuthorizedException) {
+                this.client.login();
+                return method.invoke(this.client, parameters);
+            } else {
+                throw (Exception)e.getTargetException();
+            }
+        }
+    }
+
+    JSONObject createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+        return (JSONObject) returnObjectWrapper("createVolume", name, allocType, capacity, poolId);
+    }
+
+    void deleteVolume(String volumeId) throws Exception {
+        noReturnWrapper("deleteVolume", volumeId);
+    }
+
+    JSONArray listVolumes(String poolId) throws Exception {
+        return (JSONArray) returnObjectWrapper("listVolumes", poolId);
+    }
+
+    JSONArray listStoragePools() throws Exception {
+        return (JSONArray) returnObjectWrapper("listStoragePools");
+    }
+
+    JSONObject getStoragePool(String poolId) throws Exception {
+        return (JSONObject) returnObjectWrapper("getStoragePool", poolId);
+    }
+
+    JSONObject getISCSIInitiator(String initiator) throws Exception {
+        return (JSONObject) returnObjectWrapper("getISCSIInitiator", initiator);
+    }
+
+    JSONObject getFCInitiator(String initiator) throws Exception {
+        return (JSONObject) returnObjectWrapper("getFCInitiator", initiator);
+    }
+
+    JSONObject createHost(String name, HOST_OS_TYPE osType) throws Exception {
+        return (JSONObject) returnObjectWrapper("createHost", name, osType);
+    }
+
+    JSONObject getHostById(String id) throws Exception {
+        return (JSONObject) returnObjectWrapper("getHostById", id);
+    }
+
+    JSONArray getHostsByLun(String lunId) throws Exception {
+        return (JSONArray) returnObjectWrapper("getHostsByLun", lunId);
+    }
+
+    void addISCSIInitiatorToHost(String initiator, String hostId) throws Exception {
+        noReturnWrapper("addISCSIInitiatorToHost", initiator, hostId);
+    }
+
+    void addFCInitiatorToHost(String initiator, String hostId) throws Exception {
+        noReturnWrapper("addFCInitiatorToHost", initiator, hostId);
+    }
+
+    JSONArray getHostsByHostGroup(String hostGroupId) throws Exception {
+        return (JSONArray) returnObjectWrapper("getHostsByHostGroup", hostGroupId);
+    }
+
+    JSONObject createHostGroup(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("createHostGroup", name);
+    }
+
+    void addHostToHostGroup(String hostId, String hostGroupId) throws Exception {
+        noReturnWrapper("addHostToHostGroup", hostId, hostGroupId);
+    }
+
+    JSONArray getHostGroupsByHost(String hostId) throws Exception {
+        return (JSONArray) returnObjectWrapper("getHostGroupsByHost", hostId);
+    }
+
+    JSONObject createMappingView(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("createMappingView", name);
+    }
+
+    JSONArray getMappingViewsByHostGroup(String hostGroupId) throws Exception {
+        return (JSONArray) returnObjectWrapper("getMappingViewsByHostGroup", hostGroupId);
+    }
+
+    JSONObject createLunGroup(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("createLunGroup", name);
+    }
+
+    JSONObject getLunGroupByMappingView(String mappingViewId) throws Exception {
+        return (JSONObject) returnObjectWrapper("getLunGroupByMappingView", mappingViewId);
+    }
+
+    void addLunToLunGroup(String lunId, String lunGroupId) throws Exception {
+        noReturnWrapper("addLunToLunGroup", lunId, lunGroupId);
+    }
+
+    void removeLunFromLunGroup(String lunId, String lunGroupId) throws Exception {
+        noReturnWrapper("removeLunFromLunGroup", lunId, lunGroupId);
+    }
+
+    void associateGroupToMappingView(String groupId, int groupType, String mappingViewId) throws Exception {
+        noReturnWrapper("associateGroupToMappingView", groupId, groupType, mappingViewId);
+    }
+
+    JSONArray getLunGroupsByLun(String volumeId) throws Exception {
+        return (JSONArray) returnObjectWrapper("getLunGroupsByLun", volumeId);
+    }
+
+    JSONObject getHostByName(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("getHostByName", name);
+    }
+
+    JSONObject getHostGroupByName(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("getHostGroupByName", name);
+    }
+
+    JSONObject getLunGroupByName(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("getLunGroupByName", name);
+    }
+
+    JSONObject getMappingViewByName(String name) throws Exception {
+        return (JSONObject) returnObjectWrapper("getMappingViewByName", name);
+    }
+
+    JSONObject getSystem() throws Exception {
+        return (JSONObject) returnObjectWrapper("getSystem");
+    }
+
+    JSONObject getVolumeById(String volumeId) throws Exception {
+        return (JSONObject) returnObjectWrapper("getVolumeById", volumeId);
+    }
+
+    JSONArray listSnapshots(String volumeId) throws Exception {
+        return (JSONArray) returnObjectWrapper("listSnapshots", volumeId);
+    }
+
+    void createVolumeSnapshot(String volumeId, String name) throws Exception {
+        noReturnWrapper("createVolumeSnapshot", volumeId, name);
+    }
+
+    void deleteVolumeSnapshot(String snapshotId) throws Exception {
+        noReturnWrapper("deleteVolumeSnapshot", snapshotId);
+    }
+
+    void rollbackVolumeSnapshot(String snapshotId, String rollbackSpeed) throws Exception {
+        noReturnWrapper("rollbackVolumeSnapshot", snapshotId, rollbackSpeed);
+    }
+	
+	void expandVolume(String volumeId, long capacity) throws Exception {
+        noReturnWrapper("expandVolume", volumeId, capacity);
     }
 }

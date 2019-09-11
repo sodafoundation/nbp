@@ -15,6 +15,7 @@
 package org.opensds.vmware.ngc.adapters.oceanstor;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -123,7 +124,24 @@ class RunningStatus {
             return "unknown";
         }
 
-        return (String) RUNNINGSTATUS_MAP.get(status);
+        return RUNNINGSTATUS_MAP.get(status);
+    }
+}
+
+class HealthStatus {
+    private static final HashMap<String, String> HEALTHSTATUS_MAP = new HashMap<>();
+
+    static {
+        HEALTHSTATUS_MAP.put("1", "normal");
+        HEALTHSTATUS_MAP.put("2", "fault");
+    }
+
+    static String getStatus(String status) {
+        if (!HEALTHSTATUS_MAP.containsKey(status)) {
+            return "unknown";
+        }
+
+        return HEALTHSTATUS_MAP.get(status);
     }
 }
 
@@ -134,8 +152,15 @@ class VolumeMOBuilder {
         String wwn = jsonObject.getString("WWN");
         ALLOC_TYPE allocType = (jsonObject.getInt("ALLOCTYPE") == 1) ? ALLOC_TYPE.THIN : ALLOC_TYPE.THICK;
         long capacity = jsonObject.getLong("CAPACITY") * 512;
-
-        return new VolumeMO(name, id, wwn, allocType, capacity);
+        long allocCapacity = jsonObject.getLong("ALLOCCAPACITY") * 512;
+        VolumeMO.StatusE status = (jsonObject.getInt("HEALTHSTATUS") == 1) ? VolumeMO.StatusE.Normal : VolumeMO
+                .StatusE.Faulty;
+        String storagePoolId = jsonObject.getString("PARENTID");
+        VolumeMO volumeMO = new VolumeMO(name, id, wwn, allocType, capacity);
+        volumeMO.status = status;
+        volumeMO.allocCapacity = allocCapacity;
+        volumeMO.storagePoolId = storagePoolId;
+        return volumeMO;
     }
 }
 
@@ -148,6 +173,27 @@ class StoragePoolMOBuilder {
         long freeCapacity = jsonObject.getLong("USERFREECAPACITY") * 512;
 
         return new StoragePoolMO(name, id, type, totalCapacity, freeCapacity);
+    }
+}
+
+class SnapshotMOBuilder {
+    static public SnapshotMO build(JSONObject jsonObject) {
+        String name = jsonObject.getString("NAME");
+        String id = jsonObject.getString("ID");
+        String healthStatus = HealthStatus.getStatus(jsonObject.getString("HEALTHSTATUS"));
+        long capacity = jsonObject.getLong("USERCAPACITY") * 512;
+        String parentId = jsonObject.getString("PARENTID");
+
+        long timeStamp = jsonObject.getLong("TIMESTAMP");
+        String activatedTime;
+        if (timeStamp < 0) {
+            activatedTime = "--";
+        } else {
+            Date date = new Date(timeStamp * 1000L);
+            activatedTime = date.toString();
+        }
+
+        return new SnapshotMO(name, id, healthStatus, capacity, parentId, activatedTime);
     }
 }
 
@@ -165,21 +211,24 @@ public class OceanStor extends Storage {
         }
     }
 
-    RestClient client;
+    private RestClientWrapper client;
 
     public OceanStor(String name) {
         super(name);
-        this.client = new RestClient();
+        this.client = new RestClientWrapper();
     }
 
+    @Override
     public void login(String ip, int port, String user, String password) throws Exception {
         client.login(ip, port, user, password);
     }
 
+    @Override
     public void logout() {
         client.logout();
     }
 
+    @Override
     public StorageMO getDeviceInfo() throws Exception {
         JSONObject system = client.getSystem();
 
@@ -194,46 +243,47 @@ public class OceanStor extends Storage {
         String sn = system.getString("wwn");
         String status = RunningStatus.getStatus(system.getString("RUNNINGSTATUS"));
 
-        return new StorageMO(name, model, sn, status,"Huawei");
+        return new StorageMO(name, model, sn, status, "Huawei");
     }
 
-    public VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    @Override
+    public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
         return VolumeMOBuilder.build(volume);
     }
 
+    @Override
     public void deleteVolume(String volumeId) throws Exception {
         client.deleteVolume(volumeId);
     }
 
+    @Override
     public List<VolumeMO> listVolumes() throws Exception {
         List<VolumeMO> volumes = new ArrayList<>();
 
         JSONArray jsonArray = client.listVolumes("");
-        if (jsonArray != null) {
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject volume = jsonArray.getJSONObject(i);
-                volumes.add(VolumeMOBuilder.build(volume));
-            }
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject volume = jsonArray.getJSONObject(i);
+            volumes.add(VolumeMOBuilder.build(volume));
         }
 
         return volumes;
     }
 
+    @Override
     public List<VolumeMO> listVolumes(String poolId) throws Exception {
         List<VolumeMO> volumes = new ArrayList<>();
 
         JSONArray jsonArray = client.listVolumes(poolId);
-        if (jsonArray != null) {
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject volume = jsonArray.getJSONObject(i);
-                volumes.add(VolumeMOBuilder.build(volume));
-            }
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject volume = jsonArray.getJSONObject(i);
+            volumes.add(VolumeMOBuilder.build(volume));
         }
 
         return volumes;
     }
 
+    @Override
     public List<StoragePoolMO> listStoragePools() throws Exception {
         List<StoragePoolMO> pools = new ArrayList<>();
 
@@ -248,10 +298,53 @@ public class OceanStor extends Storage {
         return pools;
     }
 
+    @Override
     public StoragePoolMO getStoragePool(String poolId) throws Exception {
         JSONObject pool = client.getStoragePool(poolId);
         return StoragePoolMOBuilder.build(pool);
     }
+
+    @Override
+    public VolumeMO queryVolumeByID(String volumeId) throws Exception {
+        String subLunId = volumeId.substring(volumeId.length() - 8);
+        Long numLunId = Long.parseLong(subLunId, 16);
+        JSONObject volume = client.getVolumeById(String.valueOf(numLunId));
+        return VolumeMOBuilder.build(volume);
+    }
+
+    @Override
+    public List<SnapshotMO> listSnapshot(String volumeId) throws Exception {
+        List<SnapshotMO> snapshots = new ArrayList<>();
+
+        JSONArray jsonArray = client.listSnapshots(volumeId);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject snapshot = jsonArray.getJSONObject(i);
+            snapshots.add(SnapshotMOBuilder.build(snapshot));
+        }
+
+        return snapshots;
+    }
+
+    @Override
+    public void createVolumeSnapshot(String volumeId, String name) throws Exception {
+        client.createVolumeSnapshot(volumeId, name);
+    }
+
+    @Override
+    public void deleteVolumeSnapshot(String snapshotId) throws Exception {
+        client.deleteVolumeSnapshot(snapshotId);
+    }
+
+    @Override
+    public void rollbackVolumeSnapshot(String snapshotId, String rollbackSpeed) throws Exception {
+        client.rollbackVolumeSnapshot(snapshotId, rollbackSpeed);
+    }
+	
+	@Override
+    public void expandVolume(String volumeId, long capacity) throws Exception {
+        client.expandVolume(volumeId, capacity);
+    }
+
 
     private JSONObject getISCSIInitiator(String initiator) throws Exception {
         JSONObject jsonObject = client.getISCSIInitiator(initiator);
@@ -271,14 +364,14 @@ public class OceanStor extends Storage {
     private List getFCInitiators(String[] initiators) throws Exception {
         List iniList = new ArrayList<JSONObject>();
 
-        for (String i: initiators) {
+        for (String i : initiators) {
             JSONObject jsonObject = client.getFCInitiator(i);
             if (jsonObject == null) {
                 continue;
             }
 
             if (jsonObject.getInt("RUNNINGSTATUS") != RUNNING_STATUS.ONLINE.getValue()) {
-               continue;
+                continue;
             }
 
             iniList.add(jsonObject);
@@ -319,7 +412,7 @@ public class OceanStor extends Storage {
                 hostId = iscsiInitiator.getString("PARENTID");
             }
         } else if (fcInitiators != null) {
-            for (Object i: fcInitiators) {
+            for (Object i : fcInitiators) {
                 JSONObject jsonObject = (JSONObject) i;
                 if (!jsonObject.getBoolean("ISFREE")) {
                     hostId = jsonObject.getString("PARENTID");
@@ -345,7 +438,7 @@ public class OceanStor extends Storage {
         if (iscsiInitiator != null) {
             client.addISCSIInitiatorToHost(iscsiInitiator.getString("ID"), host.getString("ID"));
         } else if (fcInitiators != null) {
-            for (Object i: fcInitiators) {
+            for (Object i : fcInitiators) {
                 JSONObject jsonObject = (JSONObject) i;
                 client.addFCInitiatorToHost(jsonObject.getString("ID"), host.getString("ID"));
             }
@@ -359,7 +452,7 @@ public class OceanStor extends Storage {
         JSONArray hostGroups = client.getHostGroupsByHost(host.getString("ID"));
 
         if (hostGroups != null) {
-            for (Object i: hostGroups) {
+            for (Object i : hostGroups) {
                 JSONObject jsonObject = (JSONObject) i;
                 JSONArray hosts = client.getHostsByHostGroup(jsonObject.getString("ID"));
                 if (hosts != null && hosts.length() == 1) {
@@ -441,7 +534,7 @@ public class OceanStor extends Storage {
     private void addLunToLunGroup(String lunId, String lunGroupId) throws Exception {
         JSONArray lunGroups = client.getLunGroupsByLun(lunId);
         if (lunGroups != null) {
-            for (Object i: lunGroups) {
+            for (Object i : lunGroups) {
                 JSONObject jsonObject = (JSONObject) i;
                 if (jsonObject.getString("ID").equals(lunGroupId)) {
                     return;
