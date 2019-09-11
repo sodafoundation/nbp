@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-   Chassis HTML plugin metadata (version A).
-   The <plugin> tag doesn't contain any moduleUri property because it is an HTML plugin.
--->
-<plugin id="org.opensds.vmware.ngc"
-   defaultBundle="org_opensds_storage_devices">
+
+<plugin id="org.opensds.vmware.ngc" defaultBundle="org_opensds_storage_devices">
 
    <resources>
       <resource locale="{locale}">
-         <module uri="locales/ngc-{locale}.swf"/>
+         <module uri="locales/ngc-ui-{locale}.swf"/>
       </resource>
    </resources>
 
@@ -165,7 +161,6 @@
                   </com.vmware.ui.lists.ColumnDataSourceInfo>
                </dataInfo>
             </com.vmware.ui.lists.ColumnContainer>
-
          </items>
       </object>
    </extension>
@@ -299,7 +294,7 @@
       </object>
    </extension>
 
-   <!--action in vsphere-->
+   <!-- ***********************action in vsphere ESXI host  ***********************-->
    <!--esxi right click menus-->
    <extension id="org.opensds.ngc.solution.hostMenus">
       <extendedPoint>vsphere.core.menus.solutionMenus</extendedPoint>
@@ -313,6 +308,30 @@
                   <type>action</type>
                   <uid>org.opensds.ngc.action.createDatastore</uid>
                   <label>Create Datastore/Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>separator</type>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--Mount Volume -->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.mount</uid>
+                  <label>Mount Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--UNMount Volume -->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.unmount</uid>
+                  <label>Unmount Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--Backup and Recovery-->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>separator</type>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.snapshot</uid>
+                  <label>Backup and Recovery</label>
                </com.vmware.actionsfw.ActionMenuItemSpec>
             </Array>
          </children>
@@ -351,4 +370,211 @@
       </metadata>
    </extension>
 
+   <!--mount page in esxi host-->
+   <extension id="org.opensds.ngc.action.mount">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.mount</uid>
+               <label>Mount Volume</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/mount/mount-forward.html?type=mount</actionUrl>
+                     <dialogTitle>Mount Volume</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!--unmount page in esxi host-->
+   <extension id="org.opensds.ngc.action.unmount">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.unmount</uid>
+               <label>Unmount Volume</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/unmount/unmount-forward.html?type=unmount</actionUrl>
+                     <dialogTitle>Unmount Volume</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!-- Backup and Recovery page in exsi host-->
+   <extension id="org.opensds.ngc.action.snapshot">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.snapshot</uid>
+               <label>Backup and Recovery</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/snapshot/snapshot-forward.html?type=backupAndRecovery</actionUrl>
+                     <dialogTitle>Backup and Recovery</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!-- ***********************action in vsphere Datastore  ***********************-->
+   <!--&lt;!&ndash;datastore right click menus&ndash;&gt;
+   <extension id="org.opensds.ngc.solution.datastoreMenus">
+      <extendedPoint>vsphere.core.menus.solutionMenus</extendedPoint>
+      <object>
+         <label>OpenSDS Storage Plugin</label>
+         <uid>org.opensds.ngc.solution.datastoreMenus</uid>
+         <children>
+            <Array>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.extendDatastore</uid>
+                  <label>Extend Datastore</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.deleteDatastore</uid>
+                  <label>Delete Datastore</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+            </Array>
+         </children>
+      </object>
+      <metadata>
+         &lt;!&ndash; Filter creates this extension only for VirtualMachine objects &ndash;&gt;
+         <objectType>Datastore</objectType>
+      </metadata>
+   </extension>-->
+
+   <!--&lt;!&ndash; Extend Datastore &ndash;&gt;
+   <extension id="org.opensds.ngc.action.extendDatastore">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.extendDatastore</uid>
+               <label>Extend Datastore</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     &lt;!&ndash; execute the action on client-side (html view in a modal dialog) &ndash;&gt;
+                     <actionUrl>/vsphere-client/opensds/resources/html/datastore/datastore-extend.html</actionUrl>
+                     <dialogTitle>Extend Datastore</dialogTitle>
+                     <dialogSize>650,460</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         &lt;!&ndash; This filters the actions to be visible only on Chassis &ndash;&gt;
+         <objectType>Datastore</objectType>
+      </metadata>
+   </extension>
+   &lt;!&ndash; Delete Datastore &ndash;&gt;
+   <extension id="org.opensds.ngc.action.deleteDatastore">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.deleteDatastore</uid>
+               <label>Delete Datastore</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     &lt;!&ndash; execute the action on client-side (html view in a modal dialog) &ndash;&gt;
+                     <actionUrl>/vsphere-client/opensds/resources/html/datastore/deleteDatastore/deleteDatastore.html?type=DeleteDatastore</actionUrl>
+                     <dialogTitle>Delete Datastore</dialogTitle>
+                     <dialogSize>650,460</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         &lt;!&ndash; This filters the actions to be visible only on Chassis &ndash;&gt;
+         <objectType>Datastore</objectType>
+      </metadata>
+   </extension>-->
+
+   <!-- host monitor page -->
+   <extension id="org.opensds.ngc.hostView">
+      <extendedPoint>vsphere.core.host.monitorViews</extendedPoint>
+      <object>
+         <name>OpenSDS Storage</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/host/host-main.html</url>
+                </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>
+
+   <!-- view monitor page -->
+   <extension id="org.opensds.ngc.VirtualmachineView">
+      <extendedPoint>vsphere.core.vm.monitorViews</extendedPoint>
+      <object>
+         <name>OpenSDS Storage</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/vm/vm-main.html</url>
+               </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>
+
+   <!--<extension id="org.opensds.ngc.datastore.summary">
+      <extendedPoint>vsphere.core.datastore.summarySectionViews</extendedPoint>
+      <object>
+         <name>OpenSDS Datastore Msg</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/summary/datastore-summary.html</url>
+                  <dialogTitle>OpenSDS Datastore Msg</dialogTitle>
+                  <dialogSize>500, 450</dialogSize>
+               </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>-->
 </plugin>

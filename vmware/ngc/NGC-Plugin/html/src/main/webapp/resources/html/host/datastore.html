@@ -1,0 +1,716 @@
+<!doctype html>
+<html style="height: 100%;">
+<body style="height: 100%;">
+<div id="divMain" style="position: relative; height: 100%">
+    <div style="padding-top: 10px;">
+        <span style="font-weight: bold;">Datastores</span>
+    </div>
+    <div id="help" url="1" class="help" style="top:11px;position: absolute;">
+    </div>
+    <div class="line" style="top: 30px;"></div>
+    <div style="position: absolute; top: 41px;">
+        <div class="plugin_button_main" id="btnRefresh">
+            <!-- <div class="plugin_button_div button_left"></div>
+            <div class="plugin_button_div button_center">Refresh</div>
+            <div class="plugin_button_div button_right"></div> -->
+            <div class="plugin_button_main" style="float: left;margin-left: 0px;">
+                <input type="button" id="btnRefresh" value="Refresh"/>
+            </div>
+        </div>
+    </div>
+    <div id="datastoreTableDiv"
+         style="position: relative;top: 50px;border: 1px solid #C0C0C0;border-top: none;overflow-y: hidden;overflow-x: hidden;">
+        <table id="datastoreTable" class="tablesorter" style="table-layout: fixed;position: relative;">
+            <thead class="tableHead">
+            <tr>
+                <th title="Name" width="18%" align="left" style="background:white">
+                    <div>Name</div>
+                </th>
+                <th title="Status" width="10%" align="left">
+                    <div>Status</div>
+                </th>
+                <th title="Total Capacity" width="10%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Total Capacity
+                    </div>
+                </th>
+                <th id="usageRateTh" title="Usage Rate" width="13%" align="right" style="text-align: left;
+                    padding-right: 4px;">
+                    <div>Usage Rate</div>
+                </th>
+                <th title="Type" width="7%" align="left">
+                    <div>Type</div>
+                </th>
+                <th title="Hardware Acceleration" width="15%" align="left">
+                    <div>Hardware Acceleration</div>
+                </th>
+                <th title="Last Update" id="lastTd" width="25%" align="left">
+                    <div>Last Update</div>
+                </th>
+            </tr>
+            </thead>
+        </table>
+        <div id="datastoreTableDataDiv"
+             style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
+            <table id="datastoreTableData" class="tablesorter"
+                   style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+                <tbody id="tbody_datastore"></tbody>
+            </table>
+        </div>
+        <div id="divLoadingDatastore" class="loading_font"
+             style="width: 100%;height: 92%;position: absolute; left: 1px; top: 38px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 90%; display: inline-block; vertical-align: middle;"></span>loading
+        </div>
+        <div id="divErrorDatastore" class="loading_font"
+             style="width: 100%;height: 92%;position: absolute; top: 38px; left: 0px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>Inactive
+            session,Please refresh your web browser or relogin.
+        </div>
+    </div>
+    <div id="lunTableTitle" style="position: absolute;">
+        <span style="font-weight: bold;" id="lunOrFsUsedForDsSpan">Volumes Used for Datastore</span>
+    </div>
+    <!-- <div class="line" id="lineDiv" style="display: none;"></div> -->
+    <div id="lunTableDiv"
+         style="position: relative; border: 1px solid #C0C0C0; border-top: none;overflow-y: hidden;overflow-x: hidden;">
+        <table id="datastoreLunTable" class="tablesorter" style="table-layout: fixed;position: relative;">
+            <thead class="tableHead">
+            <tr>
+                <!--<th class="lunIdentifierTh" title="Identifier" width="23%" align="left"style="background:white"><div class="lunIdentifierDiv">Identifier</div></th>-->
+                <!--<th class="nameVcenterTh" title="Name(vCenter)" width="10%" align="left"><div class="nameVcenterDiv">Name(vCenter)</div></th>-->
+                <th class="nameDeviceTh" title="Name" width="10%" align="left">
+                    <div class="nameDeviceDiv">Name</div>
+                </th>
+                <th title="ID" width="8%" align="left">
+                    <div>ID</div>
+                </th>
+                <th title="Type" width="8%" align="left">
+                    <div>Type</div>
+                </th>
+                <th title="Capacity" width="10%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Capacity</div>
+                </th>
+                <th id="volumeUsageRateTh" title="Usage Rate" width="15%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Usage Rate</div>
+                </th>
+                <!--<th title="Owning Device" width="9%" align="left"><div>Owning Device</div></th>-->
+                <th title="Storage Pool" width="10%" align="left">
+                    <div>Storage Pool</div>
+                </th>
+                <th title="Pool Capacity" width="10%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Pool Capacity</div>
+                </th>
+                <th id="poolUsageRateTh" title="Pool Usage Rate" width="15%" align="right" style="text-align: left;
+                padding-right: 4px;">
+                    <div>Pool Usage Rate</div>
+                </th>
+                <th title="Device IP" id="lastTd" width="14%" align="left">
+                    <div>Device IP</div>
+                </th>
+            </tr>
+            </thead>
+        </table>
+        <div id="datastoreLunTableDataDiv"
+             style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
+            <table id="datastoreLunTableData" class="tablesorter"
+                   style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+                <tbody id="tbody_datastoreLun"></tbody>
+            </table>
+        </div>
+        <div id="divLoadingDatastoreLun" class="loading_font"
+             style="width: 98%;height: 90%;position: absolute; left: 1px; top: 38px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 90%; display: inline-block; vertical-align: middle;"></span>loading
+        </div>
+        <div id="divErrorDatastoreLun" class="loading_font"
+             style="width: 100%;height: 92%;position: absolute; top: 35px; left: 0px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>Inactive
+            session,Please refresh your web browser or relogin.
+        </div>
+    </div>
+</div>
+</body>
+<head>
+    <meta charset="utf-8"/>
+    <title>Datastores</title>
+    <style type="text/css">
+        .line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-image: url(../../../assets/images/line.png);
+        }
+
+        .help {
+            right: 0px;
+            background-image: url(../../../assets/images/help.png);
+            height: 17px;
+            width: 17px;
+        }
+
+        table thead tr th, table tbody tr td {
+            white-space: nowrap;
+        }
+
+        #datastoreTableDiv, #lunTableDiv {
+            background-image: url(../../../assets/images/gride_title.png);
+            font-weight: normal;
+            margin: 0px;
+            padding: 0px;
+            background-repeat: repeat-x;
+            vertical-align: bottom;
+        }
+    </style>
+    <link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css"/>
+    <link rel="stylesheet" href="../../../assets/css/table.css"/>
+    <link rel="stylesheet" href="../../../assets/css/style.css"/>
+    <link rel="stylesheet" href="../../../assets/css/icstyle.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jqtree.css"/>
+
+    <script src="../../../assets/jquery-1.10.2.min.js"></script>
+    <script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="../../../resources/js/common/web-platform.js"></script>
+    <script src="../../../resources/js/common/jquery-util.js"></script>
+    <script src="../../../resources/js/common/storage.plugin.js"></script>
+    <script src="../../../resources/js/common/drag-table.js"></script>
+    <script type="text/javascript">
+        var datastoreID = "";
+        var rowIndex = 0;
+        var moref = "";
+        var serverGuid = "";
+        var status = 0;
+        var ns = org_opensds_storage_devices;
+        var lunOrFsFlag = "lun";
+        $(document).ready(function () {
+
+            var interval = setInterval(function () {
+                if ($("#datastoreTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+                    changesize();
+                    if (status != 2) {
+                        //$("#divLoadingDatastore").css("display", "block");
+                        status = 1;
+                    }
+                    clearInterval(interval);
+                }
+            }, 2);
+
+            initParam();
+            refreshDatastores();
+            $("#btnRefresh").click(function () {
+                $("#divLoadingDatastore").css("display", "block");
+                $("#btnRefresh").prop("disabled", "disabled");
+
+                $("#datastoreTable tr:eq(0) th:eq(0)").width("18%");
+                $("#datastoreTable tr:eq(0) th:eq(1)").width("10%");
+                $("#datastoreTable tr:eq(0) th:eq(2)").width("10%");
+                $("#datastoreTable tr:eq(0) th:eq(3)").width("15%");
+                $("#datastoreTable tr:eq(0) th:eq(4)").width("7%");
+                $("#datastoreTable tr:eq(0) th:eq(5)").width("15%");
+                $("#datastoreTable tr:eq(0) th:eq(6)").width("25%");
+                $("#datastoreLunTable tr:eq(0) th:eq(0)").width("10%");
+                $("#datastoreLunTable tr:eq(0) th:eq(1)").width("8%");
+                $("#datastoreLunTable tr:eq(0) th:eq(2)").width("8%");
+                $("#datastoreLunTable tr:eq(0) th:eq(3)").width("10%");
+                $("#datastoreLunTable tr:eq(0) th:eq(4)").width("15%");
+                $("#datastoreLunTable tr:eq(0) th:eq(5)").width("10%");
+                $("#datastoreLunTable tr:eq(0) th:eq(6)").width("10%");
+                $("#datastoreLunTable tr:eq(0) th:eq(7)").width("15%");
+                $("#datastoreLunTable tr:eq(0) th:eq(8)").width("14%");
+
+                setTimeout(function () {
+                    $("#btnRefresh").removeProp("disabled");
+                }, 500);
+                refreshDatastores();
+            });
+
+            $(window).resize(function () {
+                changesize();
+                $("#datastoreTable").width($("#datastoreTableData").width());
+                $("#datastoreLunTable").width($("#datastoreLunTableData").width());
+            });
+        });
+        function changesize() {
+            var divMainHeight = $("#divMain").height();
+            var divMainWidth = $("#divMain").width();
+            var tableFrameHeight = (divMainHeight - 11 - 20 - 10 - 22 - 10 - 17 - 10 - 20 - 16) / 2;
+            var tabNameTop = tableFrameHeight + 10 + 73 + 17;
+            $("#datastoreTableDiv").height(tableFrameHeight);
+            var lineTop = tabNameTop + 20;
+            var lunTableDivTop = lineTop + 3;
+            $("#lunTableTitle").css("top", lunTableDivTop - 20);
+            $("#lunTableDiv").css("top", "97px");
+            $("#lunTableDiv").width(divMainWidth - 2);
+            $("#lunTableDiv").height(tableFrameHeight);
+
+            $("#datastoreTableDataDiv").height($("#datastoreTableDiv").height() - $("#datastoreTable").height());
+            $("#datastoreLunTableDataDiv").height($("#lunTableDiv").height() - $("#datastoreLunTable").height());
+        }
+        function initParam() {
+            moref = parent.moref;
+            serverGuid = parent.serverGuid;
+        }
+        function refreshDatastores() {
+            $("#datastoreTable").width($("#divMain").width() - 2);
+            $("#datastoreLunTable").width($("#divMain").width() - 2);
+            clearDatastores();
+            clearLunsOrFs();
+            if ($("#datastoreTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+                setTimeout(function () {
+                    if (status != 1) {
+                        $("#divLoadingDatastore").css("display", "block");
+                        status = 2;
+                    }
+                }, 30);
+            }
+            $("#divLoadingDatastoreLun").css("display", "none");
+            var DatastoresUrl = ns.webContextPath + "/rest/data/host/datastores/" + moref + "?serverGuid=" + serverGuid
+                + "&t=" + new Date();
+            $.getJSON(encodeURI(DatastoresUrl), function (resp) {
+                var tbody = document.getElementById("tbody_datastore");
+                $(tbody).html("");
+                $("#divLoadingDatastore").css("display", "none");
+                if (resp.msg) {
+                    $("#divErrorDatastore").text(resp.msg).show();
+                    return;
+                }
+                var arr = eval(resp.data);
+                for (var i = 0; i < arr.length; i++) {
+                    var jsonObj = arr[i];
+                    var tr = document.createElement("tr");
+                    var td1 = tr.insertCell(0);
+                    td1.align = "left";
+                    var td2 = tr.insertCell(1);
+                    td2.align = "left";
+                    var td3 = tr.insertCell(2);
+                    td3.align = "right";
+                    var td4 = tr.insertCell(3);
+                    td4.align = "right";
+                    var td5 = tr.insertCell(4);
+                    td5.align = "left";
+                    var td6 = tr.insertCell(5);
+                    td6.align = "left";
+                    var td7 = tr.insertCell(6);
+                    td7.align = "left";
+                    td7.style.borderRight = "0px";
+                    var td8 = tr.insertCell(7);
+                    td8.style.display = "none";
+                    var td9 = tr.insertCell(8);
+                    td9.style.display = "none";
+
+                    var support = jsonObj.hardWareAccSupport;
+                    var datastoreRef = window.location.protocol + "//" + window.location.host +
+                        WEB_PLATFORM.getRootPath() +
+                        '/#?extensionId=vsphere.core.datastore.summary&objectId=urn:vmomi:' +
+                        jsonObj.id + ':' + parent.serverGuid + "&navigator=vsphere.core.viTree.storageView";
+                    if (!jsonObj.accessible) {
+                        if ("vstorageunsupported" == support) {
+                            td6.innerHTML = changeFont("Not Supported");
+                            td6.title = "Not Supported";
+                        } else if ("vstoragesupported" == support) {
+                            td6.innerHTML = changeFont("Supported");
+                            td6.title = "Supported";
+                        } else if ("vstorageunknown" == support) {
+                            td6.innerHTML = changeFont("Unknow");
+                            td6.title = "Unknow";
+                        }
+                        url = "../../../assets/images/Datastore.png";
+                        td1.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;"
+                            + "<a href='" + datastoreRef + "' target='_top'> " + jsonObj.name + "</a>";
+                        td1.title = jsonObj.name;
+                        var status = jsonObj.overallStatus;
+                        var url = status + ".png";
+                        if (status == "green") {
+                            url = "../../../assets/images/" + "green.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + changeFont("Normal");
+                            td2.title = "Normal";
+                        } else if (status == "yellow") {
+                            url = "../../../assets/images/" + "yellow.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + changeFont("Warning");
+                            td2.title = "Warning";
+                        } else if (status == "red") {
+                            url = "../../../assets/images/" + "red.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + changeFont("Alert");
+                            td2.title = "Alert";
+                        } else if (status == "gray") {
+                            url = "../../../assets/images/" + "gray.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + changeFont("Unknow");
+                            td2.title = "Unknow";
+                        }
+                        td3.innerHTML = changeFont(jsonObj.capacity);
+                        td3.title = jsonObj.capacity;
+                        td4.innerHTML = makeRateChart(jsonObj.capUsage, $("#usageRateTh"));
+                        td4.title = "Free Capacity:" + jsonObj.freeCapacity;
+                        td5.innerHTML = changeFont(jsonObj.type);
+                        td5.title = jsonObj.type;
+                        var time = jsonObj.lastTime;
+                        var localTime = new Date(time);
+                        td7.innerHTML = changeFont(localTime);
+                        td7.title = localTime;
+                        td8.innerHTML = changeFont(jsonObj.diskName);
+                        td8.title = jsonObj.diskName;
+                        td9.innerHTML = changeFont(jsonObj.id);
+                        td9.title = jsonObj.id;
+                    } else {
+                        if ("vstorageunsupported" == support) {
+                            td6.innerHTML = "Not Supported";
+                            td6.title = "Not Supported";
+                        } else if ("vstoragesupported" == support) {
+                            td6.innerHTML = "Supported";
+                            td6.title = "Supported";
+                        } else if ("vstorageunknown" == support) {
+                            td6.innerHTML = "Unknow";
+                            td6.title = "Unknow";
+                        }
+                        url = "../../../assets/images/Datastore.png";
+                        td1.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;"
+                            + "<a href='" + datastoreRef + "' target='_top'> " + jsonObj.name + "</a>";
+                        td1.title = jsonObj.name;
+                        var status = jsonObj.overallStatus;
+                        var url = status + ".png";
+                        if (status == "green") {
+                            url = "../../../assets/images/" + "green.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;Normal";
+                            td2.title = "Normal";
+                        } else if (status == "yellow") {
+                            url = "../../../assets/images/" + "yellow.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;Warning";
+                            td2.title = "Warning";
+                        } else if (status == "red") {
+                            url = "../../../assets/images/" + "red.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;Alert";
+                            td2.title = "Alert";
+                        } else if (status == "gray") {
+                            url = "../../../assets/images/" + "red.png";
+                            td2.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;Unknow";
+                            td2.title = "Unknow";
+                        }
+                        td3.innerHTML = jsonObj.capacity;
+                        td3.title = jsonObj.capacity;
+                        td4.innerHTML = makeRateChart(jsonObj.capUsage, $("#usageRateTh"));
+                        td4.title = "Free Capacity:" + jsonObj.freeCapacity;
+                        td5.innerHTML = jsonObj.type;
+                        td5.title = jsonObj.type;
+                        var time = jsonObj.lastTime;
+                        var localTime = new Date(time);
+                        td7.innerHTML = localTime;
+                        td7.title = localTime;
+                        td8.innerHTML = jsonObj.diskName;
+                        td8.title = jsonObj.diskName;
+                        td9.innerHTML = jsonObj.id;
+                        td9.title = jsonObj.id;
+                    }
+
+                    td1.width = "18%";
+                    td2.width = "10%";
+                    td3.width = "10%";
+                    td4.width = "15%";
+                    td5.width = "7%";
+                    td6.width = "15%";
+                    td7.width = "25%";
+
+                    tbody.appendChild(tr);
+                }
+                $("#datastoreTable").width($("#datastoreTableData").width());
+                datastoreClickEvent();
+            });
+        }
+
+        function changeFont(value) {
+            var value = "<font color='gray' style='font-style:italic;'>" + value + "</font>";
+            return value;
+        }
+
+        function refreshLunsOrFs() {
+            $("#datastoreLunTable").width($("#divMain").width() - 2);
+            clearLunsOrFs();
+            $("#divLoadingDatastoreLun").css("display", "block");
+            if (datastoreID == "") {
+                $("#divLoadingDatastoreLun").css("display", "none");
+                return;
+            }
+            var storageLunUrl = "";
+            var diskName = datastoreID;
+            if (lunOrFsFlag == "lun") {
+
+                storageLunUrl = ns.webContextPath + "/rest/data/host/volumesOfdatastore/" + datastoreID + "?hostId="
+                    + moref + "&serverGuid=" + serverGuid + "&t=" + new Date();
+                $.getJSON(encodeURI(storageLunUrl), function (resp) {
+                    if (datastoreID == "") {
+                        return;
+                    }
+                    if (datastoreID != diskName) {
+                        return;
+                    }
+                    var tbody = document.getElementById("tbody_datastoreLun");
+                    $(tbody).html("");
+                    $("#divLoadingDatastoreLun").css("display", "none");
+                    if (resp.msg) {
+                        console.log(resp.msg);
+                        //$("#divErrorDatastoreLun").text(resp.msg).show();
+                        return
+                    }
+                    var arr = eval(resp.data);
+                    for (var i = 0; i < arr.length; i++) {
+                        var jsonObj = arr[i];
+
+                        var tr = document.createElement("tr");
+                        var td1 = tr.insertCell(0);
+                        td1.align = "left";
+                        var td2 = tr.insertCell(1);
+                        td2.align = "left";
+                        var td3 = tr.insertCell(2);
+                        td3.align = "left";
+                        var td4 = tr.insertCell(3);
+                        td4.align = "left";
+                        var td5 = tr.insertCell(4);
+                        td5.align = "left";
+                        var td6 = tr.insertCell(5);
+                        td6.align = "right";
+                        var td7 = tr.insertCell(6);
+                        td7.align = "left";
+                        var td8 = tr.insertCell(7);
+                        td8.align = "left";
+                        var td9 = tr.insertCell(8);
+                        td9.align = "left";
+                        td9.style.borderRight = "0px";
+                        // push data
+                        td1.innerHTML = jsonObj.name;
+                        td1.title = jsonObj.name;
+                        td2.innerHTML = jsonObj.id;
+                        td2.title = jsonObj.id;
+                        td3.innerHTML = jsonObj.allocType;
+                        td3.title = jsonObj.allocType;
+                        td4.innerHTML = jsonObj.capacity;
+                        td4.title = jsonObj.capacity;
+                        td5.innerHTML = makeRateChart(jsonObj.capacityUsage, $("#volumeUsageRateTh"));
+                        td5.title = "Free Capacity:" + jsonObj.freeCapacity;
+                        td6.innerHTML = jsonObj.storagePoolName;
+                        td6.title = jsonObj.storagePoolName;
+                        td7.innerHTML = jsonObj.storagePoolCapactiy;
+                        td7.title = jsonObj.storagePoolCapactiy;
+                        td8.innerHTML =  makeRateChart(jsonObj.storagePoolUsage, $("#poolUsageRateTh"));
+                        td8.title = "Free Capacity:" + jsonObj.storagePoolFreeCap;
+                        td9.innerHTML = jsonObj.storageIP;
+                        td9.title = jsonObj.storageIP;
+
+                        td1.width = "10%";
+                        td2.width = "8%";
+                        td3.width = "8%";
+                        td4.width = "10%";
+                        td5.width = "15%";
+                        td6.width = "10%";
+                        td7.width = "10%";
+                        td8.width = "15%";
+                        td9.width = "14%";
+
+                        tbody.appendChild(tr);
+                        if (datastoreID == "") {
+                            break;
+                        }
+                    }
+                    if (datastoreID == "") {
+                        clearLunsOrFs();
+                    }
+                    $("#datastoreLunTable").width($("#datastoreLunTableData").width());
+                    $("#divErrorDatastoreLun").css('display', 'none');
+                });
+            } else if (lunOrFsFlag == "fs") {
+                storageLunUrl = ns.webContextPath + "/rest/nfsdata/fsListOfDatastore/" + moref + "?datastoreId="
+                    + datastoreID + "&serverGuid=" + serverGuid + "&t=" + new Date();
+                // no suport $("#divLoadingDatastoreLun").css("display", "none");
+                $.getJSON(encodeURI(storageLunUrl), function (resp) {
+                    if (datastoreID == "") {
+                        return;
+                    }
+                    if (datastoreID != diskName) {
+                        return;
+                    }
+                    var tbody = document.getElementById("tbody_datastoreLun");
+                    $(tbody).html("");
+                    $("#divLoadingDatastoreLun").css("display", "none");
+                    if (resp.errorCode) {
+                        $("#divErrorDatastoreLun").text(resp.errorDesc).show();
+                        return
+                    }
+                    var arr = eval(resp.data);
+                    for (var i = 0; i < arr.length; i++) {
+                        var jsonObj = arr[i];
+
+                        var tr = document.createElement("tr");
+                        var td1 = tr.insertCell(0);
+                        td1.align = "left";
+                        var td2 = tr.insertCell(1);
+                        td2.align = "left";
+                        var td3 = tr.insertCell(2);
+                        td3.align = "left";
+                        var td4 = tr.insertCell(3);
+                        td4.align = "right";
+                        var td5 = tr.insertCell(4);
+                        td5.align = "left";
+                        var td6 = tr.insertCell(5);
+                        td6.align = "left";
+                        var td7 = tr.insertCell(6);
+                        td7.align = "left";
+                        td7.style.borderRight = "0px";
+                        td1.innerHTML = jsonObj.name;
+                        td1.title = jsonObj.name;
+                        td2.innerHTML = jsonObj.id;
+                        td2.title = jsonObj.id;
+                        td3.innerHTML = jsonObj.allocType;
+                        td3.title = jsonObj.allocType;
+                        td4.innerHTML = jsonObj.capacity;
+                        td4.title = jsonObj.capacity;
+                        td5.innerHTML = jsonObj.deviceName;
+                        td5.title = jsonObj.deviceName;
+                        td6.innerHTML = jsonObj.storagePoolName;
+                        td6.title = jsonObj.storagePoolName;
+                        td7.innerHTML = jsonObj.deviceIp;
+                        td7.title = jsonObj.deviceIp;
+
+                        td1.width = "10%";
+                        td2.width = "5%";
+                        td3.width = "7%";
+                        td4.width = "8%";
+                        td5.width = "9%";
+                        td6.width = "15%";
+                        td7.width = "13%";
+
+                        tbody.appendChild(tr);
+                        if (datastoreID == "") {
+                            break;
+                        }
+                    }
+                    if (datastoreID == "") {
+                        clearLunsOrFs();
+                    }
+                    $("#datastoreLunTable").width($("#datastoreLunTableData").width());
+                });
+            }
+        }
+        function datastoreClickEvent() {
+            $("#datastoreTableData tr").bind("click", function (event) {
+                $(this).find("td").css("background-color", "#abcefc");
+                $("#datastoreTableData tr").not($(this)).find("td").css("background-color", "#FFFFFF");
+                if ($(this).find('td:eq(6)').text() == "NFS") {
+                    lunOrFsFlag = "fs";
+                    datastoreID = $(this).find('td:eq(10)').text();
+                    $("#lunOrFsUsedForDsSpan").html("File Systems Used for Datastore");
+                    $(".lunIdentifierTh").hide();
+                    $(".nameVcenterTh").hide();
+                    $(".nameDeviceDiv").html("Name");
+                } else {
+                    lunOrFsFlag = "lun";
+                    datastoreID = $(this).find('td:eq(10)').text();
+                    $(".lunIdentifierTh").show();
+                    // $(".lunIdentifierDiv").show();
+                    $(".nameVcenterTh").show();
+                    // $(".nameVcenterDiv").show();
+//                $(".nameDeviceTh").hide();
+                    $(".nameDeviceDiv").html("Name(Device)");
+                    $("#lunOrFsUsedForDsSpan").html("Volumes Used for Datastore");
+                }
+                refreshLunsOrFs();
+            });
+        }
+        function clearDatastores() {
+            datastoreID = "";
+            var tb = document.getElementById('datastoreTableData');
+            var rowNum = tb.rows.length;
+            for (var i = 0; i < rowNum; i++) {
+                tb.deleteRow(i);
+                rowNum = rowNum - 1;
+                i = i - 1;
+            }
+            $("#datastoreTable").width($("#datastoreTableData").width());
+        }
+        function clearLunsOrFs() {
+            var tb = document.getElementById('datastoreLunTableData');
+            var rowNum = tb.rows.length;
+            for (var i = 0; i < rowNum; i++) {
+                tb.deleteRow(i);
+                rowNum = rowNum - 1;
+                i = i - 1;
+            }
+            $("#datastoreLunTable").width($("#datastoreLunTableData").width());
+        }
+        function hideBottomBorder() {
+            var h = $("#datastoreTable").height();
+            var h1 = $("#datastoreTable").height();
+            if (h <= h1) {
+                //$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
+                var div = $("#datastoreTableDiv").width() - $("#datastoreTable").width();
+                $("#datastoreheadDiv").css("display", "block");
+                $("#datastoreheadDiv").width(div);
+            } else {
+                //$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
+                $("#datastoreheadDiv").css("display", "none");
+            }
+        }
+        function hideLunBottomBorder() {
+            var h = $("#datastoreLunTableDivList").height();
+            var h1 = $("#datastoreLunTable").height();
+            if (h <= h1) {
+                //$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
+                var div = $("#lunTableDiv").width() - $("#datastoreLunTable").width();
+                $("#datastoreLunheadDiv").css("display", "block");
+                $("#datastoreLunheadDiv").width(div);
+            } else {
+                //$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
+                //$("#lunheadDiv").css("display", "none");
+                var div = $("#lunTableDiv").width() - $("#datastoreLunTable").width();
+                $("#datastoreLunheadDiv").css("display", "block");
+                $("#datastoreLunheadDiv").width(div);
+            }
+        }
+
+        function testAddtr() {
+            var tbody = document.getElementById("tbody_datastore");
+            var tr = document.createElement("tr");
+            var td1 = tr.insertCell(0);
+            td1.align = "left";
+            var td2 = tr.insertCell(1);
+            td2.align = "left";
+            var td3 = tr.insertCell(2);
+            td3.align = "right";
+            var td4 = tr.insertCell(3);
+            td4.align = "right";
+            var td5 = tr.insertCell(4);
+            td5.align = "left";
+            var td6 = tr.insertCell(5);
+            td6.align = "left";
+            var td7 = tr.insertCell(6);
+            td7.align = "left";
+            td7.style.borderRight = "0px";
+            var td8 = tr.insertCell(7);
+            td8.style.display = "none";
+            var td9 = tr.insertCell(8);
+            td9.style.display = "none";
+
+            td1.innerHTML = "asda";
+            td1.title = "adas";
+            td2.innerHTML = "asda";
+            td2.title = "adas";
+            td3.innerHTML = "adas";
+            td3.title = "adas";
+
+            td4.innerHTML = makeRateChart(0.6);
+            td4.title = "Free Capacity:"+ 60;
+
+            td1.width = "18%";
+            td2.width = "10%";
+            td3.width = "10%";
+            td4.width = "12%";
+            td5.width = "10%";
+            td6.width = "15%";
+            td7.width = "25%";
+
+            tbody.appendChild(tr);
+        }
+
+
+        var fun01 = dragTable_table;
+        fun01("datastoreTable", "datastoreTableData");
+        var fun02 = dragTable_table;
+        fun02("datastoreLunTable", "datastoreLunTableData");
+    </script>
+</head>
+</html>

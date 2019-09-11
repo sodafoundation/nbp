@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>Snapshot</title>
+		<meta http-equiv="Cache-Control" content="no-cache" />
+		<link type="text/css" rel="stylesheet" href="../../../assets/css/style.css">
+		<link type="text/css" rel="stylesheet" href="../../../assets/css/icstyle.css">
+		<link type="text/css" rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css">
+		<link type="text/css" rel="stylesheet" href="../../../assets/css/snapshot-main.css">
+		<style type="text/css">
+			table thead tr th,
+			table tbody tr td {
+				white-space: nowrap;
+			}
+			
+			.popup {
+				border: 0px solid yellow;
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+				background-color: #FFFFFF;
+				filter: alpha(opacity=45);
+				opacity: 0.45;
+				display: none;
+				z-index: 200;
+			}
+			
+			.pager {
+				height: 100%;
+			}
+			
+			.help {
+				right: 0px;
+				background-image: url(../../../assets/images/help.png);
+				height: 17px;
+				width: 17px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="divMain">
+			<div class="dataArea">
+				<div class="tabHead">
+					<div id="lunTabDesc" class="tabDesc">
+						<div><span class="basicTitle" id="lunTabBasicTitle">Lun</span>&nbsp;&nbsp;<input type="button" id="toggleLunFsBtn" value="File System"style="width:78px;display: none;"></div>
+						<div id="help" url="snapshot" class="help" style="top:11px;position: absolute;margin-right: 8px;">
+						</div>
+					</div>
+					<div class="line" id="line1"></div>
+					<div class="topButtonDiv btnContainer">
+						<div class="plugin_button_main" style="float: left;margin-left: 0px;">
+							<input type="button" id="showBackupBtn" value="Backup" />
+						</div>
+						<div class="plugin_button_main" style="float: left;margin-left: 5px;">
+							<input type="button" id="refreshLunBtn" value="Refresh" />
+						</div>
+						<!-- for search -->
+						<div class="plugin_button_main" style="float: right;margin-right: 0px;">
+							<input type="button" id="btnSearch" value="Search">
+						</div>
+						<div id="nameId_filterValueDiv" class="plugin_button_main" style="float: right;margin-right: 5px;">
+							<input type="text" class="search_Input" id="nameId_filterValue" maxlength="32" placeholder="Keyword" onkeydown="if(event.keyCode=='13')$('#btnSearch').click()" style="width: 149px;vertical-align:top;padding-top:5px">
+						</div>
+						<div class="plugin_button_main" style="float: right;margin-right: 5px;">
+							<select id="healthStatus_filterValue" class="healthStatus_filterValue" name="filterValue" style="width: 155px;height: 22px; display: none;">
+								<option value="ALL">All</option>
+								<option value="NORMAL">Normal</option>
+								<option value="FAULT">Fault</option>
+							</select>
+							<select id="runStatus_filterValue" class="runStatus_filterValue" style="width: 155px;height: 22px; display: none;">
+								<option value="ALL">All</option>
+								<option value="ONLINE">Online</option>
+								<option value="OFFLINE">Offline</option>
+							</select>
+						</div>
+						<div class="plugin_button_main" style="float: right;margin-right: 5px;">
+							<select id="filterType" class="filterType" style="width: 155px;height: 22px;vertical-align:top;">
+								<option value="NAME">Name</option>
+								<option value="ID">ID</option>
+<!--								<option value="HEALTHSTATUS" style="font-size: 12px">Health status</option>
+								<option value="RUNNINGSTATUS">Running status</option>-->
+							</select>
+						</div>
+					</div>
+				</div>
+				<!-- <div id="lunTabDiv" class="tabArea"> -->
+				<div id="lunTabDiv" class="tabArea" style="position: relative;overflow-y: hidden;overflow-x: hidden;">
+					<table id="hostLunTab" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;">
+						<thead class="tableHead">
+							<tr>
+								<th class="lunFsIdTh" title="LUN ID" width="4%" align="left"style="background:none;">
+									<div class="lunFsIdDiv">ID</div>
+								</th>
+								<th title="Name" width="13%" align="left">
+									<div>Name</div>
+								</th>
+								<th title="Status" width="8%" align="left">
+									<div> Status</div>
+								</th>
+								<th id="volCapUsage" title="Capacity Usage" width="16%" align="left">
+									<div>Capacity Usage</div>
+								</th>
+								<th title="Pool Name" width="13%" align="left">
+									<div>Pool Name</div>
+								</th>
+								<th id="poolCapUsage" title="Pool Usage" width="16%" style="text-align: left; padding-right: 4px;">
+									<div>Pool Usage</div>
+								</th>
+								<th title="Storage IP" width="13%" align="left">
+									<div>Storage IP</div>
+								</th>
+								<th  title="Used By" width="17%" align="left" style="border-right: 0px;">
+									<div class="lunTabMappingDiv">Used By</div>
+								</th>
+							</tr>
+						</thead>
+					</table>
+					<iframe id="lunTabFrame" frameborder="0" scrolling="auto" style="width: 100%;border: none;height: 100%;" src=""></iframe>
+					<div id="pager-lunTabFrame" style="height: 24px; width: 100%"></div>
+				</div>
+			</div>
+			<div class="dataArea" id="dataArea2">
+				<div id="tabHead" class="tabHead">
+					<div id="snapshotTabDesc" class="tabDesc">
+						<span class="basicTitle">Snapshot</span>
+					</div>
+					<div class="line" id="tarLineDiv"></div>
+					<div class="btnContainer">
+						<div class="plugin_button_main" style="float: left;margin-left: 0px;">
+							<input type="button" id="recoverBtn" value="Recovery" />
+						</div>
+						<div class="plugin_button_main" style="float: left;margin-left: 5px;">
+							<input type="button" id="delSnapBtn" value="Delete" />
+						</div>
+						<div class="plugin_button_main" style="float: left;margin-left: 5px;">
+							<input type="button" id="refreshSnapBtn" value="Refresh" />
+						</div>
+					</div>
+				</div>
+				<!-- <div id="snapshotTabDiv" class="tabArea"> -->
+				<div id="snapshotTabDiv" class="tabArea" style="position: relative;overflow-y: hidden;overflow-x: hidden;">
+					<table id="snapshotTab" class="tablesorter" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
+						<thead class="tableHead">
+							<tr>
+								<th style="display: none">id</th>
+								<th style="display: none">srcLunId</th>
+								<th width="4%" align="center" style="text-align: center;background:none;">
+									<input type="checkbox" id="chk_all" style="vertical-align:middle;" />
+								</th>
+								<th title="ID" width="8%" align="left">
+									<div>ID</div>
+								</th>
+								<th title="Name" width="22%" align="left">
+									<div>Name</div>
+								</th>
+								<th title="Status" width="15%" align="left">
+									<div>Status</div>
+								</th>
+								<th class="capacityTh" title="Capacity" width="15%" style="text-align: left;
+								padding-right: 4px;">
+									<div class="capacityDiv">Capacity</div>
+								</th>
+								<th class="spTabWwnTh" title="Time Stamp" width="20%" align="left">
+									<div class="spTabWwnDiv">Time Stamp</div>
+								</th>
+							</tr>
+						</thead>
+					</table>
+					<iframe id="snapshotFrame" name="snapshotFrame" frameborder="0" scrolling="auto" style="width: 100%;" src=""></iframe>
+					<div id="pager-snapshotFrame" style="height: 24px; width: 100%"></div>
+				</div>
+			</div>
+			<div id="divLoadingLun" class="loBlock">
+				<span class="loWords">loading</span>
+			</div>
+			<div id="divLoadingSnapshot" class="loBlock">
+				<span class="loWords">loading</span>
+			</div>
+			<div id="divError" class="loading_font" style="width: 100%;height: 94%;position: absolute;top: 19px;left: 0px;background-color: #FFF;filter: alpha(opacity = 100);display: none;">
+			</div>
+			<div class="popup" id="popupDiv"></div>
+			<div id="ingDiv1" style="display: none;">
+				<span id="ing" style="position: absolute;left: 410px;top: 200px;font-size: 18px;color: #000000;z-index: 201;">Processing...please wait.</span>
+			</div>
+		</div>
+		<div id="cSnapBox">
+			<div id="title" class="alertBox">Excute Result</div>
+			<div id="cSnapBoxContent" class="alertBox">
+				<div id="inpuDiv" style="margin-top: 10px;margin-bottom: 5px;">
+					<label for="cSnapshotName" style="margin-left: 8px;font-size: 15px;">snapshot name:</label>
+					<input id="cSnapshotName" maxlength="31" type="text" style="width: 230px;">
+				</div>
+				<div id="btnDiv" class="btnAlign">
+					<input id="backupBtn" value="OK" type="button">
+					<input id="cancelBK" class="cancleBtn" value="Cancel" type="button">
+				</div>
+			</div>
+			<div id="sucDiv" class="alertBox">
+				<div class="alertWords sucWords" id="sucWords" style="word-break: break-all;">Successful</div>
+				<input name="OpType" type="hidden" id="sucType" value="" />
+				<hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797" />
+				<div class="btnAlign">
+					<!-- <button class="alertClose" id="sucOp">OK</button> -->
+					<input id="sucOp" value="OK" type="button">
+				</div>
+			</div>
+			<div id="errDiv" class="alertBox">
+				<div class="alertWords errWords" id="errWords" style="word-break: break-all;">Failed</div>
+				<input name="OpType" type="hidden" id="errType" value="" />
+				<hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797" />
+				<div class="btnAlign">
+					<!-- <button class="alertClose" id="errOp">OK</button> -->
+					<input id="errOp" value="OK" type="button">
+				</div>
+			</div>
+			<div id="delInfoDiv" class="alertBox">
+				<div id="infWords" class="alertWords infWords">Do you really want to do this?</div>
+				<input name="OpType" type="hidden" id="infType" value="" />
+				<hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;" color="#979797" />
+				<div id="btnDiv" class="btnAlign">
+					<input id="confirBtn" value="OK" type="button">
+					<input id="cancelBtn" class="cancleBtn" value="Cancel" type="button">
+				</div>
+			</div>
+			<div id="rollbackContent" class="alertBox">
+				<div class="rollbackDataContent">
+					<div id="rollbackContentDiv">You are about to restore the data on the source LUN to the point in time when the snapshot was activated.
+					</div>
+					<div id="inpuDiv" class="btnAlign">
+						<table id="rollbackDataTable">
+							<tr>
+								<td>Snapshot Name:</td>
+								<td><span id="rollbackSnap"></span></td>
+							</tr>
+							<tr class="rollbackSpeedTr">
+								<td><label for="rollbackSpeed">Rollback Speed:</label></td>
+								<td>
+									<select id="rollbackSpeed"  style="width:200px;">
+										<option value="1">Low</option>
+										<option value="2">Medium</option>
+										<option value="3">High</option>
+										<option value="4">Highest</option>
+									</select>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797" />
+				<div id="btnDiv" class="btnAlign">
+					<input id="rollbackBtn" value="OK" type="button" />
+					<input id="cancelRB" class="cancleBtn" value="Cancel" type="button" />
+				</div>
+			</div>
+			<div id="beforeRollback" class="alertBox">
+				<div id="beforeRollback_tip" style="margin-top: 10px;margin-bottom: 5px;text-align: center;"></div>
+				<hr style="position: relative;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797" />
+				<div id="btnDiv" class="btnAlign">
+					<input id="nextStep" value="OK" type="button">
+					<input id="cancelNext" class="cancleBtn" value="Cancel" type="button">
+				</div>
+			</div>
+		</div>
+		<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/web-platform.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/jquery.bigpage.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/storage.plugin.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/popup.self.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/popupclass.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/jquery-util.js"></script>
+		<script type="text/javascript" src="../../../resources/js/common/basic-table.js"></script>
+		<script type="text/javascript" src="../../../resources/js/snapshot/snapshot-main.js"></script>
+	</body>
+	<script src="../../../resources/js/common/drag-table.js"></script>
+	<script type="text/javascript">
+		   		//添加表格拖动功能
+   var fun01=dragTable_iframe;
+   fun01("hostLunTab","lunTabFrame","hostLunTable" );
+   var fun02=dragTable_iframe;
+   fun02("snapshotTab","snapshotFrame","snapshotTable" );
+
+	</script>
+</html>

@@ -1,0 +1,444 @@
+<!doctype html>
+<html style="height: 100%;">
+<body style="height: 100%">
+<div id="divMain" style="position: relative; height: 100%">
+    <div style="padding-top: 10px;">
+        <span style="font-weight: bold;">Raw Device Mapping</span>
+    </div>
+    <div id="help" url="4" class="help" style="top:11px;position: absolute;">
+    </div>
+    <div class="line" style="top: 30px;"></div>
+    <div style="position: absolute; top: 41px;">
+        <!-- <div class="plugin_button_main" id="btnRefresh">
+            <div class="plugin_button_div button_left"></div>
+            <div class="plugin_button_div button_center">Refresh</div>
+            <div class="plugin_button_div button_right"></div>
+        </div> -->
+        <div class="plugin_button_main" style="float: left;margin-left: 0px;">
+            <input type="button" id="btnRefresh" value="Refresh"/>
+        </div>
+    </div>
+    <div id="rawDeviceMappingTableDiv"
+         style="position: relative;top: 50px;border: 1px solid #C0C0C0;border-top: none;overflow-y: hidden;overflow-x: hidden;">
+        <table id="rawDeviceMappingTable" class="tablesorter" style="table-layout: fixed;position: relative;">
+            <thead class="tableHead">
+            <tr>
+                <th title="Name" width="12%" align="left" style="background:none">
+                    <div>Name</div>
+                </th>
+                <th title="Capacity" width="12%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Capacity</div>
+                </th>
+                <th title="LUN Identifier" width="30%" align="left">
+                    <div>LUN Identifier</div>
+                </th>
+                <th title="Owning File" width="30%" align="left">
+                    <div>Owning File</div>
+                </th>
+                <th title="Compatibility Mode" id="lastTd" width="16%" align="left">
+                    <div>Compatibility Mode</div>
+                </th>
+            </tr>
+            </thead>
+            <!-- <tbody id="tbody_rawDev"></tbody> -->
+        </table>
+        <div id="rawDeviceMappingTableDataDiv"
+             style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
+            <table id="rawDeviceMappingTableData" class="tablesorter"
+                   style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+                <tbody id="tbody_rawDev"></tbody>
+            </table>
+        </div>
+        <div id="divLoadingRawDev" class="loading_font"
+             style="width: 96%;height: 92%;position: absolute;/* top: 19px*/; left: 0px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+        </div>
+        <div id="divErrorRawDev" class="loading_font"
+             style="width: 96%;height: 92%;position: absolute; /*top: 19px*/; left: 0px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>Inactive
+            session,Please refresh your web browser or relogin.
+        </div>
+    </div>
+    <div id="lunTableTitle" style="position: absolute;">
+        <span style="font-weight: bold;">Raw Device Mappings Storage Information</span>
+    </div>
+    <!-- <div class="line" id="lineDiv" style="display: none;"></div> -->
+    <div id="lunTableDiv"
+         style="position: relative;border: 1px solid #C0C0C0;border-top: none;overflow-y: hidden;overflow-x: hidden;">
+        <table id="rawDeviceMappingLunTable" class="tablesorter" style="table-layout: fixed;position: relative;">
+            <thead class="tableHead">
+            <tr>
+                <th title="Identifier" width="15%" align="left" style="background:none">
+                    <div>Identifier</div>
+                </th>
+                <th title="Name(vCenter)" width="10%" align="left">
+                    <div>Name(vCenter)</div>
+                </th>
+                <th title="Name(Device)" width="10%" align="left">
+                    <div>Name(Device)</div>
+                </th>
+                <th title="ID" width="5%" align="left">
+                    <div>ID</div>
+                </th>
+                <th title="Type" width="10%" align="left">
+                    <div>Type</div>
+                </th>
+                <th title="Capacity" width="10%" align="right" style="text-align: left; padding-right: 4px;">
+                    <div>Capacity</div>
+                </th>
+                <th title="Owning Device" width="10%" align="left">
+                    <div>Owning Device</div>
+                </th>
+                <th title="Owning Storage Pool" width="15%" align="left">
+                    <div>Owning Storage Pool</div>
+                </th>
+                <th title="Device IP" id="lastTd" width="15%" align="left">
+                    <div>Device IP</div>
+                </th>
+            </tr>
+            </thead>
+            <!-- <tbody id="tbody_mapping"></tbody> -->
+        </table>
+        <div id="rawDeviceMappingLunTableDataDiv"
+             style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
+            <table id="rawDeviceMappingLunTableData" class="tablesorter"
+                   style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+                <tbody id="tbody_mapping"></tbody>
+            </table>
+        </div>
+        <div id="divLoadingMapping" class="loading_font"
+             style="width: 96%;height: 92%;position: absolute; left: 1px; /*top: 20px*/; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+        </div>
+        <div id="divErrorMapping" class="loading_font"
+             style="width: 96%;height: 92%;position: absolute; /*top: 19px*/; left: 0px; background-color: #FFF; display: none;">
+            <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>Inactive
+            session,Please refresh your web browser or relogin.
+        </div>
+    </div>
+</div>
+</body>
+<head>
+    <meta charset="utf-8"/>
+    <title>RawDevice</title>
+    <link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css"/>
+    <link rel="stylesheet" href="../../../assets/css/table.css"/>
+    <link rel="stylesheet" href="../../../assets/css/style.css"/>
+    <link rel="stylesheet" href="../../../assets/css/icstyle.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jqtree.css"/>
+    <script src="../../../assets/jquery-1.10.2.min.js"></script>
+    <script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="../../../resources/js/common/web-platform.js"></script>
+    <script src="../../../resources/js/common/jquery-util.js"></script>
+    <script src="../../../resources/js/common/storage.plugin.js"></script>
+    <script src="../../../resources/js/common/drag-table.js"></script>
+    <style type="text/css">
+        .line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-image: url(../../../assets/images/line.png);
+        }
+
+        .help {
+            right: 0px;
+            background-image: url(../../../assets/images/help.png);
+            height: 17px;
+            width: 17px;
+        }
+
+        table thead tr th, table tbody tr td {
+            white-space: nowrap;
+        }
+
+        #rawDeviceMappingTableDiv, #lunTableDiv {
+            background-image: url(../../../assets/images/gride_title.png);
+            font-weight: normal;
+            margin: 0px;
+            padding: 0px;
+            background-repeat: repeat-x;
+            vertical-align: bottom;
+        }
+    </style>
+    <script type="text/javascript">
+        var rowIndex = 0;
+        var moref = "";
+        var datastoreMoref = "";
+        var lunUuid = "";
+        var serverGuid = "";
+        var status = 0;
+        var ns = org_opensds_storage_devices;
+
+        $(document).ready(function () {
+            makeHelp();
+            //changesize();
+            var interval = setInterval(function () {
+                if ($("#rawDeviceMappingTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+                    changesize();
+                    if (status != 2) {
+                        $("#divLoadingRawDev").css("display", "block");
+                        status = 1;
+                    }
+                    clearInterval(interval);
+                }
+            }, 2);
+
+            initParam();
+            refreshRawDeviceMappings();
+            $("#btnRefresh").click(function () {
+                $("#divLoadingRawDev").css("display", "block");
+                $("#btnRefresh").prop("disabled", "disabled");
+
+                $("#rawDeviceMappingTable tr:eq(0) th:eq(0)").width("12%");
+                $("#rawDeviceMappingTable tr:eq(0) th:eq(1)").width("12%");
+                $("#rawDeviceMappingTable tr:eq(0) th:eq(2)").width("30%");
+                $("#rawDeviceMappingTable tr:eq(0) th:eq(3)").width("30%");
+                $("#rawDeviceMappingTable tr:eq(0) th:eq(4)").width("16%");
+
+                setTimeout(function () {
+                    $("#btnRefresh").removeProp("disabled");
+                }, 500);
+                refreshRawDeviceMappings();
+            });
+            $(window).resize(function () {
+                /* parent.changesize(); */
+                changesize();
+                $("#rawDeviceMappingTable").width($("#rawDeviceMappingTableData").width());
+                $("#rawDeviceMappingLunTable").width($("#rawDeviceMappingLunTableData").width());
+            });
+        });
+
+        function changesize() {
+            var divMainHeight = $("#divMain").height();
+            var divMainWidth = $("#divMain").width();
+            //从左到右依次为:padding-top:11,datastore标题头高度:20,间距:10,按钮高度:22,间距:10,表头高度17,间距10,标题头20,间距10,表头高度17,padding-bottom:11.
+            var tableFrameHeight = (divMainHeight - 11 - 20 - 10 - 22 - 10 - 16 - 10 - 20 - 16) / 2;
+            var tabNameTop = tableFrameHeight + 10 + 73 + 17;
+            //两张表格的高度
+            $("#rawDeviceMappingTableDiv").height(tableFrameHeight);
+            $("#rawDeviceMappingTableDiv").width(divMainWidth - 2);
+            var lineTop = tabNameTop + 20;
+            var lunTableDivTop = lineTop + 3;
+            $("#lunTableTitle").css("top", lunTableDivTop - 20);
+            $("#lunTableDiv").css("top", "97px");
+            $("#lunTableDiv").width(divMainWidth - 2);
+            $("#lunTableDiv").height(tableFrameHeight);
+
+            $("#rawDeviceMappingTableDataDiv").height($("#rawDeviceMappingTableDiv").height() - $("#rawDeviceMappingTable").height());
+            $("#rawDeviceMappingLunTableDataDiv").height($("#lunTableDiv").height() - $("#rawDeviceMappingLunTable").height());
+        }
+
+        function initParam() {
+            moref = parent.moref;
+            serverGuid = parent.serverGuid;
+        }
+
+        function refreshRawDeviceMappings() {
+            $("#rawDeviceMappingTable").width($("#divMain").width() - 2);
+            $("#rawDeviceMappingLunTable").width($("#divMain").width() - 2);
+            clearRawDeviceMappings();
+            clearLuns();
+            var RawDeviceMappingsUrl = ns.webContextPath + "/rest/data/vm/rawDeviceMappings/"
+                + moref + "?serverGuid=" + serverGuid + "&t=" + new Date();
+            if ($("#rawDeviceMappingTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
+                setTimeout(function () {
+                    if (status != 1) {
+                        $("#divLoadingRawDev").css("display", "block");
+                        status = 2;
+                    }
+                }, 30);
+            }
+            $("#divLoadingMapping").css("display", "none");
+            $.getJSON(encodeURI(RawDeviceMappingsUrl), function (resp) {
+                $("#divLoadingRawDev").css("display", "none");
+                var tbody = document.getElementById("tbody_rawDev");
+                $(tbody).html("");
+                if (resp.errorCode) {
+                    $("#divLoadingRawDev").css("display", "none");
+                    $("#divErrorRawDev").text(resp.errorDesc).show();
+                    return;
+                }
+                var arr = eval(resp.data);
+                for (var i = 0; i < arr.length; i++) {
+                    var jsonObj = arr[i]; // 获取json对象
+                    //var tr = table.insertRow(table.rows.length);
+
+                    var tr = document.createElement("tr");
+                    var td1 = tr.insertCell(0);
+                    td1.align = "left";
+                    var td2 = tr.insertCell(1);
+                    td2.align = "right";
+                    var td3 = tr.insertCell(2);
+                    td3.align = "left";
+                    var td4 = tr.insertCell(3);
+                    td4.align = "left";
+                    var td5 = tr.insertCell(4);
+                    td5.align = "left";
+                    var td6 = tr.insertCell(5);
+                    td6.style.display = "none";
+                    var td7 = tr.insertCell(6);
+                    td7.style.display = "none";
+                    td5.style.borderRight = "0px";
+
+                    td1.width = "12%";
+                    td2.width = "12%";
+                    td3.width = "30%";
+                    td4.width = "30%";
+                    td5.width = "16%";
+
+                    var dname = jsonObj.name;
+                    //var hardDiskName = "Hard disk " + dname.split(" ")[1];
+                    url = "../../../assets/images/disk.png";
+                    td1.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + dname;
+                    td1.title = dname;
+
+                    td2.innerHTML = jsonObj.size;
+                    td2.title = jsonObj.size;
+                    td3.innerHTML = jsonObj.lunIdentifier;
+                    td3.title = jsonObj.lunIdentifier;
+                    td4.innerHTML = jsonObj.diskFileName;
+                    td4.title = jsonObj.diskFileName;
+                    td5.innerHTML = jsonObj.compatibilityMode;
+                    td5.title = jsonObj.compatibilityMode;
+                    td6.innerHTML = jsonObj.datastoreId;
+                    td6.title = jsonObj.datastoreId;
+                    td7.innerHTML = jsonObj.lunUuid;
+                    td7.title = jsonObj.lunUuid;
+
+                    tbody.appendChild(tr);
+                }
+                $("#rawDeviceMappingTable").width($("#rawDeviceMappingTableData").width());
+                rawDeviceMappingClickEvent();
+            });
+        }
+
+        function refreshRawDeviceMappingLuns() {
+            $("#rawDeviceMappingLunTable").width($("#divMain").width() - 2);
+            clearLuns();
+            $("#divLoadingMapping").css("display", "block");
+            if (datastoreMoref == "" || lunUuid == "") {
+                $("#divLoadingMapping").css("display", "none");
+                return;
+            }
+            var storageLunUrl = ns.webContextPath + "/rest/data/RawDeviceMappingLuns/"
+                + datastoreMoref + "?serverGuid=" + serverGuid + "&lunWWN=" + lunUuid + "&t=" + new Date();
+            var uuid = lunUuid;
+            $.getJSON(encodeURI(storageLunUrl), function (resp) {
+                $("#divLoadingMapping").css("display", "none");
+                if (datastoreMoref == "" || lunUuid == "") {
+                    return;
+                }
+                if (lunUuid != uuid) {
+                    return;
+                }
+                var tbody = document.getElementById("tbody_mapping");
+                $(tbody).html("");
+                if (resp.errorCode) {
+                    $("#divLoadingMapping").css("display", "none");
+                    $("#divErrorMapping").text(resp.errorDesc).show();
+                    return;
+                }
+                var arr = eval(resp.data);
+                for (var i = 0; i < arr.length; i++) {
+                    var jsonObj = arr[i];// 获取json对象
+
+                    var tr = document.createElement("tr");
+                    var td1 = tr.insertCell(0);
+                    td1.align = "left";
+                    var td2 = tr.insertCell(1);
+                    td2.align = "left";
+                    var td3 = tr.insertCell(2);
+                    td3.align = "left";
+                    var td4 = tr.insertCell(3);
+                    td4.align = "left";
+                    var td5 = tr.insertCell(4);
+                    td5.align = "left";
+                    var td6 = tr.insertCell(5);
+                    td6.align = "right";
+                    var td7 = tr.insertCell(6);
+                    td7.align = "left";
+                    var td8 = tr.insertCell(7);
+                    td8.align = "left";
+                    var td9 = tr.insertCell(8);
+                    td9.align = "left";
+                    td9.style.borderRight = "0px";
+
+                    td1.width = "15%";
+                    td2.width = "10%";
+                    td3.width = "10%";
+                    td4.width = "5%";
+                    td5.width = "10%";
+                    td6.width = "10%";
+                    td7.width = "10%";
+                    td8.width = "15%";
+                    td9.width = "15%";
+
+                    td1.innerHTML = jsonObj.identifier;
+                    td2.innerHTML = jsonObj.displayName;
+                    td3.innerHTML = jsonObj.name;
+                    td4.innerHTML = jsonObj.id;
+                    td5.innerHTML = jsonObj.allocType;
+                    td6.innerHTML = jsonObj.capacity;
+                    td7.innerHTML = jsonObj.deviceName;
+                    td8.innerHTML = jsonObj.storagePoolName;
+                    td9.innerHTML = jsonObj.deviceIp;
+
+                    td1.title = jsonObj.identifier;
+                    td2.title = jsonObj.displayName;
+                    td3.title = jsonObj.name;
+                    td4.title = jsonObj.id;
+                    td5.title = jsonObj.allocType;
+                    td6.title = jsonObj.capacity;
+                    td7.title = jsonObj.deviceName;
+                    td8.title = jsonObj.storagePoolName;
+                    td9.title = jsonObj.deviceIp;
+
+                    tbody.appendChild(tr);
+                    if (datastoreMoref == "" || lunUuid == "") {
+                        break;
+                    }
+                }
+                if (datastoreMoref == "" || lunUuid == "") {
+                    clearLuns();
+                }
+                $("#rawDeviceMappingLunTable").width($("#rawDeviceMappingLunTableData").width());
+            });
+        }
+        function rawDeviceMappingClickEvent() {
+            $("#rawDeviceMappingTableData tr").bind("click", function (event) {
+                $(this).find("td").css("background-color", "#abcefc");
+                $("#rawDeviceMappingTableData tr").not($(this)).find("td").css("background-color", "#FFFFFF");
+                datastoreMoref = $(this).find('td:eq(5)').text();
+                lunUuid = $(this).find('td:eq(6)').text();
+                refreshRawDeviceMappingLuns();
+            });
+        }
+        function clearRawDeviceMappings() {
+            datastoreMoref = "";
+            lunUuid = "";
+            var tb = document.getElementById('rawDeviceMappingTableData');
+            var rowNum = tb.rows.length;
+            for (var i = 0; i < rowNum; i++) {
+                tb.deleteRow(i);
+                rowNum = rowNum - 1;
+                i = i - 1;
+            }
+        }
+        function clearLuns() {
+            var tb = document.getElementById('rawDeviceMappingLunTableData');
+            var rowNum = tb.rows.length;
+            for (var i = 0; i < rowNum; i++) {
+                tb.deleteRow(i);
+                rowNum = rowNum - 1;
+                i = i - 1;
+            }
+        }
+        //添加表格拖动功能
+        var fun01 = dragTable_table;
+        fun01("rawDeviceMappingTable", "rawDeviceMappingTableData");
+        var fun02 = dragTable_table;
+        fun02("rawDeviceMappingLunTable", "rawDeviceMappingLunTableData");
+    </script>
+</head>
+</html>

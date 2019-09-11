@@ -28,7 +28,7 @@ table thead tr th,table tbody tr td {
 
 	function refreshData() {
 		$("#divLoadingAlarm").css("display", "block");
-		var url = ns.webContextPath + "/rest/data/devicelist?t=" + new Date();
+		var url = ns.webContextPath + "/rest/device/getList?t=" + new Date();
 		$.getJSON(encodeURI(url), function(resp) {
 			$("#divLoadingAlarm").css("display", "none");
 			//var table = document.getElementById("deviceList");
@@ -62,14 +62,14 @@ table thead tr th,table tbody tr td {
 				td2.innerHTML = jsonObj.deviceModel;
 				td3.innerHTML = jsonObj.ip;
 				td4.innerHTML = jsonObj.sn;
-				td5.innerHTML = jsonObj.id;
+				td5.innerHTML = jsonObj.uid;
 				td6.innerHTML = jsonObj.deviceType;
 				td7.innerHTML = jsonObj.supportNFS;
 				td1.title = jsonObj.deviceName;
 				td2.title = jsonObj.deviceModel;
 				td3.title = jsonObj.ip;
 				td4.title = jsonObj.sn;
-				td5.title = jsonObj.id;
+				td5.title = jsonObj.uid;
 				td6.title = jsonObj.deviceType;
 				td7.title = jsonObj.supportNFS;
 				

@@ -405,3 +405,28 @@ function shieldCombinationKey() {
 	      return false;
     });
 }
+
+// create bar for usage!
+function makeRateChart(usageRate, element) {
+    usageRate = usageRate.toFixed(2);
+    var totalWidth = element.outerWidth() * 0.65;
+    var totalHeight = element.outerHeight() * 0.40;
+
+    var innerHtml = "<table style=\"float:left;cellpadding: 0;cellspacing: 0;height:" +
+        totalHeight +
+        "px; width: " +
+        totalWidth + "px;\"><tr><td style=\"border: 0; padding: 1px 0;height:100%; width:" + usageRate*100
+        + "%;\"><div style=\"background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#ffb346), to(#ff8a00));" +
+        "FILTER: progid:DXImageTransform.Microsoft.Gradient(gradientType=0,startColorStr=#ffb346,endColorStr=#ff8a00);" +
+        "background: -ms-linear-gradient(left,#ffb346 0%,#ff8a00 100%);" +
+        "background: -moz-linear-gradient(left, #ffb346, #ff8a00);" +
+        "background: -o-linear-gradient(left,#ffb346 0%, #ff8a00 100%);" +
+        "valign:left; width : 100%; height: 100%;\"></div></td><td " +
+        "style=\"border: 0; padding: 1px 0; height: 100%;width:" + (1 - usageRate) * 100 +
+        "%;\"><div  style=\"background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0d3ff), to(#9bb9e9));" +
+        "FILTER: progid:DXImageTransform.Microsoft.Gradient(gradientType=0,startColorStr=#b0d3ff,endColorStr=#9bb9e9);" +
+        "background: -ms-linear-gradient(left,#b0d3ff 0%,#9bb9e9 100%);" +
+        "background: -moz-linear-gradient(left, #b0d3ff, #9bb9e9);background: -o-linear-gradient(left, #b0d3ff 0%, #9bb9e9 100%);" +
+        "valign:left; width : 100%; height: 100%;\"></div></td></tr></table><div style='float:left;margin-left:3px;'>"+usageRate*100+ "%"+ "</div>";
+    return innerHtml;
+}

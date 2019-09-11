@@ -1,0 +1,331 @@
+<!doctype html>
+<html style="height: 100%">
+<body style="height: 100%">
+<div id="divMain" style="position: relative; height: 100%">
+    <div style="height: 20px; width: 100%; float: left; top: 11px; position: absolute;">
+        <span class="basicTitle" style="line-height: 20px; font-weight: bold;">Volumes</span>
+    </div>
+    <div id="help" url="2" class="help" style="top:11px;position: absolute;">
+    </div>
+    <div class="line" style="top: 30px;"></div>
+    <div style="position: absolute; top: 41px;">
+        <!-- <div class="plugin_button_main" id="btnRefresh">
+            <div class="plugin_button_div button_left"></div>
+            <div class="plugin_button_div button_center">Refresh</div>
+            <div class="plugin_button_div button_right"></div>
+        </div> -->
+        <div class="plugin_button_main" style="float: left;margin-left: 0px;">
+            <input type="button" id="btnRefresh" value="Refresh"/>
+        </div>
+    </div>
+    <div id="lunTableDiv"
+         style="position: relative;top: 73px; border: 1px solid #C0C0C0;border-top: 0 none;overflow-y: hidden;overflow-x: hidden;">
+        <table id="hostLunTable" class="tablesorter" style="table-layout: fixed;position: relative;">
+            <thead class="tableHead">
+            <tr>
+                <th title="Identifier" width="15%" align="center" style="background:none">
+                    <div>Identifier(ESXI)</div>
+                </th>
+                <th title="Status" width="5%" align="center">
+                    <div>Status</div>
+                </th>
+                <th title="Volume Name" width="10%" align="center">
+                    <div>Name</div>
+                </th>
+                <th title="ID" width="5%" align="center">
+                    <div>ID</div>
+                </th>
+                <th title="Type" width="5%" align="center">
+                    <div>Type</div>
+                </th>
+                <th id="volumeCapUsage" title="Capacity Usage" width="15%" align="center">
+                    <div>Capacity Usage</div>
+                </th>
+                <th title="Storage Pool" width="10%" align="center">
+                    <div>Storage Pool</div>
+                </th>
+                <th id="poolCapUsage" title="Pool Capacity Usage " width="15%" align="center">
+                    <div>Pool Capacity Usage</div>
+                </th>
+                <th title="Device IP" width="10%" align="center">
+                    <div>Device IP</div>
+                </th>
+                <th title="Used By" id="lastTd" width="10%" align="center">
+                    <div>Used By</div>
+                </th>
+            </tr>
+            </thead>
+            <!-- <tbody id="tbody_hostLun" style="margin-right: 0px;"></tbody> -->
+        </table>
+        <div id="hostLunTableDataDiv"
+             style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
+            <table id="hostLunTableData" class="tablesorter"
+                   style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+                <tbody id="tbody_hostLun"></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="divLoadingLuns" class="loading_font"
+         style="position: absolute; left:1px; top: 110px; background-color: #FFF;display: none;">
+        <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+    </div>
+
+    <div id="divErrorLuns" class="loading_font"
+         style="position: absolute; left: 1px; top: 91px; background-color: #FFF;display: none;">
+        <span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>Inactive
+        session,Please refresh your web browser or relogin.
+    </div>
+</div>
+</body>
+<head>
+    <meta charset="utf-8"/>
+    <title>LUNs</title>
+    <style type="text/css">
+        .line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-image: url(../../../assets/images/line.png);
+        }
+
+        .help {
+            right: 0px;
+            background-image: url(../../../assets/images/help.png);
+            height: 17px;
+            width: 17px;
+        }
+
+        table thead tr th, table tbody tr td {
+            white-space: nowrap;
+        }
+
+        #lunTableDiv {
+            background-image: url(../../../assets/images/gride_title.png);
+            font-weight: normal;
+            margin: 0px;
+            padding: 0px;
+            background-repeat: repeat-x;
+            vertical-align: bottom;
+        }
+    </style>
+    <link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css"/>
+    <link rel="stylesheet" href="../../../assets/css/table.css"/>
+    <link rel="stylesheet" href="../../../assets/css/style.css"/>
+    <link rel="stylesheet" href="../../../assets/css/icstyle.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jqtree.css"/>
+
+    <script src="../../../assets/jquery-1.10.2.min.js"></script>
+    <script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="../../../resources/js/common/web-platform.js"></script>
+    <script src="../../../resources/js/common/jquery-util.js"></script>
+    <script src="../../../resources/js/common/storage.plugin.js"></script>
+    <script src="../../../resources/js/common/drag-table.js"></script>
+    <script type="text/javascript">
+        var moref = "";
+        var serverGuid = "";
+        var status = 0;
+        var ns = org_opensds_storage_devices;
+        var lunTable2 = document.getElementById(hostLunTable);
+        var lunTable = $("#hostLunTable");
+        $("#divLoadingLuns").css("display", "block");
+
+
+        $(document).ready(function () {
+            makeHelp();
+            initParam();
+            //changesize();
+            var interval = setInterval(function () {
+                if ($("#lunTableDiv").height() > 0) {
+                    changesize();
+                    if (status != 2) {
+                        $("#divLoadingLuns").css("display", "block");
+                        status = 1;
+                    }
+                    clearInterval(interval);
+                }
+            }, 2);
+
+            refreshLuns();
+            $("#btnRefresh").click(function () {
+                $("#divLoadingLuns").css("display", "block");
+                $("#btnRefresh").prop("disabled", "disabled");
+                $("#btnRefresh").prop("disabled", "disabled");
+                $("#hostLunTable tr:eq(0) th:eq(0)").width("15%");
+                $("#hostLunTable tr:eq(0) th:eq(1)").width("5%");
+                $("#hostLunTable tr:eq(0) th:eq(2)").width("10%");
+                $("#hostLunTable tr:eq(0) th:eq(3)").width("5%");
+                $("#hostLunTable tr:eq(0) th:eq(4)").width("5%");
+                $("#hostLunTable tr:eq(0) th:eq(5)").width("15%");
+                $("#hostLunTable tr:eq(0) th:eq(6)").width("10%");
+                $("#hostLunTable tr:eq(0) th:eq(7)").width("15%");
+                $("#hostLunTable tr:eq(0) th:eq(8)").width("10%");
+                $("#hostLunTable tr:eq(0) th:eq(9)").width("10%");
+                setTimeout(function () {
+                    $("#btnRefresh").removeProp("disabled");
+                }, 500);
+                refreshLuns();
+            });
+            $(window).resize(function () {
+                changesize();
+                $("#hostLunTable").width($("#hostLunTableData").width());
+                /* $("#hostLunTableDataDiv").height($("#lunTableDiv").height() - $("#hostLunTable").height()); */
+            });
+        });
+        function initParam() {
+            moref = parent.moref;
+            serverGuid = parent.serverGuid;
+        }
+        function refreshLuns() {
+            $("#hostLunTable").width($("#divMain").width() - 2);
+            clearLuns();
+            if ($("#lunTableDiv").height() > 0) {
+                setTimeout(function () {
+                    if (status != 1) {
+                        $("#divLoadingLuns").css("display", "block");
+                        status = 2;
+                    }
+                }, 30);
+            }
+            var hostLunUrl = ns.webContextPath + "/rest/data/host/volumeListOfHost/" + moref + "?serverGuid=" + serverGuid
+                + "&t=" + new Date();
+            $.getJSON(encodeURI(hostLunUrl), function (resp) {
+                $("#divLoadingLuns").css("display", "none");
+                var tbody = document.getElementById("tbody_hostLun");
+                $(tbody).html("");
+                if (resp.errorCode) {
+                    $("#divLoadingLuns").css("display", "none");
+                    $("#divErrorLuns").text(resp.errorDesc).show();
+                    return;
+                }
+                var arr = eval(resp.data);
+                for (var i = 0; i < arr.length; i++) {
+                    var jsonObj = arr[i];
+
+                    var tr = document.createElement("tr");
+                    var td1 = tr.insertCell(0);
+                    td1.align = "left";
+                    var td2 = tr.insertCell(1);
+                    td2.align = "left";
+                    var td3 = tr.insertCell(2);
+                    td3.align = "left";
+                    var td4 = tr.insertCell(3);
+                    td4.align = "left";
+                    var td5 = tr.insertCell(4);
+                    td5.align = "left";
+                    var td6 = tr.insertCell(5);
+                    td6.align = "left";
+                    var td7 = tr.insertCell(6);
+                    td7.align = "left";
+                    var td8 = tr.insertCell(7);
+                    td8.align = "left";
+                    var td9 = tr.insertCell(8);
+                    td9.align = "left";
+                    var td10 = tr.insertCell(9);
+                    td10.align = "left";
+                    var td11 = tr.insertCell(10);
+                    td11.align = "left";
+                    td11.style.borderRight = "0px";
+
+                    td1.innerHTML = jsonObj.identifier;
+                    td1.title = jsonObj.identifier;
+                    // insert lunstatus
+                    var status = jsonObj.status;
+                    if (status == "Normal") {
+                        url = "../../../assets/images/lun_status_normal.png";
+                        td2.innerHTML = "<img src=" + url + ">"
+                        td2.title = jsonObj.status;
+                    }
+                    else if (status == "Faulty") {
+                        url = "../../../assets/images/lun_status_unnormal.png";
+                        td2.innerHTML = "<img src=" + url + ">"
+                        td2.title = jsonObj.status;
+                    }
+
+                    td3.innerHTML = jsonObj.name;
+                    td3.title = jsonObj.name;
+                    td4.innerHTML = jsonObj.id;
+                    td4.title = jsonObj.id;
+                    td5.innerHTML = jsonObj.allocType;
+                    td5.title = jsonObj.allocType;
+                    td6.innerHTML =  makeRateChart(jsonObj.capacityUsage, $("#volumeCapUsage"));
+                    td6.title = "Total Capacity:" + jsonObj.capacity + " ; Free Capacity:" + jsonObj.freeCapacity;
+                    td7.innerHTML = jsonObj.storagePoolName;
+                    td7.title = jsonObj.storagePoolName;
+                    td8.innerHTML =  makeRateChart(jsonObj.storagePoolUsage, $("#poolCapUsage"));
+                    td8.title = "Total Capacity:" + jsonObj.storagePoolCapactiy + " ; Free Capacity:" + jsonObj.storagePoolFreeCap;
+                    td9.innerHTML = jsonObj.storageIP;
+                    td9.title = jsonObj.storageIP;
+
+                    var usedType = jsonObj.usedType;
+                    if (usedType == "Datastore") {
+                        url = "../../../assets/images/Datastore.png";
+                        td10.innerHTML = "<img src=" + url + ">" + "&nbsp;&nbsp;" + jsonObj.usedBy;
+                        td10.title = jsonObj.usedBy;
+                    }
+                    else if (usedType == "VirtualMachine") {
+                        url = "../../../assets/images/VirtualMachine.png";
+                        td10.innerHTML = "<img src=" + url + ">" + "&nbsp;&nbsp;" + jsonObj.usedBy;
+                        td10.title = jsonObj.usedBy;
+                    }
+                    else {
+                        td10.innerHTML = jsonObj.usedBy;
+                        td10.title = jsonObj.usedBy;
+                    }
+
+                    td1.width = "15%";
+                    td2.width = "5%";
+                    td3.width = "10%";
+                    td4.width = "5%";
+                    td5.width = "5%";
+                    td6.width = "15%";
+                    td7.width = "10%";
+                    td8.width = "15%";
+                    td9.width = "10%";
+                    td10.width = "10%";
+                    tbody.appendChild(tr);
+                }
+                $("#hostLunTable").width($("#hostLunTableData").width());
+            });
+        }
+        function clearLuns() {
+            var tb = document.getElementById('hostLunTableData');
+            var rowNum = tb.rows.length;
+            for (var i = 0; i < rowNum; i++) {
+                tb.deleteRow(i);
+                rowNum = rowNum - 1;
+                i = i - 1;
+            }
+        }
+        function changesize() {
+            var divMainHeight = $("#divMain").height();
+            var divMainWidth = $("#divMain").width();
+            var tableFrameHeight = divMainHeight - 14 - 22 - 20 - 10 - 21;
+            $("#lunTableDiv").height(tableFrameHeight);
+            $("#lunTableDiv").width(divMainWidth - 2);
+
+            $("#divLoadingLuns").width(divMainWidth - 10);
+            $("#divLoadingLuns").height(tableFrameHeight - 48);
+
+            $("#divErrorLuns").width(divMainWidth - 2);
+            $("#divErrorLuns").height(tableFrameHeight - 18);
+
+            $("#hostLunTableDataDiv").height($("#lunTableDiv").height() - $("#hostLunTable").height());
+        }
+        function hideBottomBorder() {
+            var h = $("#hostLunTableDiv").height();
+            var h1 = $("#hostLunTable").height();
+            if (h <= h1) {
+                var div = $("#lunTableDiv").width() - $("#hostLunTable").width();
+                $("#hostLunheadDiv").css("display", "block");
+                $("#hostLunheadDiv").width(div);
+            } else {
+                $("#hostLunheadDiv").css("display", "block");
+                $("#hostLunheadDiv").width(div);
+            }
+        }
+        var fun01 = dragTable_table;
+        fun01("hostLunTable", "hostLunTableData");
+    </script>
+</head>
+</html>

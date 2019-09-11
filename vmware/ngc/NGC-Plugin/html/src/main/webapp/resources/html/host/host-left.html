@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Host View</title>
+<style type="text/css">
+html {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	padding: 0px;
+	background-image: url("../../../assets/images/list_bg_shade.png");
+}
+
+body {
+	font-family: Tahoma;
+	font-size: 12px;
+	color: #464646;
+	padding-top: 10px;
+}
+
+a {
+	text-decoration: NONE;
+	outline: none;
+}
+
+table {
+	font-size: 12px;
+	font-color: blue;
+	margin: 0px;
+	padding: 0px;
+}
+
+.left_top_navigation {
+	/*background-image: url("../../../assets/images/left_list_title.png");*/
+	font-size: 12px;
+	font-weight: bold;
+	color: #0f3f6d;
+	height: 22px;
+	padding-left: 5px;
+}
+
+.left_top_datastore {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	vertical-align: middle;
+}
+
+.left_top_luns {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	vertical-align: middle;
+}
+
+.left_top_targets {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	vertical-align: middle;
+}
+
+font {
+	font-family: Tahoma;
+}
+
+.lego_div {
+	position: absolute;
+	bottom: 10px;
+	height: 120px;
+	text-align: center;
+}
+</style>
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#herfDatastore').css('color', '#000');
+		$('#hrefLun').css('color', '#0068FF');
+		$('#hrefTargets').css('color', '#0068FF');
+		$('#hrefFs').css('color', '#0068FF');
+		$('#hrefTopN').css('color', '#0068FF');
+	});
+	function goInHostMain(type) {
+		//var moref = parent.moref;
+		if (type == "datastore") {
+			$('#herfDatastore').css('color', '#000');
+			$('#hrefLun').css('color', '#0068FF');
+			$('#hrefTargets').css('color', '#0068FF');
+			$('#hrefFs').css('color', '#0068FF');
+			$('#hrefTopN').css('color', '#0068FF');
+
+			$("#lun_img").css("display", "none");
+			$("#target_img").css("display", "none");
+			$("#datastore_img").css("display", "block");
+			$("#fs_img").css("display", "none");
+			$("#topn_img").css("display", "none");
+			$("#test_img").css("display", "none");
+			parent.$("#mainFrame").attr("src", "datastore.html");
+
+		} else if (type == "luns") {
+			$('#herfDatastore').css('color', '#0068FF');
+			$('#hrefLun').css('color', '#000');
+			$('#hrefTargets').css('color', '#0068FF');
+			$('#hrefFs').css('color', '#0068FF');
+			$('#hrefTopN').css('color', '#0068FF');
+
+			$("#datastore_img").css("display", "none");
+			$("#target_img").css("display", "none");
+			$("#lun_img").css("display", "block");
+			$("#fs_img").css("display", "none");
+			$("#topn_img").css("display", "none");
+			$("#test_img").css("display", "none");
+			parent.$("#mainFrame").attr("src", "luns.html");
+		} /*else if (type == "targets") {
+			$('#herfDatastore').css('color', '#0068FF');
+			$('#hrefLun').css('color', '#0068FF');
+			$('#hrefTargets').css('color', '#000');
+			$('#hrefFs').css('color', '#0068FF');
+			$('#hrefTopN').css('color', '#0068FF');
+
+			$("#datastore_img").css("display", "none");
+			$("#lun_img").css("display", "none");
+			$("#target_img").css("display", "block");
+			$("#fs_img").css("display", "none");
+			$("#topn_img").css("display", "none");
+			$("#test_img").css("display", "none");
+			parent.$("#mainFrame").attr("src", "targets.html");
+		} else if (type == "fs") {
+            $('#herfDatastore').css('color', '#0068FF');
+            $('#hrefLun').css('color', '#0068FF');
+            $('#hrefTargets').css('color', '#0068FF');
+            $('#hrefFs').css('color', '#000');
+			$('#hrefTopN').css('color', '#0068FF');
+
+            $("#datastore_img").css("display", "none");
+            $("#lun_img").css("display", "none");
+            $("#target_img").css("display", "none");
+            $("#fs_img").css("display", "block");
+            $("#topn_img").css("display", "none");
+            $("#test_img").css("display", "none");
+            parent.$("#mainFrame").attr("src", "fileSystems.html");
+        }
+        else if (type == "topn") {
+       	    $('#hrefTopN').css('color', '#000');
+            $('#herfDatastore').css('color', '#0068FF');
+            $('#hrefLun').css('color', '#0068FF');
+            $('#hrefTargets').css('color', '#0068FF');
+            $('#hrefFs').css('color', '#0068FF');
+
+
+            $("#datastore_img").css("display", "none");
+            $("#lun_img").css("display", "none");
+            $("#target_img").css("display", "none");
+            $("#fs_img").css("display", "none");
+            $("#topn_img").css("display", "block");
+            $("#test_img").css("display", "none");
+            parent.$("#mainFrame").attr("src", "topnLUNs.html");
+        }*/
+	}
+</script>
+</head>
+<body>
+	<div>
+		<table style="border: 1px solid #7a7a7a; background-color: white; width: 100%;">
+			<tr>
+				<td colspan="2" align="left" class="left_top_navigation">Navigation</td>
+			</tr>
+			<tr style="height: 5px;">
+				<td></td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="datastore_img"
+					src="../../../assets/images/navigation_arrow.png" style="vertical-align: middle;"></img></td>
+				<td class="left_top_datastore"><a id="herfDatastore" onclick='goInHostMain("datastore")' href="#">Datastores</a>
+				</td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="lun_img" src="../../../assets/images/navigation_arrow.png"
+					style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_luns"><a id="hrefLun" onclick='goInHostMain("luns")' href="#">Volumes</a></td>
+			</tr>
+<!--			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="fs_img" src="../../../assets/images/navigation_arrow.png"
+																 style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_luns"><a id="hrefFs" onclick='goInHostMain("fs")' href="#">File Systems</a></td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="target_img"
+					src="../../../assets/images/navigation_arrow.png" style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_targets"><a id="hrefTargets" onclick='goInHostMain("targets")' href="#">Targets</a></td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="topn_img" src="../../../assets/images/navigation_arrow.png"
+																 style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_luns"><a id="hrefTopN" onclick='goInHostMain("topn")' href="#">TOPN-LUNs</a></td>
+			</tr>-->
+			<tr style="height: 5px;">
+				<td></td>
+			</tr>
+		</table>
+<!--		<div class="lego_div" style="left: 0px; width: 100%;margin-bottom: 40px;">
+			<div>
+				<img style="height: 56px; width: 56px;" src="../../../assets/images/view.png" />
+			</div>
+			<div>&nbsp;</div>
+			<div style="margin-top: 5px; font-size: 11px;">Huawei Storage Plugin</div>
+			<div style="margin-top: 5px; font-size: 11px;">
+				Copyright <font>&copy;</font> Huawei Technologies Co., Ltd. 2014. All rights reserved.
+			</div>
+		</div>-->
+	</div>
+</body>
+</html>

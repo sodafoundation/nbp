@@ -38,7 +38,7 @@
 							$("#nfsDatastoreRadio").next().show();
 						}
 						parent.isCreateDatastore = true;
-						if($("#lunDatastoreRadio").is(':checked')){
+						if($("#vmfsDatastoreRadio").is(':checked')){
 							$("#dg_main_left_5", window.parent.document).show();
 							$("#dg_main_left_6", window.parent.document).show();
 							if(enterType=="createDatastoreOrLun"){
@@ -49,11 +49,11 @@
 						}
 					}else{
 						$("#nfsDatastoreRadio").hide();
-						$("#lunDatastoreRadio").prop("checked",true);
+						$("#vmfsDatastoreRadio").prop("checked",true);
 						showSANleftMsg();
 						$("#nfsDatastoreRadio").next().hide();
 						parent.isCreateDatastore = false;
-						if($("#lunDatastoreRadio").is(':checked')){
+						if($("#vmfsDatastoreRadio").is(':checked')){
 							$("#dg_main_left_5", window.parent.document).hide();
 							$("#dg_top_5", window.parent.document).hide();
 							$("#dg_main_left_6", window.parent.document).hide();
@@ -78,7 +78,7 @@
 					if(eval(parent.supportNFS) == false){
 						$("#nfsDatastoreRadio").hide();
 						$("#nfsDatastoreRadio").next().hide();
-                        $("#lunDatastoreRadio").attr("checked", "checked");
+                        $("#vmfsDatastoreRadio").attr("checked", "checked");
                         parent.datastoreType = $('input[name="dsTypeChoice"]:checked').val();
 					}else{
 						$("#nfsDatastoreRadio").show();
@@ -89,14 +89,14 @@
 					$("#isCreateDatestore").removeAttr("checked");
 					$("#nfsDatastoreRadio").hide();
 					$("#nfsDatastoreRadio").next().hide();
-					if(parent.datastoreType == "lunDatastore") {
-						$("#lunDatastoreRadio").attr("checked", "checked");
+					if(parent.datastoreType == "vmfsDatastore") {
+						$("#vmfsDatastoreRadio").attr("checked", "checked");
 					}
 					parent.isCreateDatastore = false;
 				}
 
 				dealNextStep();
-				$("#lunDatastoreRadio").click(function(e) {
+				$("#vmfsDatastoreRadio").click(function(e) {
 					showSANleftMsg();
 				});
 
@@ -183,7 +183,7 @@
 				<tr>
 					<td colspan="2">
 						<br>
-						<input type="radio" id="lunDatastoreRadio" name="dsTypeChoice" value="lunDatastore" style="font-size:0.9em;font-weight:500;font-family: Tahoma;margin-left:20px;"><label for="lunDatastoreRadio">Block storage type</label><br>
+						<input type="radio" id="vmfsDatastoreRadio" name="dsTypeChoice" value="vmfsDatastore" style="font-size:0.9em;font-weight:500;font-family: Tahoma;margin-left:20px;"><label for="vmfsDatastoreRadio">Block storage type</label><br>
 						<br>
 						<input type="radio" id="nfsDatastoreRadio" name="dsTypeChoice" value="nfsDatastore"style="display:none; font-size:0.9em;font-weight:500;font-family: Tahoma;margin-left:20px;"><label for="nfsDatastoreRadio">NFS storage type</label>
 					</td>

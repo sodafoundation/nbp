@@ -1,0 +1,632 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>mount-main</title>
+    <link rel="stylesheet" href="../../../assets/css/basic-table.css">
+    <link rel="stylesheet" href="../../../assets/css/icstyle.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css"/>
+    <link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css">
+    <link rel="stylesheet" href="../../../assets/css/style.css"/>
+    <link rel="stylesheet" href="../../../assets/css/table.css"/>
+    <script src="../../../assets/jquery-1.10.2.min.js"></script>
+    <script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="../../../resources/js/common/web-platform.js"></script>
+    <script src="../../../resources/js/common/jquery-util.js"></script>
+    <script src="../../../resources/js/common/storage.plugin.js"></script>
+    <script src="../../../resources/js/common/jquery.bigpage.js"></script>
+    <script src="../../../resources/js/mount/mount-main.js"></script>
+    <script src="../../../resources/js/common/drag-table.js"></script>
+    <style type="text/css">
+        html, body, div {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        table thead tr th, table tbody tr td {
+            white-space: nowrap;
+        }
+
+        #divMain {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dataArea {
+            width: calc(100% - 20px);
+            margin: auto;
+        }
+
+        .popup {
+            border: 0px solid yellow;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            background-color: #FFFFFF;
+            filter: alpha(opacity=45);
+            opacity: 0.45;
+            display: none;
+            z-index: 200;
+        }
+
+        .top {
+            width: 100%;
+            height: 48px;
+            background-color: white;
+        }
+
+        .dg_top_up {
+            position: relative;
+            top: -5px;
+            padding-left: 0px;
+        }
+
+        .dg_top_down {
+            position: relative;
+            top: -18px;
+            padding-left: 0px;
+        }
+
+        .line {
+            border-top: 1px buttonshadow;
+            width: 100%;
+            height: 1px;
+            background-color: buttonshadow;
+            margin-top: 28px;
+        }
+
+        #diaLogBox {
+            border: 1px solid #979797;
+            background-color: #FFF;
+            width: 360px;
+            left: 220px;
+            top: 120px;
+            position: absolute;
+            visibility: hidden;
+            z-index: 1001;
+        }
+
+        #title {
+            height: 25px;
+            text-align: left;
+            background-color: #979797;
+            color: white;
+            line-height: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            padding-left: 12px;
+            font-family: sans-serif;
+        }
+
+        #mountInfoDiv, #messageDiv {
+            margin: 0px !important;
+            padding: 0px 15px;
+        }
+
+        .btnAlign {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .alertBox {
+            display: none;
+        }
+
+        .alertWords {
+            margin: 10px 0px;
+            padding: 20px 20px 20px 70px;
+            background-repeat: no-repeat;
+            background-position: 20px center;
+            font-family: sans-serif;
+        }
+
+        .alertBtn {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .infWords {
+            background-image: url('../../../assets/css/images/5.png');
+        }
+
+        .sucWords {
+            background-image: url('../../../assets/css/images/alert_success.png');
+        }
+
+        .errWords {
+            background-image: url('../../../assets/css/images/alert_failed.png');
+        }
+
+        .disabled {
+            color: gray;
+            cursor: not-allowed;
+        }
+
+        .help {
+            right: 0px;
+            background-image: url(../../../assets/images/help.png);
+            height: 17px;
+            width: 17px;
+        }
+    </style>
+
+</head>
+<body>
+<div id="divMain">
+    <div class="dataArea">
+        <div style="width: 100%;margin: auto;">
+            <div id="top" style="width: 100%;background-color: white;position: relative;top: 8px;">
+                <div style="padding-left: 15px;">
+                    <h4>Mount storage Volumes to ESXi host.</h4>
+                </div>
+                <div id="help" url="Mount" class="help" style="top:11px;position: absolute;">
+                </div>
+            </div>
+            <div id="line" class="line"></div>
+            <div style="width: 100%;margin-top: 5px;">
+                <div id="SelectDeviceDiv" style="line-height: 24px; overflow: hidden; padding-bottom: 5px;">
+                    <table cellpadding="0px" cellspacing="0px">
+                        <tr>
+                            <td width="15%">Select Storage Device</td>
+                            <td style="padding-left: 5px">
+                                <select id="StorageDevice" class="filterType">
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="buttons" style="width: 100%;">
+                    <div style="float: left;width:159px;">
+                        <div class="plugin_button_main" style="float: left;margin-left: 0px;">
+                            <input type="button" id="btnRefreshLUN" value="Refresh"/>
+                        </div>
+                        <div class="plugin_button_main" style="float: left;margin-left: 5px;">
+                            <input type="button" id="btnMount" value="Mount" onclick="mount()"/>
+                        </div>
+                    </div>
+                    <div style="float: right;width: 397px;">
+                        <div class="plugin_button_main" style="float: left;margin-right: 5px;">
+                            <select id="filterType" class="filterType"
+                                    style="width: 155px;height: 22px;vertical-align:top;">
+                                <option value="NAME">Name</option>
+                                <option value="ID">ID</option>
+<!--                                <option value="STATUS" style="font-size: 12px">status</option>-->
+                            </select>
+                        </div>
+                        <div id="nameId_filterValueDiv" class="plugin_button_main"
+                             style="float: left;margin-right: 5px;">
+                            <input type="text" class="search_Input" id="nameId_filterValue" maxlength="32"
+                                   placeholder="Keyword"
+                                   onkeydown="if(event.keyCode=='13')$('#btnSearch').click()"
+                                   style="width: 149px;vertical-align:top;padding-top:5px"/>
+                        </div>
+                        <div class="plugin_button_main" style="float: left;margin-right: 5px;">
+                            <select id="healthStatus_filterValue" class="healthStatus_filterValue" name="filterValue"
+                                    style="width: 155px;height: 22px; display: none;">
+                                <option value="ALL">All</option>
+                                <option value="NORMAL">Normal</option>
+                                <option value="FAULT">Fault</option>
+                            </select>
+                        </div>
+                        <div class="plugin_button_main" style="float: left;margin-right: 0px;">
+                            <input type="button" id="btnSearch" value="Search"/>
+                        </div>
+                    </div>
+                </div>
+                <div id="mappedLunListDiv" style="width: calc(100% - 1px);height: 100%;overflow-y: hidden;overflow-x: hidden;
+					position: relative;float: left;margin-top: 5px;border: 1px solid #C0C0C0;border-top: 0 none;">
+                    <table id="mappedLunList" class="tablesorter" style="table-layout: fixed;">
+                        <thead class="tableHead">
+                        <tr>
+                            <th width="4%" align="left" style="text-align: left;background:none">
+                                <input type="checkbox" id="chk_all" style="vertical-align:middle;"/>
+                            </th>
+                            <th width="4%" style="text-align: left;" title="ID">
+                                <div>ID</div>
+                            </th>
+                            <th width="13%" style="text-align: left;" title="Name">
+                                <div>Name</div>
+                            </th>
+                            <th width="4%" style="text-align: left;" title="Health Status">
+                                <div>Status</div>
+                            </th>
+                            <th width="8%" style="text-align: left;" title="Running Status">
+                                <div>Capacity</div>
+                            </th>
+                            <th id = "volCapUsage" width="16%" style="text-align: left;" title="Type">
+                                <div>Capacity Usage</div>
+                            </th>
+                            <th width="13%" style="text-align: left; padding-right: 4px;" title="Total Capacity">
+                                <div>Pool Name</div>
+                            </th>
+                            <th width="8%" style="text-align: left; padding-right: 4px;" title="Allocated Capacity">
+                                <div>Pool Capacity</div>
+                            </th>
+                            <th id = "poolCapUsage" width="16%" style="text-align: left;" title="Device Type">
+                                <div>Pool Capacity Usage</div>
+                            </th>
+                        </tr>
+                        </thead>
+                    </table>
+                    <iframe id="unmappedlunTabFrame" frameborder="0" scrolling="auto"
+                            style="width: 100%;border: none;height: 100%;" src=""></iframe>
+                    <div id="pager-unmappedlunTabFrame" style="height: 24px; width: 100%"></div>
+                    <div id="divLoadingMappedLUN" class="loading_font"
+                         style="width: 100%;height: 94%;position: absolute;top: 35px;left: 0px;background-color: #FFF;filter: alpha(opacity = 100);display: none;">
+                        <span style="width: 0;height: 100%;display: inline-block;vertical-align: middle;"></span>loading
+                    </div>
+                    <div id="diverrorLUN" class="loading_font"
+                         style="width: 100%;height: 94%;position: absolute;top: 35px;left: 0px;background-color: #FFF;filter: alpha(opacity = 100);display: none;">
+                    </div>
+                </div>
+            </div>
+            <div class="popup" id="popupDiv"></div>
+            <div id="ingDiv" style="display: none;">
+                <span id="ing" style="position: absolute;font-size: 18px;color: #000000;z-index: 201;">Mounting...please wait.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="diaLogBox" style="visibility: hidden;top:175px;left:322px;">
+
+    <div id="title" class="alertBox"></div>
+
+    <div id="sucDiv" class="alertBox">
+        <div class="alertWords sucWords" id="sucWords" style="word-break: break-all;">Successful</div>
+        <input name="OpType" type="hidden" id="sucType" value=""/>
+        <hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797"/>
+        <div class="alertBtn">
+            <input id="sucOp" value="OK" type="button">
+        </div>
+    </div>
+
+    <div id="errDiv" class="alertBox">
+        <div class="alertWords errWords" id="errWords" style="word-break: break-all;">Failed</div>
+        <input name="OpType" type="hidden" id="errType" value=""/>
+        <hr style="position: relative;left: 0px;width: 100%;border-width: 1px 0px 0px 0px;" color="#979797"/>
+        <div class="alertBtn">
+            <input id="errOp" value="OK" type="button">
+        </div>
+    </div>
+
+    <div id="mountInfoDiv" class="alertBox">
+        <div id="infWords" class="alertWords infWords">Do you really want to do this?</div>
+        <input name="OpType" type="hidden" id="infType" value=""/>
+        <hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;"
+            color="#979797"/>
+        <div id="btnDiv" class="btnAlign">
+            <input id="confirBtn" value="OK" type="button">
+            <input id="cancelBtn" class="cancleBtn" value="Cancel" type="button">
+        </div>
+    </div>
+
+    <div id="messageDiv" class="alertBox" style="position: relative;">
+        <div id="message" class="alertWords infWords" style="word-break: break-all;">The number of you choice must be
+            less than 50!
+        </div>
+        <hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;"
+            color="#979797"/>
+        <div class="alertBtn">
+            <input id="messageOp" value="OK" type="button">
+        </div>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript">
+    changesize();
+    var ns = org_opensds_storage_devices;
+    var lunId = null;
+    var deviceId = "";
+    var rowIndex = 0;
+    var hostId = WEB_PLATFORM.getHostId();
+    var serverGuid = WEB_PLATFORM.getServerGuid();
+    var divhead_id = "bak";
+
+    var filterType = "";
+    var filterValue = "";
+
+    var toPage_lun = 1;
+    var pagesize_lun = 50;
+
+    var loadpage2_data_params = "";
+
+    $(document).ready(function () {
+        makeHelp();
+        bundleEvent();
+        initSelect();
+        $("#btnRefreshLUN").click();
+        goCenter();
+        $(window).scroll(
+            function () {
+                goCenter();
+            }
+        );
+        $(window).resize(
+            function () {
+                goCenter();
+            }
+        );
+
+        JPlaceHolder.init();
+    });
+
+    function bundleEvent() {
+        $("#btnRefreshLUN").bind("click", function (event) {
+            $("#btnSearch").click();
+        });
+
+        $("#btnSearch").click(function () {
+            $("#btnSearch").prop("disabled", "disabled");
+            $("#btnRefreshLUN").prop("disabled", "disabled");
+            setTimeout(function () {
+                $("#btnSearch").prop("disabled", "");
+                $("#btnRefreshLUN").prop("disabled", "");
+            }, 500);
+            filterType = $("#filterType").val();
+            if (filterType == "NAME" || filterType == "ID") {
+                filterValue = trim($("#nameId_filterValue").val());
+            }
+            else if (filterType == "STATUS") {
+                filterValue = $("#healthStatus_filterValue").val();
+                if (filterValue == "NORMAL") {
+                }
+                else if (filterValue == "FAULT") {
+                }
+                else {
+                    filterValue = "";
+                }
+            }
+            else if (filterType == "RUNNINGSTATUS") {
+                filterValue = $("#runStatus_filterValue").val();
+                if (filterValue == "ONLINE") {
+                }
+                else if (filterValue == "OFFLINE") {
+                }
+                else {
+                    filterValue = "";
+                }
+            }
+            refreshData();
+        });
+
+        $("#filterType").unbind();
+        $("#filterType").bind("change", function () {
+            $("#nameId_filterValue").val("");
+            if ($('#filterType').val() == 'STATUS') {
+                $("#nameId_filterValueDiv").hide();
+                $("#runStatus_filterValue").hide();
+                $("#healthStatus_filterValue").show();
+                $("#healthStatus_filterValue").get(0).options[0].selected = true;
+            }
+            else {
+                $("#healthStatus_filterValue").hide();
+                $("#runStatus_filterValue").hide();
+                $("#nameId_filterValueDiv").show();
+            }
+        });
+
+        $("#confirBtn").click(function () {
+            var sucWords =
+                "Mount storage volumes to ESXi host <br />successfully.<br/>Wait until the scanhba task finishes!";
+            //var errWords = "Can't mount storage LUNs to ESXi host.";
+            var errWords = "Some error occurred during the mount,please <br />see details in the Recent Tasks.";
+            $(".alertBox").hide();
+            $("#title").hide();
+            $("#diaLogBox").css('visibility', 'hidden');
+
+            var lunIds = $.find("iframe")[0].contentWindow.getLunIds();
+            var deviceIds = $.find("iframe")[0].contentWindow.getDeviceIdsInMount();
+            var mountUrl = ns.webContextPath + "/rest/data/host/mountVolumes/" + hostId + "?deviceIds=" + deviceIds +
+                "&volumeIds=" + lunIds + "&serverGuid=" + serverGuid + "&t=" + new Date();
+            var mountReq = new req(mountUrl, null);
+            mountReq.type = "PUT";
+            var mounthandler = new handler(function doSuccess(resp) {
+                if (resp.msg == null) {
+                    $("#title").text("Success");
+                    $("#title").show();
+                    $("#sucWords").html(sucWords);
+                    $("#ingDiv").hide();
+                    $("#sucDiv").show();
+                    $("#diaLogBox").css('visibility', 'visible');
+                }
+                else {
+                    $("#title").text("Error");
+                    $("#title").show();
+                    $("#errWords").html(resp.errorDesc);
+                    $("#ingDiv").hide();
+                    $("#errDiv").show();
+                    $("#diaLogBox").css('visibility', 'visible');
+                }
+            }, function doFailed() {
+                $("#title").text("Error");
+                $("#title").show();
+                $("#errWords").html(errWords);
+                $("#ingDiv").hide();
+                $("#errDiv").show();
+                $("#diaLogBox").css('visibility', 'visible');
+            });
+            sendMsg(mountReq, mounthandler);
+        });
+
+        $("#cancelBtn").click(function () {
+            $(".alertBox").hide();
+            $("#title").text("");
+            $("#diaLogBox").css('visibility', 'hidden');
+            unlock();
+        });
+
+        $("#sucOp").click(function () {
+            refreshData();
+            $(".alertBox").hide();
+            $("#diaLogBox").css('visibility', 'hidden');
+            $("#title").text("");
+            unlock();
+        });
+
+
+        $("#errOp").click(function () {
+            refreshData();
+            $(".alertBox").hide();
+            $("#diaLogBox").css('visibility', 'hidden');
+            $("#title").text("");
+            unlock();
+        });
+
+        $("#messageOp").click(function () {
+            $(".alertBox").hide();
+            $("#diaLogBox").css('visibility', 'hidden');
+            $("#title").text("");
+            $("#popupDiv").hide();
+        });
+    }
+
+    function showWarningMessage(message) {
+        $(".alertBox").hide();
+        $("#popupDiv").show();
+        $("#title").text("Warning");
+        $("#title").show();
+        if (message) {
+            $("#message").html(message);
+        } else {
+            $("#message").html("The number of volumes you choose can not <br />be more than " + maxNum + "!");
+        }
+        $("#messageDiv").show();
+        $("#diaLogBox").css('visibility', 'visible');
+    }
+
+    function mount() {
+        var info = "You are about to mount storage volumes to ESXi host. <br />Are you sure you want to continue?";
+        $(".alertBox").hide();
+        lock();
+        $("#infWords").html(info);
+        $("#diaLogBox").css("visibility", "visible");
+        $("#title").text("Warning");
+        $("#title").show();
+        $("#mountInfoDiv").show();
+    }
+
+    function scroll(viewid, scrollid, size, divhead_id, tabid) {
+        if ($("#" + divhead_id).length > 0) {
+            $("#" + divhead_id).width($("#" + tabid).width());
+            return;
+        }
+
+        var scroll = document.getElementById(scrollid);
+
+        var tb2 = document.getElementById(viewid).cloneNode(true);
+
+        var $table = $(document.getElementById(viewid));
+        if ($table.find("input[type='checkbox']").length > 0) {
+            var id = $(tb2).find("input[type='checkbox']:first").attr("id");
+            $table.find("input[type='checkbox']:first").removeAttr("id");
+            $(tb2).find("input[type='checkbox']:first").attr("id", id);
+        }
+        for (var i = tb2.rows.length; i > size; i--) {
+
+            tb2.deleteRow(size);
+        }
+        var top = $("#" + viewid).offset().top;
+        var left = $("#" + viewid).offset().left;
+        var bak = document.createElement("div");
+        scroll.appendChild(bak);
+        bak.appendChild(tb2);
+        bak.setAttribute("id", divhead_id);
+        bak.style.position = "fixed";
+        $(bak).css({
+            "left": left,
+            "top": top,
+            width: $("#" + tabid).width(),
+            backgroundColor: "#cfc",
+            display: "block"
+        });
+        $("#" + viewid).find("th").each(function () {
+            this.innerHTML = "";
+        });
+    }
+    function goCenter() {
+        var h = $(window).height();
+        var w = $(window).width();
+        var st = $(window).scrollTop();
+        var sl = $(window).scrollLeft();
+
+        var popupDiv = $("#popupDiv");
+        popupDiv.css("width", w + sl - 3);
+        popupDiv.css("height", h + st - 4);
+        var left = (popupDiv.width() - 100) / 2;
+        var top = (popupDiv.height() - 30) / 2;
+
+        $("#ing").css({left: left - 25, top: top});
+    }
+    function trim(str) {
+        return str.replace(/(^\s*)|(\s*$)/g, "");
+    }
+
+    function lock() {
+        $("#popupDiv").show();
+        $("#ingDiv").show();
+    }
+
+    function unlock() {
+        $("#popupDiv").hide();
+        $("#ingDiv").hide();
+    }
+    var JPlaceHolder = {
+
+        _check: function () {
+            return 'placeholder' in document.createElement('input');
+        },
+
+        init: function () {
+            if (!this._check()) {
+                this.fix();
+            }
+        },
+
+        fix: function () {
+            jQuery(':input[placeholder]').each(function (index, element) {
+                var self = $(this), txt = self.attr('placeholder');
+                self.wrap($('<div></div>').css({
+                    position: 'relative',
+                    zoom: '1',
+                    border: 'none',
+                    background: 'none',
+                    padding: 'none',
+                    margin: 'none'
+                }));
+                var pos = self.position(), h = self.outerHeight(true), paddingleft = self.css('padding-left');
+                var holder = $('<span></span>').text(txt).css({
+                    position: 'absolute',
+                    left: pos.left,
+                    top: pos.top,
+                    height: h,
+                    lienHeight: h,
+                    paddingLeft: paddingleft,
+                    color: '#aaa'
+                }).appendTo(self.parent());
+                self.focusin(function (e) {
+                    holder.hide();
+                }).focusout(function (e) {
+                    if (!self.val()) {
+                        holder.show();
+                    }
+                });
+                holder.click(function (e) {
+                    holder.hide();
+                    self.focus();
+                });
+            });
+        }
+    };
+
+</script>
+<script type="text/javascript">
+
+</script>
+</html>

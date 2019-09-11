@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>VirtualMachine View</title>
+<style type="text/css">
+html {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	padding: 0px;
+	background-image: url("../../../assets/images/list_bg_shade.png");
+}
+
+body {
+	font-family: Tahoma;
+	font-size: 12px;
+	color: #464646;
+	padding-top: 10px;
+}
+
+a {
+	text-decoration: NONE;
+	outline: none;
+}
+
+table {
+	font-size: 12px;
+	font-color: blue;
+	margin: 0px;
+	padding: 0px;
+}
+
+.left_top_navigation {
+	/*background-image: url("../../../assets/images/left_list_title.png");*/
+	font-size: 12px;
+	font-weight: bold;
+	color: #0f3f6d;
+	height: 22px;
+	padding-left: 5px;
+}
+
+.left_top_virtualDisk {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	vertical-align: middle;
+}
+
+.left_top_rawDevice {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	vertical-align: middle;
+}
+
+font {
+	font-family: Tahoma;
+}
+
+.lego_div {
+	position: absolute;
+	bottom: 10px;
+	height: 120px;
+	text-align: center;
+}
+</style>
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#hrefVirtualDisk').css('color', '#000');
+		$('#hrefRawDevice').css('color', '#0068FF');
+		$('#hrefLuns').css('color', '#0068FF');
+	});
+	function goInHostMain(type) {
+		//var moref = parent.moref;
+		if (type == "virtualDisk") {
+			$('#hrefVirtualDisk').css('color', '#000');
+			$('#hrefRawDevice').css('color', '#0068FF');
+			$('#hrefLuns').css('color', '#0068FF');
+
+			$("#luns_img").css("display", "none");
+			$("#rawDevice_img").css("display", "none");
+			$("#virtualDisk_img").css("display", "block");
+			parent.$("#mainFrame").attr("src", "virtualDisks.html");
+		}
+		else if (type == "rawDevice") {
+			$('#hrefVirtualDisk').css('color', '#0068FF');
+			$('#hrefRawDevice').css('color', '#000');
+			$('#hrefLuns').css('color', '#0068FF');
+
+			$("#luns_img").css("display", "none");
+			$("#virtualDisk_img").css("display", "none");
+			$("#rawDevice_img").css("display", "block");
+			parent.$("#mainFrame").attr("src", "rawDevice.html");
+		}
+		/*else if (type == "luns"){
+			$('#hrefVirtualDisk').css('color', '#0068FF');
+			$('#hrefRawDevice').css('color', '#0068FF');
+			$('#hrefLuns').css('color', '#000');
+
+			$("#luns_img").css("display", "block");
+			$("#virtualDisk_img").css("display", "none");
+			$("#rawDevice_img").css("display", "none");
+			parent.$("#mainFrame").attr("src", "vmLuns.html");
+		}*/
+	}
+</script>
+</head>
+<body style="height: calc(100% - 40px);">
+	<div style="height: 100%">
+		<table style="border: 1px solid #7a7a7a; background-color: white; width: 100%;">
+			<tr>
+				<td colspan="2" align="left" class="left_top_navigation">Navigation</td>
+			</tr>
+			<tr style="height: 5px;">
+				<td></td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="virtualDisk_img"
+					src="../../../assets/images/navigation_arrow.png" style="vertical-align: middle;"></img></td>
+				<td class="left_top_virtualDisk"><a id="hrefVirtualDisk" onclick='goInHostMain("virtualDisk")' href="#">Virtual
+						Disks</a></td>
+			</tr>
+			<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="rawDevice_img"
+					src="../../../assets/images/navigation_arrow.png" style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_rawDevice"><a id="hrefRawDevice" onclick='goInHostMain("rawDevice")' href="#">Raw
+					Device Mappings</a></td>
+			</tr>
+			<!--<tr>
+				<td style="padding-left: 11px; width: 19px"><img id="luns_img"
+																 src="../../../assets/images/navigation_arrow.png" style="display: none; vertical-align: middle;"></img></td>
+				<td class="left_top_rawDevice"><a id="hrefLuns" onclick='goInHostMain("luns")' href="#">LUNs</a></td>
+			</tr>-->
+			<tr style="height: 5px;">
+				<td></td>
+			</tr>
+		</table>
+		<!--<div class="lego_div" style="left: 0px; width: 100%;margin-bottom: 40px;">
+			<div>
+				<img style="height: 56px; width: 56px;" src="../../../assets/images/view.png" />
+			</div>
+			<div>&nbsp;</div>
+			<div style="margin-top: 5px; font-size: 11px;">Huawei Storage Plugin</div>
+			<div style="margin-top: 5px; font-size: 11px;">
+				Copyright <font>&copy;</font> Huawei Technologies Co., Ltd. 2014. All rights reserved.
+			</div>
+		</div>-->
+	</div>
+</body>
+</html>
