@@ -73,7 +73,7 @@ public class CreateLunTask extends AbstractTask implements TaskExecution {
         try {
             createTaskList(taskInfoList, TaskInfoConst.Type.TASK_CREATE_LUN);
             VolumeInfo volumeInfo = ((VMFSDatastore)datastore).getVolumeInfos()[0];
-            volumeMO = storage.createVolume(volumeInfo.getName(),
+            volumeMO = storage.createVolume(volumeInfo.getName(), volumeInfo.getDescription(),
                     volumeInfo.getAllocType().equals("thin") ? ALLOC_TYPE.THIN : ALLOC_TYPE.THICK,
                     CapacityUtil.convertCapToLong(volumeInfo.getCapacity()),
                     volumeInfo.getStoragePoolId());

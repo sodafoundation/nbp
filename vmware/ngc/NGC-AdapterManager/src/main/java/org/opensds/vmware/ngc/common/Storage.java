@@ -32,7 +32,7 @@ public abstract class Storage {
 
     public abstract StorageMO getDeviceInfo() throws Exception;
 
-    public abstract VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws
+    public abstract VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws
             Exception;
 
     public abstract void deleteVolume(String volumeId) throws Exception;

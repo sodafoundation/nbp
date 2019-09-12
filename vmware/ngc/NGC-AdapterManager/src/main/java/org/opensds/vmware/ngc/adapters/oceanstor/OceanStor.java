@@ -247,7 +247,7 @@ public class OceanStor extends Storage {
     }
 
     @Override
-    public VolumeMO createVolume(String name, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    public VolumeMO createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
         JSONObject volume = client.createVolume(name, allocType, capacity, poolId);
         return VolumeMOBuilder.build(volume);
     }
