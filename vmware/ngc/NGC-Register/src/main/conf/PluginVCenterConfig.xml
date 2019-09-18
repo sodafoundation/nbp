@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ROOT>
+        <!--registerflag: "0" = not regisitered, "1" = already registered-->
 	<VCENTER vcip="" vcname="" vcpwd="" hostip="" registerflag="0"/>
 </ROOT>
