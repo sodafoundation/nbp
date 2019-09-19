@@ -907,7 +907,7 @@ public class HostServiceImpl extends VimCommonServiceImpl implements HostService
             Map<String, VolumeInfo> allVolumeInfo = new ConcurrentHashMap<>();
             if (storage != null) {
                 logger.info("Get all volumes!!");
-                List<VolumeMO> volumeMOs = storage.listVolumes();
+                List<VolumeMO> volumeMOs = storage.listVolumes("Status", "available");
                 logger.info("Get all volumes finished!!");
                 List<VolumeMO> volumeMOList = FilterUtils.filterList(volumeMOs, filterType, filterValue);
                 volumeMOList.forEach(n -> {

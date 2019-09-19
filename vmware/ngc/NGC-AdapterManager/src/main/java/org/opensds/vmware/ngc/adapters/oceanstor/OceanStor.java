@@ -284,6 +284,19 @@ public class OceanStor extends Storage {
     }
 
     @Override
+    public List<VolumeMO> listVolumes(String filterKey, String filterValue) throws Exception {
+        List<VolumeMO> volumes = new ArrayList<>();
+
+        JSONArray jsonArray = client.listVolumes(filterKey, filterValue);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject volume = jsonArray.getJSONObject(i);
+            volumes.add(VolumeMOBuilder.build(volume));
+        }
+
+        return volumes;
+    }
+
+    @Override
     public List<StoragePoolMO> listStoragePools() throws Exception {
         List<StoragePoolMO> pools = new ArrayList<>();
 

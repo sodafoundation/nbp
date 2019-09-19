@@ -39,6 +39,8 @@ public abstract class Storage {
 
     public abstract List<VolumeMO> listVolumes() throws Exception;
 
+    public abstract List<VolumeMO> listVolumes(String filterKey, String filtervalue) throws Exception;
+
     public abstract List<VolumeMO> listVolumes(String poolId) throws Exception;
 
     public abstract List<StoragePoolMO> listStoragePools() throws Exception;

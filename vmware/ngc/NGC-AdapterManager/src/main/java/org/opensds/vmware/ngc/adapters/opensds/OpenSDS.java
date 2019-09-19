@@ -26,11 +26,21 @@ class VolumeMOBuilder {
     static public VolumeMO build(JSONObject jsonObject) {
         String name = jsonObject.getString("name");
         String id = jsonObject.getString("id");
-        String wwn = jsonObject.getString("id");
+        JSONObject metadata = jsonObject.getJSONObject("metadata");
+        String wwn = metadata.getString("wwn");
         ALLOC_TYPE allocType = ALLOC_TYPE.THIN;
         long capacity = jsonObject.getLong("size")*UNIT_TYPE.GB.getUnit();
-
-        return new VolumeMO(name, id, wwn, allocType, capacity);
+        long allocCapacity = jsonObject.getLong("size") * UNIT_TYPE.GB.getUnit();
+        String volStatus = jsonObject.getString("status");
+        VolumeMO.StatusE status = (volStatus.equals("available") ||
+                volStatus.equals("inUse")) ? VolumeMO.StatusE.Normal : VolumeMO
+                .StatusE.Faulty;
+        String storagePoolId = jsonObject.getString("poolId");
+        VolumeMO volumeMO = new VolumeMO(name, id, wwn, allocType, capacity);
+        volumeMO.status = status;
+        volumeMO.allocCapacity = allocCapacity;
+        volumeMO.storagePoolId = storagePoolId;
+        return volumeMO;
     }
 }
 
@@ -43,6 +53,19 @@ class StoragePoolMOBuilder {
         long freeCapacity = jsonObject.getLong("freeCapacity")*UNIT_TYPE.GB.getUnit();
 
         return new StoragePoolMO(name, id, type, totalCapacity, freeCapacity);
+    }
+}
+
+class SnapshotMOBuilder {
+    static public SnapshotMO build(JSONObject jsonObject) {
+        String name = jsonObject.getString("name");
+        String id = jsonObject.getString("id");
+        String healthStatus = jsonObject.getString("status");
+        long capacity = jsonObject.getLong("size")*UNIT_TYPE.GB.getUnit();
+        String parentId = jsonObject.getString("volumeId");
+        String timestamp = jsonObject.getString("createdAt");
+
+        return new SnapshotMO(name, id, healthStatus, capacity, parentId, timestamp);
     }
 }
 
@@ -106,6 +129,21 @@ public class OpenSDS extends Storage {
         return volumes;
     }
 
+    @Override
+	public List<VolumeMO> listVolumes(String filterKey, String filtervalue) throws Exception {
+		 List<VolumeMO> volumes = new ArrayList<>();
+
+	        JSONArray jsonArray = client.listVolumes(filterKey, filtervalue);
+	        if (jsonArray != null) {
+	            for (int i = 0; i < jsonArray.length(); i++) {
+	                JSONObject volume = jsonArray.getJSONObject(i);
+	                volumes.add(VolumeMOBuilder.build(volume));
+	            }
+	        }
+
+	        return volumes;
+	}
+
     public List<StoragePoolMO> listStoragePools() throws Exception {
         List<StoragePoolMO> pools = new ArrayList<>();
 
@@ -136,35 +174,43 @@ public class OpenSDS extends Storage {
 	
     @Override
     public VolumeMO queryVolumeByID(String volumeId) throws Exception {
-        // todo:
-        return new VolumeMO(null, null, null,null, 0L);
+        JSONObject volume = client.getVolume(volumeId);
+        return VolumeMOBuilder.build(volume);
     }
 
     @Override
     public List<SnapshotMO> listSnapshot(String volumeId) throws Exception {
-        // todo:
-        List<SnapshotMO> arrayList = new ArrayList<>();
-        arrayList.add(new SnapshotMO(null, null,null, 0, null, null));
-        return arrayList;
+         List<SnapshotMO> snapshots = new ArrayList<>();
+
+	     JSONArray jsonArray = client.listVolumeSnapshot(volumeId);
+	     if (jsonArray != null) {
+	          for (int i = 0; i < jsonArray.length(); i++) {
+	              JSONObject snapshot = jsonArray.getJSONObject(i);
+	              snapshots.add(SnapshotMOBuilder.build(snapshot));
+	          }
+	      }
+
+	    return snapshots;
     }
 
     @Override
     public void createVolumeSnapshot(String volumeId, String name) throws Exception {
-        // todo:
+        client.createVolumeSnapshot(volumeId, name);
     }
 
     @Override
     public void deleteVolumeSnapshot(String snapshotId) throws Exception {
-		 // todo:
+        client.deleteVolumeSnapshot(snapshotId);
     }
 
     @Override
     public void rollbackVolumeSnapshot(String snapshotId, String rollbackSpeed) throws Exception {
-		 // todo:
+         //TODO
     }
 	
 	@Override
     public void expandVolume(String volumeId, long capacity) throws Exception {
-        // todo:
+		capacity = capacity/(UNIT_TYPE.GB.getUnit());
+		client.expandVolume(volumeId, capacity);
     }
 }

@@ -201,6 +201,49 @@ class RestClient {
         return luns;
     }
 
+    JSONArray listVolumes(String filterKey, String filterValue) throws Exception {
+        String lunCountUrl ="";
+        if (!filterValue.isEmpty()) {
+            lunCountUrl = String.format("/lun/count?filter=%s::%s", filterKey, filterValue);
+        }
+
+        JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
+        if (isFailed(countResponse)) {
+            String msg = String.format("Get lun count error %d: %s",
+                    getErrorCode(countResponse), getErrorDescription(countResponse));
+            throw new Exception(msg);
+        }
+
+        JSONObject countData = countResponse.getJSONObject("data");
+        int count = countData.getInt("COUNT");
+        JSONArray luns = new JSONArray();
+
+        for (int i = 0; i < count; i += 100) {
+            String batchQueryLunUrl="";
+
+            if (!filterValue.isEmpty()) {
+                batchQueryLunUrl = String.format("/lun?filter=%s::%s&range=[%d-%d]", filterKey, filterValue, i, i + 100);
+            }
+
+            JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
+            if (isFailed(lunsResponse)) {
+                String msg = String.format("Batch get luns error %d: %s",
+                        getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
+                throw new Exception(msg);
+            }
+
+            if (!lunsResponse.has("data")) {
+                break;
+            }
+
+            for (Object lun: lunsResponse.getJSONArray("data")) {
+                luns.put(lun);
+            }
+        }
+
+        return luns;
+    }
+
     JSONArray listStoragePools() throws Exception {
         JSONObject response = (JSONObject)request.get("/storagepool");
         if (isFailed(response)) {
@@ -797,6 +840,10 @@ class RestClientWrapper {
 
     JSONArray listVolumes(String poolId) throws Exception {
         return (JSONArray) returnObjectWrapper("listVolumes", poolId);
+    }
+
+    JSONArray listVolumes(String filterKey, String filterValue) throws Exception {
+        return (JSONArray) returnObjectWrapper("listVolumes", filterKey, filterValue);
     }
 
     JSONArray listStoragePools() throws Exception {
