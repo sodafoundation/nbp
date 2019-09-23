@@ -319,17 +319,15 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	ipIdx := 2
-	// here insert nqn into node info so, ipIdx should be 3
-	ipIdx ++
+	nodeInfoValues := strings.Split(nodeInfo, ",")
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: req.VolumeId,
 		HostInfo: model.HostInfo{
-			Host:      strings.Split(nodeInfo, ",")[0],
+			Host:      nodeInfoValues[0],
 			Platform:  runtime.GOARCH,
 			OsType:    runtime.GOOS,
 			Initiator: initator,
-			Ip:        strings.Split(nodeInfo, ",")[ipIdx],
+			Ip:        nodeInfoValues[len(nodeInfoValues)-1],
 		},
 		Metadata:       req.VolumeContext,
 		AccessProtocol: protocol,
