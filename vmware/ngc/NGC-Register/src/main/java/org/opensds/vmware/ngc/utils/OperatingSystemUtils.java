@@ -21,13 +21,13 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-public class OperationSystemUtils {
+public class OperatingSystemUtils {
 
     private static final int DISKSPACE_THRESHOLD = 629145600;
 
-    private static final Logger _logger = LogManager.getLogger(OperationSystemUtils.class);
+    private static final Logger _logger = LogManager.getLogger(OperatingSystemUtils.class);
 
-    private OperationSystemUtils() {
+    private OperatingSystemUtils() {
     }
 
     /**

@@ -262,7 +262,7 @@ public class XmlUtils {
     }
 
     private ErrorCode writeToXML(String path, Document doc) {
-        if (OperationSystemUtils.isFreeDiskSpace()) {
+        if (OperatingSystemUtils.isFreeDiskSpace()) {
             return ErrorCode.NO_SPACE;
         }
         OutputStream outputStream = null;

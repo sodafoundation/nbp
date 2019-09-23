@@ -20,7 +20,7 @@ import org.opensds.vmware.ngc.model.VCenterInfo;
 import org.opensds.vmware.ngc.service.VCenterService;
 import org.opensds.vmware.ngc.utils.FileUtils;
 import org.opensds.vmware.ngc.utils.MediaTypeUtils;
-import org.opensds.vmware.ngc.utils.OperationSystemUtils;
+import org.opensds.vmware.ngc.utils.OperatingSystemUtils;
 import org.opensds.vmware.ngc.utils.XmlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

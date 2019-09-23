@@ -29,7 +29,7 @@ public class CommonUtils {
 
     private static final String HTTP_SDK = "sdk";
 
-    private static final String SEMICOLON = ":";
+    private static final String COLON = ":";
 
     private static final String SLANTING = "/";
 
@@ -86,7 +86,7 @@ public class CommonUtils {
         return new StringBuffer().
                 append(HTTPS_HEAD).
                 append(hostip).
-                append(SEMICOLON).
+                append(COLON).
                 append(PORT).
                 append(SLANTING).
                 append(DIRECT_DOWNWLOAD_PATH).
