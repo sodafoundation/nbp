@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+	<EventID name="发现设备" severity="green">
+		<EventType>
+			<eventTypeID>storage-discover-device</eventTypeID>
+			<eventType>vim.event.EventEx</eventType>
+			<description>当发现设备时，产生此信息。</description>
+		</EventType>
+	</EventID>
+	<EventID name="移除设备" severity="green">
+		<EventType>
+			<eventTypeID>storage-delete-device</eventTypeID>
+			<eventType>vim.event.EventEx</eventType>
+			<description>当移除设备时，产生此信息。</description>
+		</EventType>
+	</EventID>
+	<EventID name="创建Datastore" severity="green">
+		<EventType>
+			<eventTypeID>storage-createdatastore-device</eventTypeID>
+			<eventType>vim.event.EventEx</eventType>
+			<description>当创建DataStore时，产生此信息。</description>
+		</EventType>
+	</EventID>
+</ROOT>
