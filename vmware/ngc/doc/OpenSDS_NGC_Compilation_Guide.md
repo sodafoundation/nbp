@@ -98,7 +98,7 @@ Step 3 Set the system environment variable VSPHERE_SDK_HOME. The variable value 
 decompressed SDK package.
 ```
 ```
-Step 4 In order to support vSphere Web Client Client (Flex ), please also download the vSphere Clint SDK
+Step 4 In order to support vSphere Web Client (Flex ), please also download the vSphere Client SDK
 Development Kit (https://code.vmware.com/web/sdk/6.7/web-client) from the vMware website.
 ```
 ```

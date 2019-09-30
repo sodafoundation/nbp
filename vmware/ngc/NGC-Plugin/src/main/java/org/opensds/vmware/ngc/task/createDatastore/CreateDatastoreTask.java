@@ -56,7 +56,7 @@ public class CreateDatastoreTask extends AbstractTask implements TaskExecution {
 
     @Override
     public void runTask() throws Exception {
-        logger.info("---------Step three, running create the datastoreInfo task and convert volume to Datastore...");
+        logger.info("---------CreateDatastoreTask, running create the datastoreInfo task and convert volume to Datastore...");
         List<TaskInfo> taskInfoList = new ArrayList<>();
         try {
             ResultInfo<Object> resultInfo = hostServiceImpl.convertVmfsDatastore(hostMos, serverInfo, volumeMO, datastoreInfo);
@@ -76,6 +76,6 @@ public class CreateDatastoreTask extends AbstractTask implements TaskExecution {
 
     @Override
     public void rollBack() throws Exception {
-        logger.info("---------Step three, roll back and create the datastore failed...");
+        logger.info("---------CreateDatastoreTask, roll back and create the datastore failed...");
     }
 }

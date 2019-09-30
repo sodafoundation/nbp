@@ -60,7 +60,7 @@ public class CreateLunTask extends AbstractTask implements TaskExecution {
     @Override
     public void runTask() throws Exception {
 
-        logger.info("---------Step one, run create the datastoreInfo task and create volume...");
+        logger.info("---------CreateLun/VolumeTask, run create the datastoreInfo task and create volume...");
         List<TaskInfo> taskInfoList = new ArrayList<>();
         try {
             createTaskList(taskInfoList, TaskInfoConst.Type.TASK_CREATE_LUN);
@@ -74,7 +74,7 @@ public class CreateLunTask extends AbstractTask implements TaskExecution {
             changeTaskState(taskInfoList,  TaskInfoConst.Status.SUCCESS,
                     String.format("Create volume %s finished.", volumeMO.name));
         } catch (Exception e) {
-            logger.error( "---------Step one error : " + e.getMessage());
+            logger.error( "---------CreateLun/VolumeTask error : " + e.getMessage());
             changeTaskState(taskInfoList, TaskInfoConst.Status.ERROR,
                     String.format("Create volume failed: %s", e.getMessage()));
             throw e;
@@ -87,7 +87,7 @@ public class CreateLunTask extends AbstractTask implements TaskExecution {
             logger.info("Could not create the volume...");
             return;
         }
-        logger.info("---------Step one, rolling back and deleted created volume...");
+        logger.info("---------CreateLun/VolumeTask, rolling back and deleted created volume...");
         List<TaskInfo> rollBackTaskInfoList = new ArrayList<>();
         try {
             createTaskList(rollBackTaskInfoList, TaskInfoConst.Type.TASK_DELETE_LUN);

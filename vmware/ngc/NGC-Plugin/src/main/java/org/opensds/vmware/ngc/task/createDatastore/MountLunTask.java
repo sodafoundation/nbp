@@ -57,7 +57,7 @@ public class MountLunTask extends AbstractTask implements TaskExecution {
     @Override
     public void runTask() throws Exception {
 
-        logger.info("---------Step two, run create the datastoreInfo task and mount volume...");
+        logger.info("---------MountTask, run create the datastoreInfo task and mount volume...");
 
         List<TaskInfo> taskInfoList = new ArrayList<>();
         try {
@@ -82,10 +82,10 @@ public class MountLunTask extends AbstractTask implements TaskExecution {
     @Override
     public void rollBack() throws Exception {
         if (connectMO == null) {
-            logger.info("---------Step two, do not need roll back for unmount volume.");
+            logger.info("---------MountTask, Cannot roll back for unmount volume.");
             return;
         }
-        logger.info("---------Step two, rolling back mount volume...");
+        logger.info("---------MountTask, rolling back mount volume...");
         List<TaskInfo> rollBackTaskInfoList = new ArrayList<>();
         try {
             createTaskList(rollBackTaskInfoList, TaskInfoConst.Type.TASK_UNMOUNT_LUN_FROM_HOST);

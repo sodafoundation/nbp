@@ -33,11 +33,11 @@ public class MathUtil
     }
 
     /**
-     * 根据double提供的精度四舍五入
+     *double
      *
-     * @param number 需要转的数字
-     * @param scale 精度
-     * @return double 转换后的double
+     * @param number
+     * @param scale
+     * @return double
      */
     public static double downScaleToDouble(double number, int... scale) {
         int precision = PRECISION_TWO;
@@ -53,11 +53,11 @@ public class MathUtil
     }
 
     /**
-     * 向下转换
      *
-     * @param number 数值
-     * @param scale 精度
-     * @return String 小数位数
+     *
+     * @param number
+     * @param scale
+     * @return String
      */
     public static String downScaleToString(double number, int... scale) {
         int precision = PRECISION_TWO;
@@ -139,7 +139,7 @@ public class MathUtil
             min = precision[1];
         }
         NumberFormat nf = NumberFormat.getNumberInstance();
-        //添加舍入模式
+
         nf.setRoundingMode(RoundingMode.HALF_UP);
         nf.setMaximumFractionDigits(max);
         nf.setMinimumFractionDigits(min > max ? max : min);
@@ -259,7 +259,7 @@ public class MathUtil
      *
      * @param value Need rounded number
      * @param scale Keep a few places after the decimal point
-     * @return resul
+     * @return result
      */
     public static double round(double value,int scale){
         if(scale<0){
