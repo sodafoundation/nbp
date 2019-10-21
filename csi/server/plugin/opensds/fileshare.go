@@ -197,7 +197,8 @@ func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeR
 		attachMode = "read,write"
 	}
 
-	accessTo := strings.Split(req.GetNodeId(), ",")[IpIdx]
+	nodeInfo := strings.Split(req.GetNodeId(), ",")
+	accessTo := nodeInfo[len(nodeInfo)-1]
 	// check if fileshare exists
 	shareSpec, err := f.Client.GetFileShare(req.VolumeId)
 	if err != nil || shareSpec == nil {
@@ -292,7 +293,8 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	accessTo := strings.Split(req.GetNodeId(), ",")[IpIdx]
+	nodeInfo := strings.Split(req.GetNodeId(), ",")
+	accessTo := nodeInfo[len(nodeInfo)-1]
 
 	for _, attachSpec := range attachments {
 		if attachSpec.FileShareId == shareSpec.Id && attachSpec.AccessTo == accessTo {
