@@ -197,6 +197,7 @@ func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeR
 		attachMode = "read,write"
 	}
 
+	//NodeId is a comma seperated string consisting of hostname, iqn(iSCSI Qualified Name), nqn(NVMe Qualified Name), ip address in order
 	nodeInfo := strings.Split(req.GetNodeId(), ",")
 	accessTo := nodeInfo[len(nodeInfo)-1]
 	// check if fileshare exists
@@ -293,6 +294,7 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
+	//NodeId is a comma seperated string consisting of hostname, iqn(iSCSI Qualified Name), nqn(NVMe Qualified Name), ip address in order
 	nodeInfo := strings.Split(req.GetNodeId(), ",")
 	accessTo := nodeInfo[len(nodeInfo)-1]
 
