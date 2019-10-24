@@ -312,10 +312,6 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
-func extractNFSInitiatorFromNodeInfo(nodeInfo string) string {
-	return strings.Split(nodeInfo, ",")[IpIdx]
-}
-
 func (f *FileShare) isFileshareCanBePublished(canAtMultiNode bool, attachReq *model.FileShareAclSpec) error {
 	attachments, err := f.Client.ListFileSharesAcl()
 	if err != nil {
