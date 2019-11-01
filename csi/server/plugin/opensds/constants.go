@@ -85,7 +85,6 @@ const (
 	ShareProfileId  = "shareProfileId"
 	ShareProtocol   = "shareProtocol"
 	NFS             = "nfs"
-	IpIdx           = 2
 	ExportLocations = "exportLocations"
 	FileShareName   = "fileShareName"
 )
