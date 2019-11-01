@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>Chassis Summary</title>
+	<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css"/>
+	<link rel="stylesheet" href="../../../assets/css/table.css"/>
+	<link rel="stylesheet" href="../../../assets/css/icstyle.css"/>
+	<script src="../../../assets/jquery-1.10.2.min.js"></script>
+	<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+	<script src="../../../resources/js/common/web-platform.js"></script>
+	<script src="../../../resources/js/common/jquery-util.js"></script>
+	<script src="../../../resources/js/device/device-summary.js"></script>
+	<script src="../../../resources/js/common/storage.plugin.js"></script>
+	<style type="text/css">
+		.capacity1 {
+			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#ffb346), to(#ff8a00));
+			FILTER: progid: DXImageTransform . Microsoft . Gradient(gradientType = 0, startColorStr = #ffb346, endColorStr = #ff8a00);
+			background: -ms-linear-gradient(left, #ffb346 0%, #ff8a00 100%);
+			background: -moz-linear-gradient(left, #ffb346, #ff8a00);
+			background: -o-linear-gradient(left, #ffb346 0%, #ff8a00 100%);
+			valign: left;
+		}
+
+		.capacity2 {
+			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#e3a78a), to(#ca8564));
+			FILTER: progid: DXImageTransform . Microsoft . Gradient(gradientType = 0, startColorStr = #e3a78a, endColorStr = #ca8564);
+			background: -ms-linear-gradient(left, #e3a78a 0%, #ca8564 100%);
+			background: -moz-linear-gradient(left, #e3a78a, #ca8564);
+			background: -o-linear-gradient(left, #e3a78a 0%, #ca8564 100%);
+			valign: left;
+		}
+
+		.capacity3 {
+			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#b0d3ff), to(#9bb9e9));
+			FILTER: progid: DXImageTransform . Microsoft . Gradient(gradientType = 0, startColorStr = #b0d3ff, endColorStr = #9bb9e9);
+			background: -ms-linear-gradient(left, #b0d3ff 0%, #9bb9e9 100%);
+			background: -moz-linear-gradient(left, #b0d3ff, #9bb9e9);
+			background: -o-linear-gradient(left, #b0d3ff 0%, #9bb9e9 100%);
+			valign: left;
+		}
+
+		.help {
+			right: 5px;
+			background-image: url(../../../assets/images/help_home.png);
+			height: 15px;
+			width: 15px;
+		}
+	</style>
+</head>
+<body>
+<div id="accordion">
+	<!-- Text content is replaced at runtime by localized resources -->
+	<h2 id="SystemTittle">System Information</h2>
+	<div id="main-info" style="overflow-y: hidden;">
+		<div id="help" url="systeminfo" class="help" style="top:11px;position: absolute;"></div>
+		<table class="bordered" id="systemInfoTable">
+			<thead>
+			<tr>
+				<th width="20%">Status</th>
+				<td width="30%">
+					<div style="vertical-align: middle;">
+						<img id="status-img"
+							 style="height: 12px;width: 12px;vertical-align: top;padding-top: 2px;display: none;"
+							 src=""/>
+						<span id="sys-status" class="normal_front"></span>
+					</div>
+				</td>
+				<th>SN</th>
+				<td id="sys-sn"></td>
+
+			</tr>
+			<tr>
+				<th>Model<!-- Model --></th>
+				<td id="sys-model"></td>
+				<th><!-- IP Address -->Current connection</th>
+				<td id="sys-ip"></td>
+			</tr>
+			</thead>
+		</table>
+	</div>
+
+</div>
+
+</body>
+</html>

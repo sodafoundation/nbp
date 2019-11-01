@@ -1,0 +1,161 @@
+html,body,div {
+	margin: 0px;
+	padding: 0px;
+}
+#divMain {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+.dataArea {
+	width: calc(100% - 20px);
+	margin: auto;
+}
+.tabHead {
+	width: 100%;
+	margin: auto;
+}
+.tabDesc {
+	margin-top: 10px;
+	font-size: 14px;
+	font-weight: bold;
+}
+.line {
+	width: 100%;
+	height: 1px;
+	background-image: url(../images/line.png)
+}
+.btnContainer {
+	margin-top: 8px;
+	overflow: auto;
+}
+.tabArea {
+	width: 100%;
+	margin: auto;
+	margin-top: 8px;
+	border-width:0px 1px 1px 1px;
+	border-style:solid;
+	border-color:#c0c0c0;
+}
+#refreshLunBtn {
+	/* margin-left: 151px; */
+}
+#delSnapBtn {
+	/* margin-left: 72px; */
+}
+#refreshSnapBtn {
+	/* margin-left: 80px; */
+}
+.loWords {
+	width: 0;
+	height: 100%;
+	vertical-align: middle;
+}
+#ingDiv,.loBlock{
+	background-color: #FFF;
+	filter:alpha(opacity=50);
+	opacity: 0.5;
+	font-size: 24px;
+	color: gray;
+	text-align: center;
+	display:none;
+	position:relative;
+	width:calc(100%-20px);
+}
+#divLoadingLun{
+	left: 11px;
+    top:-365px;
+    width: calc(100% - 22px)
+}
+#divLoadingSnapshot{
+	left: 11px;
+	top:-116px;
+	width: calc(100% - 22px)
+}
+#overlay{
+	visibility:hidden;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	z-index: 1000;
+	/* background-color: #000;
+	opacity: 0.2; */
+	background-color: #FFFFFF;
+	filter:alpha(opacity=45);
+	opacity: 0.45;
+}
+#cSnapBox {
+	border: 1px solid #007ccb;
+    background-color: #FFF;
+    width: 360px;
+    left:330px;
+    top:200px;
+    position:absolute;
+    visibility:hidden;
+    z-index: 1001;
+}
+/* #title {
+    height: 25px;
+    text-align:left;
+    background-color: #979797;
+} */
+#title {
+    height: 25px;
+    text-align:left;
+    background-color: #007ccb;
+    color: white;
+	line-height: 25px;
+	font-size: 14px;
+	font-weight: bold;
+	padding-left: 12px;
+}
+#ingDiv{
+	width: 360px;
+	height: 87px;
+	vertical-align: middle;
+}
+#delInfoDiv{
+	margin: 0px !important;
+	padding: 0px 15px;
+}
+.rollbackDataContent{
+	margin: 0px auto;
+	padding: 5px 15px;
+}
+.rollbackDataTable{
+	text-align: left;
+	margin: 0px auto;
+}
+.btnAlign{
+	text-align: center;
+    margin-top: 10px;
+	margin-bottom: 5px;
+}
+.alertBox{
+	display:none;
+}
+.alertWords{
+	margin: 10px 0px;
+	padding: 20px 20px 20px 70px;
+	background-repeat: no-repeat;
+	background-position: 20px center;
+}
+.alertBtn{
+	text-align:right;
+}
+.infWords{
+	background-image: url('../css/images/5.png');
+}
+.sucWords{
+	background-image: url('../css/images/alert_success.png');
+}
+.errWords{
+	background-image:url('../css/images/alert_failed.png');
+}
+.disabled{
+	color:gray;
+	cursor:not-allowed;
+}

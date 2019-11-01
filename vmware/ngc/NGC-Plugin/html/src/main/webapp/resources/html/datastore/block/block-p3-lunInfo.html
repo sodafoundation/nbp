@@ -1,0 +1,399 @@
+<!doctype html>
+<html style="height: 100%;">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>LUN Infomation</title>
+<style type="text/css">
+html {
+	background-color: white;
+}
+.focus {
+	background: pink;
+}
+input[type="text"]{
+        border:none;
+        outline: none;
+        box-shadow:inset 0 1px 3px #FFF;
+        text-indent:6px;
+        border-radius:0px;
+        transition:none;
+        border-bottom:1px solid #C3C3C3;
+        background:linear-gradient(180deg,transparent 95%,#0094d2 0) no-repeat;
+        background-size: 0% 100%;
+        transition-property:background-size;
+        transition-duration:0.2s;
+        transition-timing-function: ease;
+        transition-delay: initial;
+    }
+input[type="text"]:focus{
+        background-size:100% 100%;
+    }
+    select{
+        border:none;
+        border-bottom: 1px solid #C3C3C3;
+        outline:none;
+    }
+    textarea{
+        font-family: Arial;
+    	text-indent: 3px;
+    	margin-left: 0px;
+    	font-size: 12px;
+    }
+    .luntable{
+    	font-size: .9rem;
+		font-weight: 400;
+    	line-height: 1rem;
+    	letter-spacing: normal;
+    	margin-top: 0;
+    	border: 1px solid #ccc;
+    	border-radius: .125rem;
+    	overflow-y: auto;
+		width: 100%;
+    	background-color: #fafafa;
+    	word-wrap: break-word;
+        padding-left: 4px;
+    }
+</style>
+<script src="../../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../../resources/js/common/web-platform.js"></script>
+<script src="../../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript">
+	var showTip = false;
+	$(document).ready(function() {
+		
+		//shieldCombinationKey();
+		$("#lunName").val(parent.lunName);
+		if (parent.license) {
+			$("#smartThinTr").css("display", "table-row");
+		} else {
+			$("#smartThinTr").css("display", "none");
+		}
+
+		if ( parent.lunAllocType == "thin" ) {
+			$("#check_lunAllocType").attr("checked", true);
+			$("#initCapacity").css("display", "table-row");
+			$("#initCapacityRange").css("display", "table-row");
+			parent.lunAllocType = "thin" ;
+			if (getOptionCounts('capaUnit', 'TB') == 0) {
+				$("#capaUnit").append("<option value ='TB'>TB</option>");
+				}
+		}else {
+			$("#check_lunAllocType").attr("checked", false);
+			$("#initCapacity").css("display", "none");
+			$("#initCapacityRange").css("display", "none");
+			if (isCapaLessThanTB(parent.useableCapa)) {
+				$("#capaUnit option[value='TB']").remove();
+			}
+		}
+
+		if (parent.useableCapa.indexOf("PB") > 0 || parent.useableCapa.indexOf("TB") > 0) {
+			if (getOptionCounts('capaUnit', 'TB') == 0) {
+				$("#capaUnit").append("<option value ='TB'>TB</option>");
+			}
+			$("#initCapaUnit").append("<option value ='TB'>TB</option>");
+		} else {
+			if (parent.lunAllocType != "thin") {
+				$("#capaUnit option[value='TB']").remove();
+			}
+			$("#initCapaUnit option[value='TB']").remove();
+		}
+		$("#txtCapa").val(parent.lunCapa);
+		$("#lunDescript").val(parent.lunDescription);
+		$("#capaUnit").val(parent.lunCapaUnit);
+		$("#useableCapa").html(getMaxCapaShow(parent.useableCapa));
+		$("#txtInitCapa").val(parent.initCapa);
+		$("#initCapaUnit").val(parent.initCapaUnit);
+		
+		if (!isEmpObj($("#txtCapa").val())) {
+			isShowTip();
+		}
+		isEnableNextButton();
+
+		$("#capaUnit").bind("change", function() {
+			parent.lunCapaUnit = this.value;
+			isShowTip();
+			isEnableNextButton();
+		});
+		$("#initCapaUnit").bind("change", function() {
+			parent.initCapaUnit = this.value;
+			isShowTip();
+			isEnableNextButton();
+		});
+		$("#check_lunAllocType").bind("click", function() {
+			if (this.checked == true) {
+				$("#initCapacity").css("display", "table-row");
+				$("#initCapacityRange").css("display", "table-row");
+				parent.lunAllocType = "thin";
+				if (getOptionCounts('capaUnit', 'TB') == 0) {
+					$("#capaUnit").append("<option value ='TB'>TB</option>");
+				}
+			} else {
+				$("#initCapacity").css("display", "none");
+				$("#initCapacityRange").css("display", "none");
+				parent.lunAllocType = "thick";
+				if (isCapaLessThanTB(parent.useableCapa)) {
+					$("#capaUnit option[value='TB']").remove();
+				}
+			}
+			if (!isEmpObj($("#txtCapa").val())) {
+				isShowTip();
+			}
+			isEnableNextButton();
+		});
+		$("#lunName").bind("propertychange input", function() {
+			var value = $(this).val();
+			var length = getLength(value);
+			if (length > 31) {
+				this.value = getByteVal(value, 31);
+			}
+			for ( var index = 0; index < this.value.length; index++) {
+				if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]$/.test(this.value.charAt(index)))) {
+					this.value = this.value.substring(0, index);
+				}
+			}
+			parent.lunName = this.value;
+			isEnableNextButton();
+		}).bind("blur", function() {
+			parent.lunName = this.value;
+			isEnableNextButton();
+		});
+		$("#txtCapa").bind("propertychange input", function() {
+			var reg = new RegExp("^[0-9]*$");
+			if (!reg.test(this.value)) {
+				$(this).val($(this).val().replace(/[^0-9]/g, ''));
+			}
+			parent.lunCapa = this.value;
+			isShowTip();
+			isEnableNextButton();
+		});
+		$("#txtInitCapa").bind("propertychange input", function() {
+			var reg = new RegExp("^[0-9]*$");
+			if (!reg.test(this.value)) {
+				$(this).val($(this).val().replace(/[^0-9]/g, ''));
+			}
+			parent.initCapa = this.value;
+			isShowTip();
+			isEnableNextButton();
+		});
+		$("#lunDescript").bind("propertychange input", function() {
+			var value = $(this).val();
+			var length = getLength(value);
+			if (length > 255) {
+				this.value = getByteVal(value, 255);
+			}
+			parent.lunDescription = getByteVal(value, 255);
+		}).bind("blur", function() {
+			parent.lunDescription = this.value;
+		});
+		
+		$("#lunName").focus();
+	});
+
+	function isEnableNextButton() {
+		var result = (parent.lunName != "") && (parent.lunCapa != "") && (showTip);
+		if (result) {
+			parent.$("#nextStep").prop("disabled", "");
+			parent.$("#nextStep").css("background","#007cbb");
+		} else {
+			parent.$("#nextStep").prop("disabled", "disabled");
+			parent.$("#nextStep").css("background","#57C7FF");
+		}
+	}
+
+	function isShowTip() {
+		var capaTip_show = false;
+		var initCapaTip_show = false;
+		var capa = "";
+		var capaInit = "";
+		var capa_value = 0;
+		var capaInit_value = 0;
+		var max_value = parent.getCapaValue(parent.useableCapa);
+		if (!isEmpObj($("#txtCapa").val())) {
+			capa = $("#txtCapa").val() + $("#capaUnit").val();
+			capa_value = parent.getCapaValue(capa);
+		}
+		if (!isEmpObj($("#txtInitCapa").val())) {
+			capaInit = $("#txtInitCapa").val() + $("#initCapaUnit").val();
+			capaInit_value = parent.getCapaValue(capaInit);
+		}
+		
+		if ($("#check_lunAllocType").prop("checked")) {
+			max_value = parent.getCapaValue("64TB");	
+		if (!isEmpObj($("#txtCapa").val()) && capa_value >= 2 && capa_value <= max_value) {
+			capaTip_show = true;
+			$("#capaTip").hide();
+		} else {
+			capaTip_show = false;
+			$("#capaTip").text("[2GB," + "64TB]").show();
+		}
+		showTip = capaTip_show;
+		} else {
+			if (!isEmpObj($("#txtCapa").val()) && capa_value >= 2 && capa_value <= max_value) {
+				capaTip_show = true;
+				$("#capaTip").hide();
+			} else {
+				capaTip_show = false;
+				$("#capaTip").text("[2GB," + getMaxCapaShow(parent.useableCapa) + "]").show();
+			}
+			showTip = capaTip_show;
+		}
+	}
+	
+	function turnToInt(capa) {
+		var num = parseInt(capa);
+		var unit = capa.replace(/[^a-zA-Z]/g,'');
+		return num + unit;
+	}
+
+	function getLength(value) {
+		var byteValLen = 0;
+		var val = value.match(/./g);
+		if (null == val) {
+			return byteValLen;
+		}
+		for ( var i = 0; i < val.length; i++) {
+			if (val[i].match(/[^\x00-\xff]/ig) != null) {
+				byteValLen += 3;
+			} else {
+				byteValLen += 1;
+			}
+		}
+		return byteValLen;
+	}
+	function getByteVal(value, max) {
+		var returnValue = "";
+		var byteValLen = 0;
+		var val = value.match(/./g);
+		if (null == val) {
+			return returnValue;
+		}
+		for ( var i = 0; i < val.length; i++) {
+			if (val[i].match(/[^\x00-\xff]/ig) != null) {
+				byteValLen += 3;
+			} else {
+				byteValLen += 1;
+			}
+			if (byteValLen > max) {
+				break;
+			}
+			returnValue += val[i];
+		}
+		return returnValue;
+	}
+	function getMaxCapaShow(capa) {
+		if (capa.indexOf("GB") > 0) {
+			return parseInt(capa) + " GB";
+		}
+		return capa;
+	}
+
+	function isCapaLessThanTB(capa) {
+		if (capa.indexOf("TB") > 0 || capa.indexOf("PB") > 0) {
+			return false;
+		}
+		return true;
+	}
+	function getOptionCounts(id, value) {
+		var optionCount = 0;
+		var count = $('#' + id).find('option').length;
+		for ( var i = 0; i < count; i++) {
+			if ($('#' + id).get(0).options[i].value == value) {
+				optionCount++;
+			}
+		}
+		return optionCount;
+	}
+</script>
+</head>
+<body style="height: 100%;overflow-y: hidden;">
+	<div style="padding-left: 5px; -moz-user-select: text; table-layout: fixed;padding-right:10px;">
+		<table cellspacing="0" class="luntable" style="overflow-x: hidden; with: 625px;">
+			<tr>
+				<td/>
+				<td/>
+			</tr>
+			<tr>
+				<td style="white-space: nowrap;width: 150px;height:38px;">Volume name</td>
+				<td><input type="text" id="lunName" maxLength="31" style="padding-left: 3px;width: 220px; font-size: 12px" /></td>
+			</tr>
+			<tr valign="top">
+				<td style="padding-top: 5px;">Description</td>
+				<td style="padding-top: 5px;"><textarea id="lunDescript" style="padding-left: 5px;width: 220px; height: 40px; overflow: auto;resize: none;">
+				</textarea></td>
+			</tr>
+			<!-- <tr id="smartThinTr">
+				<td style="white-space: nowrap;">SmartThin:</td>
+				<td><input type="checkbox" id="check_lunAllocType" />Enable After the SmartThin function is enabled, </td>
+			</tr>
+			<tr id="smartThinExploreTr">
+				<td>&nbsp;</td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thin LUNs are created.</td>
+			</tr> -->
+			<tr id="smartThinTr">
+				<td style="white-space: nowrap;vertical-align: top;height:48px;padding-top:10px;">Thin</td>
+				<td>
+					<div style="border: 0px;position: relative;top: -3px;">
+						<table style="border: 0;cellpadding: 0;cellspacing: 0;">
+							<tr>
+								<td style="padding-left: 0px;width:8px;vertical-align: top;"><input type="checkbox" id="check_lunAllocType"/></td>
+								<td>Thin volume will be created.</td>
+							</tr>
+						</table>
+					</div>
+				</td>
+			</tr>
+			<tr style="height:40px;">
+				<td style="white-space: nowrap;">Capacity</td>
+				<td>
+					<table>
+						<tr>
+							<td><input type="text" id="txtCapa"style="padding-left: 3px;" /></td>
+							<td>&nbsp; <select id="capaUnit" style="background-color:#fafafa;">
+									<option value="GB">GB</option>
+							</select>
+							</td>
+							<td><span id="capaTip" style="color: red;font-size: 12px;display: none;"></span></td>
+						</tr>
+					</table>
+				</td>
+				<td style="width: 16px; display: none;" id="lunCapaRangeImage">
+					<div style="width: 16px; height: 16px; background-image: url(../../image/error.png)"></div>
+				</td>
+				<td><span id="lunCapaRange" style="display: none; color: red;"></span></td>
+			</tr>
+			<tr style="height:40px;">
+				<td>Available capacity</td>
+				<td><span id="useableCapa"style="padding-left: 5px;"></span></td>
+			</tr>
+			<tr style="height:40px;">
+				<td>Min. capacity</td>
+				<td style="padding-left: 5px;">2GB</td>
+			</tr>
+			<!-- <tr style="display: none;" id="initCapacity">
+				<td style="white-space: nowrap;">Initially Allocated Capacity:</td>
+				<td>
+					<table>
+						<tr>
+							<td><span><input type="text" id="txtInitCapa" /></span></td>
+							<td>&nbsp; <select id="initCapaUnit">
+									<option value="GB">GB</option>
+							</select>
+							</td>
+							<td><span id="initCapaTip" style="color: red;font-size: 12px;display: none;"></span></td>
+						</tr>
+					</table>
+				</td>
+				<td style="width: 16px; display: none;" id="initCapaRangeImage">
+					<div style="width: 16px; height: 16px; background-image: url(../../image/error.png)"></div>
+				</td>
+				<td><span id="initCapaRange" style="display: none; color: red;"></span></td>
+			</tr>
+			<tr style="display: none;" id="initCapacityRange">
+				<td>&nbsp;</td>
+				<td>Min. initially allocated capacity:&nbsp;1 GB</td>
+			</tr> -->
+		</table>
+	</div>
+</body>
+</html>

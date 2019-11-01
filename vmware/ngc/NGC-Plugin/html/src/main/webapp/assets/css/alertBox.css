@@ -1,0 +1,72 @@
+html,body,div {
+	margin: 0px;
+	padding: 0px;
+}
+#ingDiv{
+	background-color: #FFF;
+	filter:alpha(opacity=50);
+	opacity: 0.5;
+	font-size: 24px;
+	color: gray;
+	text-align: center;
+	display:none;
+	position:relative;
+	width:calc(100%-20px);
+}
+#overlay{
+	visibility:hidden;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	z-index: 1000;
+	background-color: #000;
+	opacity: 0.2;
+}
+#diaLogBox {
+    background-color: #FFF;
+    width: 360px;
+    left:330px;
+    top:226px;
+    position:absolute;
+    visibility:hidden;
+    z-index: 1001;
+}
+#title {
+    height: 25px;
+    text-align:left;
+    background-color: #979797;
+}
+#ingDiv{
+	width: 360px;
+	height: 87px;
+	vertical-align: middle;
+}
+.alertBox{
+	display: none;
+}
+.alertWords{
+	margin: 10px 0px;
+	padding: 25px 20px 25px 70px;
+	background-repeat: no-repeat;
+	background-position: 20px center;
+}
+.alertBtn{
+	text-align: right;
+}
+.sucWords{
+	background-image: url('../css/images/alert_success.png');
+}
+.errWords{
+	background-img: url('../css/images/alert_failed.png');
+}
+.disabled{
+	color: gray;
+	cursor: not-allowed;
+}
+.dataArea {
+	width: calc(100% - 20px);
+	margin: auto;
+}
