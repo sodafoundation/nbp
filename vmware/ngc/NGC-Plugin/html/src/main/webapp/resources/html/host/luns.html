@@ -9,11 +9,6 @@
     </div>
     <div class="line" style="top: 30px;"></div>
     <div style="position: absolute; top: 41px;">
-        <!-- <div class="plugin_button_main" id="btnRefresh">
-            <div class="plugin_button_div button_left"></div>
-            <div class="plugin_button_div button_center">Refresh</div>
-            <div class="plugin_button_div button_right"></div>
-        </div> -->
         <div class="plugin_button_main" style="float: left;margin-left: 0px;">
             <input type="button" id="btnRefresh" value="Refresh"/>
         </div>
@@ -55,7 +50,6 @@
                 </th>
             </tr>
             </thead>
-            <!-- <tbody id="tbody_hostLun" style="margin-right: 0px;"></tbody> -->
         </table>
         <div id="hostLunTableDataDiv"
              style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
@@ -134,7 +128,6 @@
         $(document).ready(function () {
             makeHelp();
             initParam();
-            //changesize();
             var interval = setInterval(function () {
                 if ($("#lunTableDiv").height() > 0) {
                     changesize();
@@ -169,7 +162,6 @@
             $(window).resize(function () {
                 changesize();
                 $("#hostLunTable").width($("#hostLunTableData").width());
-                /* $("#hostLunTableDataDiv").height($("#lunTableDiv").height() - $("#hostLunTable").height()); */
             });
         });
         function initParam() {

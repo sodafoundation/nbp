@@ -32,7 +32,6 @@ table {
 }
 
 .left_top_navigation {
-	/*background-image: url("../../../assets/images/left_list_title.png");*/
 	font-size: 12px;
 	font-weight: bold;
 	color: #0f3f6d;
@@ -81,7 +80,6 @@ font {
 		$('#hrefTopN').css('color', '#0068FF');
 	});
 	function goInHostMain(type) {
-		//var moref = parent.moref;
 		if (type == "datastore") {
 			$('#herfDatastore').css('color', '#000');
 			$('#hrefLun').css('color', '#0068FF');
@@ -111,51 +109,7 @@ font {
 			$("#topn_img").css("display", "none");
 			$("#test_img").css("display", "none");
 			parent.$("#mainFrame").attr("src", "luns.html");
-		} /*else if (type == "targets") {
-			$('#herfDatastore').css('color', '#0068FF');
-			$('#hrefLun').css('color', '#0068FF');
-			$('#hrefTargets').css('color', '#000');
-			$('#hrefFs').css('color', '#0068FF');
-			$('#hrefTopN').css('color', '#0068FF');
-
-			$("#datastore_img").css("display", "none");
-			$("#lun_img").css("display", "none");
-			$("#target_img").css("display", "block");
-			$("#fs_img").css("display", "none");
-			$("#topn_img").css("display", "none");
-			$("#test_img").css("display", "none");
-			parent.$("#mainFrame").attr("src", "targets.html");
-		} else if (type == "fs") {
-            $('#herfDatastore').css('color', '#0068FF');
-            $('#hrefLun').css('color', '#0068FF');
-            $('#hrefTargets').css('color', '#0068FF');
-            $('#hrefFs').css('color', '#000');
-			$('#hrefTopN').css('color', '#0068FF');
-
-            $("#datastore_img").css("display", "none");
-            $("#lun_img").css("display", "none");
-            $("#target_img").css("display", "none");
-            $("#fs_img").css("display", "block");
-            $("#topn_img").css("display", "none");
-            $("#test_img").css("display", "none");
-            parent.$("#mainFrame").attr("src", "fileSystems.html");
-        }
-        else if (type == "topn") {
-       	    $('#hrefTopN').css('color', '#000');
-            $('#herfDatastore').css('color', '#0068FF');
-            $('#hrefLun').css('color', '#0068FF');
-            $('#hrefTargets').css('color', '#0068FF');
-            $('#hrefFs').css('color', '#0068FF');
-
-
-            $("#datastore_img").css("display", "none");
-            $("#lun_img").css("display", "none");
-            $("#target_img").css("display", "none");
-            $("#fs_img").css("display", "none");
-            $("#topn_img").css("display", "block");
-            $("#test_img").css("display", "none");
-            parent.$("#mainFrame").attr("src", "topnLUNs.html");
-        }*/
+		}
 	}
 </script>
 </head>
@@ -179,35 +133,10 @@ font {
 					style="display: none; vertical-align: middle;"></img></td>
 				<td class="left_top_luns"><a id="hrefLun" onclick='goInHostMain("luns")' href="#">Volumes</a></td>
 			</tr>
-<!--			<tr>
-				<td style="padding-left: 11px; width: 19px"><img id="fs_img" src="../../../assets/images/navigation_arrow.png"
-																 style="display: none; vertical-align: middle;"></img></td>
-				<td class="left_top_luns"><a id="hrefFs" onclick='goInHostMain("fs")' href="#">File Systems</a></td>
-			</tr>
-			<tr>
-				<td style="padding-left: 11px; width: 19px"><img id="target_img"
-					src="../../../assets/images/navigation_arrow.png" style="display: none; vertical-align: middle;"></img></td>
-				<td class="left_top_targets"><a id="hrefTargets" onclick='goInHostMain("targets")' href="#">Targets</a></td>
-			</tr>
-			<tr>
-				<td style="padding-left: 11px; width: 19px"><img id="topn_img" src="../../../assets/images/navigation_arrow.png"
-																 style="display: none; vertical-align: middle;"></img></td>
-				<td class="left_top_luns"><a id="hrefTopN" onclick='goInHostMain("topn")' href="#">TOPN-LUNs</a></td>
-			</tr>-->
 			<tr style="height: 5px;">
 				<td></td>
 			</tr>
 		</table>
-<!--		<div class="lego_div" style="left: 0px; width: 100%;margin-bottom: 40px;">
-			<div>
-				<img style="height: 56px; width: 56px;" src="../../../assets/images/view.png" />
-			</div>
-			<div>&nbsp;</div>
-			<div style="margin-top: 5px; font-size: 11px;">Huawei Storage Plugin</div>
-			<div style="margin-top: 5px; font-size: 11px;">
-				Copyright <font>&copy;</font> Huawei Technologies Co., Ltd. 2014. All rights reserved.
-			</div>
-		</div>-->
 	</div>
 </body>
 </html>

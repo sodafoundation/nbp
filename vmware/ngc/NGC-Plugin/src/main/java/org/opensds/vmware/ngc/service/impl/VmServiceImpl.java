@@ -351,7 +351,7 @@ public class VmServiceImpl extends VimCommonServiceImpl implements Vmservice {
         return virDisk;
     }
 
-    // ge vir disk size
+    // get virtual disk size
     private String getVirDiskSize(String summary) {
         String diskSummary = summary.replace(",", "").replace("KB", "").replace(" ", "");
         long diskSize = Long.parseLong(diskSummary) * KBTOB;
@@ -359,7 +359,7 @@ public class VmServiceImpl extends VimCommonServiceImpl implements Vmservice {
         return virDiskSize;
     }
 
-    // ge vir disk id
+    // get virtual disk id
     private String getVirDiskId(VirtualDisk virdev, Map<Integer, String> virCon) {
         if (virdev == null || virCon.isEmpty()) {
             return null;
@@ -375,7 +375,7 @@ public class VmServiceImpl extends VimCommonServiceImpl implements Vmservice {
         return virDiskId.toString();
     }
 
-    // get vir disk info
+    // get virtual disk info
     private String getVirDiskMode(String mode) {
         String tempMode = mode.replace(" ", ".").replace("_", ".");
         return tempMode;
@@ -469,7 +469,6 @@ public class VmServiceImpl extends VimCommonServiceImpl implements Vmservice {
         for (DatastoreHostMount hostMount : hostMounts) {
             ManagedObjectReference hostMo = hostMount.getKey();
             HostConfigInfo hostConfigInfo = getHostConfigInfo(hostMo, serverInfo);
-            // viHost = getDatastoreHost(hostMor);
             lun = getVirDiskLun(hostConfigInfo, uuid);
             if (null != lun) {
                 break;

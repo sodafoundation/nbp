@@ -152,7 +152,7 @@ function changeToLowercase(word)
 function checkIP(ip) { 
 	var exp = /^((\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5])\.(\d|\d\d|[0-1]\d\d|2[0-4]\d|25[0-5]))$/;
 	var bool = ip.match(exp);
-	//不是IP
+
 	if (!bool){ return 0;}
 	else {
 		var ips = ip.split(".");

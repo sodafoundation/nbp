@@ -58,8 +58,6 @@
       <templateId>vsphere.core.inventory.objectViewTemplate</templateId>
       <variable name="namespace" value="org.opensds.vmware.ngc.device"/>
       <variable name="objectType" value="opensds:Storage"/>
-      <!-- remove the Related Objects tab since it is empty -->
-      <!--<excludedExtension>org.opensds.vmware.ngc.device.related</excludedExtension>-->
    </templateInstance>
 
 
@@ -452,85 +450,6 @@
    </extension>
 
    <!-- ***********************action in vsphere Datastore  ***********************-->
-   <!--&lt;!&ndash;datastore right click menus&ndash;&gt;
-   <extension id="org.opensds.ngc.solution.datastoreMenus">
-      <extendedPoint>vsphere.core.menus.solutionMenus</extendedPoint>
-      <object>
-         <label>OpenSDS Storage Plugin</label>
-         <uid>org.opensds.ngc.solution.datastoreMenus</uid>
-         <children>
-            <Array>
-               <com.vmware.actionsfw.ActionMenuItemSpec>
-                  <type>action</type>
-                  <uid>org.opensds.ngc.action.extendDatastore</uid>
-                  <label>Extend Datastore</label>
-               </com.vmware.actionsfw.ActionMenuItemSpec>
-               <com.vmware.actionsfw.ActionMenuItemSpec>
-                  <type>action</type>
-                  <uid>org.opensds.ngc.action.deleteDatastore</uid>
-                  <label>Delete Datastore</label>
-               </com.vmware.actionsfw.ActionMenuItemSpec>
-            </Array>
-         </children>
-      </object>
-      <metadata>
-         &lt;!&ndash; Filter creates this extension only for VirtualMachine objects &ndash;&gt;
-         <objectType>Datastore</objectType>
-      </metadata>
-   </extension>-->
-
-   <!--&lt;!&ndash; Extend Datastore &ndash;&gt;
-   <extension id="org.opensds.ngc.action.extendDatastore">
-      <extendedPoint>vise.actions.sets</extendedPoint>
-      <object>
-         <actions>
-            <com.vmware.actionsfw.ActionSpec>
-               <uid>org.opensds.ngc.action.extendDatastore</uid>
-               <label>Extend Datastore</label>
-               <icon></icon>
-               <delegate>
-                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
-                  <object><root>
-                     &lt;!&ndash; execute the action on client-side (html view in a modal dialog) &ndash;&gt;
-                     <actionUrl>/vsphere-client/opensds/resources/html/datastore/datastore-extend.html</actionUrl>
-                     <dialogTitle>Extend Datastore</dialogTitle>
-                     <dialogSize>650,460</dialogSize>
-                  </root></object>
-               </delegate>
-            </com.vmware.actionsfw.ActionSpec>
-         </actions>
-      </object>
-      <metadata>
-         &lt;!&ndash; This filters the actions to be visible only on Chassis &ndash;&gt;
-         <objectType>Datastore</objectType>
-      </metadata>
-   </extension>
-   &lt;!&ndash; Delete Datastore &ndash;&gt;
-   <extension id="org.opensds.ngc.action.deleteDatastore">
-      <extendedPoint>vise.actions.sets</extendedPoint>
-      <object>
-         <actions>
-            <com.vmware.actionsfw.ActionSpec>
-               <uid>org.opensds.ngc.action.deleteDatastore</uid>
-               <label>Delete Datastore</label>
-               <icon></icon>
-               <delegate>
-                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
-                  <object><root>
-                     &lt;!&ndash; execute the action on client-side (html view in a modal dialog) &ndash;&gt;
-                     <actionUrl>/vsphere-client/opensds/resources/html/datastore/deleteDatastore/deleteDatastore.html?type=DeleteDatastore</actionUrl>
-                     <dialogTitle>Delete Datastore</dialogTitle>
-                     <dialogSize>650,460</dialogSize>
-                  </root></object>
-               </delegate>
-            </com.vmware.actionsfw.ActionSpec>
-         </actions>
-      </object>
-      <metadata>
-         &lt;!&ndash; This filters the actions to be visible only on Chassis &ndash;&gt;
-         <objectType>Datastore</objectType>
-      </metadata>
-   </extension>-->
 
    <!-- host monitor page -->
    <extension id="org.opensds.ngc.hostView">
@@ -562,19 +481,4 @@
       </object>
    </extension>
 
-   <!--<extension id="org.opensds.ngc.datastore.summary">
-      <extendedPoint>vsphere.core.datastore.summarySectionViews</extendedPoint>
-      <object>
-         <name>OpenSDS Datastore Msg</name>
-         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
-            <object>
-               <root>
-                  <url>/vsphere-client/opensds/resources/html/summary/datastore-summary.html</url>
-                  <dialogTitle>OpenSDS Datastore Msg</dialogTitle>
-                  <dialogSize>500, 450</dialogSize>
-               </root>
-            </object>
-         </componentClass>
-      </object>
-   </extension>-->
 </plugin>

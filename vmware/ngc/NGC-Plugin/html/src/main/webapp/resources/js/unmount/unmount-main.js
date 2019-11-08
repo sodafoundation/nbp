@@ -36,19 +36,15 @@ function refreshData() {
 			});
 }
 
-//调整页面结构
 function changesize() {
 	var divMainHeight = $("#divMain").height();
 
 	var topHeight = $("#top").height();
 	var lineTop = 5 + topHeight + 5;
 	var buttonsTop = lineTop + 2 + 5;
-	//分割线的位置
 	$("#line").css("top", lineTop);
-	//按钮的位置
 	$("#buttons").css("top", buttonsTop);
 	var buttonsHeight = $("#buttons").height();
-	//表格的位置 和高度
 	var tableTop = buttonsTop + buttonsHeight + 5;
 	var tableHeight = divMainHeight - tableTop - 3;
 	$("#mappedLunListDiv").height(tableHeight - 63);

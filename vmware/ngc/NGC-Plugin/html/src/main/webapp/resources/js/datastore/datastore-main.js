@@ -27,7 +27,7 @@ var produceDefaultName = true;
 var lunDescription = "";
 // TYPE :thin thick
 var lunAllocType = "thick";
-// capactity
+// capacity
 var lunCapa = "";
 var lunCapaUnit = "GB";
 var useableCapa = "";
@@ -42,7 +42,6 @@ var storagePoolType = "";
 // datastoreName is repeat?
 var isDsNameRepeat = false;
 var isLunInfoValide = false;
-// window.external.SetTitle(operationTitle);
 
 //for NFS -----------
 var datastoreType = "";
@@ -98,10 +97,8 @@ $(document).ready(function () {
             $("#mainFrame").attr("src", "datastore-p2-devicelist.html");
         }
     }
-    // makeHelp();
-    // shieldCombinationKey();
+
     $("#preStep").click(function () {
-        // 如果按钮被灰化,直接返回
         if (this.disabled == true) {
             return;
         }
@@ -111,7 +108,6 @@ $(document).ready(function () {
             handlePreAction("#dg_top_" + currentPage, "#dg_top_" + curPage, "#dg_main_left_" + currentPage, "#dg_main_left_" + curPage, "#img_main_left_" + currentPage, "#img_main_left_" + curPage);
         } else {
             if (datastoreType == "vmfsDatastore") {
-                //创建lun时的页面控制 data:2018-12-10 author:qwx615620
                 if (isCreateDatastore == false && currentPage == 5) {
                     handlePreAction("#dg_top_" + 7, "#dg_top_" + 4, "#dg_main_left_" + 7, "#dg_main_left_" + 4, "#img_main_left_" + 7, "#img_main_left_" + 4);
                 } else {
@@ -407,20 +403,7 @@ function createDatastore() {
         volumeList[0] = volumeInfo;
         createDatastoreInfo.volumeInfos = volumeList;
     }
-
-    /*createDatastoreInfo.deviceType = deviceType;
-     createDatastoreInfo.deviceId = deviceId;
-     createDatastoreInfo.datastoreName = datastoreName;
-     createDatastoreInfo.storagePoolId = storagePoolId;
-     createDatastoreInfo.datastoreType = datastoreType;
-     createDatastoreInfo.isCreateDatastore = isCreateDatastore;
-     if(datastoreType == "vmfsDatastore") {
-     createDatastoreInfo.vmfsVersion = vmfsVersion;
-     createDatastoreInfo.lunName = lunName;
-     createDatastoreInfo.lunDescription = lunDescription;
-     createDatastoreInfo.lunCapacity = lunCapa;
-     createDatastoreInfo.allocType = lunAllocType;
-     }*/ else {
+    else {
         //for nfs
         createDatastoreInfo.fileSystemName = fileSystemName;
         createDatastoreInfo.allocType = fileSystemAllocType;
@@ -442,21 +425,6 @@ function createDatastore() {
     var ns = org_opensds_storage_devices;
     var requsetURL = ns.webContextPath + url;
     WEB_PLATFORM.callActionsController(requsetURL, postJson);
-   /* $.ajax({
-        async:true,
-        contentType: "application/x-www-form-urlencoded;charset=UTF-8",
-        type: "POST",
-        url: encodeURI(requsetURL),
-        data: postJson,
-        dataType: 'json',
-        success: function (data) {
-            console.log(data);
-        }, error: function (XMLHttpRequest, textStatus, errorThrown) {
-            alert(XMLHttpRequest.status);
-            alert(XMLHttpRequest.readyState);
-            alert(textStatus);
-        }
-    })*/
 }
 
 function init() {

@@ -92,15 +92,6 @@ table thead tr th, table tbody tr td {
 			</table>
 			<iframe id="tabFrame" frameborder="0" scrolling="auto" style="width: 100%;border: none;height: 100%;" src=""></iframe>
 			<div id="pager-tabFrame" style="height: 24px; width: 100%"></div>
-			<!-- <table id="alarmTableTbody" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;">
-				<tbody class="tableBody" id="">
-					<tr id="clone">
-						<th width="20%" align="left" title="Severity">Severity</th>
-						<th width="50%" align="left" title="Description">Description</th>
-						<th width="30%" align="left" title="starttime">Occurred On</th>
-					</tr>
-				</tbody>
-			</table> -->
 			<div id="divLoadingAlarm" class="loading_font"
 				style="position: absolute; top: 40px; left: 0px; background-color: #FFF; display: none;">
 				<span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
@@ -155,9 +146,6 @@ table thead tr th, table tbody tr td {
 	});
 	
 	function loadAlarms(){
-		/* if ($("#" + divhead_id).length > 0) {
-			$("#" + divhead_id).width($("#alarmMain").width() - 2);
-		} */
 		if ($("#alarmTableDiv").width() > 0) {
 			$("#storagealarmTab").width($("#alarmMain").width() - 2);
 		}
@@ -193,7 +181,6 @@ table thead tr th, table tbody tr td {
 			position : "down",
 			callback : null
 		});
-//		$("#storagealarmTab").forEach()
 	}
 	function alarmClickEvent() {
 		$("#storagealarmTab tr:gt(0)").bind("click", function(event) {
@@ -213,7 +200,7 @@ table thead tr th, table tbody tr td {
 	function changesize() {
 		var divMainHeight = $("#alarmMain").height();
 		var divMainWidth = $("#alarmMain").width();
-		var tableFrameHeight = divMainHeight - 22 - 35 - 2 - 18;//
+		var tableFrameHeight = divMainHeight - 22 - 35 - 2 - 18;
 		$("#alarmTableDiv").height(tableFrameHeight);
 		$("#alarmTableDiv").width(divMainWidth - 2);
 		$("#divLoadingAlarm").width(divMainWidth - 4);
@@ -221,7 +208,7 @@ table thead tr th, table tbody tr td {
 		$("#diverrorAlarm").width(divMainWidth - 2);
 		$("#diverrorAlarm").height(tableFrameHeight - 20 - 2);
 		//iframe
-		$("#tabFrame").height(tableFrameHeight - 35 - 4 - 24);//
+		$("#tabFrame").height(tableFrameHeight - 35 - 4 - 24);
 	}
 	function hideBottomBorder() {
 		var h = $("#alarmTableDiv").height();
@@ -231,7 +218,6 @@ table thead tr th, table tbody tr td {
 			$("#alarmheadDiv").css("display", "block");
 			$("#alarmheadDiv").width(div);
 		} else {
-			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
 			$("#alarmheadDiv").css("display", "none");
 		}
 	}
@@ -312,28 +298,9 @@ table thead tr th, table tbody tr td {
 			else if(filterType == "LEVEL")
 			{
 				filterValue = $("#level_filterValue_alarm").val();
-//				if(filterValue == "WARNING")
-//				{
-//					filterValue = "3";
-//				}
-//				else if(filterValue == "MAJOR")
-//				{
-//					filterValue = "5";
-//				}
-//				else if(filterValue == "CRITICAL")
-//				{
-//					filterValue = "6";
-//				}
-//				else	
-//				{
-//					filterValue = "";
-//				}
 			}
 			loadAlarms();
 		});
-		/* $("#level_filterValue_alarm").bind("change", function() {
-			$("#btnSearch").click();
-		}); */
 	}
 	    var fun=dragTable_iframe;
    fun("storagealarmTab","tabFrame","storagealarmTable" );

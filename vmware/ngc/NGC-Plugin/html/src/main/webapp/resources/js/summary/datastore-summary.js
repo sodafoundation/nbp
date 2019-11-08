@@ -45,20 +45,4 @@ $(document).ready(function() {
     $("#storagePoolCharts").append(childDiv);
     storaePoolCapChart = echarts.init(document.getElementById(childId));
     storaePoolCapChart.setOption(option, true);
-    /*
-    var queryUrl = ns.webContextPath + "/rest/data/datastore/getInfo/" + moref + "?serverGuid="
-        + serverGuid + "&t=" + new Date();
-    $.getJSON(encodeURI(queryUrl), function (resp) {
-        if (resp.msg != null){
-            var arr = eval(resp.data);
-            for ( var i = 0; i < arr.length; i++) {
-                var jsonObj = arr[i];
-                $("#volumeTb").
-                option.series[0].data[0].value = jsonObj.storagePoolUsage;
-                storaePoolCapChart = echarts.init(document.getElementById('storagePoolChart'));
-                storaePoolCapChart.setOption(option, true);
-            }
-
-        }
-    });*/
 });

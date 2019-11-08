@@ -193,7 +193,7 @@ public class PluginMgntService {
     }
 
     /**
-     * safety cloes stream
+     * safety close stream
      * @param stream
      */
     private void closeStream (Closeable stream) {

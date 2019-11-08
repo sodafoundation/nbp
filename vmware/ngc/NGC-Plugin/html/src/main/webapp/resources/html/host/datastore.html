@@ -10,9 +10,6 @@
     <div class="line" style="top: 30px;"></div>
     <div style="position: absolute; top: 41px;">
         <div class="plugin_button_main" id="btnRefresh">
-            <!-- <div class="plugin_button_div button_left"></div>
-            <div class="plugin_button_div button_center">Refresh</div>
-            <div class="plugin_button_div button_right"></div> -->
             <div class="plugin_button_main" style="float: left;margin-left: 0px;">
                 <input type="button" id="btnRefresh" value="Refresh"/>
             </div>
@@ -69,14 +66,11 @@
     <div id="lunTableTitle" style="position: absolute;">
         <span style="font-weight: bold;" id="lunOrFsUsedForDsSpan">Volumes Used for Datastore</span>
     </div>
-    <!-- <div class="line" id="lineDiv" style="display: none;"></div> -->
     <div id="lunTableDiv"
          style="position: relative; border: 1px solid #C0C0C0; border-top: none;overflow-y: hidden;overflow-x: hidden;">
         <table id="datastoreLunTable" class="tablesorter" style="table-layout: fixed;position: relative;">
             <thead class="tableHead">
             <tr>
-                <!--<th class="lunIdentifierTh" title="Identifier" width="23%" align="left"style="background:white"><div class="lunIdentifierDiv">Identifier</div></th>-->
-                <!--<th class="nameVcenterTh" title="Name(vCenter)" width="10%" align="left"><div class="nameVcenterDiv">Name(vCenter)</div></th>-->
                 <th class="nameDeviceTh" title="Name" width="10%" align="left">
                     <div class="nameDeviceDiv">Name</div>
                 </th>
@@ -92,7 +86,6 @@
                 <th id="volumeUsageRateTh" title="Usage Rate" width="15%" align="right" style="text-align: left; padding-right: 4px;">
                     <div>Usage Rate</div>
                 </th>
-                <!--<th title="Owning Device" width="9%" align="left"><div>Owning Device</div></th>-->
                 <th title="Storage Pool" width="10%" align="left">
                     <div>Storage Pool</div>
                 </th>
@@ -186,7 +179,6 @@
                 if ($("#datastoreTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
                     changesize();
                     if (status != 2) {
-                        //$("#divLoadingDatastore").css("display", "block");
                         status = 1;
                     }
                     clearInterval(interval);
@@ -445,7 +437,6 @@
                     $("#divLoadingDatastoreLun").css("display", "none");
                     if (resp.msg) {
                         console.log(resp.msg);
-                        //$("#divErrorDatastoreLun").text(resp.msg).show();
                         return
                     }
                     var arr = eval(resp.data);
@@ -516,7 +507,6 @@
             } else if (lunOrFsFlag == "fs") {
                 storageLunUrl = ns.webContextPath + "/rest/nfsdata/fsListOfDatastore/" + moref + "?datastoreId="
                     + datastoreID + "&serverGuid=" + serverGuid + "&t=" + new Date();
-                // no suport $("#divLoadingDatastoreLun").css("display", "none");
                 $.getJSON(encodeURI(storageLunUrl), function (resp) {
                     if (datastoreID == "") {
                         return;
@@ -601,10 +591,7 @@
                     lunOrFsFlag = "lun";
                     datastoreID = $(this).find('td:eq(10)').text();
                     $(".lunIdentifierTh").show();
-                    // $(".lunIdentifierDiv").show();
                     $(".nameVcenterTh").show();
-                    // $(".nameVcenterDiv").show();
-//                $(".nameDeviceTh").hide();
                     $(".nameDeviceDiv").html("Name(Device)");
                     $("#lunOrFsUsedForDsSpan").html("Volumes Used for Datastore");
                 }
@@ -636,12 +623,10 @@
             var h = $("#datastoreTable").height();
             var h1 = $("#datastoreTable").height();
             if (h <= h1) {
-                //$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
                 var div = $("#datastoreTableDiv").width() - $("#datastoreTable").width();
                 $("#datastoreheadDiv").css("display", "block");
                 $("#datastoreheadDiv").width(div);
             } else {
-                //$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
                 $("#datastoreheadDiv").css("display", "none");
             }
         }
@@ -649,13 +634,10 @@
             var h = $("#datastoreLunTableDivList").height();
             var h1 = $("#datastoreLunTable").height();
             if (h <= h1) {
-                //$('.tableBody tr:last').find('td').css("border-bottom", "0 none");
                 var div = $("#lunTableDiv").width() - $("#datastoreLunTable").width();
                 $("#datastoreLunheadDiv").css("display", "block");
                 $("#datastoreLunheadDiv").width(div);
             } else {
-                //$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
-                //$("#lunheadDiv").css("display", "none");
                 var div = $("#lunTableDiv").width() - $("#datastoreLunTable").width();
                 $("#datastoreLunheadDiv").css("display", "block");
                 $("#datastoreLunheadDiv").width(div);

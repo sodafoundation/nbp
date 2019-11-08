@@ -29,14 +29,11 @@ var ns = org_opensds_storage_devices;
         var url = "";
         if (parent.datastoreType == "vmfsDatastore") {
             url = ns.webContextPath + "/rest/data/storagepoolListForBlock/" + deviceId + "?t=" + new Date();
-		} else if (parent.datastoreType == "nfsDatastore") {
-            //url = ns.webContextPath + "/rest/data/storagepoolListForNFS/" + deviceId + "?t=" + new Date();
 		}
 
 		function refreshData() {
 			$.getJSON(encodeURI(url), function(resp) {
 				$("#divLoadingAlarm").css("display", "none");
-				//var table = document.getElementById("storagepoolList");
 				var tbody = document.getElementById("tbody_pool");
 				var arr = eval(resp.data);
 				for ( var i = 0; i < arr.length; i++) {
@@ -106,22 +103,13 @@ var ns = org_opensds_storage_devices;
 				parent.$("#nextStep").css("background","#007cbb");
 
 				if (this.rowIndex != "" && rowIndex != this.rowIndex) {
-					//重置后面的信息
-					//文件系统版本
 					parent.fileVersion = "VMFS5";
-					//VMFS3块大小,默认为1
 					parent.blockSize = "1";
-					//LUN的类型:thin thick
 					parent.lunAllocType = "";
-					//LUN的容量
 					parent.lunCapa = "";
-					//LUN容量单位,初始化为GB
 					parent.lunCapaUnit = "GB";
-					//初始化容量
 					parent.initCapa = "";
-					//初始化容量单位,初始化为GB
 					parent.initCapaUnit = "GB";
-					//Datastore名称
 					parent.datastoreName = "";
 				}
 			});

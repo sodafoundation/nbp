@@ -153,7 +153,7 @@ public class TimeUtil
         String dateTimeEnd = systemTimeZone.getDateTimeEnd();
         String result = "";
 
-        Date date = new Date(timeLong * 1000); // 根据long类型的秒数生命一个date类型的时间
+        Date date = new Date(timeLong * 1000);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         String timezoneSymbols = timeZone.substring(0, 1);
@@ -191,7 +191,7 @@ public class TimeUtil
         {
             timeZoneResult = " UTC" + timeZone;
         }
-//        result = result + timeZoneResult;
+
         return result;
     }
 }

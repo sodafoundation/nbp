@@ -31,12 +31,10 @@ table thead tr th,table tbody tr td {
 		var url = ns.webContextPath + "/rest/device/getList?t=" + new Date();
 		$.getJSON(encodeURI(url), function(resp) {
 			$("#divLoadingAlarm").css("display", "none");
-			//var table = document.getElementById("deviceList");
 			var tbody = document.getElementById("tbody_device");
 			var arr = eval(resp.data);
 			for ( var i = 0; i < arr.length; i++) {
 				var jsonObj = arr[i];
-				//var tr = table.insertRow(table.rows.length);
 				var tr = document.createElement("tr");
 				var td0 = tr.insertCell(0);
 				td0.align = "center";

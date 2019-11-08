@@ -64,7 +64,6 @@ function a2t(tbsel, cloId, objs) {
 function obj2rel($tr, obj) {
     $tr.children("td").each(function (num, td) {
         if (!isEmpObj($(td).attr("name"))) {
-            // chg 20181101 : ie11 compatibility bug
             console.log($(td).attr("name"));
             if (isEmpObj(obj[$(td).attr("name")]) && obj[$(td).attr("name")] != false) {
                 td.innerHTML = "";

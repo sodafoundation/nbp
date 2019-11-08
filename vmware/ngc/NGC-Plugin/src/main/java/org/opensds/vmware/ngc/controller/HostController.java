@@ -169,7 +169,7 @@ public class HostController {
      * @param start       page start
      * @param count       page count
      * @param serverInfo  sever instance
-     * @return list of voumluie
+     * @return list of volumes
      */
     @RequestMapping(value = "/mountableVolumeList/{hostId}", method = {RequestMethod.GET,RequestMethod.POST})
     @ResponseBody

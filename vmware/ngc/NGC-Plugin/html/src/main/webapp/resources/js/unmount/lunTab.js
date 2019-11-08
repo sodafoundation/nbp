@@ -5,11 +5,7 @@ var filterValue = parent.filterValue;
 
 var maxNum = 50;
 
-// 加载完之后,立即请求数据
 $(document).ready(function () {
-    // 初始页面组件,比如禁用按钮,绑定事件
-    //bindEvent();
-    // 加载表格数据
     initData();
 });
 function initData() {
@@ -102,23 +98,18 @@ function initData() {
     });
     sendMsg(lunReq, lunhandler);
 }
-/**
- * 仅仅提供单选按钮,并不提供批量快照/备份功能, 如果提供也不再通过checkbox的方式
- */
+
 function bindEvent() {
-    $("#hostLunTable tbody tr").bind("click", function (event) {// 行的点击事件
-        // 修改相关样式
-        $("#hostLunTable tbody tr td").css("background-color", "#FFFFFF");// 删除其他选中行的背景样式
+    $("#hostLunTable tbody tr").bind("click", function (event) {
+        $("#hostLunTable tbody tr td").css("background-color", "#FFFFFF");
         $(this).find('td').each(function (i) {
             $(this).css("background-color", "#abcefc");
         });
-        // 刷新快照
         parent.lunObj.id = $(this).find("[name='lunId']").text();
         parent.lunObj.lunName = $(this).find("[name='lunName']").text();
         parent.lunObj.scsiLunState = $(this).find("[name='scsiLunState']").text();
         parent.lunObj.usedByStatus = $(this).find("[name='usedByStatus']").text();
         parent.devObj.id = $(this).find("[name='serialNumber']").text();
-        // 禁用/激活相关按钮
         parent.$("#refreshSnapBtn").prop("disabled", "");
         parent.$("#refreshSnapBtn").removeClass("disabled");
         parent.$("#refreshLunBtn").prop("disabled", "");
@@ -129,45 +120,30 @@ function bindEvent() {
         parent.loadSnapshots();
     });
 }
-/*
- * 锁定表头（用于子页面）
- * viewid		父页面table id
- * scrollid		父页面滚动条容器id
- * size			copy时保留表格的行数
- * divhead_id	copy的表头id
- * tabid		子页面表格id
- */
+
 function scroll(viewid, scrollid, size, divhead_id, tabid) {
     if (parent.$("#" + divhead_id).length > 0) {
         parent.$("#" + divhead_id).width($("#" + tabid).width());
         return;
     }
-    // 获取滚动条容器  
     var scroll = parent.document.getElementById(scrollid);
-    // 将表格拷贝一份 
     var tb2 = parent.document.getElementById(viewid).cloneNode(true);
 
     var $table = $(parent.document.getElementById(viewid));
-    if ($table.find("input[type='checkbox']").length > 0) {//这是一个空表(只有表头没有数据)
+    if ($table.find("input[type='checkbox']").length > 0) {
         var id = $(tb2).find("input[type='checkbox']:first").attr("id");
         $table.find("input[type='checkbox']:first").removeAttr("id");
         $(tb2).find("input[type='checkbox']:first").attr("id", id);
     }
-    // 将拷贝得到的表格中非表头行删除  
     for (var i = tb2.rows.length; i > size; i--) {
-        // 每次删除数据行的第一行  
         tb2.deleteRow(size);
     }
     var top = parent.$("#" + viewid).offset().top;
     var left = parent.$("#" + viewid).offset().left;
     var bak = parent.document.createElement("div");
-    // 将div添加到滚动条容器中  
     scroll.appendChild(bak);
-    // 将拷贝得到的表格在删除数据行后添加到创建的div中 
     bak.appendChild(tb2);
     bak.setAttribute("id", divhead_id);
-    // 设置创建的div的position属性为absolute,即绝对定于滚动条容器（滚动条容器的position属性必须为relative）
-    //bak.style.position = "absolute";width: scroll.scrollWidth;
     bak.style.position = "fixed";
     $(bak).css({"left": left, "top": top, width: $("#" + tabid).width(), backgroundColor: "#cfc", display: "block"});
     parent.$("#" + viewid).find("th").each(function () {
@@ -175,7 +151,7 @@ function scroll(viewid, scrollid, size, divhead_id, tabid) {
     });
 }
 function GetRequest() {
-    var url = location.search; //获取url中"?"符后的字串   
+    var url = location.search;  
     var theRequest = new Object();
     if (url.indexOf("?") != -1) {
         var str = url.substr(1);
@@ -186,9 +162,7 @@ function GetRequest() {
     }
     return theRequest;
 }
-/**
- * 获取LUN的ID列表
- */
+
 function getLunIds() {
     var ids = [];
     $.each($("input[id^='diveChbox_']"), function (i) {
@@ -200,13 +174,9 @@ function getLunIds() {
     return ids;
 }
 
-/**
- * 获取与LUN对应的阵列的ID列表
- */
 function getDeviceIdsInUnmount() {
     var ids = [];
     $("input[id^='diveChbox_']").each(function (i) {
-        //$.each($("input[id^='diveChbox_']"), function(i) {
         if (this.checked) {
             var id = this.id.split("_")[1];
             ids.push($("#hideDeviceId_" + id).val());
@@ -215,9 +185,6 @@ function getDeviceIdsInUnmount() {
     return ids;
 }
 
-/**
- * 获取列表行数
- */
 function localInit() {
     var table = document.getElementById("hostLunTable");
     var rowNum = table.rows.length - 1;
@@ -226,11 +193,6 @@ function localInit() {
     }
 }
 
-/**
- * 设置页面多选框,rowNum为table行数
- * @param rowNum
- * @return
- */
 function loacalSetPageCheckBox(rowNum) {
     parent.$("#chk_all").unbind("click");
     parent.$("#chk_all").click(function () {
@@ -238,7 +200,6 @@ function loacalSetPageCheckBox(rowNum) {
         var flag = moreThanMaxNum(rowNum, 0, message);
         if (flag) {
             this.checked = false;
-            //默认选中前面maxNum条数据
             $("input[id^='diveChbox_']").each(function (i, n) {
                 if (i < maxNum) {
                     this.checked = true;
@@ -319,7 +280,6 @@ function loacalSetPageCheckBox(rowNum) {
     });
 }
 
-// 判断选中的数量是否超过指定的上限
 function moreThanMaxNum(count, num, message) {
     if (count > maxNum) {
         if (parent.$("#chk_all")[0].checked || num > maxNum) {

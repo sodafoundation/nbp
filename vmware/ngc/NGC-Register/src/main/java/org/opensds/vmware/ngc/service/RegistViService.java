@@ -69,7 +69,7 @@ public class RegistViService {
     }
 
     /**
-     * create Extension in vcetner server
+     * create Extension in vcenter server
      * @param hostip
      * @param local
      * @return
@@ -303,7 +303,7 @@ public class RegistViService {
     }
 
     /**
-     * get auth extension resouce info from xml
+     * get auth extension resource info from xml
      * @return
      */
     private List<ExtensionResourceInfo> createPerExtensionResource() {

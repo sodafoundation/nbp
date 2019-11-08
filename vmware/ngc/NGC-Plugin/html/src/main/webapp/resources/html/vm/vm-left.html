@@ -32,7 +32,6 @@ table {
 }
 
 .left_top_navigation {
-	/*background-image: url("../../../assets/images/left_list_title.png");*/
 	font-size: 12px;
 	font-weight: bold;
 	color: #0f3f6d;
@@ -73,7 +72,6 @@ font {
 		$('#hrefLuns').css('color', '#0068FF');
 	});
 	function goInHostMain(type) {
-		//var moref = parent.moref;
 		if (type == "virtualDisk") {
 			$('#hrefVirtualDisk').css('color', '#000');
 			$('#hrefRawDevice').css('color', '#0068FF');
@@ -94,16 +92,6 @@ font {
 			$("#rawDevice_img").css("display", "block");
 			parent.$("#mainFrame").attr("src", "rawDevice.html");
 		}
-		/*else if (type == "luns"){
-			$('#hrefVirtualDisk').css('color', '#0068FF');
-			$('#hrefRawDevice').css('color', '#0068FF');
-			$('#hrefLuns').css('color', '#000');
-
-			$("#luns_img").css("display", "block");
-			$("#virtualDisk_img").css("display", "none");
-			$("#rawDevice_img").css("display", "none");
-			parent.$("#mainFrame").attr("src", "vmLuns.html");
-		}*/
 	}
 </script>
 </head>
@@ -128,25 +116,10 @@ font {
 				<td class="left_top_rawDevice"><a id="hrefRawDevice" onclick='goInHostMain("rawDevice")' href="#">Raw
 					Device Mappings</a></td>
 			</tr>
-			<!--<tr>
-				<td style="padding-left: 11px; width: 19px"><img id="luns_img"
-																 src="../../../assets/images/navigation_arrow.png" style="display: none; vertical-align: middle;"></img></td>
-				<td class="left_top_rawDevice"><a id="hrefLuns" onclick='goInHostMain("luns")' href="#">LUNs</a></td>
-			</tr>-->
 			<tr style="height: 5px;">
 				<td></td>
 			</tr>
 		</table>
-		<!--<div class="lego_div" style="left: 0px; width: 100%;margin-bottom: 40px;">
-			<div>
-				<img style="height: 56px; width: 56px;" src="../../../assets/images/view.png" />
-			</div>
-			<div>&nbsp;</div>
-			<div style="margin-top: 5px; font-size: 11px;">Huawei Storage Plugin</div>
-			<div style="margin-top: 5px; font-size: 11px;">
-				Copyright <font>&copy;</font> Huawei Technologies Co., Ltd. 2014. All rights reserved.
-			</div>
-		</div>-->
 	</div>
 </body>
 </html>

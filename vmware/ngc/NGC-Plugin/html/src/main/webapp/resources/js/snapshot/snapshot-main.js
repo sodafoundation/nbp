@@ -31,13 +31,10 @@ var pager2ResultUrl = "";
 var fsObj = new Object();
 
 $(document).ready(function () {
-    //makeHelp();
     loadLunsOrFs();
     bundleEvent();
 });
-/**
- * 初始化LUN或者file system数据
- */
+
 function loadLunsOrFs() {
     $("#chk_all").prop("checked", false);
     $("#toggleLunFsBtn").prop("disabled", "disabled");
@@ -90,9 +87,7 @@ function loadLunsOrFs() {
 function enableToggleBtn() {
     $("#toggleLunFsBtn").prop("disabled", "");
 }
-/**
- * 加载快照数据
- */
+
 function loadSnapshots() {
 
     if (lun_fs_flag == "lun") {
@@ -145,9 +140,8 @@ function loadSnapshots() {
         }
     });
 }
-/** 绑定事件处理 */
+
 function bundleEvent() {
-    //切换文件系统和块存储系统
     $("#toggleLunFsBtn").click(function () {
 
         if (lun_fs_flag == "lun") {
@@ -168,7 +162,6 @@ function bundleEvent() {
             $(".capacityDiv").hide();
             $(".activedTh").attr("title", "Created");
             $(".activedDiv").html("Created");
-            // $("#filterType option[value='ID']").remove();
 
             loadLunsOrFs();
         } else if (lun_fs_flag == "fs") {
@@ -190,7 +183,6 @@ function bundleEvent() {
             $(".capacityDiv").show();
             $(".activedTh").attr("title", "Activated");
             $(".activedDiv").html("Activated");
-            // $("#filterType").append("<option value='ID'>ID</option>");
 
             loadLunsOrFs();
         }
@@ -204,7 +196,6 @@ function bundleEvent() {
             $("#btnSearch").prop("disabled", "");
             $("#btnRefreshLUN").prop("disabled", "");
         }, 500);
-        //点击过查询后,刷新操作才会过滤查询
         filterType = $("#filterType").val();
         if (filterType == "NAME" || filterType == "ID") {
             filterValue = trim($("#nameId_filterValue").val());
@@ -254,7 +245,6 @@ function bundleEvent() {
         }
     });
 
-    // 刷新LUN列表
     $("#refreshLunBtn").click(function () {
         $("#hostLunTab tr:eq(0) th:eq(0)").width("5%");
         $("#hostLunTab tr:eq(0) th:eq(1)").width("10%");
@@ -268,7 +258,6 @@ function bundleEvent() {
         $("#hostLunTab tr:eq(0) th:eq(9)").width("10%");
         loadLunsOrFs();
     });
-    // 刷新快照列表
     $("#refreshSnapBtn").click(function () {
         $("#snapshotTab tr:eq(0) th:eq(0)").width("4%");
         $("#snapshotTab tr:eq(0) th:eq(1)").width("22%");
@@ -279,14 +268,11 @@ function bundleEvent() {
         $("#snapshotTab tr:eq(0) th:eq(6)").width("20%");
         loadSnapshots();
     });
-    // 取消对话框 取消删除 取消备份 取消还原
     $(".cancleBtn").click(function () {
-        /*$("#overlay").css('visibility', 'hidden');*/
         $("#cSnapBox").css('visibility', 'hidden');
         $(".alertBox").hide();
         unlock();
     });
-    // 删除对话框
     $("#delSnapBtn").click(function () {
         if (isEmpObj(devObj.id)) {
             $.debug("del snapshot check, data is null");
@@ -313,10 +299,7 @@ function bundleEvent() {
                 snapshots.push(snapshotObj);
             }
         });
-        // TODO提示是否确认删除
-        //$("#infWords").text("You are about to delete snapshot ("+snapshot.name+"). This operation cannot be undone. ");
         $("#infWords").text("You are about to delete snapshots. This operation cannot be undone. ");
-        /*$("#overlay").css('visibility', 'visible');*/
         lock();
         $("#cSnapBox").css('visibility', 'visible');
         $(".alertBox").hide();
@@ -324,18 +307,13 @@ function bundleEvent() {
         $("#title").show();
         $("#delInfoDiv").show();
     });
-    // 确认删除
     $("#confirBtn").click(function () {
-        // 打开遮盖层
-        /*$("#overlay").css('visibility', 'visible');*/
         $("#cSnapBox").css('visibility', 'hidden');
         $("#title").hide();
         $("#delInfoDiv").hide();
-        /*$("#ingDiv").show();*/
 
         $("#sucType").val("refreshSnapBtn");
         $("#errType").val("refreshSnapBtn");
-        // 发送请求信息
         var snapReq = "";
         if (lun_fs_flag == "lun") {
             snapReq = new req(cSnapshotUrl + "/" + devObj.id
@@ -370,24 +348,19 @@ function bundleEvent() {
         });
         sendMsg(snapReq, snaphandler);
     });
-    // 备份窗口
     $("#showBackupBtn").click(function () {
-        // 如果无选中
         if ((lun_fs_flag == "lun" && (isEmpObj(lunObj.id) || isEmpObj(lunObj.name))) ||
             lun_fs_flag == "fs" && (isEmpObj(fsObj.id) || isEmpObj(fsObj.name))) {
             $.debug("showBackupBtn check, data is null");
             return;
         }
-        // 如果有选中
         var snapshotName = "";
         if (lun_fs_flag == "lun") {
-            snapshotName = getSnapName(lunObj.name);// 将数据填充到对话框
+            snapshotName = getSnapName(lunObj.name);
         } else if (lun_fs_flag == "fs") {
-            snapshotName = getSnapName(fsObj.name);// 将数据填充到对话框
+            snapshotName = getSnapName(fsObj.name);
         }
         $("#cSnapshotName").val(snapshotName);
-        // 弹出对话框,将snapshot信息传递给对话框
-        /*$("#overlay").css('visibility', 'visible');*/
         lock();
         $("#cSnapBox").css('visibility', 'visible');
         $(".alertBox").hide();
@@ -395,16 +368,12 @@ function bundleEvent() {
         $("#title").show();
         $("#cSnapBoxContent").show();
     });
-    // 确认备份
     $("#backupBtn").click(function () {
         $("#sucType").val("refreshSnapBtn");
         $("#errType").val("refreshSnapBtn");
-        // 打开遮盖层
-        /*$("#overlay").css('visibility', 'visible');*/
         $("#cSnapBox").css('visibility', 'hidden');
         $("#title").hide();
         $("#cSnapBoxContent").hide();
-        /*$("#ingDiv").show();*/
         var snapshot = new Object();
         var lunReq = new Object();
         if (lun_fs_flag == "lun") {
@@ -470,7 +439,6 @@ function bundleEvent() {
         }
         $(".alertBox").hide();
         $("#title").text("");
-        /*$("#overlay").css('visibility', 'hidden');*/
         $("#cSnapBox").css('visibility', 'hidden');
         unlock();
     });
@@ -486,11 +454,9 @@ function bundleEvent() {
         }
         $(".alertBox").hide();
         $("#title").text("");
-        /*$("#overlay").css('visibility', 'hidden');*/
         $("#cSnapBox").css('visibility', 'hidden');
         unlock();
     });
-    // 打开恢复对话框 - 恢复第一步
     $("#recoverBtn").click(function () {
         var used_tip = "";
         if (lun_fs_flag == "lun") {
@@ -533,7 +499,6 @@ function bundleEvent() {
         }
     });
 
-    //点击ok按钮 - 恢复第二步
     $("#nextStep").click(function () {
         if (lun_fs_flag == "lun") {
             afterRemoveLunDs();
@@ -545,9 +510,7 @@ function bundleEvent() {
             $("#cancelNext").addClass("disabled");
             $("#cancelNext").prop("disabled", "disabled");
 
-            //为nfs增加卸载datastore的步骤,目的是为了保留datastore对应的文件系统
-            var rmDsReq = new req(dsNfsUrl + "/" + fsObj.datastoreId + "?serverGuid=" + serverGuid + "&hostId=" + hostId, "");//是否需要转码
-
+            var rmDsReq = new req(dsNfsUrl + "/" + fsObj.datastoreId + "?serverGuid=" + serverGuid + "&hostId=" + hostId, "");
             rmDsReq.type = "DELETE";
             var rmDshandler = new handler(function doSuccess(resp) {
                 if (resp.data) {
@@ -583,12 +546,10 @@ function bundleEvent() {
 
     });
 
-    // 执行恢复 - 恢复第三步
     $("#rollbackBtn").click(function () {
         $("#sucType").val("refreshSnapBtn");
         $("#errType").val("refreshSnapBtn");
         if (lun_fs_flag == "lun") {
-            // 打开遮盖层
             $("#cSnapBox").css('visibility', 'hidden');
             $("#title").hide();
             $("#rollbackContent").hide();
@@ -596,7 +557,6 @@ function bundleEvent() {
 
         }
 
-        // 选择恢复速度
         var snapReq = new Object();
         if (lun_fs_flag == "lun") {
             snapReq = new req(cSnapshotUrl + "/" + devObj.id + "?rollbackSpeed=" + trim($("#rollbackSpeed").val()), JSON.stringify(snapshot));
@@ -616,7 +576,6 @@ function bundleEvent() {
                     $("#sucWords").text("Recover snapshot successfully.");
                     $("#sucDiv").show();
                 } else if (lun_fs_flag == "fs") {
-                    //nfs还需把datastore挂载回来
                     $("#rollbackContentDiv").html("The datastore is mounting, please wait for it done...");
                     $("#rollbackBtn").addClass("disabled");
                     $("#rollbackBtn").prop("disabled", "disabled");
@@ -639,9 +598,8 @@ function bundleEvent() {
         });
         sendMsg(snapReq, snaphandler);
     });
-    // 绑定快照名称输入框的校验
     $("#cSnapshotName").bind("input propertychange", function () {
-        var value = $(this).val();//大于31位则不能输入,中文算3个字符
+        var value = $(this).val();
         var length = getLength(value);
         if (length > 31) {
             this.value = getByteVal(value, 31);
@@ -661,7 +619,6 @@ function bundleEvent() {
     });
 }
 
-//nfs恢复第二步执行成功的附加步骤
 function afterRemoveLunDs() {
     $("#beforeRollback").hide();
     if (isEmpObj(devObj.id)) {
@@ -707,9 +664,6 @@ function afterRemoveNfsDs() {
         $.debug("del snapshot check, data is null");
         return;
     }
-    /*$("#overlay").css('visibility', 'visible');*/
-    /*lock();
-     $("#cSnapBox").css('visibility', 'visible');*/
     $(".alertBox").hide();
     $("#rollbackSnap").text(snapshot.name);
     $("#title").text("Recover Snapshot");
@@ -723,7 +677,6 @@ function afterRemoveNfsDs() {
     }
 }
 
-//nfs恢复第三步执行成功后附加步骤
 function mountNfsDatastore() {
 
     var nfsDatastoreMount = new Object();
@@ -743,7 +696,6 @@ function mountNfsDatastore() {
             $("#sucDiv").show();
         }
         else if (resp.errorCode) {
-//          $("#errWords").text("Mount NFS datastore failed.");
             $("#errWords").text(resp.errorDesc);
             $("#errDiv").show();
         }
@@ -765,11 +717,7 @@ function init() {
         setPageCheckBox(rowNum);
     }
 }
-/**
- * 设置页面多选框,rowNum为table行数
- * @param rowNum
- * @return
- */
+
 function setPageCheckBox(rowNum) {
     var $singleChkbox = $("#snapshotFrame")[0].contentWindow.$("input[id^='snapCheckbox_']");
     $("#chk_all").unbind("click");
@@ -884,9 +832,6 @@ function setPageCheckBox(rowNum) {
     });
 }
 
-/**
- * 生成快照名称
- */
 function getSnapName(lunName) {
     var cTime = new Date();
     var cMon = subTime("" + (cTime.getMonth() + 1));
@@ -894,7 +839,7 @@ function getSnapName(lunName) {
     var cHou = subTime("" + cTime.getHours());
     var cMin = subTime("" + cTime.getMinutes());
     var cSec = ("" + cTime.getSeconds());
-    var suffix = ("" + cTime.getFullYear()).substring(2, 4) + cMon + cDate + cHou + cMin + cSec + cTime.getMilliseconds();// 名称后缀
+    var suffix = ("" + cTime.getFullYear()).substring(2, 4) + cMon + cDate + cHou + cMin + cSec + cTime.getMilliseconds();
     var snapshotName = lunName;
     if (snapshotName.length > 16) {
         snapshotName = snapshotName.substring(0, 16);
@@ -902,12 +847,12 @@ function getSnapName(lunName) {
     snapshotName = snapshotName + suffix;
     return snapshotName;
 }
-/* 补齐双位数 */
+
 function subTime(tStr) {
     tStr = tStr.length == 1 ? "0" + tStr : tStr;
     return tStr;
 }
-/** 校验快照名称 */
+
 function chkSnapName() {
     var sName = $("#cSnapshotName").val();
     if (isEmpObj(sName)) {
@@ -917,12 +862,12 @@ function chkSnapName() {
         $("#backupBtn").prop("disabled", false);
     }
 }
-//锁屏
+
 function lock() {
     $("#popupDiv").show();
     $("#ingDiv1").show();
 }
-//解屏 
+
 function unlock() {
     $("#popupDiv").hide();
     $("#ingDiv1").hide();

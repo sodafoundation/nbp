@@ -84,13 +84,11 @@ function initData() {
 	});
 	sendMsg(lunReq, lunhandler);
 }
-/**
- * 仅仅提供单选按钮,并不提供批量快照/备份功能, 如果提供也不再通过checkbox的方式
- */
-function bindEvent() {
-	$("#hostLunTable tbody tr").bind("click", function(event) { // 行的点击事件
 
-		$("#hostLunTable tbody tr td").css("background-color", "#FFFFFF"); // 删除其他选中行的背景样式
+function bindEvent() {
+	$("#hostLunTable tbody tr").bind("click", function(event) {
+
+		$("#hostLunTable tbody tr td").css("background-color", "#FFFFFF");
 		$(this).find('td').each(function(i) {
 			$(this).css("background-color", "#abcefc");
 		});
@@ -111,14 +109,7 @@ function bindEvent() {
 		parent.loadSnapshots();
 	});
 }
-/*
- * 锁定表头（用于子页面）
- * viewid		父页面table id
- * scrollid		父页面滚动条容器id
- * size			copy时保留表格的行数
- * divhead_id	copy的表头id
- * tabid		子页面表格id
- */
+
 function scroll(viewid, scrollid, size, divhead_id, tabid) {
 	if(parent.$("#" + divhead_id).length > 0) {
 		parent.$("#" + divhead_id).width($("#" + tabid).width());
@@ -161,7 +152,7 @@ function scroll(viewid, scrollid, size, divhead_id, tabid) {
 }
 
 function GetRequest() {
-	var url = location.search; //获取url中"?"符后的字串
+	var url = location.search;
 	var theRequest = new Object();
 	if(url.indexOf("?") != -1) {
 		var str = url.substr(1);
@@ -172,9 +163,7 @@ function GetRequest() {
 	}
 	return theRequest;
 }
-/**
- * 获取LUN的ID列表
- */
+
 function getLunIds() {
 	var ids = [];
 	$.each($("input[id^='diveChbox_']"), function(i) {
@@ -186,13 +175,9 @@ function getLunIds() {
 	return ids;
 }
 
-/**
- * 获取与LUN对应的阵列的ID列表
- */
 function getDeviceIdsInMount() {
 	var ids = [];
 	$("input[id^='diveChbox_']").each(function(i) {
-		//$.each($("input[id^='diveChbox_']"), function(i) {
 		if(this.checked) {
 			var id = this.id.split("_")[1];
 			ids.push($("#hideDeviceId_" + id).val());
@@ -201,9 +186,6 @@ function getDeviceIdsInMount() {
 	return ids;
 }
 
-/**
- * 获取列表行数
- */
 function loaclInit() {
 	var table = document.getElementById("hostLunTable");
 	var rowNum = table.rows.length - 1;
@@ -212,11 +194,6 @@ function loaclInit() {
 	}
 }
 
-/**
- * 设置页面多选框,rowNum为table行数
- * @param rowNum
- * @return
- */
 function localSetPageCheckBox(rowNum) {
 	parent.$("#chk_all").unbind("click");
 	parent.$("#chk_all").click(function() {
@@ -224,7 +201,6 @@ function localSetPageCheckBox(rowNum) {
 		var flag = moreThanMaxNum(rowNum, 0, message);
 		if(flag) {
 			this.checked = false;
-			//默认选中前面maxNum条数据
 			$("input[id^='diveChbox_']").each(function(i, n) {
 				if(i < maxNum) {
 					this.checked = true;
@@ -305,7 +281,6 @@ function localSetPageCheckBox(rowNum) {
 	});
 }
 
-// 判断选中的数量是否超过指定的上限
 function moreThanMaxNum(count, num, message) {
 	if(count > maxNum) {
 		if(parent.$("#chk_all")[0].checked || num > maxNum) {

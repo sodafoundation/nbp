@@ -9,11 +9,6 @@
     </div>
     <div class="line" style="top: 30px;"></div>
     <div style="position: absolute; top: 41px;">
-        <!-- <div class="plugin_button_main" id="btnRefresh">
-            <div class="plugin_button_div button_left"></div>
-            <div class="plugin_button_div button_center">Refresh</div>
-            <div class="plugin_button_div button_right"></div>
-        </div> -->
         <div class="plugin_button_main" style="float: left;margin-left: 0px;">
             <input type="button" id="btnRefresh" value="Refresh"/>
         </div>
@@ -40,7 +35,6 @@
                 </th>
             </tr>
             </thead>
-            <!-- <tbody id="tbody_rawDev"></tbody> -->
         </table>
         <div id="rawDeviceMappingTableDataDiv"
              style="width: 100%;overflow-y: auto;overflow-x: hidden;border: 0px;margin: 0px;padding: 0px;">
@@ -62,7 +56,6 @@
     <div id="lunTableTitle" style="position: absolute;">
         <span style="font-weight: bold;">Raw Device Mappings Storage Information</span>
     </div>
-    <!-- <div class="line" id="lineDiv" style="display: none;"></div> -->
     <div id="lunTableDiv"
          style="position: relative;border: 1px solid #C0C0C0;border-top: none;overflow-y: hidden;overflow-x: hidden;">
         <table id="rawDeviceMappingLunTable" class="tablesorter" style="table-layout: fixed;position: relative;">
@@ -172,7 +165,6 @@
 
         $(document).ready(function () {
             makeHelp();
-            //changesize();
             var interval = setInterval(function () {
                 if ($("#rawDeviceMappingTableDiv").height() > 0 && $("#lunTableDiv").height() > 0) {
                     changesize();
@@ -202,7 +194,6 @@
                 refreshRawDeviceMappings();
             });
             $(window).resize(function () {
-                /* parent.changesize(); */
                 changesize();
                 $("#rawDeviceMappingTable").width($("#rawDeviceMappingTableData").width());
                 $("#rawDeviceMappingLunTable").width($("#rawDeviceMappingLunTableData").width());
@@ -212,10 +203,8 @@
         function changesize() {
             var divMainHeight = $("#divMain").height();
             var divMainWidth = $("#divMain").width();
-            //从左到右依次为:padding-top:11,datastore标题头高度:20,间距:10,按钮高度:22,间距:10,表头高度17,间距10,标题头20,间距10,表头高度17,padding-bottom:11.
             var tableFrameHeight = (divMainHeight - 11 - 20 - 10 - 22 - 10 - 16 - 10 - 20 - 16) / 2;
             var tabNameTop = tableFrameHeight + 10 + 73 + 17;
-            //两张表格的高度
             $("#rawDeviceMappingTableDiv").height(tableFrameHeight);
             $("#rawDeviceMappingTableDiv").width(divMainWidth - 2);
             var lineTop = tabNameTop + 20;
@@ -261,8 +250,7 @@
                 }
                 var arr = eval(resp.data);
                 for (var i = 0; i < arr.length; i++) {
-                    var jsonObj = arr[i]; // 获取json对象
-                    //var tr = table.insertRow(table.rows.length);
+                    var jsonObj = arr[i];
 
                     var tr = document.createElement("tr");
                     var td1 = tr.insertCell(0);
@@ -288,7 +276,6 @@
                     td5.width = "16%";
 
                     var dname = jsonObj.name;
-                    //var hardDiskName = "Hard disk " + dname.split(" ")[1];
                     url = "../../../assets/images/disk.png";
                     td1.innerHTML = "<img src='" + url + "' style='vertical-align: middle;'>&nbsp;&nbsp;" + dname;
                     td1.title = dname;
@@ -341,7 +328,7 @@
                 }
                 var arr = eval(resp.data);
                 for (var i = 0; i < arr.length; i++) {
-                    var jsonObj = arr[i];// 获取json对象
+                    var jsonObj = arr[i];
 
                     var tr = document.createElement("tr");
                     var td1 = tr.insertCell(0);
@@ -434,7 +421,6 @@
                 i = i - 1;
             }
         }
-        //添加表格拖动功能
         var fun01 = dragTable_table;
         fun01("rawDeviceMappingTable", "rawDeviceMappingTableData");
         var fun02 = dragTable_table;

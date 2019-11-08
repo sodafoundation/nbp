@@ -218,9 +218,6 @@ select{
 						<option value="UNMAPPED">False</option>
 					</select>
 				</div>
-				<!-- <div class="plugin_button_main" style="float: left;margin-right: 5px;">
-					<input type="text" id="keywordLun" name="keyword" placeholder="Keyword"/>
-				</div> -->
 				<div class="plugin_button_main" style="float: left;margin-right: 1px;">
 					<input type="button" id="btnSearchLun" value="Search"/>
 				</div>
@@ -392,51 +389,14 @@ function initSelect() {
 			if(filterType_pool == "NAME" || filterType_pool == "ID")
 			{
 				filterValue_pool = $("#nameId_filterValue_pool").val();
-				//filterValue_pool = encodeURI(filterValue_pool);
 			}
 			else if(filterType_pool == "HEALTHSTATUS")
 			{
 				filterValue_pool = $("#healthStatus_filterValue_pool").val();
-				if(filterValue_pool == "NORMAL")
-				{
-					//filterValue_pool = "1";
-				}
-				else if(filterValue_pool == "FAULT")
-				{
-					//filterValue_pool = "2";
-				}
-				else if(filterValue_pool == "DEGRADED")
-				{
-					//filterValue_pool = "5";
-				}
-				else	
-				{
-					filterValue_pool = "";
-				}
 			}
 			else if(filterType_pool == "RUNNINGSTATUS")
 			{
 				filterValue_pool = $("#runStatus_filterValue_pool").val();
-				if(filterValue_pool == "ONLINE")
-				{
-					//filterValue_pool = "27";
-				}
-				else if(filterValue_pool == "OFFLINE")
-				{
-					//filterValue_pool = "28";
-				}
-				else if(filterValue_pool == "PRE_COPY")
-				{
-					//filterValue_pool = "14";
-				}
-				else if(filterValue_pool == "RECONSTRUCTION")
-				{
-					//filterValue_pool = "16";
-				}
-				else
-				{
-					filterValue_pool = "";
-				}
 			}
 			initSelect();
 			loadPools();
@@ -504,42 +464,15 @@ function initSelect() {
 			if(filterType_lun == "NAME" || filterType_lun == "ID")
 			{
 				filterValue_lun = trim($("#nameId_filterValue_lun").val());
-				//filterValue_lun = encodeURI(filterValue_lun);
 			}
 			else if(filterType_lun == "HEALTHSTATUS")
 			{
 				filterValue_lun = $("#healthStatus_filterValue_lun").val();
-
-				if(filterValue_lun == "NORMAL")
-				{
-					//filterValue_lun="1";
-				}
-				else if(filterValue_lun == "FAULT")
-				{
-					//filterValue_lun="2";
-				}
-				else
-				{
-					filterValue_lun="";
-				}
 			}
 			else if(filterType_lun == "RUNNINGSTATUS")
 			{
 				filterValue_lun = $("#runStatus_filterValue_lun").val();
-				if(filterValue_lun == "ONLINE")
-				{
-					//filterValue_lun="27";
-				}
-				else if(filterValue_lun == "OFFLINE")
-				{
-					//filterValue_lun="28";
-				}
-				else
-				{
-					filterValue_lun="";
-				}
 			}
-			//d00456872 add:
 			else if(filterType_lun == "MAPPING"){
 				filterValue_lun = $("#mapping_filterValue_lun").val();
 				if(filterValue_lun == "ALL"){
@@ -551,9 +484,6 @@ function initSelect() {
 	}
 	
 	function loadPools(){
-		/* if ($("#" + divhead_id_pool).length > 0) {
-			$("#" + divhead_id_pool)[0].style.width = $("#poolMain").width() - 2;
-		} */
 		if ($("#poolTableDiv").width() > 0) {
 			$("#storagepoolTableHead").width($("#poolMain").width() - 2);
 		}
@@ -723,8 +653,6 @@ function initSelect() {
 			$("#poolheadDiv").css("display", "block");
 			$("#poolheadDiv").width(div);
 		} else {
-			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
-			//$("#poolheadDiv").css("display", "none");
 			var div = $("#poolTableDiv").width() - $("#storagepoolTable").width();
 			$("#poolheadDiv").css("display", "block");
 			$("#poolheadDiv").width(div);
@@ -738,8 +666,6 @@ function initSelect() {
 			$("#lunheadDiv").css("display", "block");
 			$("#lunheadDiv").width(div);
 		} else {
-			//$('.tableBody tr:last').find('td').css("border-bottom", "1px solid #C0C0C0");
-			//$("#lunheadDiv").css("display", "none");
 			var div = $("#lunTableDiv").width() - $("#storagelunTable").width();
 			$("#lunheadDiv").css("display", "block");
 			$("#lunheadDiv").width(div);
