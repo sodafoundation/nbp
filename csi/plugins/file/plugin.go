@@ -12,42 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package file
 
 import (
-	"github.com/golang/glog"
-	"github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/csi/server/plugin"
+	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/opensds/client"
 )
 
 // Plugin define
 type Plugin struct {
-	PluginStorageType string
-	Client            *client.Client
-	VolumeClient      *Volume
-	FileShareClient   *FileShare
+	FileShareClient *FileShare
 }
 
-func NewServer(endpoint, authStrategy, storageType string) (plugin.Service, error) {
-	// get opensds client
-	client, err := opensds.GetClient(endpoint, authStrategy)
-	if client == nil || err != nil {
-		glog.Errorf("get opensds client failed: %v", err)
-		return nil, err
-	}
-
+// NewServer initializes and return plugin server
+func NewServer(client *client.Client) (common.Service, error) {
 	p := &Plugin{
-		PluginStorageType: storageType,
-		Client:            client,
-		VolumeClient:      NewVolume(client),
-		FileShareClient:   NewFileshare(client),
+		FileShareClient: NewFileshare(client),
 	}
 
 	// When there are multiple volumes unmount at the same time,
 	// it will cause conflicts related to the state machine,
 	// so start a watch list to let the volumes unmount one by one.
-	go p.UnpublishRoutine()
+	go common.UnpublishRoutine(client)
 
 	return p, nil
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package block
 
 import (
 	"errors"
@@ -23,16 +23,13 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
+	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	VolumeStorageType = "block"
 )
 
 type Volume struct {
@@ -43,6 +40,7 @@ func NewVolume(c *client.Client) *Volume {
 	return &Volume{Client: c}
 }
 
+// CreateVolume implementation
 func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	// build volume body
 	volumebody := &model.VolumeSpec{}
@@ -53,44 +51,31 @@ func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeRe
 	glog.V(5).Infof("create volume parameters %+v", req.GetParameters())
 	for k, v := range req.GetParameters() {
 		switch k {
-		case ParamProfile:
+		case common.ParamProfile:
 			if v == "" {
 				msg := "profile id cannot be empty"
 				glog.Error(msg)
 				return nil, status.Error(codes.InvalidArgument, msg)
 			}
 			volumebody.ProfileId = v
-		case ParamEnableReplication:
+		case common.ParamEnableReplication:
 			if strings.ToLower(v) == "true" {
 				enableReplication = true
 			}
-		case ParamSecondaryAZ:
+		case common.ParamSecondaryAZ:
 			secondaryAZ = v
-		case PublishAttachMode:
+		case common.PublishAttachMode:
 			if strings.ToLower(v) == "ro" {
 				attachMode = "ro"
 			}
 		}
 	}
 
-	prf, err := v.Client.GetProfile(volumebody.ProfileId)
-	if err != nil {
-		msg := fmt.Sprintf("get profile %s failed", volumebody.ProfileId)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	if VolumeStorageType != prf.StorageType {
-		msg := fmt.Sprintf("the input storage type %s and storage type %s in profile %s are inconsistent", VolumeStorageType, prf.StorageType, volumebody.ProfileId)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	size := getSize(req.GetCapacityRange())
+	size := common.GetSize(req.GetCapacityRange())
 	volumebody.Size = size
 
 	if req.GetAccessibilityRequirements() != nil {
-		volumebody.AvailabilityZone = getZone(req.GetAccessibilityRequirements())
+		volumebody.AvailabilityZone = common.GetZone(req.GetAccessibilityRequirements(), TopologyZoneKey)
 	}
 
 	glog.V(5).Infof("volume body: %+v", volumebody)
@@ -110,7 +95,7 @@ func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeRe
 	}
 
 	glog.V(5).Info("waiting until volume is created")
-	volStable, err := waitForStatusStable(volExist.Id, func(id string) (interface{}, error) {
+	volStable, err := common.WaitForStatusStable(volExist.Id, func(id string) (interface{}, error) {
 		return v.Client.GetVolume(id)
 	})
 
@@ -126,13 +111,13 @@ func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeRe
 		CapacityBytes: vol.Size * util.GiB,
 		VolumeId:      vol.Id,
 		VolumeContext: map[string]string{
-			VolumeName:        vol.Name,
-			VolumeStatus:      vol.Status,
-			VolumeAZ:          vol.AvailabilityZone,
-			VolumePoolId:      vol.PoolId,
-			VolumeProfileId:   vol.ProfileId,
-			VolumeLvPath:      vol.Metadata["lvPath"],
-			PublishAttachMode: attachMode,
+			VolumeName:               vol.Name,
+			VolumeStatus:             vol.Status,
+			VolumeAZ:                 vol.AvailabilityZone,
+			VolumePoolId:             vol.PoolId,
+			VolumeProfileId:          vol.ProfileId,
+			VolumeLvPath:             vol.Metadata["lvPath"],
+			common.PublishAttachMode: attachMode,
 		},
 
 		AccessibleTopology: []*csi.Topology{
@@ -156,7 +141,7 @@ func (v *Volume) CreateVolume(req *csi.CreateVolumeRequest) (*csi.CreateVolumeRe
 			return nil, status.Error(codes.Internal, msg)
 		}
 
-		_, err = waitForStatusStable(sVol.Id, func(id string) (interface{}, error) {
+		_, err = common.WaitForStatusStable(sVol.Id, func(id string) (interface{}, error) {
 			return v.Client.GetVolume(id)
 		})
 
@@ -205,6 +190,7 @@ func (v *Volume) FindVolume(volName string) (*model.VolumeSpec, error) {
 	return nil, nil
 }
 
+// DeleteVolume implementation
 func (v *Volume) DeleteVolume(volId string) (*csi.DeleteVolumeResponse, error) {
 	vol, _ := v.Client.GetVolume(volId)
 	if vol == nil {
@@ -239,6 +225,7 @@ func (v *Volume) DeleteVolume(volId string) (*csi.DeleteVolumeResponse, error) {
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
+// getReplicationByVolume implementation
 func (v *Volume) getReplicationByVolume(volId string) *model.ReplicationSpec {
 	replications, _ := v.Client.ListReplications()
 	for _, r := range replications {
@@ -249,8 +236,9 @@ func (v *Volume) getReplicationByVolume(volId string) *model.ReplicationSpec {
 	return nil
 }
 
+// ControllerPublishVolume implementation
 func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
-	attachMode, ok := req.VolumeContext[PublishAttachMode]
+	attachMode, ok := req.VolumeContext[common.PublishAttachMode]
 	if !ok {
 		glog.Info("attach mode will use default value: rw")
 		attachMode = "rw"
@@ -280,7 +268,7 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 
 	switch protocol {
 	case connector.FcDriver:
-		wwpns, err := extractFCInitiatorFromNodeInfo(nodeInfo)
+		wwpns, err := ExtractFCInitiatorFromNodeInfo(nodeInfo)
 		if err != nil {
 			msg := fmt.Sprintf("extract FC initiator from node info failed: %v",
 				err)
@@ -291,7 +279,7 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 		initator = strings.Join(wwpns, ",")
 		break
 	case connector.IscsiDriver:
-		iqn, err := extractISCSIInitiatorFromNodeInfo(nodeInfo)
+		iqn, err := ExtractISCSIInitiatorFromNodeInfo(nodeInfo)
 		if err != nil {
 			msg := fmt.Sprintf("extract ISCSI initiator from node info failed: %v", err)
 			glog.Error(msg)
@@ -303,16 +291,16 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 	case connector.RbdDriver:
 		break
 	case connector.NvmeofDriver:
-                nqn, err := extractNvmeofInitiatorFromNodeInfo(nodeInfo)
-                if err != nil {
-                        msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
-                                err.Error())
-                        glog.Error(msg)
-                        return nil, status.Error(codes.FailedPrecondition, msg)
-                }
+		nqn, err := ExtractNvmeofInitiatorFromNodeInfo(nodeInfo)
+		if err != nil {
+			msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
+				err.Error())
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
 
- 		initator = nqn
-		break;
+		initator = nqn
+		break
 	default:
 		msg := fmt.Sprintf("protocol:%s not support", protocol)
 		glog.Error(msg)
@@ -361,11 +349,11 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 
 	resp := &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{
-			PublishHostIp:       newAttachment.Ip,
-			PublishHostName:     newAttachment.Host,
-			PublishAttachId:     newAttachment.Id,
-			PublishAttachStatus: newAttachment.Status,
-			PublishAttachMode:   attachMode,
+			common.PublishHostIp:       newAttachment.Ip,
+			common.PublishHostName:     newAttachment.Host,
+			common.PublishAttachId:     newAttachment.Id,
+			common.PublishAttachStatus: newAttachment.Status,
+			common.PublishAttachMode:   attachMode,
 		},
 	}
 
@@ -398,7 +386,7 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
-		resp.PublishContext[PublishSecondaryAttachId] = newAttachment.Id
+		resp.PublishContext[common.PublishSecondaryAttachId] = newAttachment.Id
 	}
 
 	return resp, nil
@@ -444,6 +432,7 @@ func (v *Volume) isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.Vo
 	return nil
 }
 
+// ControllerUnpublishVolume implementation
 func (v *Volume) ControllerUnpublishVolume(req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	//check volume is exist
 	volSpec, errVol := v.Client.GetVolume(req.VolumeId)
@@ -481,16 +470,17 @@ func (v *Volume) ControllerUnpublishVolume(req *csi.ControllerUnpublishVolumeReq
 	}
 
 	for _, act := range acts {
-		if ok := UnpublishAttachmentList.isExist(act.Id); !ok {
+		if ok := common.UnpublishAttachmentList.IsExist(act.Id); !ok {
 			glog.Infof("add attachment id %s into unpublish attachment list", act.Id)
-			UnpublishAttachmentList.Add(act)
-			UnpublishAttachmentList.PrintList(VolumeStorageType)
+			common.UnpublishAttachmentList.Add(act)
+			common.UnpublishAttachmentList.PrintVolAttachList()
 		}
 	}
 
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
+// ListVolumes implementation
 func (v *Volume) ListVolumes(req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
 	// only support list all the volumes at present
 	volumes, err := v.Client.ListVolumes()
@@ -525,14 +515,15 @@ func (v *Volume) ListVolumes(req *csi.ListVolumesRequest) (*csi.ListVolumesRespo
 	}, nil
 }
 
+// NodeStageVolume implementation
 func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	volId := req.VolumeId
-	attachmentId := req.PublishContext[PublishAttachId]
+	attachmentId := req.PublishContext[common.PublishAttachId]
 
 	if r := v.getReplicationByVolume(volId); r != nil {
 		if r.ReplicationStatus == model.ReplicationFailover {
 			volId = r.SecondaryVolumeId
-			attachmentId = req.PublishContext[PublishSecondaryAttachId]
+			attachmentId = req.PublishContext[common.PublishSecondaryAttachId]
 		}
 		if r.Metadata == nil {
 			r.Metadata = make(map[string]string)
@@ -634,7 +625,7 @@ func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStag
 		}
 	} else {
 		vol.Metadata[CSIVolumeMode] = "Block"
-		err = createSymlink(device, mountpoint)
+		err = CreateSymlink(device, mountpoint)
 
 		if err != nil {
 			msg := fmt.Sprintf("failed to create a link: oldname=%v, newname=%v, err %v", device, mountpoint, err)
@@ -659,6 +650,7 @@ func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStag
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
+// NodeUnstageVolume implementation
 func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	vol, attachment, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
@@ -707,9 +699,10 @@ func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.Node
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
+// NodePublishVolume implementation
 func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	volId := req.VolumeId
-	attachmentId := req.PublishContext[PublishAttachId]
+	attachmentId := req.PublishContext[common.PublishAttachId]
 
 	if r := v.getReplicationByVolume(volId); r != nil {
 		volId = r.Metadata[AttachedVolumeId]
@@ -770,7 +763,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 			return nil, status.Errorf(codes.FailedPrecondition, msg)
 		}
 	} else {
-		err = createSymlink(device, mountpoint)
+		err = CreateSymlink(device, mountpoint)
 
 		if err != nil {
 			msg := fmt.Sprintf("failed to create a link: oldname=%v, newname=%v, %v", device, mountpoint, err)
@@ -789,6 +782,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
+// NodeUnpublishVolume implementation
 func (v *Volume) NodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	vol, attachment, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {

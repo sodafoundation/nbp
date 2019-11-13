@@ -12,14 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
-
-// K8s storage class parameter keywords
-const (
-	ParamProfile           = "profile"
-	ParamEnableReplication = "enableReplication"
-	ParamSecondaryAZ       = "secondaryAvailabilityZone"
-)
+package block
 
 // CSI volume attribute keywords
 const (
@@ -30,23 +23,6 @@ const (
 	VolumeProfileId     = "profileId"
 	VolumeLvPath        = "lvPath"
 	VolumeReplicationId = "replicationId"
-	StorageType         = "storageType"
-)
-
-// CSI publish attribute keywords
-const (
-	PublishHostIp            = "hostIp"
-	PublishHostName          = "hostName"
-	PublishAttachId          = "attachmentId"
-	PublishSecondaryAttachId = "secondaryAttachmentId"
-	PublishAttachStatus      = "attachmentStatus"
-	PublishAttachMode        = "attachMode"
-)
-
-// Opensds Attachment metadata keywords
-const (
-	TargetPath        = "targetPath"
-	StagingTargetPath = "stagingTargetPath"
 )
 
 // Opensds replication metadata keywords
@@ -55,14 +31,14 @@ const (
 	AttachedId       = "attachedId"
 )
 
+// Opensds Attachment metadata keywords
+const (
+	TargetPath        = "targetPath"
+	StagingTargetPath = "stagingTargetPath"
+)
+
 // volume prefix
 const SecondaryPrefix = "secondary-"
-
-const (
-	// default filesystem type
-	DefFSType               = "ext4"
-	DefaultAvailabilityZone = "default"
-)
 
 // Csi configuration parameters and values
 const (
@@ -76,23 +52,9 @@ const (
 	CSIBlock = "Block"
 )
 
-// fileshare constant parameters
-const (
-	ShareName       = "shareName"
-	ShareAZ         = "shareAZ"
-	ShareStatus     = "shareStatus"
-	SharePoolId     = "sharePoolId"
-	ShareProfileId  = "shareProfileId"
-	ShareProtocol   = "shareProtocol"
-	NFS             = "nfs"
-	ExportLocations = "exportLocations"
-	FileShareName   = "fileShareName"
-)
-
 // PluginName setting
 const (
-	FakeIQN    = "fakeIqn"
-	PluginName = "csi-opensdsplugin"
+	PluginName = "csi-opensdsplugin-block"
 )
 
 var TopologyZoneKey = "topology." + PluginName + "/zone"

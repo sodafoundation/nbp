@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package block
 
 import (
 	"fmt"
@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"github.com/opensds/nbp/csi/common"
 )
 
 type FakePlugin struct {
@@ -34,7 +35,7 @@ func (p *FakePlugin) NodeGetInfo(
 	req *csi.NodeGetInfoRequest) (
 	*csi.NodeGetInfoResponse, error) {
 	return &csi.NodeGetInfoResponse{
-		NodeId: FakeIQN,
+		NodeId: common.FakeIQN,
 	}, nil
 }
 
@@ -42,7 +43,7 @@ func TestNodeGetInfo(t *testing.T) {
 	var fakePlugin = &FakePlugin{}
 	var fakeCtx = context.Background()
 	fakeReq := &csi.NodeGetInfoRequest{}
-	expectedNodeId := FakeIQN
+	expectedNodeId := common.FakeIQN
 
 	rs, err := fakePlugin.NodeGetInfo(fakeCtx, fakeReq)
 	if err != nil {
@@ -104,7 +105,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 	attachmentId := "f2dda3d2-bf79-11e7-8665-f750b088f63e"
 
-	fakeReq.PublishContext = map[string]string{PublishAttachId: attachmentId}
+	fakeReq.PublishContext = map[string]string{common.PublishAttachId: attachmentId}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
 	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist: output format not supported", attachmentId))

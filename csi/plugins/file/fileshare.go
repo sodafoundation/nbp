@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package file
 
 import (
 	"errors"
 	"fmt"
+	"github.com/opensds/nbp/csi/common"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -29,10 +30,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	FileshareStorageType = "file"
-)
-
 type FileShare struct {
 	Client *client.Client
 }
@@ -41,6 +38,7 @@ func NewFileshare(c *client.Client) *FileShare {
 	return &FileShare{Client: c}
 }
 
+// CreateFileShare implementation
 func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	var profileId, name, availabilityZone string
 	var size int64
@@ -50,7 +48,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 	var attachMode = "read,write"
 	for k, v := range req.GetParameters() {
 		switch k {
-		case ParamProfile:
+		case common.ParamProfile:
 			if v == "" {
 				msg := "profile id cannot be empty"
 				glog.Error(msg)
@@ -58,7 +56,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 			}
 			// profile id
 			profileId = v
-		case PublishAttachMode:
+		case common.PublishAttachMode:
 			if strings.ToLower(v) == "read" {
 				// attach mode
 				attachMode = "read"
@@ -68,27 +66,12 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 		}
 	}
 
-	// check profile is valid
-	prf, err := f.Client.GetProfile(profileId)
-	if err != nil {
-		msg := fmt.Sprintf("get profile %s failed", profileId)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	if FileshareStorageType != prf.StorageType {
-		msg := fmt.Sprintf("the input storage type %s and storage type %s in profile %s are inconsistent",
-			FileshareStorageType, prf.StorageType, profileId)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
 	// size
-	size = getSize(req.GetCapacityRange())
+	size = common.GetSize(req.GetCapacityRange())
 
 	// availability zone
 	if req.GetAccessibilityRequirements() != nil {
-		availabilityZone = getZone(req.GetAccessibilityRequirements())
+		availabilityZone = common.GetZone(req.GetAccessibilityRequirements(), TopologyZoneKey)
 	}
 
 	glog.Infof("find if fileshare %s has been created successfully", name)
@@ -117,7 +100,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 
 	glog.Info("wait for the fileshare to be created successfully")
 
-	shareStable, err := waitForStatusStable(shareExist.Id, func(id string) (interface{}, error) {
+	shareStable, err := common.WaitForStatusStable(shareExist.Id, func(id string) (interface{}, error) {
 		return f.Client.GetFileShare(id)
 	})
 
@@ -133,14 +116,14 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 		CapacityBytes: share.Size * util.GiB,
 		VolumeId:      share.Id,
 		VolumeContext: map[string]string{
-			ShareName:         share.Name,
-			ShareAZ:           share.AvailabilityZone,
-			ShareStatus:       share.Status,
-			SharePoolId:       share.PoolId,
-			ShareProfileId:    share.ProfileId,
-			ShareProtocol:     share.Protocols[0],
-			PublishAttachMode: attachMode,
-			ExportLocations:   strings.Join(share.ExportLocations, ","),
+			ShareName:                share.Name,
+			ShareAZ:                  share.AvailabilityZone,
+			ShareStatus:              share.Status,
+			SharePoolId:              share.PoolId,
+			ShareProfileId:           share.ProfileId,
+			ShareProtocol:            share.Protocols[0],
+			common.PublishAttachMode: attachMode,
+			ExportLocations:          strings.Join(share.ExportLocations, ","),
 		},
 
 		AccessibleTopology: []*csi.Topology{
@@ -157,6 +140,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 	}, nil
 }
 
+// FindFileshare implementation
 func (f *FileShare) FindFileshare(fileshareName string) (*model.FileShareSpec, error) {
 	shares, err := f.Client.ListFileShares()
 	if err != nil {
@@ -174,6 +158,7 @@ func (f *FileShare) FindFileshare(fileshareName string) (*model.FileShareSpec, e
 	return nil, nil
 }
 
+// DeleteFileShare implementation
 func (f *FileShare) DeleteFileShare(shareID string) (*csi.DeleteVolumeResponse, error) {
 	share, _ := f.Client.GetFileShare(shareID)
 	if share == nil {
@@ -190,8 +175,9 @@ func (f *FileShare) DeleteFileShare(shareID string) (*csi.DeleteVolumeResponse, 
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
+// ControllerPublishFileShare implementation
 func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
-	attachMode, ok := req.VolumeContext[PublishAttachMode]
+	attachMode, ok := req.VolumeContext[common.PublishAttachMode]
 	if !ok {
 		glog.Info("attach mode will use default value: read,write")
 		attachMode = "read,write"
@@ -246,17 +232,18 @@ func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeR
 
 	resp := &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{
-			PublishHostIp:     attachReq.AccessTo,
-			PublishAttachId:   newAttachment.Id,
-			PublishAttachMode: attachMode,
-			ExportLocations:   req.GetVolumeContext()[ExportLocations],
-			FileShareName:     shareSpec.Name,
+			common.PublishHostIp:     attachReq.AccessTo,
+			common.PublishAttachId:   newAttachment.Id,
+			common.PublishAttachMode: attachMode,
+			ExportLocations:          req.GetVolumeContext()[ExportLocations],
+			FileShareName:            shareSpec.Name,
 		},
 	}
 
 	return resp, nil
 }
 
+// getProtoFromPool implementation
 func (f *FileShare) getProtoFromPool(poolId string) (string, error) {
 	// get protocol from pool
 	pool, err := f.Client.GetPool(poolId)
@@ -277,6 +264,7 @@ func (f *FileShare) getProtoFromPool(poolId string) (string, error) {
 	return protocol, nil
 }
 
+// ControllerUnpublishFileShare implementation
 func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	//check volume is exist
 	shareSpec, err := f.Client.GetFileShare(req.VolumeId)
@@ -300,10 +288,10 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 
 	for _, attachSpec := range attachments {
 		if attachSpec.FileShareId == shareSpec.Id && attachSpec.AccessTo == accessTo {
-			if ok := UnpublishAttachmentList.isExist(attachSpec.Id); !ok {
+			if ok := common.UnpublishAttachmentList.IsExist(attachSpec.Id); !ok {
 				glog.Infof("add attachment id %s into unpublish attachment list", attachSpec.Id)
-				UnpublishAttachmentList.Add(attachSpec)
-				UnpublishAttachmentList.PrintList(FileshareStorageType)
+				common.UnpublishAttachmentList.Add(attachSpec)
+				common.UnpublishAttachmentList.PrintFileShareList()
 			}
 			break
 		}
@@ -312,6 +300,7 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
+// isFileshareCanBePublished implementation
 func (f *FileShare) isFileshareCanBePublished(canAtMultiNode bool, attachReq *model.FileShareAclSpec) error {
 	attachments, err := f.Client.ListFileSharesAcl()
 	if err != nil {
@@ -337,6 +326,7 @@ func (f *FileShare) isFileshareCanBePublished(canAtMultiNode bool, attachReq *mo
 	return nil
 }
 
+// ListFileShares implementation
 func (f *FileShare) ListFileShares(req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
 	shares, err := f.Client.ListFileShares()
 	if err != nil {
@@ -368,6 +358,7 @@ func (f *FileShare) ListFileShares(req *csi.ListVolumesRequest) (*csi.ListVolume
 	}, nil
 }
 
+// NodeStageFileShare implementation
 func (f *FileShare) NodeStageFileShare(req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	mountpoint := req.GetStagingTargetPath()
 	if mountpoint == "" {
@@ -425,6 +416,7 @@ func (f *FileShare) NodeStageFileShare(req *csi.NodeStageVolumeRequest) (*csi.No
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
+// NodeUnstageFileShare implementation
 func (f *FileShare) NodeUnstageFileShare(req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	// check volume is unmounted
 	stagingTargetPath := req.GetStagingTargetPath()
@@ -456,6 +448,7 @@ func (f *FileShare) NodeUnstageFileShare(req *csi.NodeUnstageVolumeRequest) (*cs
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
+// NodePublishFileShare implementation
 func (f *FileShare) NodePublishFileShare(req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	device := req.GetStagingTargetPath()
 	mountpoint := req.GetTargetPath()
@@ -501,6 +494,7 @@ func (f *FileShare) NodePublishFileShare(req *csi.NodePublishVolumeRequest) (*cs
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
+// NodeUnpublishFileShare implementation
 func (f *FileShare) NodeUnpublishFileShare(req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	// check volume is unmounted
 	targetPath := req.GetTargetPath()

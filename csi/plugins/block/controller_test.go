@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opensds
+package block
 
 import (
 	"encoding/json"
@@ -26,6 +26,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/opensds/nbp/csi/util"
+	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/opensds/client"
 	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/model"
@@ -54,11 +55,9 @@ func init() {
 	}
 
 	fakePlugin = &Plugin{
-		Client: client,
 		VolumeClient: &Volume{
 			Client: client,
 		},
-		PluginStorageType: VolumeStorageType,
 	}
 	fakeCtx = context.Background()
 }
@@ -94,9 +93,7 @@ var (
 	
 			"id": "1106b972-66ef-11e7-b172-db03f3689c9c",
 			"name": "default",
-			"description": "default policy",
-			"storageType": "block"
-		
+			"description": "default policy",		
 }`
 
 	ByteVolumes = `[
@@ -506,7 +503,6 @@ func TestCreateVolume(t *testing.T) {
 		},
 		Parameters: map[string]string{
 			"profile":     "1106b972-66ef-11e7-b172-db03f3689c9c",
-			"storageType": "block",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
@@ -518,7 +514,7 @@ func TestCreateVolume(t *testing.T) {
 		AccessibilityRequirements: &csi.TopologyRequirement{
 			Preferred: []*csi.Topology{
 				&csi.Topology{
-					Segments: map[string]string{TopologyZoneKey: DefaultAvailabilityZone},
+					Segments: map[string]string{TopologyZoneKey: common.DefaultAvailabilityZone},
 				},
 			},
 		},
@@ -539,7 +535,7 @@ func TestCreateVolume(t *testing.T) {
 			VolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			VolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
 			VolumeLvPath:      "",
-			PublishAttachMode: "rw",
+			common.PublishAttachMode: "rw",
 		},
 		AccessibleTopology: []*csi.Topology{
 			{
@@ -556,15 +552,5 @@ func TestCreateVolume(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedRs, rs) {
 		t.Errorf("expected: %v, actual: %v\n", expectedRs, rs)
-	}
-}
-
-func TestIsStringMapEqual(t *testing.T) {
-	metadataA := map[string]string{"lvPath": "/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
-	metadataB := map[string]string{"lvPath": "/dev/opensds-volumes-default/volume-105a8e15-8ab2-463c-9efb-7af1a3451138"}
-	ret := isStringMapEqual(metadataA, metadataB)
-
-	if !ret {
-		t.Errorf("expected: true, actual: %v\n", ret)
 	}
 }

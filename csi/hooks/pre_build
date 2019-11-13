@@ -27,5 +27,6 @@ mkdir -p gopath/src/github.com/opensds/nbp
 cd gopath/src/github.com/opensds/nbp
 cp -r ${BASE_DIR}/* .
 make docker
-cp csi/server/csi.server.opensds ${BASE_DIR}/csi/server
-cp -a csi/server/nvme-cli-1.8.1 ${BASE_DIR}/csi/server
+cp csi/csi.block.opensds ${BASE_DIR}/csi
+cp csi/csi.file.opensds ${BASE_DIR}/csi
+cp -a csi/nvme-cli-1.8.1 ${BASE_DIR}/csi
