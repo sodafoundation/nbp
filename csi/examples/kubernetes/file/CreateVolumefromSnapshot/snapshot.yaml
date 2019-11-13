@@ -1,9 +1,9 @@
 apiVersion: snapshot.storage.k8s.io/v1alpha1
 kind: VolumeSnapshot
 metadata:
-  name: new-snapshot-demo
+  name: new-snapshot-demo-file
 spec:
-  snapshotClassName: csi-opensds-snapclass
+  snapshotClassName: csi-opensds-snapclass-file
   source:
     name: opensdspvc
     kind: PersistentVolumeClaim

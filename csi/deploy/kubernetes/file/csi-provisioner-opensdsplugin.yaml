@@ -1,15 +1,15 @@
-# This YAML file contains snapshotter & csi driver API objects,
-# which are necessary to run external csi snapshotter for opensds.
+# This YAML file contains attacher & csi driver API objects,
+# which are necessary to run external csi provisioner for opensds.
 
 kind: Service
 apiVersion: v1
 metadata:
-  name: csi-snapshotter-opensdsplugin
+  name: csi-provisioner-opensdsplugin-file
   labels:
-    app: csi-snapshotter-opensdsplugin
+    app: csi-provisioner-opensdsplugin-file
 spec:
   selector:
-    app: csi-snapshotter-opensdsplugin
+    app: csi-provisioner-opensdsplugin-file
   ports:
     - name: dummy
       port: 12345
@@ -18,26 +18,27 @@ spec:
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: csi-snapshotter-opensdsplugin
+  name: csi-provisioner-opensdsplugin-file
 spec:
-  serviceName: "csi-snapshotter-opensdsplugin"
+  serviceName: "csi-provisioner-opensdsplugin-file"
   replicas: 1
   selector:
     matchLabels:
-      app: csi-snapshotter-opensdsplugin
+      app: csi-provisioner-opensdsplugin-file
   template:
     metadata:
       labels:
-        app: csi-snapshotter-opensdsplugin
+        app: csi-provisioner-opensdsplugin-file
     spec:
-      serviceAccount: csi-snapshotter
+      serviceAccount: csi-provisioner-file
       containers:
-        - name: csi-snapshotter
-          image: quay.io/k8scsi/csi-snapshotter:v1.1.0
+        - name: csi-provisioner
+          image: quay.io/k8scsi/csi-provisioner:v1.1.0
           args:
-            - "--snapshotter=csi-opensdsplugin"
+            - "--provisioner=csi-opensdsplugin-file"
             - "--csi-address=$(ADDRESS)"
             - "--connection-timeout=15s"
+            - "--feature-gates=Topology=True"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -46,12 +47,11 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: opensds
-          image: opensdsio/csiplugin:latest
+          image: opensdsio/csiplugin-file:latest
           args :
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
-            - "--storageType=$(OPENSDS_STORAGE_TYPE)"
             - "--v=8"
           env:
             - name: CSI_ENDPOINT
@@ -59,67 +59,57 @@ spec:
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: opensdsendpoint
-            - name: OPENSDS_STORAGE_TYPE
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: opensdsstoragetype
-            - name: ENABLE_ENCRYPTED
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: enableEncrypted
-            - name: PASSWORD_ENCRYPTER
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: passwordencrypter
             - name: OPENSDS_AUTH_STRATEGY
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: opensdsauthstrategy
             - name: OS_AUTH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: osauthurl
             - name: OS_USERNAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: osusername
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-file
+                  key: passwordencrypter
             - name: OS_PASSWORD
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: ospassword
             - name: PASSWORD_ENCRYPTER
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: passwordencrypter
             - name: ENABLE_ENCRYPTED
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: enableEncrypted
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: ostenantname
             - name: OS_PROJECT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: osprojectname
             - name: OS_USER_DOMAIN_ID
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-file
                   key: osuserdomainid
           imagePullPolicy: "IfNotPresent"
           volumeMounts:

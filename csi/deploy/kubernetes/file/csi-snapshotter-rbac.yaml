@@ -1,23 +1,20 @@
 # This YAML file contains RBAC API objects,
-# which are necessary to run external csi provisioner for opensds.
+# which are necessary to run external csi snapshotter for opensds.
 
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: csi-provisioner
+  name: csi-snapshotter-file
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-provisioner-runner
+  name: external-snapshotter-runner-file
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
     verbs: ["get", "list", "watch", "create", "delete"]
@@ -25,33 +22,37 @@ rules:
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch", "update"]
   - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses", "csinodes"]
+    resources: ["storageclasses"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
-  - apiGroups: [""]
-    resources: ["endpoints"]
-    verbs: ["get", "create", "update"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["create","get", "list", "watch","update", "delete"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots"]
     verbs: ["create","get", "list", "watch","update", "delete"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots/status"]
     verbs: ["update"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshotcontents"]
-    verbs: ["create","get", "list", "watch","update", "delete"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["create","get", "list", "watch","delete"]
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-provisioner-role
+  name: csi-snapshotter-role-file
 subjects:
   - kind: ServiceAccount
-    name: csi-provisioner
+    name: csi-snapshotter-file
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: external-provisioner-runner
+  name: external-snapshotter-runner-file
   apiGroup: rbac.authorization.k8s.io

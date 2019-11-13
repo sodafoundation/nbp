@@ -19,5 +19,5 @@ spec:
   volumes:
   - name: csi-data-opensdsplugin
     persistentVolumeClaim:
-      claimName: opensdspvc
+      claimName: opensdspvc-file
       readOnly: false

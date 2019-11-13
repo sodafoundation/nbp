@@ -4,20 +4,20 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-nodeplugin-opensdsplugin
+  name: csi-nodeplugin-opensdsplugin-block
 spec:
   selector:
     matchLabels:
-      app: csi-nodeplugin-opensdsplugin
+      app: csi-nodeplugin-opensdsplugin-block
   template:
     metadata:
       labels:
-        app: csi-nodeplugin-opensdsplugin
+        app: csi-nodeplugin-opensdsplugin-block
     spec:
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-      serviceAccount: csi-nodeplugin
+      serviceAccount: csi-nodeplugin-block
       hostNetwork: true
       containers:
         - name: node-driver-registrar
@@ -28,7 +28,7 @@ spec:
             - "--kubelet-registration-path=$(ADDRESS)"
           env:
             - name: ADDRESS
-              value: /var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
+              value: /var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -45,85 +45,79 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: opensdsio/csiplugin:latest
+          image: opensdsio/csiplugin-block:latest
           args :
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
             - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
-            - "--storageType=$(OPENSDS_STORAGE_TYPE)"
             - "--v=8"
           env:
             - name: CSI_ENDPOINT
-              value: unix://var/lib/kubelet/plugins/csi-opensdsplugin/csi.sock
+              value: unix://var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: opensdsendpoint
-            - name: OPENSDS_STORAGE_TYPE
-              valueFrom:
-                configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
-                  key: opensdsstoragetype
             - name: OPENSDS_AUTH_STRATEGY
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: opensdsauthstrategy
             - name: OS_AUTH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: osauthurl
             - name: OS_USERNAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: osusername
             - name: OS_PASSWORD
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: ospassword
             - name: PASSWORD_ENCRYPTER
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: passwordencrypter
             - name: ENABLE_ENCRYPTED
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: enableEncrypted
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: ostenantname
             - name: PASSWORD_ENCRYPTER
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: passwordencrypter
             - name: ENABLE_ENCRYPTED
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: enableEncrypted
             - name: OS_PROJECT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: osprojectname
             - name: OS_USER_DOMAIN_ID
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin
+                  name: csi-configmap-opensdsplugin-block
                   key: osuserdomainid
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin
+              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin-block
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
@@ -144,7 +138,7 @@ spec:
       volumes:
         - name: socket-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-opensdsplugin
+            path: /var/lib/kubelet/plugins/csi-opensdsplugin-block
             type: DirectoryOrCreate
         - name: volume-devices-dir
           hostPath:

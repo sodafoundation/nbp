@@ -4,11 +4,10 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: csi-configmap-opensdsplugin
+  name: csi-configmap-opensdsplugin-file
 data:
   opensdsendpoint: http://127.0.0.1:50040
   opensdsauthstrategy: noauth
-  opensdsstoragetype: block
   osauthurl: http://127.0.0.1/identity
   osusername: admin
   ospassword: opensds@123

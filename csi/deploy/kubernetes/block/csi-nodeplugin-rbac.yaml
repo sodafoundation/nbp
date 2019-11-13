@@ -1,49 +1,44 @@
-# This YAML file contains RBAC API objects,
-# which are necessary to run external csi attacher for opensds.
+# This YAML defines all API objects to create RBAC roles for csi node plugin.
 
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: csi-attacher
+  name: csi-nodeplugin-block
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-attacher-runner
+  name: csi-nodeplugin-block
 rules:
   - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch", "update"]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
     verbs: ["get", "list", "watch", "update"]
   - apiGroups: [""]
     resources: ["nodes"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["get", "list", "watch", "update"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch", "update"]
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csinodeinfos"]
-    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: ["csi.storage.k8s.io"]
     resources: ["csidrivers"]
-    verbs: ["create", "delete", "get", "list", "watch"]
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create","get", "list", "watch","delete"]
-
+    verbs: ["get", "list", "watch"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-attacher-role
+  name: csi-nodeplugin-block
 subjects:
   - kind: ServiceAccount
-    name: csi-attacher
+    name: csi-nodeplugin-block
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: external-attacher-runner
+  name: csi-nodeplugin-block
   apiGroup: rbac.authorization.k8s.io
