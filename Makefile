@@ -22,25 +22,30 @@ VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 		 --always --dirty --abbrev=8)
 BUILD_TGT := opensds-sushi-$(VERSION)-linux-amd64
 
-.PHONY: all build prebuild csi.server.opensds csi.client.opensds flexvolume.server.opensds service-broker cindercompatibleapi docker clean
+.PHONY: all build prebuild csi.block.opensds csi.file.opensds flexvolume.server.opensds service-broker cindercompatibleapi docker clean
 
 all: build
 
-build: csi.server.opensds csi.client.opensds flexvolume.server.opensds service-broker cindercompatibleapi
+build: csi.block.opensds csi.file.opensds flexvolume.server.opensds service-broker cindercompatibleapi
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)
 
-csi.server.opensds: prebuild
-	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.server.opensds github.com/opensds/nbp/csi/server
+csi.block.opensds: prebuild
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.block.opensds github.com/opensds/nbp/csi/cmd/block
 	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
 	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
 	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
 	cd ..
-	cp -a ./nvme-cli-1.8.1 ./csi/server/
+	cp -a ./nvme-cli-1.8.1 ./csi/
 
-csi.client.opensds: prebuild
-	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.client.opensds github.com/opensds/nbp/csi/client
+csi.file.opensds: prebuild
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.file.opensds github.com/opensds/nbp/csi/cmd/file
+	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
+	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
+	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
+	cd ..
+	cp -a ./nvme-cli-1.8.1 ./csi/
 
 flexvolume.server.opensds: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
@@ -52,20 +57,20 @@ cindercompatibleapi: prebuild
 	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
 
 docker: build
-	cp $(BUILD_DIR)/csi.server.opensds ./csi/server
-	cp $(BUILD_DIR)/csi.client.opensds ./csi/client
+	cp $(BUILD_DIR)/csi.block.opensds ./csi/
+	cp $(BUILD_DIR)/csi.file.opensds ./csi/
 	cp $(BUILD_DIR)/service-broker ./service-broker/cmd/service-broker
-	docker build csi/server -t opensdsio/csiplugin:$(IMAGE_TAG)
-	docker build csi/client -t opensdsio/csipluginclient:$(IMAGE_TAG)
+	docker build -f csi/cmd/block/Dockerfile -t opensdsio/csiplugin-block:$(IMAGE_TAG) csi
+	docker build -f csi/cmd/file/Dockerfile -t opensdsio/csiplugin-file:$(IMAGE_TAG) csi
 	docker build service-broker/cmd/service-broker -t opensdsio/service-broker:$(IMAGE_TAG)
 
 goimports:
 	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
 
 clean:
-	rm -rf $(BUILD_DIR) ./csi/server/csi.server.opensds ./csi/client/csi.client.opensds \
+	rm -rf $(BUILD_DIR) ./csi/csi.block.opensds ./csi/csi.file.opensds \
 		./service-broker/cmd/service-broker/service-broker \
-		./csi/server/nvme-cli-1.8.1
+		./csi/nvme-cli-1.8.1
 
 version:
 	@echo ${VERSION}
@@ -77,8 +82,8 @@ dist: build
 	    cd $(DIST_DIR) && \
 	    mkdir -p $(BUILD_TGT)/{csi,flexvolume,provisioner,service-broker} && \
 	    cp -r $(BUILD_DIR) $(BUILD_TGT)/bin/ && \
-	    cp -r $(BASE_DIR)/csi/server/deploy $(BUILD_TGT)/csi/ && \
-	    cp -r $(BASE_DIR)/csi/server/examples $(BUILD_TGT)/csi/ && \
+	    cp -r $(BASE_DIR)/csi/deploy $(BUILD_TGT)/csi/ && \
+	    cp -r $(BASE_DIR)/csi/examples $(BUILD_TGT)/csi/ && \
 	    cp -r $(BASE_DIR)/flexvolume/examples $(BUILD_TGT)/flexvolume/ && \
 	    cp -r $(BASE_DIR)/opensds-provisioner/deploy $(BUILD_TGT)/provisioner/ && \
 	    cp -r $(BASE_DIR)/opensds-provisioner/examples $(BUILD_TGT)/provisioner/ && \
