@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="o11nplugin-storage" default="package" basedir=".">
+  <!-- ====================================================================== -->
+  <!-- Build environment properties                                           -->
+  <!-- ====================================================================== -->
+
+  <property file="maven-build.properties" />
+  <property name="maven.build.finalName" value="vrealize-orchestrator-plugin-opensds" />
+
+  <!-- ====================================================================== -->
+  <!-- Defining classpaths                                                    -->
+  <!-- ====================================================================== -->
+
+  <path id="build.classpath">
+    <fileset dir="${maven.repo.local}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+  <path id="build.test.classpath">
+    <fileset dir="${maven.repo.local}">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+
+  <!-- ====================================================================== -->
+  <!-- Cleaning up target                                                     -->
+  <!-- ====================================================================== -->
+
+  <target name="clean" description="Clean the output directory">
+    <delete dir="${maven.build.dir}" />
+  </target>
+
+  <!-- ====================================================================== -->
+  <!-- Compilation target                                                     -->
+  <!-- ====================================================================== -->
+
+  <target name="compile" depends="" description="Compile the code">
+    <mkdir dir="${maven.build.outputDir}" />
+  </target>
+
+  <!-- ====================================================================== -->
+  <!-- Test-compilation target                                                -->
+  <!-- ====================================================================== -->
+
+  <target name="compile-tests" depends="compile" description="Compile the test code" unless="maven.test.skip">
+    <mkdir dir="${maven.build.testOutputDir}" />
+  </target>
+
+  <!-- ====================================================================== -->
+  <!-- Run all tests                                                          -->
+  <!-- ====================================================================== -->
+
+  <target name="test" depends="compile-tests, junit-missing" unless="junit.skipped" description="Run the test cases" />
+
+  <target name="test-junit-present">
+    <available classname="junit.framework.Test" property="junit.present" />
+  </target>
+
+  <target name="test-junit-status" depends="test-junit-present">
+    <condition property="junit.missing">
+      <and>
+        <isfalse value="${junit.present}" />
+        <isfalse value="${maven.test.skip}" />
+      </and>
+    </condition>
+    <condition property="junit.skipped">
+      <or>
+        <isfalse value="${junit.present}" />
+        <istrue value="${maven.test.skip}" />
+      </or>
+    </condition>
+  </target>
+
+  <target name="junit-missing" depends="test-junit-status" if="junit.missing">
+    <echo>=================================== WARNING ===================================</echo>
+    <echo> JUnit is not present in your $ANT_HOME/lib directory. Tests not executed.</echo>
+    <echo>===============================================================================</echo>
+  </target>
+
+  <!-- ====================================================================== -->
+  <!-- Javadoc target                                                         -->
+  <!-- ====================================================================== -->
+
+  <target name="javadoc" description="Generates the Javadoc of the application" />
+
+  <!-- ====================================================================== -->
+  <!-- Package target                                                         -->
+  <!-- ====================================================================== -->
+
+  <target name="package" depends="compile" description="Package the application">
+    <!-- Prepare DAR -->
+    <mkdir dir="${maven.build.dir}/${maven.build.finalName}" />
+    <mkdir dir="${maven.build.dir}/${maven.build.finalName}/lib" />
+    <copy todir="${maven.build.dir}/${maven.build.finalName}/lib">
+      <fileset file="${maven.repo.local}/*.jar"  excludes="o11n*.jar"/>
+    </copy>
+    <copy todir="${maven.build.dir}/${maven.build.finalName}">
+      <fileset dir="${maven.build.darDir}" casesensitive="yes">
+      </fileset>
+    </copy>
+    <replace file="${maven.build.dir}/${maven.build.finalName}/VSO-INF/vso.xml" token="__build.number__" value="${plugin.build.number}" />
+
+    <!-- Create DAR -->
+    <jar jarfile="${maven.build.dir}/${maven.build.finalName}.dar" compress="true" duplicate="preserve">
+      <fileset dir="${maven.build.dir}/${maven.build.finalName}">
+        <!-- list of included files -->
+        <include name="**/*" />
+      </fileset>
+    </jar>
+    <mkdir dir="bin" />
+    <copy todir="bin">
+      <fileset file="${maven.build.dir}/${maven.build.finalName}.dar" />
+    </copy>
+    <!-- <antcall target="deploy" /> -->
+  </target>
+
+</project>

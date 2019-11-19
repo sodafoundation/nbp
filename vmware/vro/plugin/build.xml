@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ====================================================================== -->
+<!-- Ant build file (http://ant.apache.org/) for Ant 1.6.2 or above.        -->
+<!-- ====================================================================== -->
+
+<project name="OpenSDS-Storage-vRO-project" default="build-begin" basedir="."
+		 xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+
+	<description>
+		Ant build script example for the VRO plugin project.
+		-----------------------------------------------------------------------
+	</description>
+	<!--property files -->
+	<property environment="env"/>
+	<property name="ANT_HOME" value="${env.ANT_HOME}"/>
+	<property name="lib" value="lib" />
+	<path id="maven-ant-tasks.classpath" path="${ANT_HOME}/lib/maven-ant-tasks-2.1.3.jar" />
+	<typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+			 uri="antlib:org.apache.maven.artifact.ant"
+			 classpathref="maven-ant-tasks.classpath" />
+
+	<!-- get the jar to the lib -->
+	<target name="gather-dependencies-from-maven" >
+		<artifact:dependencies filesetId="deps.fileset">
+			<pom file="pom.xml"/>
+		</artifact:dependencies>
+		<copy todir="${lib}">
+			<fileset refid="deps.fileset"/>
+			<mapper type="flatten"/>
+		</copy>
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Build VRO                                                            -->
+	<!-- ====================================================================== -->
+
+	<target name="build-begin" depends="gather-dependencies-from-maven,setup,clean,package,teardown"/>
+
+	<target name="setup" description="create folder, copy jar and binary">
+		<mkdir dir="bin" />
+		<copy todir="src/main/dar/resources/packages" overwrite="true">
+			<fileset dir="ui_package/">
+				<include name="org.OpenSDS.DataManagement.package" />
+			</fileset>
+		</copy>
+		<copy todir="bin" overwrite="true">
+			<fileset dir="ui_package/">
+				<include name="org.OpenSDS.DataManagement.package" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="teardown" description="clean all">
+		<delete dir="bin" />
+		<delete includeEmptyDirs="true">
+			<fileset dir="src/main/dar/resources/packages" includes="org.OpenSDS.DataManagement.package" defaultexcludes="no" />
+		</delete>
+	</target>
+
+
+	<!-- ====================================================================== -->
+	<!-- Cleaning up target                                                     -->
+	<!-- ====================================================================== -->
+
+	<target name="clean" description="Clean the output directory">
+		<ant antfile="build_plugin.xml"  target="clean" />
+		<ant antfile="build_dar.xml"  target="clean" />
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Compilation target                                                     -->
+	<!-- ====================================================================== -->
+
+	<target name="compile" description="Compile the code">
+		<ant antfile="build_plugin.xml"  target="compile" />
+		<ant antfile="build_dar.xml" target="compile" />
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Test-compilation target                                                -->
+	<!-- ====================================================================== -->
+
+	<target name="compile-tests" description="Compile the test code">
+		<ant antfile="build_plugin.xml"  target="compile-tests" />
+		<ant antfile="build_dar.xml" target="compile-tests" />
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Run all tests                                                          -->
+	<!-- ====================================================================== -->
+
+	<target name="test" description="Run the test cases">
+		<ant antfile="build_plugin.xml" target="test" />
+		<ant antfile="build_dar.xml"  target="test" />
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Javadoc target                                                         -->
+	<!-- ====================================================================== -->
+
+	<target name="javadoc" description="Generates the Javadoc of the application">
+		<ant antfile="build_plugin.xml"  target="javadoc" />
+		<ant antfile="build_dar.xml"  target="javadoc" />
+	</target>
+
+	<!-- ====================================================================== -->
+	<!-- Package target                                                         -->
+	<!-- ====================================================================== -->
+
+	<target name="package" description="Package the application">
+		<ant antfile="build_plugin.xml"  target="package" />
+		<ant antfile="build_dar.xml"  target="package" />
+		<mkdir dir="plugin_package" />
+		<zip destfile="plugin_package/openSDS_Storage_vRO_Plugin_V2.1.10.zip" basedir="bin"></zip>
+	</target>
+	
+</project>
