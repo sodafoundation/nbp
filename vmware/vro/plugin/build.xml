@@ -112,7 +112,7 @@
 		<ant antfile="build_plugin.xml"  target="package" />
 		<ant antfile="build_dar.xml"  target="package" />
 		<mkdir dir="plugin_package" />
-		<zip destfile="plugin_package/openSDS_Storage_vRO_Plugin_V2.1.10.zip" basedir="bin"></zip>
+		<zip destfile="plugin_package/openSDS_Storage_vRO_Plugin_V1.0.0.zip" basedir="bin"></zip>
 	</target>
 	
 </project>

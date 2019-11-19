@@ -6,9 +6,9 @@ OpenSDS vRealize Orchestrator Plugin
 
 I. General Information 
 
-    Name:     OpenSDS_Storage_vRO_Plugin_V2.1.10
+    Name:     OpenSDS_Storage_vRO_Plugin_V1.0.0
     Category: vRealize Orchestrator Plugin
-    version : 2.1.10
+    version : 1.0.0
     
 II. Description
 
