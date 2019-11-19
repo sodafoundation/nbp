@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="049833a6-d31c-4667-9dc7-c4b762f405be" version="0.0.11" api-version="6.0.0" allowed-operations="vef" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Create Volume]]></display-name>
+  <description><![CDATA[Create LUN]]></description>
+  <position y="50.0" x="100.0"></position>
+  <input>
+    <param name="VolumeName" type="string">
+      <description><![CDATA[Volume Name]]></description>
+    </param>
+    <param name="Description" type="string">
+      <description><![CDATA[Volume  Description]]></description>
+    </param>
+    <param name="Capacity" type="number">
+      <description><![CDATA[Capacity in GB]]></description>
+    </param>
+    <param name="ProfileID" type="string">
+      <description><![CDATA[Profile ID]]></description>
+    </param>
+    <param name="OpenSDS" type="OpenSDS:OpenSDSInfo"></param>
+  </input>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"></position>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" catch-name="item2" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[
+var VolumeService = Server.findForType('OpenSDS:VolumeService');
+VolumeService.createVolume(OpenSDS,VolumeName,Description,Capacity,ProfileName);
+System.log("create Volume success:");]]></script>
+    <in-binding>
+      <bind name="VolumeName" type="string" export-name="VolumeName"></bind>
+      <bind name="Description" type="string" export-name="Description"></bind>
+      <bind name="Capacity" type="number" export-name="Capacity"></bind>
+      <bind name="ProfileName" type="string" export-name="ProfileID"></bind>
+      <bind name="OpenSDS" type="OpenSDS:OpenSDSInfo" export-name="OpenSDS"></bind>
+    </in-binding>
+    <out-binding></out-binding>
+    <position y="55.40909090909091" x="204.5"></position>
+  </workflow-item>
+  <workflow-item name="item2" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="109.04545454545453" x="245.0"></position>
+  </workflow-item>
+  <presentation>
+    <p-param name="OpenSDS">
+      <desc><![CDATA[OpenSDS]]></desc>
+    </p-param>
+    <p-param name="VolumeName">
+      <desc><![CDATA[Volume Name]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="Description">
+      <desc><![CDATA[Volume Description]]></desc>
+    </p-param>
+    <p-param name="Capacity">
+      <desc><![CDATA[Capacity in GB]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="ProfileID">
+      <desc><![CDATA[Profile ID ]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+  </presentation>
+</workflow>

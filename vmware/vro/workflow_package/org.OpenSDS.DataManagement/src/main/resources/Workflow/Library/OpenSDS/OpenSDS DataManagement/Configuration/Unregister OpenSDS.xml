@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="45d27579-c11f-4263-9bc7-30577cd59f4f" version="0.0.4" api-version="6.0.0" allowed-operations="vef" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Unregister OpenSDS]]></display-name>
+  <description><![CDATA[Unregister Storage Array]]></description>
+  <position y="50.0" x="100.0"></position>
+  <input>
+    <param name="OpenSDS" type="OpenSDS:OpenSDSInfo"></param>
+  </input>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"></position>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" catch-name="item2" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var configuration = Server.findForType('OpenSDS:Conf');
+configuration.unregister(hostName);
+
+System.log("unregister success");]]></script>
+    <in-binding>
+      <bind name="hostName" type="OpenSDS:OpenSDSInfo" export-name="OpenSDS"></bind>
+    </in-binding>
+    <out-binding></out-binding>
+    <position y="55.40909090909091" x="204.5"></position>
+  </workflow-item>
+  <workflow-item name="item2" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="109.04545454545453" x="245.0"></position>
+  </workflow-item>
+  <presentation>
+    <p-param name="OpenSDS">
+      <desc><![CDATA[OpenSDS]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

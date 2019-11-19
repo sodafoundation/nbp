@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--  Maybe you'd like to change this to point to your organization's groupId-->
+  <groupId>workflow-designer-exported</groupId>
+
+  <artifactId>org.OpenSDS.DataManagement</artifactId>
+  <packaging>package</packaging>
+  <version>1.0.0-SNAPSHOT</version>
+
+  <properties>
+    <keystoreLocation>--Specify me--</keystoreLocation>
+    <keystorePassword>--Specify me--</keystorePassword>
+	<vco.server>--Specify me --</vco.server>
+    <vco.version>7.5.0.10044239</vco.version>
+    <!-- change to vf for releases: it will lock the workflows -->
+    <allowedMask>vef</allowedMask>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>added-by-archetype</id>
+      <name>This repo was added by the 'Expand to file system'</name>
+      <url>https://${vco.server}:8281/vco-repo</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>added-by-archetype</id>
+      <name>This repo was added by the 'Expand to file system'</name>
+      <url>https://${vco.server}:8281/vco-repo</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.vmware.o11n.mojo.pkg</groupId>
+        <artifactId>maven-o11n-package-plugin</artifactId>
+        <version>${vco.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <packageName>org.OpenSDS.DataManagement</packageName>
+          <!-- Set the local path to the *.vmokeystore file used to sign the content -->
+          <keystoreLocation>${keystoreLocation}</keystoreLocation>
+          <keystorePassword>${keystorePassword}</keystorePassword>
+          <includes>
+            <include>**/*.element_info.xml</include>
+          </includes>
+          <packageFileName>${project.artifactId}-${project.version}</packageFileName>
+          <allowedMask>${allowedMask}</allowedMask>
+          <exportVersionHistory>false</exportVersionHistory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

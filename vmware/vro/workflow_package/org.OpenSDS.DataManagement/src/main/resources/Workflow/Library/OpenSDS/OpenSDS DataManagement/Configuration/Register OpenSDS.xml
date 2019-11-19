@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="1757184b-d15c-41aa-ad57-0640b9861c72" version="0.0.18" api-version="6.0.0" allowed-operations="vef" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Register OpenSDS]]></display-name>
+  <description><![CDATA[Register Storage Array ]]></description>
+  <position y="50.0" x="100.0"></position>
+  <input>
+    <param name="opensdsName" type="string"></param>
+    <param name="hostname" type="string"></param>
+    <param name="port" type="string"></param>
+    <param name="username" type="string"></param>
+    <param name="password" type="SecureString"></param>
+    <param name="authEnabled" type="boolean"></param>
+  </input>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"></position>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" catch-name="item2" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var configuration = Server.findForType('OpenSDS:Conf');
+
+configuration.register(opensdsName,hostname,port,username,password,authEnabled,"OpenSDS");
+
+System.log("register success");
+]]></script>
+    <in-binding>
+      <bind name="opensdsName" type="string" export-name="opensdsName"></bind>
+      <bind name="hostname" type="string" export-name="hostname"></bind>
+      <bind name="port" type="string" export-name="port"></bind>
+      <bind name="username" type="string" export-name="username"></bind>
+      <bind name="password" type="SecureString" export-name="password"></bind>
+      <bind name="errorCode" type="string" export-name="errorCode"></bind>
+      <bind name="authEnabled" type="boolean" export-name="authEnabled"></bind>
+    </in-binding>
+    <out-binding></out-binding>
+    <position y="55.40909090909091" x="204.5"></position>
+  </workflow-item>
+  <workflow-item name="item2" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="109.04545454545453" x="245.0"></position>
+  </workflow-item>
+  <presentation>
+    <p-param name="opensdsName">
+      <desc><![CDATA[OpenSDS Name]]></desc>
+    </p-param>
+    <p-param name="hostname">
+      <desc><![CDATA[OpenSDS Controller  IP Address]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="port">
+      <desc><![CDATA[OpenSDS Controller Port Number]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="username">
+      <desc><![CDATA[Login User]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="password">
+      <desc><![CDATA[Login Password]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="authEnabled">
+      <desc><![CDATA[Keystone Auth Enabled
+]]></desc>
+      <p-qual kind="static" name="defaultValue" type="boolean"><![CDATA[false]]></p-qual>
+    </p-param>
+  </presentation>
+</workflow>
