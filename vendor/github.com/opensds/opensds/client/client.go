@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package client
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -40,6 +41,7 @@ type Client struct {
 	*VolumeMgr
 	*VersionMgr
 	*ReplicationMgr
+	*FileShareMgr
 
 	cfg *Config
 }
@@ -55,7 +57,7 @@ func NewClient(c *Config) (*Client, error) {
 	// If endpoint field not specified,use the default value localhost.
 	if c.Endpoint == "" {
 		c.Endpoint = constants.DefaultOpensdsEndpoint
-		fmt.Printf("Warnning: OpenSDS Endpoint is not specified using the default value(%s)\n", c.Endpoint)
+		log.Printf("WARNING: OpenSDS Endpoint is not specified, use default(%s)\n", c.Endpoint)
 	}
 
 	// If https is enabled, CA cert file should be provided.
@@ -65,19 +67,23 @@ func NewClient(c *Config) (*Client, error) {
 		_, err := os.Stat(cacert)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("Cannot open file %s", cacert)
+				return nil, fmt.Errorf("CA file(%s) doesn't exist", cacert)
 			}
 		}
 	}
 
 	var r Receiver
+	var err error
 	switch c.AuthOptions.(type) {
 	case *NoAuthOptions:
 		r = NewReceiver()
 	case *KeystoneAuthOptions:
-		r = NewKeystoneReciver(c.AuthOptions.(*KeystoneAuthOptions))
+		r, err = NewKeystoneReceiver(c.AuthOptions.(*KeystoneAuthOptions))
+		if err != nil {
+			return nil, fmt.Errorf("keystone authentication failed")
+		}
 	default:
-		fmt.Println("Warning: Not support auth options, use default.")
+		log.Println("WARNING: Not support auth options, use default(noauth).")
 		r = NewReceiver()
 		c.AuthOptions = NewNoauthOptions(constants.DefaultTenantId)
 	}
@@ -91,13 +97,13 @@ func NewClient(c *Config) (*Client, error) {
 		VolumeMgr:      NewVolumeMgr(r, c.Endpoint, t),
 		VersionMgr:     NewVersionMgr(r, c.Endpoint, t),
 		ReplicationMgr: NewReplicationMgr(r, c.Endpoint, t),
+		FileShareMgr:   NewFileShareMgr(r, c.Endpoint, t),
 	}, nil
 }
 
 // Reset method is defined to clean Client struct.
 func (c *Client) Reset() *Client {
-	c = &Client{}
-	return c
+	return &Client{}
 }
 
 func processListParam(args []interface{}) (string, error) {

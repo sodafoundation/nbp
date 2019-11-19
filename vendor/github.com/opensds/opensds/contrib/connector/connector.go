@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2018 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,22 +17,25 @@ package connector
 import (
 	"fmt"
 	"log"
+
+	"github.com/opensds/opensds/contrib/drivers/utils/config"
 )
 
 const (
-	FcDriver = "fibre_channel"
+	FcDriver = config.FCProtocol
 	PortName = "port_name"
 	NodeName = "node_name"
 	Wwpn     = "wwpn"
 	Wwnn     = "wwnn"
 
-	IscsiDriver = "iscsi"
+	IscsiDriver = config.ISCSIProtocol
 	Iqn         = "iqn"
 
-	RbdDriver = "rbd"
+	RbdDriver = config.RBDProtocol
 
-	NvmeofDriver = "nvmeof"
+	NvmeofDriver = config.NVMEOFProtocol
 	Nqn          = "nqn"
+	NFSDriver    = config.NFSProtocol
 )
 
 // Connector implementation

@@ -1,0 +1,52 @@
+/*
+ * EXTERNAL ICONS SUPPORT: plugin-icons.css contain "external" icons, i.e. the ones
+ * displayed outside plugin's views, in the main app menus, shortcuts or object lists.
+ * Do not include other CSS rules here!
+ */
+.org_opensds_storage_devices-chassis {
+    background: url("../images/chassis.png");
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin: 1px 4px 0;
+}
+.org_opensds_storage_devices-addChassis {
+    background: url("../images/addChassisIcon.png");
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin: 1px 4px 0;
+}
+.org_opensds_storage_devices-editChassis {
+    background: url("../images/editChassisIcon.png");
+    width: 32px;
+    height: 25px;
+    display: inline-block;
+    vertical-align: top;
+}
+.org_opensds_storage_devices-deleteChassis {
+    background: url("../images/removeChassisIcon.png");
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin: 1px 4px 0;
+}
+.org_opensds_storage_devices-pluginIcon {
+    background: url("../images/chassis.png");
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin: 1px 4px 0;
+}
+.org_opensds_storage_devices-configChassis {
+    background: url("../images/deviceConfig.png");
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: text-bottom;
+    margin: 1px 4px 0;
+}

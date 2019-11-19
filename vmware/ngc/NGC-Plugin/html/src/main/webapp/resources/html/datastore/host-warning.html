@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+body {background-color: #FFFFFF}
+</style>
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+</head>
+<body>
+
+<div style="height:100%; width:100%;padding:20% 0;">
+<table  align="center">
+<tr>
+<td id="msg"align="center"></td>
+</tr>
+</table>
+</div>
+
+</body>
+<script type="text/javascript">
+
+function GetQueryString(name)
+{
+     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+     var r = window.location.search.substr(1).match(reg);
+     if(r!=null)return  unescape(r[2]); return null;
+}
+var img= "<img src='../../../assets/images/warn.png'>";
+var type = GetQueryString("type");
+if("createDatastore" == type){
+	document.getElementById('msg').innerHTML = img + "The ESXi host does not respond or is offline.Datastore cannot be created.";
+}else if("mount" == type){
+	document.getElementById('msg').innerHTML = img + "The ESXi host does not respond or is offline. Storage LUNs cannot be mounted.";
+}else if("unmount" == type){
+	document.getElementById('msg').innerHTML = img + "The ESXi host does not respond or is offline. Storage LUNs cannot be unmounted.";
+}else if("backupAndRecovery" == type){
+	document.getElementById('msg').innerHTML = img + "The ESXi host does not respond or is offline. Storage LUNs cannot be backed up or recovered.";
+}
+
+
+</script>
+</html>

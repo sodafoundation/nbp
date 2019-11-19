@@ -108,7 +108,8 @@
   revision = "c65c006176ff7ff98bb916961c7abbc6b0afc0aa"
 
 [[projects]]
-  digest = "1:381fdad8817f7dc3e36a62441e87b29251fcf216d93d39a244fda414ce9f1feb"
+  branch = "master"
+  digest = "1:15c3c59c0e964d39008948fdac5114327cabbf2475655ee55083410fe877e0a3"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -120,8 +121,7 @@
     "ptypes/wrappers",
   ]
   pruneopts = "NUT"
-  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
-  version = "v1.2.0"
+  revision = "e91709a02e0e8ff8b86b7aa913fdc9ae9498e825"
 
 [[projects]]
   branch = "master"
@@ -160,7 +160,7 @@
   version = "v0.2.0"
 
 [[projects]]
-  digest = "1:23f77354dd0bfec335d5fa03cc52d370408b082c09204a1f50664c58dae4edd1"
+  digest = "1:80230022ab481c6688b237550bc45017d9d2abfc19e4916e2ce344d24f613a6d"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -172,7 +172,7 @@
     "pagination",
   ]
   pruneopts = "NUT"
-  revision = "754e57e7867bfa48062ff2a237caad538085700a"
+  revision = "3ad89c4ea008e0e0b729720040b0be25a35d4615"
 
 [[projects]]
   digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
@@ -283,14 +283,18 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:6981a8bf1991753ec77f5100590102c793edeaef3d859dfddbae2b7360ad3be4"
+  branch = "master"
+  digest = "1:0497cfcd382f257803667b4807c701b10c0c8ed096c1213f11f3bf1e0ed2e0ed"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
     "contrib/connector",
     "contrib/connector/fc",
     "contrib/connector/iscsi",
+    "contrib/connector/nfs",
+    "contrib/connector/nvmeof",
     "contrib/connector/rbd",
+    "contrib/drivers/utils/config",
     "pkg/context",
     "pkg/db/drivers/etcd",
     "pkg/dock/client",
@@ -304,8 +308,7 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "b9cd3fe65a676e8b6fc1d507bcacfb8f1b242618"
-  version = "v0.5.1"
+  revision = "089dca690fc4ff6e458421c7d9adf8b5d222f61a"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
@@ -981,6 +984,8 @@
     "github.com/opensds/opensds/contrib/connector",
     "github.com/opensds/opensds/contrib/connector/fc",
     "github.com/opensds/opensds/contrib/connector/iscsi",
+    "github.com/opensds/opensds/contrib/connector/nfs",
+    "github.com/opensds/opensds/contrib/connector/nvmeof",
     "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/db/drivers/etcd",

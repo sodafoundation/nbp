@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:osgi="http://www.springframework.org/schema/osgi" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+      http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/osgi
+      http://www.springframework.org/schema/osgi/spring-osgi.xsd
+      http://www.springframework.org/schema/mvc
+      http://www.springframework.org/schema/mvc/spring-mvc.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- DO NOT CHANGE this section, it enables Spring MVC @Controller programming
+        model -->
+    <context:annotation-config/>
+    <!--<mvc:annotation-driven conversion-service="conversionService"/>-->
+    <context:component-scan base-package="org.opensds.vmware.ngc"/>
+
+    <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+        <property name="converters">
+            <set>
+                <bean class="org.opensds.vmware.ngc.config.MoConverter"/>
+                <bean class="org.opensds.vmware.ngc.config.ServerInfoConverter">
+                    <constructor-arg ref="userSessionService"/>
+                </bean>
+            </set>
+        </property>
+    </bean>
+
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper">
+        <property name="serializationInclusion" value="NON_NULL"/>
+    </bean>
+    <mvc:annotation-driven conversion-service="conversionService">
+        <mvc:message-converters>
+            <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="objectMapper" ref="objectMapper"/>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <bean id="datastoreController" class="org.opensds.vmware.ngc.controller.DatastoreController" />
+
+    <bean id="deviceDataAdapterImpl" class="org.opensds.vmware.ngc.adapter.DeviceDataAdapter"/>
+
+    <osgi:reference id="dataService"
+                    interface="com.vmware.vise.data.query.DataService"/>
+
+    <osgi:reference id="objectReferenceService"
+                    interface="com.vmware.vise.data.query.ObjectReferenceService"/>
+
+    <osgi:reference id="vimObjectReferenceService"
+                    interface="com.vmware.vise.vim.data.VimObjectReferenceService"/>
+
+    <osgi:reference id="userSessionService"
+                    interface="com.vmware.vise.usersession.UserSessionService"/>
+
+    <osgi:service id="deviceDataAdapter" ref="deviceDataAdapterImpl"
+                  interface="com.vmware.vise.data.query.DataProviderAdapter"/>
+
+</beans>
+

@@ -3,3 +3,6 @@ kind: VolumeSnapshotClass
 metadata:
   name: csi-opensds-snapclass
 snapshotter: csi-opensdsplugin
+parameters:
+  profile:
+

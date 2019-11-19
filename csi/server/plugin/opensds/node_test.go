@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2018 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+type FakePlugin struct {
+}
 
 // NodeGetInfo for FakePlugin
 func (p *FakePlugin) NodeGetInfo(
@@ -76,12 +79,10 @@ func TestNodeGetCapabilities(t *testing.T) {
 }
 
 func TestNodeStageVolume(t *testing.T) {
-	var fakePlugin = &Plugin{}
-	var fakeCtx = context.Background()
 	fakeReq := csi.NodeStageVolumeRequest{}
 
 	_, err := fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/volume_capability must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path/volume_capability must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -103,10 +104,10 @@ func TestNodeStageVolume(t *testing.T) {
 
 	attachmentId := "f2dda3d2-bf79-11e7-8665-f750b088f63e"
 
-	fakeReq.PublishContext = map[string]string{KPublishAttachId: attachmentId}
+	fakeReq.PublishContext = map[string]string{PublishAttachId: attachmentId}
 
 	_, err = fakePlugin.NodeStageVolume(fakeCtx, &fakeReq)
-	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist", attachmentId))
+	expectedErr = status.Error(codes.FailedPrecondition, fmt.Sprintf("the volume attachment %s does not exist: output format not supported", attachmentId))
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -119,7 +120,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 	fakeReq := csi.NodeUnstageVolumeRequest{}
 
 	_, err := fakePlugin.NodeUnstageVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -132,7 +133,7 @@ func TestNodePublishVolume(t *testing.T) {
 	fakeReq := csi.NodePublishVolumeRequest{}
 
 	_, err := fakePlugin.NodePublishVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/staging_target_path/target_path/volume_capability must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/staging_target_path/target_path/volume_capability must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)
@@ -145,7 +146,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 	fakeReq := csi.NodeUnpublishVolumeRequest{}
 
 	_, err := fakePlugin.NodeUnpublishVolume(fakeCtx, &fakeReq)
-	expectedErr := status.Error(codes.InvalidArgument, "Volume_id/target_path must be specified")
+	expectedErr := status.Error(codes.InvalidArgument, "volume_id/target_path must be specified")
 
 	if !reflect.DeepEqual(expectedErr, err) {
 		t.Errorf("expected: %v, actual: %v\n", expectedErr, err)

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2018 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ func GetCSIEndPoint(csiEndpoint string) (string, error) {
 	csiEndpoint = strings.TrimSpace(csiEndpoint)
 
 	if csiEndpoint == "" {
-		err := errors.New("CSIEndpoint is empty")
+		err := errors.New("csi endpoint is empty")
 		log.Fatalf("%v", err)
 		return csiEndpoint, err
 	}
@@ -108,9 +108,9 @@ func GetCSIClientConn(csiEndpoint string) (*grpc.ClientConn, error) {
 }
 
 // IsSupportPotocol ...
-func IsSupportPotocol(protocol string) bool {
-	supportPotocols := [...]string{connector.FcDriver, connector.IscsiDriver}
-	for _, v := range supportPotocols {
+func IsSupportProtocol(protocol string) bool {
+	supportProtocols := [...]string{connector.FcDriver, connector.IscsiDriver,connector.NvmeofDriver}
+	for _, v := range supportProtocols {
 		if strings.ToLower(protocol) == v {
 			return true
 		}

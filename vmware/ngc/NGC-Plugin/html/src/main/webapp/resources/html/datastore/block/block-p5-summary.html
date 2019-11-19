@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Create Datastore All Info</title>
+<style type="text/css">
+html {
+	background-color: white;
+}
+.summaryTable{
+    font-size: .9rem;
+    font-weight: 400;
+    line-height: 1rem;
+    letter-spacing: normal;
+    margin-top: 0;
+    border: 1px solid #ccc;
+    border-radius: .125rem;
+    overflow-y: auto;
+    background-color: #fafafa;
+    word-wrap: break-word;
+    padding-left: 4px;
+}
+tr{
+height:26px;
+}
+</style>
+<script src="../../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../../resources/js/common/web-platform.js"></script>
+<script src="../../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript">
+	var enterType = GetQueryString("enterType");
+	$(document).ready(function() {
+
+		init();
+		//shieldCombinationKey();
+		//if(parent.isExtentDataStor){
+		//	$("#operation").html("<s:text name='storage.plugin.action.create.datastore.extent'/>");
+		//}else{
+		$("#operation").html("Create datastore");
+		//}
+		//begin  data：2018-12-14 author:qwx615620
+		if(parent.isCreateDatastore){
+			$("#datastoreName").html(parent.datastoreName);
+			$("#fileSysVersion").html(parent.fileVersion);
+		}else{
+			$("#datastoreNameTR").hide();
+			$("#datastoreName").html("");
+			$("#Version").hide();
+			$("#fileSysVersion").html("");
+		}
+		if(enterType=="createDatastoreOrLun"){
+			$("#hosts").show();
+			var s = "";
+			for(var i=0;i<parent.hostIPArray.length;i++){
+				if(i<parent.hostIPArray.length-1){
+					s += parent.hostIPArray[i]+",";
+				}else{
+					s += parent.hostIPArray[i];
+				}
+			}
+			$("#hostsName").html(s);
+		}else{
+			$("#hosts").hide();
+			$("#hostsName").html("");
+		}
+		//end
+		document.getElementById("datastoreNameTD").title = parent.datastoreName;
+		$("#storType").html(parent.storType);
+		$("#deviceName").html(parent.deviceName);
+		$("#storagePoolName").html(parent.storagePoolName);
+		$("#lunName").html(parent.lunName);
+		$("#deviceIP").html(parent.deviceIp);
+		$("#blockSize").html(parent.blockSize + " MB");
+		$("#lunDesc").html(parent.lunDescription);
+		document.getElementById("lunDescTD").title = parent.lunDescription;
+		$("#lunAllocType").html(parent.lunAllocType);
+		$("#lunCapa").html(
+				parent.lunCapa + " " + parent.lunCapaUnit);
+		if (parent.lunAllocType == "thin") {
+			$("#lunAllocType").html("Enable");
+			$("#trInitCapa").css("display", "table-row");
+			$("#lunInitCapa")
+					.html(parent.initCapa + "&nbsp;" + parent.initCapaUnit);
+		} else {
+			$("#lunAllocType").html("Disabled");
+			$("#trInitCapa").css("display", "none");
+		}
+		if (parent.fileVersion == "VMFS3") {
+			$("#blockSizeTR").css("display", "table-row");
+			$("#fileSysVersion").html("VMFS-3");
+		} else {
+			//$("#fileSysVersion").html("VMFS-5");
+			$("#blockSizeTR").css("display", "none");
+		}
+		$(window).resize(function() {
+			init();
+		});
+
+	});
+
+	function init() {
+		$("#datastoreName").width($("html").width() - 195);
+		$("#lunDesc").width($("html").width() - 195);
+	}
+	function GetQueryString(name)
+	{
+		 var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+		 var r = window.location.search.substr(1).match(reg);
+		 if(r!=null)return  unescape(r[2]); return null;
+	}
+</script>
+</head>
+<body>
+	<div style="padding-top: 5px; padding-left: 5px;overflow-x: hidden;margin-right:10px;">
+		<table class="summaryTable" cellpadding="1" cellspacing="3" style="width: 100%;align:left;">
+			<tr>
+				<td style="white-space: nowrap;"><div style="width:160px;">Device Name:</div></td>
+				<td><span id="deviceName"></span></td>
+			</tr>
+			<tr>
+				<td style="white-space: nowrap;">IP Address:</td>
+				<td><span id="deviceIP"></span></td>
+			</tr>
+			<tr id="hosts">
+				<td style="white-space: nowrap;">Hosts IP:</td>
+				<td><span id="hostsName"></span></td>
+			</tr>
+			<tr>
+				<td style="white-space: nowrap;">Storage Pool:</td>
+				<td><span id="storagePoolName"></span></td>
+			</tr>
+			<tr id="Version">
+				<td style="white-space: nowrap;">File System Version:</td>
+				<td><span id="fileSysVersion"></span></td>
+			</tr>
+			<tr id="blockSizeTR">
+				<td style="white-space: nowrap;">Block size:</td>
+				<td><span id="blockSize"></span></td>
+			</tr>
+			<tr>
+				<td style="white-space: nowrap;">Volume Name:</td>
+				<td><span id="lunName"></span></td>
+			</tr>
+			<tr>
+				<td style="white-space: nowrap;">Description:</td>
+				<td id="lunDescTD">
+					<div id="lunDesc" style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"></div>
+				</td>
+			</tr>
+			<tr>
+				<td>SmartThin:</td>
+				<td><span id="lunAllocType"></span></td>
+			</tr>
+			<tr>
+				<td>Capacity:</td>
+				<td><span id="lunCapa"></span></td>
+			</tr>
+			<tr id="datastoreNameTR">
+				<td style="white-space: nowrap;">Datastore Name:</td>
+				<td id="datastoreNameTD">
+					<div id="datastoreName" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

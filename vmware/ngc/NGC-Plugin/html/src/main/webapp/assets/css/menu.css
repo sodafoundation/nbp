@@ -1,0 +1,88 @@
+.tab-introduce
+{
+	padding-top: 24px;
+	padding-left: 15px;
+	color: #454545;
+	font-size: 14px;
+}
+.link-div
+{
+	font-weight: bold;
+	color: #345382;
+	cursor:pointer;
+}
+.link-div-hover
+{
+	color: #2b87f3;
+}
+.menu_div
+{
+	cursor:default;
+}
+.menu_a{
+	display:inline-block;
+	float:left;
+}
+div.ui-state-active .menu_left{
+	width:5px;
+	height:17px;
+	background-image:url(../images/tab_active_left.png);
+	background-repeat: no-repeat;
+}
+div.ui-state-active .menu_center{
+	height:17px;
+	background-image:url(../images/tab_active_repeat.png);
+	background-repeat:repeat-x;
+	text-align:center;
+	line-height:17px;
+	color: #000000;
+}
+div.ui-state-active .menu_right{
+	width:16px;
+	height:17px;
+	background-image:url(../images/tab_active_right.png);
+	background-repeat: no-repeat;
+	z-index: 9999;
+}
+div.ui-state-default .menu_left{
+	width:5px;
+	height:16px;
+	background-image:url(../images/tab_normal_left.png);
+	background-repeat: no-repeat;
+}
+div.ui-state-default .menu_center{
+	height:16px;
+	background-image:url(../images/tab_normal_repeat.png);
+	background-repeat:repeat-x;
+	text-align:center;
+	line-height:16px;
+	color: #FFFFFF;
+}
+div.ui-state-default .menu_right{
+	width:16px;
+	height:16px;
+	background-image:url(../images/tab_normal_right.png);
+	background-repeat: no-repeat;
+	z-index: 9999;
+}
+div.ui-state-hover .menu_left{
+	width:5px;
+	height:16px;
+	background-image:url(../images/tab_hover_left.png);
+	background-repeat: no-repeat;
+}
+div.ui-state-hover .menu_center{
+	height:16px;
+	background-image:url(../images/tab_hover_repeat.png);
+	background-repeat:repeat-x;
+	text-align:center;
+	line-height:16px;
+	color: #FFFFFF;
+}
+div.ui-state-hover .menu_right{
+	width:16px;
+	height:16px;
+	background-image:url(../images/tab_hover_right.png);
+	background-repeat: no-repeat;
+	z-index: 9999;
+}
