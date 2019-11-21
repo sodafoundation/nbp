@@ -198,6 +198,18 @@ class RestClient {
         return response;
     }
 
+    JSONArray listVolumes(String filterKey, String filterValue) throws Exception {
+        String volumeUrl;
+        volumeUrl = String.format("/block/volumes?%s=%s", filterKey, filterValue);
+        JSONArray response = (JSONArray)request.get(volumeUrl);
+        if(response.isEmpty()) {
+            String msg = String.format("List Volumes error: No Volumes Found");
+            throw new Exception(msg);
+        }
+
+        return response;
+    }
+
     JSONArray listStoragePools() throws Exception {
         JSONArray response = (JSONArray)request.get("/pools");
         if(response.isEmpty()) {
@@ -238,19 +250,10 @@ class RestClient {
     }
 
     JSONObject detachVolume(String volumeId) throws Exception {
-        JSONArray response = (JSONArray)request.get("/block/attachments");
-        String attachmentId = "";
+        JSONArray response = (JSONArray)request.get(String.format("/block/attachments?VolumeId=%s", volumeId));
+        JSONObject attachment = (JSONObject)response.get(0);
+        String attachmentId = (String) attachment.get("id");
 
-        for(Object o: response) {
-            if(o instanceof JSONObject) {
-                JSONObject attachment = (JSONObject)o;
-                String volId = (String) attachment.get("volumeId");
-                if(volumeId.equals(volId)) {
-                    attachmentId = (String) attachment.get("id");
-                    break;
-                }
-            }
-        }
         if(response.isEmpty() || attachmentId.isEmpty()) {
          String msg = String.format("Detach volume %s error: No Attachment Found",
                     volumeId);
@@ -274,5 +277,64 @@ class RestClient {
             throw new Exception(msg);
         }
         return responseDelete;
+    }
+
+    JSONObject getVolume(String volumeId) throws Exception {
+
+        JSONArray response = (JSONArray)request.get(String.format("/block/volumes?wwn=%s", volumeId));
+        if (response.isEmpty()) {
+            String msg = String.format("List Volume for WWN error: No Volumes Found");
+            throw new Exception(msg);
+        }
+        JSONObject volume = (JSONObject) response.get(0);
+        return volume;
+    }
+
+    JSONArray listVolumeSnapshot(String volumeId) throws Exception {
+        String snapshotUrl;
+        if (!volumeId.isEmpty()) {
+            snapshotUrl = String.format("/block/snapshots?VolumeId=%s", volumeId);
+        } else {
+            snapshotUrl = String.format("/block/snapshots");
+        }
+        JSONArray response = (JSONArray)request.get(snapshotUrl);
+        if(response.isEmpty()) {
+            String msg = String.format("List Volume Snapshots error: No Volumes Found");
+            throw new Exception(msg);
+        }
+
+        return response;
+    }
+
+    JSONObject createVolumeSnapshot(String volumeId, String name) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("name", name);
+        requestData.put("volumeId", volumeId);
+
+        JSONObject response = (JSONObject)request.post("/block/snapshots", requestData);
+
+        if (isFailed(response)) {
+            String msg = String.format("Create volume snapshot %s error %d: %s",
+                    name, getErrorCode(response), getErrorMessage(response));
+            throw new Exception(msg);
+        }
+        return response;
+    }
+
+    void deleteVolumeSnapshot(String snapshotId) throws Exception {
+        request.delete(String.format("/block/snapshots/%s", snapshotId));
+    }
+
+    void expandVolume(String volumeId, long capacity) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("newSize", capacity);
+
+        JSONObject response = (JSONObject)request.post(String.format("/block/volumes/%s/resize", volumeId), requestData);
+
+        if (isFailed(response)) {
+            String msg = String.format("Expand Volume %s error %d: %s",
+                    volumeId, getErrorCode(response), getErrorMessage(response));
+            throw new Exception(msg);
+        }
     }
 }

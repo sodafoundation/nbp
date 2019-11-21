@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title></title>
+    <meta http-equiv="Cache-Control" content="no-cache"/>
+    <link type="text/css" rel="stylesheet" href="../../../assets/css/basic-table.css">
+    <link type="text/css" rel="stylesheet" href="../../../assets/css/lun-snapshot-Tab.css">
+    <style type="text/css">
+        table thead tr th, table tbody tr td {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body style="overflow-x:hidden;">
+<table id="hostLunTable" class="tablesorter"
+       style="table-layout: fixed; cellspacing: 0; cellpadding: 0;overflow-x: hidden;">
+    <tbody id ="hostLunTbody" class="tableBody">
+    <tr id="cloneLun">
+        <td name="id" title="" width="4%" align="left"></td>
+        <td name="name" title="" width="13%" align="left"></td>
+        <td name="status" title="" width="8%" align="left"></td>
+        <td name="capacityUsage" title="" width="16%" align="left"></td>
+        <td name="storagePoolName" title="" width="13%" style="text-align: left; padding-right: 4px;"></td>
+        <td name="storagePoolUsage" title="" width="16%" style="text-align: left; padding-right: 4px;"></td>
+        <td name="storageIP" title="" width="13%" align="left"></td>
+        <td name="usedBy" title="" width="17%" align="left"></td>
+        <td name="usedType"  style="display:none;"></td>
+        <td name="wwn" style="display:none;"></td>
+        <td name="storageId" style="display:none;"></td>
+    </tr>
+    </tbody>
+</table>
+<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/basic-table.js"></script>
+<script type="text/javascript" src="../../../resources/js/snapshot/lunTab.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/storage.plugin.js"></script>
+</body>
+</html>

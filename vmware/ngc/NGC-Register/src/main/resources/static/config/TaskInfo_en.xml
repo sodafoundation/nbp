@@ -183,13 +183,6 @@
         <taskSummaryKey>OpenSDS.Storage.Task.CreateFS.summary</taskSummaryKey>
         <taskSummaryValue>Create file system, the 1st NFS datastore creation step</taskSummaryValue>
     </TaskId>
-    <!--<TaskId name="OpenSDS.Storage.Task.CreateNFSShare">-->
-        <!--<taskId>OpenSDS.Storage.Task.CreateNFSShare</taskId>-->
-        <!--<taskLabelKey>OpenSDS.Storage.Task.CreateNFSShare.label</taskLabelKey>-->
-        <!--<taskLabelValue>Create NFS share</taskLabelValue>-->
-        <!--<taskSummaryKey>OpenSDS.Storage.Task.CreateNFSShare.summary</taskSummaryKey>-->
-        <!--<taskSummaryValue>Create NFS share, the 2nd NFS datastore creation step</taskSummaryValue>-->
-    <!--</TaskId>-->
     <TaskId name="OpenSDS.Storage.Task.MountNFSDatastore">
         <taskId>OpenSDS.Storage.Task.MountNFSDatastore</taskId>
         <taskLabelKey>OpenSDS.Storage.Task.MountNFSDatastore.label</taskLabelKey>
