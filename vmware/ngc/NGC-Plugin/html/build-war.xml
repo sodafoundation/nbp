@@ -9,7 +9,7 @@
     </description>
 
     <!-- Properties specific to this project -->
-    <property name="PROJECT_NAME" value="ngc"/>
+    <property name="PROJECT_NAME" value="ngc-ui"/>
     <property name="BUNDLE_NAME" value="org_opensds_storage_devices"/>
 
     <!-- SDK home folders should be set in environment variables -->

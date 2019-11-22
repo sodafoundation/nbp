@@ -31,25 +31,25 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-
 @Controller
 @RequestMapping(value = "/device")
 
-public class DeviceController  {
+public class DeviceController {
+
     private static final Log logger = LogFactory.getLog(DeviceController.class);
-    @Autowired(required=false)
+
+    @Autowired
     private DeviceService deviceService;
     @Autowired
     private VimObjectReferenceService objectReferenceService;
-
 
     public DeviceController() {
         QueryUtil.setObjectReferenceService(objectReferenceService);
     }
 
     /**
-     * @param json
-     * @return
+     * @param json String
+     * @return ResultInfo
      */
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     @ResponseBody
@@ -62,8 +62,8 @@ public class DeviceController  {
     }
 
     /**
-     * @param deviceID
-     * @return
+     * @param deviceID String
+     * @return ResultInfo
      */
     @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
     @ResponseBody
@@ -74,6 +74,10 @@ public class DeviceController  {
         return result;
     }
 
+    /**
+     * @param deviceID String
+     * @return ResultInfo
+     */
     @RequestMapping(value = "/get", method = RequestMethod.GET)
     @ResponseBody
     public ResultInfo get(
@@ -84,9 +88,9 @@ public class DeviceController  {
     }
 
     /**
-     * @param deviceID
-     * @param json
-     * @return
+     * @param deviceID String
+     * @param json String
+     * @return ResultInfo
      */
     @RequestMapping(value = "/update", method = RequestMethod.PUT)
     @ResponseBody
@@ -100,6 +104,20 @@ public class DeviceController  {
         return resultInfo;
     }
 
+    /**
+     * get device list
+     * @return ResultInfo<Object>
+     */
+    @RequestMapping(value = "/getList")
+    @ResponseBody
+    public ResultInfo<Object> getDeviceList() {
+        return deviceService.getList();
+    }
+
+    /**
+     * get device type
+     * @return ResultInfo
+     */
     @RequestMapping(value = "/types", method = RequestMethod.GET)
     @ResponseBody
     public ResultInfo types() {
@@ -119,6 +137,5 @@ public class DeviceController  {
         Object objectReference = objectReferenceService.getReference(objectID);
         return objectReference;
     }
-
 }
 

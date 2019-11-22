@@ -36,7 +36,7 @@
             </fileset>
 
             <fileset dir="..\html\target">
-                <include name="ngc.war"/>
+                <include name="ngc-ui.war"/>
             </fileset>
 
            <fileset dir="${platform.selfDev}">

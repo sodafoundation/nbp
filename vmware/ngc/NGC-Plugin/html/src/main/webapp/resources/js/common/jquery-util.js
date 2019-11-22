@@ -42,7 +42,6 @@ function req(url,data){
 	this.url = url;
 	this.data = data;
 	this.dataType = "";
-	//增大请求的超时时间
 	this.timeout = 30 * 60 * 1000;
 }
 

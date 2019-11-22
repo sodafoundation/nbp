@@ -29,6 +29,8 @@ public interface TaskInfoConst {
         String TASK_CREATE_DATASTORE = "OpenSDS.Storage.Task.CreateDatastore";
 
         String TASK_CHECK_HOST_CONFIG = "OpenSDS.Storage.Task.CheckHostConfig";
+
+        String TASK_EXTNED_LUN = "OpenSDS.Storage.Task.ExtendDatastore";
     }
 
     interface Status {

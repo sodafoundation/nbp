@@ -103,7 +103,7 @@ public class IndexController implements  ServletContextAware {
     }
 
     /**
-     * direct to unregister aciton
+     * direct to unregister action
      * @return
      */
     @RequestMapping(value = "/action", method = RequestMethod.POST, params = "action=unregister")
@@ -147,7 +147,7 @@ public class IndexController implements  ServletContextAware {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + file.getName())
                 // Content-Type
                 .contentType(mediaType)
-                // Contet-Length
+                // Content-Length
                 .contentLength(file.length())
                 .body(resource);
     }

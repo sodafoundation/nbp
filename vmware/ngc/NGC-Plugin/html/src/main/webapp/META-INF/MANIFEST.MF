@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: NGCPlugin-ui
+Bundle-Name: NGC-Plugin-ui
 Bundle-SymbolicName: org.opensds.vmware.ngc.ui
-Bundle-Version: 1.5.50
+Bundle-Version: 1.1.0
 Bundle-Vendor: OpenSDS
 Bundle-ClassPath: .
 Web-ContextPath: vsphere-client/opensds

@@ -19,25 +19,30 @@ import com.vmware.vise.usersession.UserSession;
 import com.vmware.vise.usersession.UserSessionService;
 import org.springframework.core.convert.converter.Converter;
 
-
 public class ServerInfoConverter implements Converter<String, ServerInfo> {
+
     private UserSessionService userSessionService;
 
     public ServerInfoConverter(UserSessionService userSessionService) {
         this.userSessionService = userSessionService;
     }
 
+    /**
+     * convert serviceGuid to ServerInfo
+     * @param serviceGuid String
+     * @return ServerInfo
+     */
     @Override
     public ServerInfo convert(String serviceGuid) {
         UserSession userSession = userSessionService.getUserSession();
         if (userSession == null) {
-            throw new RuntimeException("userSession is null");
+            throw new NullPointerException("userSession is null");
         }
         for (ServerInfo serverInfo : userSession.serversInfo) {
             if (serverInfo.serviceGuid.equalsIgnoreCase(serviceGuid)) {
                 return serverInfo;
             }
         }
-        throw new RuntimeException("Can not find serverInfo");
+        throw new IllegalArgumentException("Can not find serverInfo");
     }
 }

@@ -14,6 +14,9 @@
 
 package org.opensds.vmware.ngc.model;
 
+import org.opensds.vmware.ngc.models.StoragePoolMO;
+import org.opensds.vmware.ngc.util.CapacityUtil;
+
 public class StoragePoolInfo {
 
     public static final String UNKNOW = "";
@@ -46,7 +49,7 @@ public class StoragePoolInfo {
 
     private String consumedCapacity;
 
-    private String consumedCapacityPercentage;
+    private double consumedCapacityPercentage;
 
     private String consumedCapacityThreshold;
 
@@ -79,7 +82,7 @@ public class StoragePoolInfo {
         this.freeCapacity = ZERO;
         this.availableCapacity = ZERO;
         this.consumedCapacity = ZERO;
-        this.consumedCapacityPercentage = ZERO;
+        this.consumedCapacityPercentage = 0;
         this.consumedCapacityThreshold = ZERO;
         this.hotspareTotalCapacity = ZERO;
         this.hotspareConsumedCapacity = ZERO;
@@ -216,11 +219,11 @@ public class StoragePoolInfo {
         return this;
     }
 
-    public String getConsumedCapacityPercentage() {
+    public double getConsumedCapacityPercentage() {
         return consumedCapacityPercentage;
     }
 
-    public StoragePoolInfo setConsumedCapacityPercentage(String consumedCapacityPercentage) {
+    public StoragePoolInfo setConsumedCapacityPercentage(double consumedCapacityPercentage) {
         this.consumedCapacityPercentage = consumedCapacityPercentage;
         return this;
     }
@@ -287,4 +290,18 @@ public class StoragePoolInfo {
         this.sectorSize = sectorSize;
         return this;
     }
+
+    /**
+     * convert storagepoolMo to storagepool info
+     * @param poolMO storagepool mo
+     */
+    public void convertPoolMo2Info(final StoragePoolMO poolMO) {
+        this.setName(poolMO.name)
+                .setId(poolMO.id)
+                .setUsageType(poolMO.type.name())
+                .setTotalCapacity(CapacityUtil.convert512BToCap(poolMO.totalCapacity))
+                .setFreeCapacity(CapacityUtil.convert512BToCap(poolMO.freeCapacity))
+                .setAvailableCapacity(CapacityUtil.convert512BToCap(poolMO.totalCapacity - poolMO.freeCapacity));
+    }
+
 }

@@ -61,7 +61,7 @@ public class VCenterService {
         resultInfo.setErrorCode(chResult.getErrodCode().intValue());
         resultInfo.setErrorDesc(chResult.getErrorDESC());
         if (ErrorCode.SUCCESS.getErrodCode() != chResult.getErrodCode()) {
-            logger.error(String.format("Unreigister error, msg is %s", resultInfo.getErrorCodemsg()));
+            logger.error(String.format("Unregister error, msg is %s", resultInfo.getErrorCodemsg()));
             return resultInfo.setData(false);
         }
         return resultInfo.setData(true);

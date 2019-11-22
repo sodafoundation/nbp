@@ -22,6 +22,10 @@ public class HttpException extends Exception {
         this.httpResponseCode = httpResponseCode;
     }
 
+    public long getHttpResponseCode() {
+        return this.httpResponseCode;
+    }
+
     public String toString() {
         return String.format("HTTP exception with code %d: %s", this.httpResponseCode, super.toString());
     }

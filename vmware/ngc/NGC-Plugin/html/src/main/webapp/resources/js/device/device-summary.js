@@ -9,7 +9,6 @@ function getParam(name) {
 $(document).ready(
     function () {
         makeHelp();
-        //changesize();
         // Namespace shortcut
         var ns = org_opensds_storage_devices;
 
@@ -20,8 +19,6 @@ $(document).ready(
             return;
         }
         // Data url to get System Info
-        //var dataUrl = ns.buildDataSystemUrl(deviceId);
-        // dataUrl = dataUrl + "?t=" + new Date();
         var dataUrl = ns.baseURL + "opensds/rest/device/get?deviceID=" + deviceId;
 
         // Do the actual call now and save as GlobalRefresh handler
@@ -38,7 +35,6 @@ $(document).ready(
                 }
 
                 $("#systemInfoTable").show();
-//                var jsonObj = eval(data);
                 var data = resp.data;
 
                 $("#sys-sn").text(data.sn);
