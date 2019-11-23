@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+	<EventID name="Device discover" severity="green">
+		<EventType>
+			<eventTypeID>org.opensds.vmware.ngc.discover.device</eventTypeID>
+			<description>The infomation is generated when the storage was discover.</description>
+		</EventType>
+	</EventID>
+	<EventID name="Delete device" severity="green">
+		<EventType>
+			<eventTypeID>org.opensds.vmware.ngc.delete.device</eventTypeID>
+			<description>The infomation is generated when the storage was delete.</description>
+		</EventType>
+	</EventID>
+</ROOT>

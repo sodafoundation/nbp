@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} -[%L]- %msg%n"/>
+        </Console>
+        <RollingFile name="RegisterLog" fileName="log/RegisterCenter.log"
+                     filePattern="logs/RegisterCenter-%d{yyyy-MM-dd HH}.log" immediateFlush="true" append="true">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} -[%L] [%M]- %msg%n"/>
+            <SizeBasedTriggeringPolicy size="50MB"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="DEBUG">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RegisterLog" />
+        </Root>
+    </Loggers>
+</Configuration>

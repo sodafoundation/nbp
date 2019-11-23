@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+	<AuthId name="StorageAdmin">
+		<authName>StorageAdmin</authName>
+		<authNaLabelKey>privilege.StorageAdmin.label</authNaLabelKey>
+		<authNaLabelValue>Storage Administrator</authNaLabelValue>
+		<authNaSummaryKey>privilege.StorageAdmin.summary</authNaSummaryKey>
+		<authNaSummaryValue>Set of storage device management permission</authNaSummaryValue>
+		<authId>StorageAdmin.readwrite</authId>
+		<authIdLabelKey>privilege.StorageAdmin.readwrite.label</authIdLabelKey>
+		<authIdLabelValue>Manage Storage Device</authIdLabelValue>
+		<authIdSummaryKey>privilege.StorageAdmin.readwrite.summary</authIdSummaryKey>
+		<authIdSummaryValue>Authorized to use the plug-in to manage storage devices</authIdSummaryValue>
+	</AuthId>
+</ROOT>

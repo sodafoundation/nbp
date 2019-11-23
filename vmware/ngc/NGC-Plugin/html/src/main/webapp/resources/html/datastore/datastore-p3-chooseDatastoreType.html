@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html style="background-color: white">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Choose Datastore Type</title>
+		<style type="text/css">
+			html {
+				background-color: threedface;
+			}
+			
+			input::-ms-clear {
+				display: none;
+			}
+		</style>
+		<script src="../../../assets/jquery-1.10.2.min.js"></script>
+		<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+		<script src="../../../resources/js/common/web-platform.js"></script>
+		<script src="../../../resources/js/common/jquery-util.js"></script>
+		<script type="text/javascript">
+			function GetQueryString(name)
+			{
+				 var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+				 var r = window.location.search.substr(1).match(reg);
+				 if(r!=null)return  unescape(r[2]); return null;
+			}
+			var enterType = GetQueryString("enterType");
+
+			$(document).ready(function() {
+				$("#isCreateDatestore").click(function(){
+					if($(this).is(':checked')){
+						if(eval(parent.supportNFS) == false){
+							$("#nfsDatastoreRadio").hide();
+							$("#nfsDatastoreRadio").next().hide();
+                            parent.datastoreType = $('input[name="dsTypeChoice"]:checked').val();
+						}else{
+							$("#nfsDatastoreRadio").show();
+							$("#nfsDatastoreRadio").next().show();
+						}
+						parent.isCreateDatastore = true;
+						if($("#vmfsDatastoreRadio").is(':checked')){
+							$("#dg_main_left_5", window.parent.document).show();
+							$("#dg_main_left_6", window.parent.document).show();
+							if(enterType=="createDatastoreOrLun"){
+								$("#dg_main_left_7", window.parent.document).html("8 Information Summary");
+							}else{
+								$("#dg_main_left_7", window.parent.document).html("7 Information Summary");
+							}
+						}
+					}else{
+						$("#nfsDatastoreRadio").hide();
+						$("#vmfsDatastoreRadio").prop("checked",true);
+						showSANleftMsg();
+						$("#nfsDatastoreRadio").next().hide();
+						parent.isCreateDatastore = false;
+						if($("#vmfsDatastoreRadio").is(':checked')){
+							$("#dg_main_left_5", window.parent.document).hide();
+							$("#dg_top_5", window.parent.document).hide();
+							$("#dg_main_left_6", window.parent.document).hide();
+							$("#dg_top_6", window.parent.document).hide();
+							if(enterType!="createDatastoreOrLun"){
+								$("#dg_main_left_7", window.parent.document).html("5 Information Summary");
+							}else{
+								$("#dg_main_left_7", window.parent.document).html("6 Information Summary");
+							}
+						}
+					}
+				});
+
+				parent.$("#nextStep").prop("disabled", "disabled");
+				parent.$("#nextStep").css("background","#57C7FF");
+				if(eval(parent.supportNFS) == false){
+					$("#nfsDatastoreRadio").hide();
+					$("#nfsDatastoreRadio").next().hide();
+				}
+				if(parent.isCreateDatastore){
+					if(eval(parent.supportNFS) == false){
+						$("#nfsDatastoreRadio").hide();
+						$("#nfsDatastoreRadio").next().hide();
+                        $("#vmfsDatastoreRadio").attr("checked", "checked");
+                        parent.datastoreType = $('input[name="dsTypeChoice"]:checked').val();
+					}else{
+						$("#nfsDatastoreRadio").show();
+						$("#nfsDatastoreRadio").next().show();
+                        $("#nfsDatastoreRadio").attr("checked", "checked");
+					}
+				} else {
+					$("#isCreateDatestore").removeAttr("checked");
+					$("#nfsDatastoreRadio").hide();
+					$("#nfsDatastoreRadio").next().hide();
+					if(parent.datastoreType == "vmfsDatastore") {
+						$("#vmfsDatastoreRadio").attr("checked", "checked");
+					}
+					parent.isCreateDatastore = false;
+				}
+
+				dealNextStep();
+				$("#vmfsDatastoreRadio").click(function(e) {
+					showSANleftMsg();
+				});
+
+				$("#nfsDatastoreRadio").click(function(e) {
+					showNFSleftMsg();
+				});
+
+			});
+
+			function showSANleftMsg(){
+					$("#dg_main_left_2", window.parent.document).show();
+					$("#dg_main_left_3", window.parent.document).show();
+					$("#dg_main_left_4", window.parent.document).show();
+					$("#dg_main_left_7", window.parent.document).show();
+					$("#dg_main_left_nfs_4", window.parent.document).hide();
+					$("#dg_main_left_nfs_5", window.parent.document).hide();
+					$("#dg_main_left_nfs_6", window.parent.document).hide();
+					$("#dg_main_left_nfs_7", window.parent.document).hide();
+					if(parent.isCreateDatastore) {
+						$("#dg_main_left_5", window.parent.document).show();
+						$("#dg_main_left_6", window.parent.document).show();
+						if(enterType!="createDatastoreOrLun"){
+							$("#dg_main_left_7", window.parent.document).html("7 Information Summary");
+						}else{
+							$("#dg_main_left_7", window.parent.document).html("8 Information Summary");
+						}
+					} else {
+						$("#dg_main_left_5", window.parent.document).hide();
+						$("#dg_main_left_6", window.parent.document).hide();
+						if(enterType!="createDatastoreOrLun"){
+							$("#dg_main_left_7", window.parent.document).html("5 Information Summary");
+						}else{
+							$("#dg_main_left_7", window.parent.document).html("6 Information Summary");
+						}
+					}
+					parent.datastoreType = $('input[name="dsTypeChoice"]:checked').val();
+					dealNextStep();
+			}
+
+			function showNFSleftMsg(){
+					$("#dg_main_left_2", window.parent.document).show();
+					$("#dg_main_left_3", window.parent.document).show();
+					$("#dg_main_left_nfs_4", window.parent.document).show();
+					$("#dg_main_left_nfs_5", window.parent.document).show();
+					$("#dg_main_left_nfs_6", window.parent.document).show();
+					$("#dg_main_left_nfs_7", window.parent.document).show();
+					$("#dg_main_left_4", window.parent.document).hide();
+					$("#dg_main_left_5", window.parent.document).hide();
+					$("#dg_main_left_6", window.parent.document).hide();
+					$("#dg_main_left_7", window.parent.document).hide();
+					parent.datastoreType = $('input[name="dsTypeChoice"]:checked').val();
+					dealNextStep();
+			}
+
+			function dealNextStep() {
+				if(parent.datastoreType != "") {
+					parent.$("#nextStep").prop("disabled", "");
+					parent.$("#nextStep").css("background","#007cbb")
+				} else {
+					parent.$("#nextStep").prop("disabled", "disabled");
+					parent.$("#nextStep").css("background","#57C7FF");
+				}
+			}
+
+		</script>
+	</head>
+
+	<body>
+		<div style="padding-left: 5px;padding-top: 5px;">
+			<table cellspacing="0" cellpadding="1">
+				<tr>
+					<td id="isCreateDatastore" colspan="2" style="padding-left: 2px;font-size:1.1em;font-weight:500;font-family: Tahoma;">Whether to create Datastore</td>
+				</tr>
+				<tr id="chooseBox">
+					<td colspan="2"><br><input id="isCreateDatestore" type="checkbox" checked="checked" style="margin:0px 3px 0 20px;"/>Create Datastore</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td id="chooseType" colspan="2" style="padding-left: 2px;font-size:1.1em;font-weight:500;font-family: Tahoma;"><br>Choose Storage Type </td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<br>
+						<input type="radio" id="vmfsDatastoreRadio" name="dsTypeChoice" value="vmfsDatastore" style="font-size:0.9em;font-weight:500;font-family: Tahoma;margin-left:20px;"><label for="vmfsDatastoreRadio">Block storage type</label><br>
+						<br>
+						<input type="radio" id="nfsDatastoreRadio" name="dsTypeChoice" value="nfsDatastore"style="display:none; font-size:0.9em;font-weight:500;font-family: Tahoma;margin-left:20px;"><label for="nfsDatastoreRadio">NFS storage type</label>
+					</td>
+				</tr>
+				<tr id="error" style="display:none;">
+					<td>
+						<img src="../../../assets/images/red.png" style="vertical-align:bottom;"></img>
+						<span id="pointOutInfo"></span>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</body>
+
+</html>

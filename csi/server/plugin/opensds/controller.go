@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,21 @@
 package opensds
 
 import (
+	"container/list"
+	"errors"
 	"fmt"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	sdscontroller "github.com/opensds/nbp/client/opensds"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/opensds/nbp/csi/util"
-	c "github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
-	"github.com/opensds/opensds/pkg/utils"
 	"github.com/opensds/opensds/pkg/utils/constants"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -43,207 +40,51 @@ import (
 //                            Controller Service                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-var (
-	// Client opensds client
-	Client *c.Client
-)
-
-func init() {
-	Client = sdscontroller.GetClient("", "")
-}
-
-// GetDefaultProfile implementation
-func GetDefaultProfile() (*model.ProfileSpec, error) {
-	profiles, err := Client.ListProfiles()
-	if err != nil {
-		glog.Error("Get default profile failed: ", err)
-		return nil, err
-	}
-
-	for _, profile := range profiles {
-		if profile.Name == "default" {
-			return profile, nil
-		}
-	}
-
-	return nil, status.Error(codes.FailedPrecondition, "No default profile")
-}
-
-// FindVolume implementation
-func FindVolume(req *model.VolumeSpec) (bool, bool, *model.VolumeSpec, error) {
-	isExist := false
-	volumes, err := Client.ListVolumes()
-
-	if err != nil {
-		glog.Error("List volumes failed: ", err)
-
-		return false, false, nil, err
-	}
-
-	for _, volume := range volumes {
-		if volume.Name == req.Name {
-			isExist = true
-
-			if (volume.Size == req.Size) && (volume.ProfileId == req.ProfileId) &&
-				(volume.AvailabilityZone == req.AvailabilityZone) &&
-				(volume.SnapshotId == req.SnapshotId) {
-				glog.V(5).Infof("Volume already exists and is compatible")
-
-				return true, true, volume, nil
-			}
-		}
-	}
-
-	return isExist, false, nil, nil
-}
-
 // CreateVolume implementation
 func (p *Plugin) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest) (
 	*csi.CreateVolumeResponse, error) {
 
-	glog.V(5).Info("start to CreateVolume")
-	defer glog.V(5).Info("end to CreateVolume")
+	glog.V(5).Info("start to create volume")
+	defer glog.V(5).Info("end to create volume")
 
-	// build volume body
-	volumebody := &model.VolumeSpec{}
-	volumebody.Name = req.Name
-	allocationUnitBytes := util.GiB
-	if req.CapacityRange != nil {
-		volumeSizeBytes := int64(req.CapacityRange.RequiredBytes)
-		volumebody.Size = (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
-		if volumebody.Size < 1 {
-			//Using default volume size
-			volumebody.Size = 1
-		}
-	} else {
-		//Using default volume size
-		volumebody.Size = 1
-	}
-	var secondaryAZ = util.OpensdsDefaultSecondaryAZ
-	var enableReplication = false
-	for k, v := range req.GetParameters() {
-		switch strings.ToLower(k) {
-		case KParamProfile:
-			volumebody.ProfileId = v
-		case KParamAZ:
-			volumebody.AvailabilityZone = v
-		case KParamEnableReplication:
-			if strings.ToLower(v) == "true" {
-				enableReplication = true
-			}
-		case KParamSecondaryAZ:
-			secondaryAZ = v
-		}
+	if req.GetName() == "" {
+		msg := "volume name must be provided when creating volume"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	contentSource := req.GetVolumeContentSource()
-	if nil != contentSource {
-		snapshot := contentSource.GetSnapshot()
-		if snapshot != nil {
-			volumebody.SnapshotId = snapshot.GetSnapshotId()
-		}
+	if req.GetVolumeCapabilities() == nil || len(req.GetVolumeCapabilities()) == 0 {
+		msg := "volume capabilities must be provided when creating volume"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
+	}
+	// check input parameters
+	if err := checkInputParameters(req.GetParameters()); err != nil {
+		glog.Error(err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if "" == volumebody.ProfileId {
-		defaultRrf, err := GetDefaultProfile()
-		if err != nil {
-			return nil, err
-		}
-
-		volumebody.ProfileId = defaultRrf.Id
+	if p.PluginStorageType == VolumeStorageType {
+		glog.V(5).Infof("plugin information %#v", p)
+		return p.VolumeClient.CreateVolume(req)
 	}
 
-	if "" == volumebody.AvailabilityZone {
-		volumebody.AvailabilityZone = "default"
-	}
-
-	glog.V(5).Infof("CreateVolume volumebody: %v", volumebody)
-
-	isExist, isCompatible, findVolume, err := FindVolume(volumebody)
-	if err != nil {
-		return nil, err
-	}
-
-	var v *model.VolumeSpec
-
-	if isExist {
-		if isCompatible {
-			v = findVolume
-		} else {
-			return nil, status.Error(codes.AlreadyExists,
-				"Volume already exists but is incompatible")
-		}
-	} else {
-		createVolume, err := Client.CreateVolume(volumebody)
-		if err != nil {
-			isExist, isCompatible, findV, findErr := FindVolume(volumebody)
-			if findErr != nil {
-				return nil, findErr
-			}
-
-			if !(isExist && isCompatible) {
-				glog.Error("failed to CreateVolume", err)
-				return nil, err
-			}
-
-			v = findV
-			glog.V(5).Infof("Although the return failed, it was actually successful. volume = %v", findV)
-		} else {
-			v = createVolume
-		}
-	}
-
-	glog.V(5).Infof("opensds volume = %v", v)
-	// return volume info
-	volumeinfo := &csi.Volume{
-		CapacityBytes: v.Size * allocationUnitBytes,
-		VolumeId:      v.Id,
-		VolumeContext: map[string]string{
-			KVolumeName:      v.Name,
-			KVolumeStatus:    v.Status,
-			KVolumeAZ:        v.AvailabilityZone,
-			KVolumePoolId:    v.PoolId,
-			KVolumeProfileId: v.ProfileId,
-			KVolumeLvPath:    v.Metadata["lvPath"],
-		},
-	}
-
-	glog.V(5).Infof("resp volumeinfo = %v", volumeinfo)
-	if enableReplication && !isExist {
-		volumebody.AvailabilityZone = secondaryAZ
-		volumebody.Name = SecondaryPrefix + req.Name
-		sVol, err := Client.CreateVolume(volumebody)
-		if err != nil {
-			glog.Errorf("failed to create secondar volume: %v", err)
-			return nil, err
-		}
-		replicaBody := &model.ReplicationSpec{
-			Name:              req.Name,
-			PrimaryVolumeId:   v.Id,
-			SecondaryVolumeId: sVol.Id,
-			ReplicationMode:   model.ReplicationModeSync,
-			ReplicationPeriod: 0,
-		}
-		replicaResp, err := Client.CreateReplication(replicaBody)
-		if err != nil {
-			glog.Errorf("Create replication failed: %v", err)
-			return nil, err
-		}
-		volumeinfo.VolumeContext[KVolumeReplicationId] = replicaResp.Id
-	}
-
-	return &csi.CreateVolumeResponse{
-		Volume: volumeinfo,
-	}, nil
+	return p.FileShareClient.CreateFileShare(req)
 }
 
-func getReplicationByVolume(volId string) *model.ReplicationSpec {
-	replications, _ := Client.ListReplications()
-	for _, r := range replications {
-		if volId == r.PrimaryVolumeId || volId == r.SecondaryVolumeId {
-			return r
+func checkInputParameters(params map[string]string) error {
+	if params == nil {
+		return errors.New("input parameters cannot be nil")
+	}
+
+	keyList := []string{ParamProfile, ParamEnableReplication, ParamSecondaryAZ, PublishAttachMode, StorageType}
+
+	for k, _ := range params {
+		if !util.Contained(k, keyList) {
+			return fmt.Errorf("invalid input paramter key: %s. It should be one of %s,%s,%s,%s,%s",
+				k, ParamProfile, ParamEnableReplication, ParamSecondaryAZ, PublishAttachMode, StorageType)
 		}
 	}
 	return nil
@@ -254,33 +95,26 @@ func (p *Plugin) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (
 	*csi.DeleteVolumeResponse, error) {
-	glog.V(5).Info("start to DeleteVolume")
-	defer glog.V(5).Info("end to DeleteVolume")
-	volId := req.VolumeId
 
-	r := getReplicationByVolume(volId)
-	if r != nil {
-		if err := Client.DeleteReplication(r.Id, nil); err != nil {
-			return nil, err
-		}
-		if err := Client.DeleteVolume(r.PrimaryVolumeId, &model.VolumeSpec{}); err != nil {
-			return nil, err
-		}
-		if err := Client.DeleteVolume(r.SecondaryVolumeId, &model.VolumeSpec{}); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := Client.DeleteVolume(volId, &model.VolumeSpec{}); err != nil {
-			return nil, err
-		}
+	glog.V(5).Info("start to delete volume")
+	defer glog.V(5).Info("end to delete volume")
+
+	if req.VolumeId == "" {
+		msg := "volume ID must be provided when deleting volume"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	return &csi.DeleteVolumeResponse{}, nil
+	if p.PluginStorageType == VolumeStorageType {
+		return p.VolumeClient.DeleteVolume(req.VolumeId)
+	}
+
+	return p.FileShareClient.DeleteFileShare(req.VolumeId)
 }
 
 // isStringMapEqual implementation
 func isStringMapEqual(metadataA, metadataB map[string]string) bool {
-	glog.V(5).Infof("start to isStringMapEqual, metadataA = %v, metadataB = %v!",
+	glog.V(5).Infof("start to check if two map structures are equal, metadataA = %v, metadataB = %v!",
 		metadataA, metadataB)
 	if len(metadataA) != len(metadataB) {
 		glog.V(5).Infof("len(metadataA)(%v) != len(metadataB)(%v) ",
@@ -300,243 +134,34 @@ func isStringMapEqual(metadataA, metadataB map[string]string) bool {
 	return true
 }
 
-// isVolumePublished Check if the volume is published and compatible
-func isVolumePublished(canAtMultiNode bool, attachReq *model.VolumeAttachmentSpec,
-	metadata map[string]string) (*model.VolumeAttachmentSpec, error) {
-	glog.V(5).Infof("start to isVolumePublished, canAtMultiNode = %v, attachReq = %v",
-		canAtMultiNode, attachReq)
-
-	attachments, err := Client.ListVolumeAttachments()
-	if err != nil {
-		glog.V(5).Info("ListVolumeAttachments failed: " + err.Error())
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
-
-	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == attachReq.VolumeId {
-			if attachSpec.Host != attachReq.Host {
-				if !canAtMultiNode {
-					msg := fmt.Sprintf("the volume %s has been published to another node and does not have MULTI_NODE volume capability",
-						attachReq.VolumeId)
-					return nil, status.Error(codes.FailedPrecondition, msg)
-				}
-			} else {
-				// Opensds does not have volume_capability and readonly parameters,
-				// but needs to check other parameters to determine compatibility?
-				if attachSpec.Platform == attachReq.Platform &&
-					attachSpec.OsType == attachReq.OsType &&
-					attachSpec.Initiator == attachReq.Initiator &&
-					isStringMapEqual(attachSpec.Metadata, metadata) &&
-					attachSpec.AccessProtocol == attachReq.AccessProtocol {
-					glog.V(5).Info("Volume published and is compatible")
-
-					return attachSpec, nil
-				}
-
-				glog.Error("Volume published but is incompatible, incompatible attachement Id = " + attachSpec.Id)
-				return nil, status.Error(codes.AlreadyExists, "Volume published but is incompatible")
-			}
-		}
-	}
-
-	glog.V(5).Info("Need to create a new attachment")
-	return nil, nil
-}
-
 // ControllerPublishVolume implementation
-func (p *Plugin) ControllerPublishVolume(
-	ctx context.Context,
+func (p *Plugin) ControllerPublishVolume(ctx context.Context,
 	req *csi.ControllerPublishVolumeRequest) (
 	*csi.ControllerPublishVolumeResponse, error) {
 
-	glog.V(5).Info("start to ControllerPublishVolume")
-	defer glog.V(5).Info("end to ControllerPublishVolume")
+	glog.V(5).Info("start to controller publish volume")
+	defer glog.V(5).Info("end to controller publish volume")
 
-	//check volume is exist
-	volSpec, errVol := Client.GetVolume(req.VolumeId)
-	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
-		return nil, status.Error(codes.NotFound, msg)
-	}
-
-	pool, err := Client.GetPool(volSpec.PoolId)
-	if err != nil || pool == nil {
-		msg := fmt.Sprintf("the pool %s is not sxist", volSpec.PoolId)
-		glog.Error(msg)
-		return nil, status.Error(codes.NotFound, msg)
-	}
-
-	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
-	if protocol == "" {
-		// Default protocol is iscsi
-		protocol = "iscsi"
-	}
-
-	var initator string
-	hostName, wwpns, _, iqns := extractInfoFromNodeId(req.NodeId)
-
-	switch protocol {
-	case connector.FcDriver:
-		if len(wwpns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no wwpn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		initator = strings.Join(wwpns, ",")
-		break
-	case connector.IscsiDriver:
-		if len(iqns) <= 0 {
-			msg := fmt.Sprintf("protocol is %v, but no iqn", protocol)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		initator = iqns[0]
-		break
-	case connector.RbdDriver:
-		break
-	default:
-		msg := fmt.Sprintf("protocol cannot be %v", protocol)
+	if req.VolumeId == "" {
+		msg := "volume ID must be provided"
 		glog.Error(msg)
 		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	attachReq := &model.VolumeAttachmentSpec{
-		VolumeId: req.VolumeId,
-		HostInfo: model.HostInfo{
-			Host:      hostName,
-			Platform:  runtime.GOARCH,
-			OsType:    runtime.GOOS,
-			Initiator: initator,
-		},
-		Metadata:       req.VolumeContext,
-		AccessProtocol: protocol,
+	if req.NodeId == "" {
+		msg := "node ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	mode := req.VolumeCapability.AccessMode.Mode
-	canAtMultiNode := false
+	glog.V(5).Infof("plugin information %#v", p)
+	glog.V(5).Infof("current storage type: %s", p.PluginStorageType)
 
-	if csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER == mode ||
-		csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY == mode ||
-		csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER == mode {
-		canAtMultiNode = true
+	if p.PluginStorageType == VolumeStorageType {
+		return p.VolumeClient.ControllerPublishVolume(req)
 	}
 
-	expectedMetadata := utils.MergeStringMaps(attachReq.Metadata, volSpec.Metadata)
-	existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
-	if err != nil {
-		return nil, err
-	}
-
-	var attachSpec *model.VolumeAttachmentSpec
-
-	if nil == existAttachment {
-		newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
-		if errAttach != nil {
-			msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		attachSpec = newAttachment
-	} else {
-		attachSpec = existAttachment
-	}
-
-	resp := &csi.ControllerPublishVolumeResponse{
-		PublishContext: map[string]string{
-			KPublishHostIp:       attachSpec.Ip,
-			KPublishHostName:     attachSpec.Host,
-			KPublishAttachId:     attachSpec.Id,
-			KPublishAttachStatus: attachSpec.Status,
-		},
-	}
-
-	if replicationId, ok := req.VolumeContext[KVolumeReplicationId]; ok {
-		r, err := Client.GetReplication(replicationId)
-		if err != nil {
-			return nil, status.Error(codes.FailedPrecondition, "Get replication failed")
-		}
-
-		attachReq.VolumeId = r.SecondaryVolumeId
-		existAttachment, err := isVolumePublished(canAtMultiNode, attachReq, expectedMetadata)
-		if err != nil {
-			return nil, err
-		}
-
-		if nil == existAttachment {
-			newAttachment, errAttach := Client.CreateVolumeAttachment(attachReq)
-			if errAttach != nil {
-				msg := fmt.Sprintf("the volume %s failed to publish to node %s.", req.VolumeId, req.NodeId)
-				glog.Errorf("failed to ControllerPublishVolume: %v", attachReq)
-				return nil, status.Error(codes.FailedPrecondition, msg)
-			}
-
-			attachSpec = newAttachment
-		} else {
-			attachSpec = existAttachment
-		}
-
-		resp.PublishContext[KPublishSecondaryAttachId] = attachSpec.Id
-	}
-	return resp, nil
-}
-
-func extractInfoFromNodeId(nodeId string) (string, []string, []string, []string) {
-	var hostName string
-	var wwpns []string
-	var wwnns []string
-	var iqns []string
-
-	glog.V(5).Info("nodeId: " + nodeId)
-	hostNameAndInitor := strings.Split(nodeId, ",")
-	hostNameAndInitorLen := len(hostNameAndInitor)
-
-	if hostNameAndInitorLen >= 1 {
-		hostName = hostNameAndInitor[0]
-	}
-
-	var previousParameter string
-	previousIndex := 0
-
-	for i := 1; i < hostNameAndInitorLen; i++ {
-		if strings.HasPrefix(hostNameAndInitor[i], connector.Wwpn+":") {
-			wwpns = append(wwpns, strings.Split(hostNameAndInitor[i], connector.Wwpn+":")[1])
-			previousParameter = connector.Wwpn
-			previousIndex = len(wwpns) - 1
-		} else {
-			if strings.HasPrefix(hostNameAndInitor[i], connector.Wwnn+":") {
-				wwnns = append(wwnns, strings.Split(hostNameAndInitor[i], connector.Wwnn+":")[1])
-				previousParameter = connector.Wwnn
-				previousIndex = len(wwnns) - 1
-			} else {
-				if strings.HasPrefix(hostNameAndInitor[i], connector.Iqn+":") {
-					iqns = append(iqns, strings.Split(hostNameAndInitor[i], connector.Iqn+":")[1])
-					previousParameter = connector.Iqn
-					previousIndex = len(iqns) - 1
-				} else {
-					switch previousParameter {
-					case connector.Wwpn:
-						wwpns[previousIndex] = wwpns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Wwnn:
-						wwnns[previousIndex] = wwnns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					case connector.Iqn:
-						iqns[previousIndex] = iqns[previousIndex] + "," + hostNameAndInitor[i]
-						break
-					default:
-						glog.Error("The format of nodeId is incorrect")
-
-					}
-				}
-
-			}
-		}
-	}
-
-	return hostName, wwpns, wwnns, iqns
+	return p.FileShareClient.ControllerPublishFileShare(req)
 }
 
 // ControllerUnpublishVolume implementation
@@ -545,51 +170,26 @@ func (p *Plugin) ControllerUnpublishVolume(
 	req *csi.ControllerUnpublishVolumeRequest) (
 	*csi.ControllerUnpublishVolumeResponse, error) {
 
-	glog.V(5).Infof("start to ControllerUnpublishVolume, req VolumeId = %v, NodeId = %v, ControllerUnpublishSecrets =%v",
-		req.VolumeId, req.NodeId, req.Secrets)
-	defer glog.V(5).Info("end to ControllerUnpublishVolume")
+	glog.V(5).Infof("start to controller unpublish volume")
+	defer glog.V(5).Info("end to controller unpublish volume")
 
-	//check volume is exist
-	volSpec, errVol := Client.GetVolume(req.VolumeId)
-	if errVol != nil || volSpec == nil {
-		msg := fmt.Sprintf("the volume %s is not exist", req.VolumeId)
-		return nil, status.Error(codes.NotFound, msg)
+	if req.VolumeId == "" {
+		msg := "volume ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	attachments, err := Client.ListVolumeAttachments()
-	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, "Failed to unpublish volume.")
+	if req.NodeId == "" {
+		msg := "node ID must be provided"
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
-	hostName, _, _, _ := extractInfoFromNodeId(req.NodeId)
-	var acts []*model.VolumeAttachmentSpec
-
-	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
-			acts = append(acts, attachSpec)
-		}
+	if p.PluginStorageType == VolumeStorageType {
+		return p.VolumeClient.ControllerUnpublishVolume(req)
 	}
 
-	if r := getReplicationByVolume(req.VolumeId); r != nil {
-		for _, attachSpec := range attachments {
-			if attachSpec.VolumeId == r.SecondaryVolumeId && (req.NodeId == "" || attachSpec.Host == hostName) {
-				acts = append(acts, attachSpec)
-			}
-		}
-	}
-
-	for _, act := range acts {
-		err = Client.DeleteVolumeAttachment(act.Id, act)
-		if err != nil {
-			msg := fmt.Sprintf("the volume %s failed to unpublish from node %s.", req.VolumeId, req.NodeId)
-			glog.Errorf("failed to ControllerUnpublishVolume: %v", err)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		glog.V(5).Infof("attachment %v has been successfully deleted", act.Id)
-	}
-
-	return &csi.ControllerUnpublishVolumeResponse{}, nil
+	return p.FileShareClient.ControllerUnpublishFileShare(req)
 }
 
 // ValidateVolumeCapabilities implementation
@@ -606,40 +206,14 @@ func (p *Plugin) ListVolumes(
 	req *csi.ListVolumesRequest) (
 	*csi.ListVolumesResponse, error) {
 
-	glog.V(5).Info("start to ListVolumes")
-	defer glog.V(5).Info("end to ListVolumes")
+	glog.V(5).Info("start to list volumes")
+	defer glog.V(5).Info("end to list volumes")
 
-	// only support list all the volumes at present
-	volumes, err := Client.ListVolumes()
-	if err != nil {
-		return nil, err
+	if p.PluginStorageType == VolumeStorageType {
+		return p.VolumeClient.ListVolumes(req)
 	}
 
-	ens := []*csi.ListVolumesResponse_Entry{}
-	for _, v := range volumes {
-		if v != nil {
-
-			volumeinfo := &csi.Volume{
-				CapacityBytes: v.Size,
-				VolumeId:      v.Id,
-				VolumeContext: map[string]string{
-					"Name":             v.Name,
-					"Status":           v.Status,
-					"AvailabilityZone": v.AvailabilityZone,
-					"PoolId":           v.PoolId,
-					"ProfileId":        v.ProfileId,
-				},
-			}
-
-			ens = append(ens, &csi.ListVolumesResponse_Entry{
-				Volume: volumeinfo,
-			})
-		}
-	}
-
-	return &csi.ListVolumesResponse{
-		Entries: ens,
-	}, nil
+	return p.FileShareClient.ListFileShares(req)
 }
 
 // GetCapacity implementation
@@ -648,10 +222,10 @@ func (p *Plugin) GetCapacity(
 	req *csi.GetCapacityRequest) (
 	*csi.GetCapacityResponse, error) {
 
-	glog.V(5).Info("start to GetCapacity")
-	defer glog.V(5).Info("end to GetCapacity")
+	glog.V(5).Info("start to get capacity")
+	defer glog.V(5).Info("end to get capacity")
 
-	pools, err := Client.ListPools()
+	pools, err := p.Client.ListPools()
 	if err != nil {
 		return nil, err
 	}
@@ -675,8 +249,8 @@ func (p *Plugin) ControllerGetCapabilities(
 	req *csi.ControllerGetCapabilitiesRequest) (
 	*csi.ControllerGetCapabilitiesResponse, error) {
 
-	glog.V(5).Info("start to ControllerGetCapabilities")
-	defer glog.V(5).Info("end to ControllerGetCapabilities")
+	glog.V(5).Info("start to controller get capabilities")
+	defer glog.V(5).Info("end to controller get capabilities")
 
 	return &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: []*csi.ControllerServiceCapability{
@@ -727,12 +301,12 @@ func (p *Plugin) ControllerGetCapabilities(
 }
 
 // FindSnapshot implementation
-func FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnapshotSpec, error) {
+func (p *Plugin) FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnapshotSpec, error) {
 	isExist := false
-	snapshots, err := Client.ListVolumeSnapshots()
+	snapshots, err := p.Client.ListVolumeSnapshots()
 
 	if err != nil {
-		glog.Error("List volume snapshots failed: ", err)
+		glog.Errorf("list volume snapshots failed: %v", err)
 
 		return false, false, nil, err
 	}
@@ -742,7 +316,7 @@ func FindSnapshot(req *model.VolumeSnapshotSpec) (bool, bool, *model.VolumeSnaps
 			isExist = true
 
 			if (snapshot.VolumeId == req.VolumeId) && (snapshot.ProfileId == req.ProfileId) {
-				glog.V(5).Infof("snapshot already exists and is compatible")
+				glog.V(5).Info("snapshot already exists and is compatible")
 
 				return true, true, snapshot, nil
 			}
@@ -758,16 +332,16 @@ func (p *Plugin) CreateSnapshot(
 	req *csi.CreateSnapshotRequest) (
 	*csi.CreateSnapshotResponse, error) {
 
-	defer glog.V(5).Info("end to CreateSnapshot")
-	glog.V(5).Infof("start to CreateSnapshot, Name: %v, SourceVolumeId: %v, CreateSnapshotSecrets: %v, parameters: %v!",
+	defer glog.V(5).Info("end to create snapshot")
+	glog.V(5).Infof("start to create snapshot, name: %v, source volume id: %v, create snapshot secrets: %v, parameters: %v",
 		req.Name, req.SourceVolumeId, req.Secrets, req.Parameters)
 
 	if 0 == len(req.Name) {
-		return nil, status.Error(codes.InvalidArgument, "Snapshot Name cannot be empty")
+		return nil, status.Error(codes.InvalidArgument, "snapshot name cannot be empty")
 	}
 
 	if 0 == len(req.SourceVolumeId) {
-		return nil, status.Error(codes.InvalidArgument, "Source Volume ID cannot be empty")
+		return nil, status.Error(codes.InvalidArgument, "source volume ID cannot be empty")
 	}
 
 	snapReq := &model.VolumeSnapshotSpec{
@@ -778,14 +352,19 @@ func (p *Plugin) CreateSnapshot(
 	for k, v := range req.GetParameters() {
 		switch strings.ToLower(k) {
 		// TODO: support profile name
-		case KParamProfile:
+		case ParamProfile:
+			if v == "" {
+				msg := "profile id cannot be empty"
+				glog.Error(msg)
+				return nil, status.Error(codes.InvalidArgument, msg)
+			}
 			snapReq.ProfileId = v
 		}
 	}
 
-	glog.Infof("opensds CreateVolumeSnapshot request body: %v", snapReq)
+	glog.Infof("create snapshot request body: %v", snapReq)
 	var snapshot *model.VolumeSnapshotSpec
-	isExist, isCompatible, findSnapshot, err := FindSnapshot(snapReq)
+	isExist, isCompatible, findSnapshot, err := p.FindSnapshot(snapReq)
 
 	if err != nil {
 		return nil, err
@@ -796,19 +375,19 @@ func (p *Plugin) CreateSnapshot(
 			snapshot = findSnapshot
 		} else {
 			return nil, status.Error(codes.AlreadyExists,
-				"Snapshot already exists but is incompatible")
+				"snapshot already exists but is incompatible")
 		}
 	} else {
-		createSnapshot, err := Client.CreateVolumeSnapshot(snapReq)
+		createSnapshot, err := p.Client.CreateVolumeSnapshot(snapReq)
 		if err != nil {
-			glog.Error("failed to CreateVolumeSnapshot", err)
+			glog.Errorf("failed to create volume snapshot: %v", err)
 			return nil, err
 		}
 
 		snapshot = createSnapshot
 	}
 
-	glog.V(5).Infof("opensds snapshot = %v", snapshot)
+	glog.V(5).Infof("snapshot = %v", snapshot)
 	creationTime, err := p.convertStringToPtypesTimestamp(snapshot.CreatedAt)
 	if nil != err {
 		return nil, err
@@ -843,18 +422,20 @@ func (p *Plugin) DeleteSnapshot(
 	req *csi.DeleteSnapshotRequest) (
 	*csi.DeleteSnapshotResponse, error) {
 
-	defer glog.V(5).Info("end to DeleteSnapshot")
-	glog.V(5).Infof("start to DeleteSnapshot, SnapshotId: %v, DeleteSnapshotSecrets: %v!",
+	defer glog.V(5).Info("end to delete snapshot")
+	glog.V(5).Infof("start to delete snapshot, snapshot id: %v, delete snapshot secrets: %v!",
 		req.SnapshotId, req.Secrets)
 
 	if 0 == len(req.SnapshotId) {
-		return nil, status.Error(codes.InvalidArgument, "Snapshot ID cannot be empty")
+		return nil, status.Error(codes.InvalidArgument, "snapshot id cannot be empty")
 	}
 
-	err := Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
+	err := p.Client.DeleteVolumeSnapshot(req.SnapshotId, nil)
 
 	if nil != err {
-		return nil, err
+		msg := fmt.Sprintf("delete snapshot failed: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.Internal, msg)
 	}
 
 	return &csi.DeleteSnapshotResponse{}, nil
@@ -866,14 +447,16 @@ func (p *Plugin) ListSnapshots(
 	req *csi.ListSnapshotsRequest) (
 	*csi.ListSnapshotsResponse, error) {
 
-	defer glog.V(5).Info("end to ListSnapshots")
-	glog.V(5).Infof("start to ListSnapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
+	defer glog.V(5).Info("end to list snapshots")
+	glog.V(5).Infof("start to list snapshots, MaxEntries: %v, StartingToken: %v, SourceVolumeId: %v, SnapshotId: %v!",
 		req.MaxEntries, req.StartingToken, req.SourceVolumeId, req.SnapshotId)
 
 	var opts map[string]string
-	allSnapshots, err := Client.ListVolumeSnapshots(opts)
+	allSnapshots, err := p.Client.ListVolumeSnapshots(opts)
 	if nil != err {
-		return nil, err
+		msg := fmt.Sprintf("failed to list snapshots: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.InvalidArgument, msg)
 	}
 
 	snapshotId := req.GetSnapshotId()
@@ -932,7 +515,7 @@ func (p *Plugin) ListSnapshots(
 		break
 	}
 
-	glog.V(5).Infof("filterResult=%v.", filterResult)
+	glog.V(5).Infof("filter result=%v", filterResult)
 	var sortedKeys []string
 	snapshotsMap := make(map[string]*model.VolumeSnapshotSpec)
 
@@ -956,7 +539,7 @@ func (p *Plugin) ListSnapshots(
 	if v := req.StartingToken; v != "" {
 		i, err := strconv.ParseUint(v, 10, 32)
 		if err != nil {
-			return nil, status.Error(codes.Aborted, "parsing the startingToken failed")
+			return nil, status.Error(codes.Aborted, "parsing the starting token failed")
 		}
 		startingToken = int32(i)
 	}
@@ -1008,4 +591,212 @@ func (p *Plugin) ListSnapshots(
 		Entries:   entries,
 		NextToken: nextToken,
 	}, nil
+}
+
+// AttachmentObj implementation
+type AttachmentObj struct {
+	l *list.List
+	m sync.Mutex
+	r sync.RWMutex
+}
+
+// NewList implementation
+func NewList() *AttachmentObj {
+	return &AttachmentObj{
+		l: list.New(),
+	}
+}
+
+// UnpublishAttachmentList implementation
+var UnpublishAttachmentList *AttachmentObj
+
+// Add implementation
+func (q *AttachmentObj) Add(v interface{}) {
+	if v == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.PushBack(v)
+}
+
+// GetHead implementation
+func (q *AttachmentObj) GetHead() *list.Element {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Front()
+}
+
+// isExist implementation
+func (q *AttachmentObj) isExist(v interface{}) bool {
+	if q.GetLen() == 0 {
+		return false
+	}
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		if e.Value == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Delete implementation
+func (q *AttachmentObj) Delete(e *list.Element) {
+	if e == nil {
+		return
+	}
+	q.m.Lock()
+	defer q.m.Unlock()
+	q.l.Remove(e)
+}
+
+// GetLen implementation
+func (q *AttachmentObj) GetLen() int {
+	q.r.RLock()
+	defer q.r.RUnlock()
+	return q.l.Len()
+}
+
+// PrintList implementation
+func (q *AttachmentObj) PrintList(storageType string) {
+	var attachmentIDList string
+	for e := q.GetHead(); e != nil; e = e.Next() {
+		if storageType == VolumeStorageType {
+			attachmentIDList = attachmentIDList + e.Value.(*model.VolumeAttachmentSpec).Id + ","
+		} else {
+			attachmentIDList = attachmentIDList + e.Value.(*model.FileShareAclSpec).Id + ","
+		}
+	}
+	glog.Infof("the list of attachments in the context is %s", attachmentIDList)
+}
+
+// UnpublishRoutine implementation
+func (p *Plugin) UnpublishRoutine() {
+	UnpublishAttachmentList = NewList()
+	for {
+		listLen := UnpublishAttachmentList.GetLen()
+		if listLen > 0 {
+			var next *list.Element
+			for e := UnpublishAttachmentList.GetHead(); e != nil; e = next {
+				next = e.Next()
+
+				switch e.Value.(type) {
+				// delete volume attachment if storage type is block
+				case *model.VolumeAttachmentSpec:
+					act := e.Value.(*model.VolumeAttachmentSpec)
+
+					if err := p.Client.DeleteVolumeAttachment(act.Id, act); err != nil {
+						glog.Errorf("%s failed to unpublish: %v", act.Id, err)
+					} else {
+						waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
+							return p.Client.GetVolumeAttachment(id)
+						}, e)
+					}
+
+				// delete fileshare access control list if storage type is file
+				case *model.FileShareAclSpec:
+					act := e.Value.(*model.FileShareAclSpec)
+
+					if err := p.Client.DeleteFileShareAcl(act.Id); err != nil {
+						if strings.Contains(err.Error(), "Not Found") {
+							glog.Infof("delete attachment %s successfully", act.Id)
+							UnpublishAttachmentList.Delete(e)
+						} else {
+							glog.Errorf("%s failed to unpublish: %v", act.Id, err)
+						}
+					} else {
+						waitAttachmentDeleted(act.Id, func(id string) (interface{}, error) {
+							return p.Client.GetFileShareAcl(id)
+						}, e)
+					}
+				}
+
+				time.Sleep(10 * time.Second)
+			}
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func waitAttachmentDeleted(id string, f func(string) (interface{}, error), e *list.Element) {
+	ticker := time.NewTicker(2 * time.Second)
+	timeout := time.After(5 * time.Minute)
+
+	for {
+		select {
+		case <-ticker.C:
+			_, err := f(id)
+
+			if err != nil && strings.Contains(err.Error(), "Not Found") {
+				glog.Infof("delete attachment %s successfully", id)
+				UnpublishAttachmentList.Delete(e)
+				return
+			} else {
+				glog.Errorf("delete attachment failed: %v", err)
+			}
+
+		case <-timeout:
+			glog.Errorf("waiting to delete %s timeout", id)
+			return
+		}
+	}
+}
+
+func extractISCSIInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "iqn") {
+			glog.V(5).Infof("ISCSI initiator is %s", v)
+			return v, nil
+		}
+	}
+
+	return "", errors.New("no ISCSI initiators found")
+}
+
+func extractNvmeofInitiatorFromNodeInfo(nodeInfo string) (string, error) {
+        for _, v := range strings.Split(nodeInfo, ",") {
+                if strings.Contains(v, "nqn") {
+                        glog.V(5).Info("Nvmeof initiator is ", v)
+                        return v, nil
+                }
+        }
+
+         return "", errors.New("no Nvmeof initiators found")
+}
+
+func extractFCInitiatorFromNodeInfo(nodeInfo string) ([]string, error) {
+	var wwpns []string
+	for _, v := range strings.Split(nodeInfo, ",") {
+		if strings.Contains(v, "node_name") {
+			wwpns = append(wwpns, strings.Split(v, ":")[1])
+		}
+	}
+
+	if len(wwpns) == 0 {
+		return nil, errors.New("no FC initiators found")
+	}
+
+	glog.V(5).Infof("FC initiators are %s", wwpns)
+
+	return wwpns, nil
+}
+
+func getZone(requirement *csi.TopologyRequirement) string {
+	if requirement == nil {
+		return ""
+	}
+	for _, topology := range requirement.GetPreferred() {
+		zone, exists := topology.GetSegments()[TopologyZoneKey]
+		if exists {
+			return zone
+		}
+	}
+	for _, topology := range requirement.GetRequisite() {
+		zone, exists := topology.GetSegments()[TopologyZoneKey]
+		if exists {
+			return zone
+		}
+	}
+	return ""
 }

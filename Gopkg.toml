@@ -31,7 +31,7 @@
 
 [[override]]
   name = "github.com/golang/protobuf"
-  version = "1.1.0"
+  branch = "master"
 
 [[constraint]]
   name = "golang.org/x/sys"
@@ -43,7 +43,7 @@
 
 [[constraint]]
   name = "github.com/opensds/opensds"
-  version = "0.5.0"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"
@@ -63,7 +63,7 @@
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.10.0"
+  version = "1.17.0"
 
 [[constraint]]
   name = "k8s.io/api"

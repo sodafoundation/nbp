@@ -1,0 +1,41 @@
+<!doctype html>
+<html style="height: 100%;">
+<head>
+<meta charset="utf-8" />
+<title>VirtualMachine View</title>
+<style type="text/css">
+html {
+	overflow-y: auto;
+	overflow-x: auto;
+}
+</style>
+<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css" />
+<link rel="stylesheet" href="../../../assets/css/table.css" />
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript">
+	var moref = "";
+	var serverGuid = "";
+	initParam();
+	function initParam() {
+		var objectId = WEB_PLATFORM.getObjectId();
+		var arr = objectId.split(":");
+		moref = arr[2] + ":" + arr[3];
+		serverGuid = arr[4];
+	}
+</script>
+</head>
+<body style="height: 100%; width: 99%; overflow-y: auto">
+	<table style="height: 98%; width: 100%; min-height: 700px;">
+		<tr>
+			<td style="height: 100%; width: 15%;min-width: 130px; max-width: 200px;">
+				<iframe id="leftFrame" style="height: 100%; width: 100%; border: 0" src="vm-left.html" scrolling="no" frameborder=0></iframe>
+			</td>
+			<td style="height: 100%; padding-left: 11px; padding-right: 11px;">
+				<iframe id="mainFrame" style="height: 100%; width: 100%; border: 0" src="virtualDisks.html" scrolling="no" frameborder=0></iframe>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

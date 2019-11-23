@@ -108,7 +108,8 @@
   revision = "c65c006176ff7ff98bb916961c7abbc6b0afc0aa"
 
 [[projects]]
-  digest = "1:381fdad8817f7dc3e36a62441e87b29251fcf216d93d39a244fda414ce9f1feb"
+  branch = "master"
+  digest = "1:15c3c59c0e964d39008948fdac5114327cabbf2475655ee55083410fe877e0a3"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -120,8 +121,7 @@
     "ptypes/wrappers",
   ]
   pruneopts = "NUT"
-  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
-  version = "v1.2.0"
+  revision = "e91709a02e0e8ff8b86b7aa913fdc9ae9498e825"
 
 [[projects]]
   branch = "master"
@@ -160,8 +160,7 @@
   version = "v0.2.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:3f5485f5f0ea50de409c25414eaf4154bd54b2fa9ef03fc4a0a278967daac906"
+  digest = "1:80230022ab481c6688b237550bc45017d9d2abfc19e4916e2ce344d24f613a6d"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -173,7 +172,7 @@
     "pagination",
   ]
   pruneopts = "NUT"
-  revision = "3a7818a07cfc862267a0b03635075a444c92dcda"
+  revision = "3ad89c4ea008e0e0b729720040b0be25a35d4615"
 
 [[projects]]
   digest = "1:c01767916c59f084bb7c41a7d5877c0f3099b1595cfa066e84ec6ad6b084dd89"
@@ -284,19 +283,23 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:dec06de1c4a04a18f8d352681d89910494de8018982314671857e55af138dbc8"
+  branch = "master"
+  digest = "1:0497cfcd382f257803667b4807c701b10c0c8ed096c1213f11f3bf1e0ed2e0ed"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
     "contrib/connector",
     "contrib/connector/fc",
     "contrib/connector/iscsi",
+    "contrib/connector/nfs",
+    "contrib/connector/nvmeof",
     "contrib/connector/rbd",
+    "contrib/drivers/utils/config",
     "pkg/context",
     "pkg/db/drivers/etcd",
     "pkg/dock/client",
-    "pkg/dock/proto",
     "pkg/model",
+    "pkg/model/proto",
     "pkg/utils",
     "pkg/utils/constants",
     "pkg/utils/logs",
@@ -305,8 +308,7 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "76481a4c6f9b17d8055606ad60b4170cd0962c91"
-  version = "v0.5.0"
+  revision = "089dca690fc4ff6e458421c7d9adf8b5d222f61a"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
@@ -531,25 +533,30 @@
   revision = "31ac5d88444a9e7ad18077db9a165d793ad06a2e"
 
 [[projects]]
-  digest = "1:204b001c4084ad571efefebdb5bcbcf8b973616a49b30c75343deb9c4a9c4b41"
+  digest = "1:2e7dd27ea7dcc06208eb8d813658f561f8ea1dd2719773fb4da023e034b63cef"
   name = "google.golang.org/grpc"
   packages = [
     ".",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
     "codes",
     "connectivity",
     "credentials",
+    "credentials/internal",
     "encoding",
     "encoding/proto",
     "grpclog",
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
+    "internal/binarylog",
     "internal/channelz",
     "internal/envconfig",
     "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
     "internal/transport",
     "keepalive",
     "metadata",
@@ -565,8 +572,8 @@
     "tap",
   ]
   pruneopts = "NUT"
-  revision = "2e463a05d100327ca47ac218281906921038fd95"
-  version = "v1.16.0"
+  revision = "3507fb8e1a5ad030303c106fef3a47c9fdad16ad"
+  version = "v1.19.1"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -977,12 +984,14 @@
     "github.com/opensds/opensds/contrib/connector",
     "github.com/opensds/opensds/contrib/connector/fc",
     "github.com/opensds/opensds/contrib/connector/iscsi",
+    "github.com/opensds/opensds/contrib/connector/nfs",
+    "github.com/opensds/opensds/contrib/connector/nvmeof",
     "github.com/opensds/opensds/contrib/connector/rbd",
     "github.com/opensds/opensds/pkg/context",
     "github.com/opensds/opensds/pkg/db/drivers/etcd",
     "github.com/opensds/opensds/pkg/dock/client",
-    "github.com/opensds/opensds/pkg/dock/proto",
     "github.com/opensds/opensds/pkg/model",
+    "github.com/opensds/opensds/pkg/model/proto",
     "github.com/opensds/opensds/pkg/utils",
     "github.com/opensds/opensds/pkg/utils/constants",
     "github.com/opensds/opensds/pkg/utils/logs",

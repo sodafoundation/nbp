@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2018 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/opensds/opensds/contrib/connector"
 	"google.golang.org/grpc"
-	"path"
 )
 
 // getProtoandAdd return protocal and address
@@ -52,7 +54,7 @@ func GetCSIEndPoint(csiEndpoint string) (string, error) {
 	csiEndpoint = strings.TrimSpace(csiEndpoint)
 
 	if csiEndpoint == "" {
-		err := errors.New("CSIEndpoint is empty")
+		err := errors.New("csi endpoint is empty")
 		log.Fatalf("%v", err)
 		return csiEndpoint, err
 	}
@@ -103,4 +105,46 @@ func GetCSIClientConn(csiEndpoint string) (*grpc.ClientConn, error) {
 
 	// Set up a connection to the server
 	return grpc.DialContext(ctx, target, dialOpts...)
+}
+
+// IsSupportPotocol ...
+func IsSupportProtocol(protocol string) bool {
+	supportProtocols := [...]string{connector.FcDriver, connector.IscsiDriver,connector.NvmeofDriver}
+	for _, v := range supportProtocols {
+		if strings.ToLower(protocol) == v {
+			return true
+		}
+	}
+	return false
+}
+
+// IsSupportFstype ...
+func IsSupportFstype(fstype string) bool {
+	supportFstypes := [...]string{"ext2", "ext3", "ext4", "cramfs", "minix", ""}
+	for _, v := range supportFstypes {
+		if strings.ToLower(fstype) == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Contained ...
+func Contained(obj, target interface{}) bool {
+	targetValue := reflect.ValueOf(target)
+	switch reflect.TypeOf(target).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < targetValue.Len(); i++ {
+			if targetValue.Index(i).Interface() == obj {
+				return true
+			}
+		}
+	case reflect.Map:
+		if targetValue.MapIndex(reflect.ValueOf(obj)).IsValid() {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
 }

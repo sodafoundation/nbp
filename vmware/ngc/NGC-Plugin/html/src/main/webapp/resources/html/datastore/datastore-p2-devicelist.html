@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Device List</title>
+<link rel="stylesheet" href="../../../assets/css/jquery-ui-1.10.3.marge.css" />
+<link rel="stylesheet" href="../../../assets/css/table.css" />
+<link rel="stylesheet" href="../../../assets/css/style.css" />
+<link rel="stylesheet" href="../../../assets/css/icstyle.css" />
+<link rel="stylesheet" href="../../../assets/css/jquery.tablesorter.pager.css" />
+<link rel="stylesheet" href="../../../assets/css/jqtree.css" />
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script src="../../../resources/js/common/jquery-util.js"></script>
+<style type="text/css">
+table thead tr th,table tbody tr td {
+	white-space: nowrap;
+}
+</style>
+<script type="text/javascript">
+	var rowIndex = "";
+	var ns = org_opensds_storage_devices;
+
+	$(document).ready(function() {
+		refreshData();
+	});
+
+	function refreshData() {
+		$("#divLoadingAlarm").css("display", "block");
+		var url = ns.webContextPath + "/rest/device/getList?t=" + new Date();
+		$.getJSON(encodeURI(url), function(resp) {
+			$("#divLoadingAlarm").css("display", "none");
+			var tbody = document.getElementById("tbody_device");
+			var arr = eval(resp.data);
+			for ( var i = 0; i < arr.length; i++) {
+				var jsonObj = arr[i];
+				var tr = document.createElement("tr");
+				var td0 = tr.insertCell(0);
+				td0.align = "center";
+				var td1 = tr.insertCell(1);
+				td1.align = "left";
+				var td2 = tr.insertCell(2);
+				td2.align = "left";
+				var td3 = tr.insertCell(3);
+				td3.align = "left";
+				var td4 = tr.insertCell(4);
+				td4.align = "left";
+				var td5 = tr.insertCell(5);
+				td5.align = "left";
+				td5.style.display = "none";
+				var td6 = tr.insertCell(6);
+				td6.align = "left";
+				td6.style.display = "none";
+				var td7 = tr.insertCell(7);
+				td7.align = "left";
+				td7.style.display = "none";
+				td0.innerHTML = '<input type="radio" id="radio_dev" name="select_dev"  style="vertical-align:middle;"/>';
+				td1.innerHTML = jsonObj.deviceName;
+				td2.innerHTML = jsonObj.deviceModel;
+				td3.innerHTML = jsonObj.ip;
+				td4.innerHTML = jsonObj.sn;
+				td5.innerHTML = jsonObj.uid;
+				td6.innerHTML = jsonObj.deviceType;
+				td7.innerHTML = jsonObj.supportNFS;
+				td1.title = jsonObj.deviceName;
+				td2.title = jsonObj.deviceModel;
+				td3.title = jsonObj.ip;
+				td4.title = jsonObj.sn;
+				td5.title = jsonObj.uid;
+				td6.title = jsonObj.deviceType;
+				td7.title = jsonObj.supportNFS;
+				
+				tbody.appendChild(tr);
+			}
+			isDeviceSelected();
+			deviceClickEvent();
+		});
+	}
+
+	function isDeviceSelected() {
+		$("#deviceList tr").each(function() {
+			var text = $(this).find('td:eq(3)').text();
+			if(""!=text){
+				text="urn:vri:opensds:Storage:"+ text;
+			}
+			if ("" != text && text == parent.deviceId) {
+				$(this).find("td").css("background-color","#abcefc");
+				$("input[name='select_dev']").prop("checked", false);
+				$(this).find("#radio_dev").prop("checked",true);
+				parent.$("#nextStep").prop("disabled", "");
+				parent.$("#nextStep").css("background","#007cbb");
+				rowIndex = this.rowIndex;
+			}
+		});
+	}
+
+	function deviceClickEvent() {
+		$("#deviceList tr:gt(0)").bind("click", function(event) {
+			$(this).find("td").css("background-color","#abcefc");
+			$("input[name='select_dev']").prop("checked", false);
+			$(this).find("#radio_dev").prop("checked",true);
+
+			$("#deviceList tr:gt(0)").not($(this)).find("td").css("background-color","#FFFFFF");
+
+			parent.deviceName = $(this).find('td:eq(1)').text();
+			parent.deviceIp = $(this).find('td:eq(3)').text();
+			parent.deviceId = $(this).find('td:eq(5)').text();
+			parent.deviceType = $(this).find('td:eq(6)').text();
+			parent.supportNFS = false;
+			parent.$("#nextStep").prop("disabled", "");
+			parent.$("#nextStep").css("background","#007cbb");
+			if (this.rowIndex != "" && rowIndex != this.rowIndex) {
+				parent.storagePoolId = "";
+				parent.storagePoolName = "";
+				parent.license = true;
+				parent.produceDefaultName = false;
+			}
+		});
+	}
+</script>
+	<style type="text/css">
+	#deviceDiv table th{
+	border-right: 0px;
+	border-left: 0px;
+	border-bottom: 2px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #D9D9D9;
+	background: linear-gradient(#FFFFFF 0%,#FFFFFF 15%,#D9D9D9 15%, #D9D9D9 85%,#FFFFFF 85%,#FFFFFF 100%)no-repeat;
+	background-size:1px 100%;
+	}
+	#deviceDiv table th[title="Name"]{
+	//background:white;
+	}
+	#deviceDiv table td{
+	border-bottom: 1px solid #D9D9D9;
+	border-left: 0px;
+	border-right: 0px;
+	border-top: 0px;
+	}
+	</style>
+</head>
+<body>
+	<div style="height: 99.5%;margin-left: 14px;margin-right: 20px;">
+		<div
+			style="height: 100%; border-width: 0px; border-color: #D9D9D9; border-style: solid;">
+
+			<div id="deviceDiv"
+				style="height: 99.5%; border-width: 1px; border-color: #D9D9D9; border-style: solid;">
+				<table id="deviceList" class="tablesorter" style="table-layout: fixed;">
+					<thead class="tableHead">
+						<tr>
+							<th  width="5%" align="center" style="background:none;"><input type="radio" id="rad_dev2" name="select_dev" style="vertical-align:middle;" disabled /></th>
+							<th title="Name" width="23%" align="center">Name</th>
+							<th title="Type" width="15%" align="center">Model</th>
+							<th title="IP Address" width="22%" align="center">IP Address</th>
+							<th title="SN" width="35%" align="center">SN</th>
+						</tr>
+					</thead>
+					<tbody id="tbody_device"></tbody>
+				</table>
+				<div id="divLoadingAlarm" class="loading_font"
+					style="width: 100%; height: 95%;/*position: absolute;*/ top: 35px; left: 0px; background-color: #FFF; display: none;">
+					<span style="width: 0; height: 100%; display: inline-block; vertical-align: middle;"></span>loading
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

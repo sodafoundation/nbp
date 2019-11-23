@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2018 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import (
 	"github.com/astaxie/beego"
 	bctx "github.com/astaxie/beego/context"
 	log "github.com/golang/glog"
-	c "github.com/opensds/opensds/client"
 	"github.com/opensds/nbp/cindercompatibleapi/converter"
+	c "github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/pkg/utils/constants"
 )
 
@@ -84,10 +84,10 @@ func Run(cinderEndpoint string) {
 		break
 	case c.Noauth:
 		cfg.AuthOptions = c.LoadNoAuthOptionsFromEnv()
-		opensdsClient = c.NewClient(cfg)
+		opensdsClient, _ = c.NewClient(cfg)
 	default:
 		cfg.AuthOptions = c.NewNoauthOptions(constants.DefaultTenantId)
-		opensdsClient = c.NewClient(cfg)
+		opensdsClient, _ = c.NewClient(cfg)
 	}
 
 	ns :=
@@ -138,13 +138,13 @@ func NewClient(ctx *bctx.Context) {
 		if "/" == reqURL {
 			cfg := &c.Config{Endpoint: opensdsEndpoint}
 			cfg.AuthOptions = c.LoadNoAuthOptionsFromEnv()
-			opensdsClient = c.NewClient(cfg)
+			opensdsClient, _ = c.NewClient(cfg)
 		} else {
 			tenantId := GetProjectId(reqURL)
 			tokenID := ctx.Input.Header(constants.AuthTokenHeader)
 			log.V(5).Info("TenantId:" + tenantId + ", " + "TokenID:" + tokenID + "!!!")
 
-			r := &c.KeystoneReciver{Auth: &c.KeystoneAuthOptions{TenantID: tokenID,
+			r := &c.KeystoneReceiver{Auth: &c.KeystoneAuthOptions{TenantID: tokenID,
 				TokenID: tokenID}}
 
 			opensdsClient = &c.Client{

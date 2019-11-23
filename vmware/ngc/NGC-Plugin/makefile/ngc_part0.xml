@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project name="ngc-plugin" basedir="" default="main">
+    <property name="root" value="../"/>
+    <property name="NGC_DIR" value="../../NGC-Register/ngcplugin"/>
+    <property name="OPENSDS_NGC_DIR" value="${NGC_DIR}/opensds-ngc"/>
+    <property environment="env"/>
+    <property name="VSPHERE_SDK_HOME" value="${env.VSPHERE_SDK_HOME}"/>
+    <property name="platform.selfDev" value="${root}/lib"/>
+
+    <target name="init">
+        <echo message="init, mkdir"/>
+        <mkdir dir="${NGC_DIR}"/>
+        <mkdir dir="${OPENSDS_NGC_DIR}"/>
+        <mkdir dir="${OPENSDS_NGC_DIR}\plugins"/>
+    </target>
+
+    <target name="build-java" depends="init">
+        <echo message="build「NGCPlugin-service」！"/>
+        <ant dir="${root}" antfile="build-java.xml"/>
+    </target>
+    <target name="build-resources" depends="build-java">
+        <echo message="build「NGCPlugin-html_build-resources」！"/>
+        <ant dir="..\html" antfile="build-resources.xml"/>
+    </target>
+
+    <target name="build-war" depends="build-java">
+        <echo message="build「NGCPlugin-html_build-war」！"/>
+        <ant dir="..\html" antfile="build-war.xml"/>
+    </target>
+
+    <target name="copy" depends="build-war">
+        <echo message="copy！"/>
+        <copy todir="${OPENSDS_NGC_DIR}\plugins">
+            <fileset dir="..\target">
+                <include name="ngc-services.jar"/>
+            </fileset>
+
+            <fileset dir="..\html\target">
+                <include name="ngc-ui.war"/>
+            </fileset>
+
+           <fileset dir="${platform.selfDev}">
+                <include name="ngc-adapter-manager.jar"/>
+            </fileset>
+
+            <fileset dir="${VSPHERE_SDK_HOME}\libs">
+                <include name="vim25.jar"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${OPENSDS_NGC_DIR}">
+            <fileset dir="..\config">
+                <include name="plugin-package.xml"/>
+            </fileset>
+        </copy>
+    </target>
+
+
+    <target name="zip-opensds-ngc" depends="copy">
+        <echo message="zip opensds-ngc.zip!"/>
+        <zip destfile="${NGC_DIR}/opensds-ngc.zip"
+             basedir="${OPENSDS_NGC_DIR}" includes="**"></zip>
+    </target>
+
+    <target name="clean" depends="zip-opensds-ngc">
+        <delete dir="${OPENSDS_NGC_DIR}"/>
+    </target>
+
+    <target name="main" depends="clean">
+        <echo message="success to build ngc plugin！"/>
+    </target>
+
+</project>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+	<EventID name="发现设备" severity="green">
+		<EventType>
+			<eventTypeID>org.opensds.vmware.ngc.discover.device</eventTypeID>
+			<description>当发现设备时，产生此信息。</description>
+		</EventType>
+	</EventID>
+	<EventID name="移除设备" severity="green">
+		<EventType>
+			<eventTypeID>org.opensds.vmware.ngc.delete.device</eventTypeID>
+			<description>当移除设备时，产生此信息。</description>
+		</EventType>
+	</EventID>
+</ROOT>

@@ -1,3 +1,0 @@
-name: service-broker
-description: opensds-provided service-broker deployment Helm chart.
-version: 0.0.1

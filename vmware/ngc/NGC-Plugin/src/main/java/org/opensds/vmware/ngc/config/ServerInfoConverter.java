@@ -1,0 +1,48 @@
+// Copyright 2019 The OpenSDS Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
+package org.opensds.vmware.ngc.config;
+
+import com.vmware.vise.usersession.ServerInfo;
+import com.vmware.vise.usersession.UserSession;
+import com.vmware.vise.usersession.UserSessionService;
+import org.springframework.core.convert.converter.Converter;
+
+public class ServerInfoConverter implements Converter<String, ServerInfo> {
+
+    private UserSessionService userSessionService;
+
+    public ServerInfoConverter(UserSessionService userSessionService) {
+        this.userSessionService = userSessionService;
+    }
+
+    /**
+     * convert serviceGuid to ServerInfo
+     * @param serviceGuid String
+     * @return ServerInfo
+     */
+    @Override
+    public ServerInfo convert(String serviceGuid) {
+        UserSession userSession = userSessionService.getUserSession();
+        if (userSession == null) {
+            throw new NullPointerException("userSession is null");
+        }
+        for (ServerInfo serverInfo : userSession.serversInfo) {
+            if (serverInfo.serviceGuid.equalsIgnoreCase(serviceGuid)) {
+                return serverInfo;
+            }
+        }
+        throw new IllegalArgumentException("Can not find serverInfo");
+    }
+}

@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+    <TaskId name="OpenSDS.Storage.Task.QueryInitiator">
+        <taskId>OpenSDS.Storage.Task.QueryInitiator</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryInitiator.label</taskLabelKey>
+        <taskLabelValue>扫描启动器</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryInitiator.summary</taskSummaryKey>
+        <taskSummaryValue>扫描启动器</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateHost">
+        <taskId>OpenSDS.Storage.Task.CreateHost</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateHost.label</taskLabelKey>
+        <taskLabelValue>创建主机</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateHost.summary</taskSummaryKey>
+        <taskSummaryValue>创建主机</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddInitiatorToHost">
+        <taskId>OpenSDS.Storage.Task.AddInitiatorToHost</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddInitiatorToHost.label</taskLabelKey>
+        <taskLabelValue>增加启动器到主机</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddInitiatorToHost.summary</taskSummaryKey>
+        <taskSummaryValue>增加启动器到主机</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateHostGroup">
+        <taskId>OpenSDS.Storage.Task.CreateHostGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateHostGroup.label</taskLabelKey>
+        <taskLabelValue>创建主机组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateHostGroup.summary</taskSummaryKey>
+        <taskSummaryValue>创建主机组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.QueryHostGroup">
+        <taskId>OpenSDS.Storage.Task.QueryHostGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryHostGroup.label</taskLabelKey>
+        <taskLabelValue>扫描主机组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryHostGroup.summary</taskSummaryKey>
+        <taskSummaryValue>扫描主机组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddHostToHostGroup">
+        <taskId>OpenSDS.Storage.Task.AddHostToHostGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddHostToHostGroup.label</taskLabelKey>
+        <taskLabelValue>增加主机到主机组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddHostToHostGroup.summary</taskSummaryKey>
+        <taskSummaryValue>增加主机到主机组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateLun">
+        <taskId>OpenSDS.Storage.Task.CreateLun</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateLun.label</taskLabelKey>
+        <taskLabelValue>创建LUN</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateLun.summary</taskSummaryKey>
+        <taskSummaryValue>创建LUN</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateLunGroup">
+        <taskId>OpenSDS.Storage.Task.CreateLunGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateLunGroup.label</taskLabelKey>
+        <taskLabelValue>创建LUN组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateLunGroup.summary</taskSummaryKey>
+        <taskSummaryValue>创建LUN组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.QueryLunGroup">
+        <taskId>OpenSDS.Storage.Task.QueryLunGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryLunGroup.label</taskLabelKey>
+        <taskLabelValue>扫描LUN组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryLunGroup.summary</taskSummaryKey>
+        <taskSummaryValue>扫描LUN组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddLunToLunGroup">
+        <taskId>OpenSDS.Storage.Task.AddLunToLunGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddLunToLunGroup.label</taskLabelKey>
+        <taskLabelValue>增加LUN到LUN组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddLunToLunGroup.summary</taskSummaryKey>
+        <taskSummaryValue>增加LUN到LUN组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddLunToHostGroup">
+        <taskId>OpenSDS.Storage.Task.AddLunToHostGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddLunToHostGroup.label</taskLabelKey>
+        <taskLabelValue>增加LUN到主机组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddLunToHostGroup.summary</taskSummaryKey>
+        <taskSummaryValue>增加LUN到主机组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateMappingView">
+        <taskId>OpenSDS.Storage.Task.CreateMappingView</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateMappingView.label</taskLabelKey>
+        <taskLabelValue>创建映射视图</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateMappingView.summary</taskSummaryKey>
+        <taskSummaryValue>创建映射视图</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.QueryMappingView">
+        <taskId>OpenSDS.Storage.Task.QueryMappingView</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryMappingView.label</taskLabelKey>
+        <taskLabelValue>扫描映射视图</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryMappingView.summary</taskSummaryKey>
+        <taskSummaryValue>扫描映射视图</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddHostGroupToMappingView">
+        <taskId>OpenSDS.Storage.Task.AddHostGroupToMappingView</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddHostGroupToMappingView.label</taskLabelKey>
+        <taskLabelValue>增加主机组到映射视图</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddHostGroupToMappingView.summary</taskSummaryKey>
+        <taskSummaryValue>增加主机组到映射视图</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.AddLunGroupToMappingView">
+        <taskId>OpenSDS.Storage.Task.AddLunGroupToMappingView</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.AddLunGroupToMappingView.label</taskLabelKey>
+        <taskLabelValue>增加LUN组到映射视图</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.AddLunGroupToMappingView.summary</taskSummaryKey>
+        <taskSummaryValue>增加LUN组到映射视图</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.ComputeLunInfo">
+        <taskId>OpenSDS.Storage.Task.ComputeLunInfo</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.ComputeLunInfo.label</taskLabelKey>
+        <taskLabelValue>检测LUN是否存在</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.ComputeLunInfo.summary</taskSummaryKey>
+        <taskSummaryValue>检测LUN是否存在</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.InitializeConnection">
+        <taskId>OpenSDS.Storage.Task.InitializeConnection</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.InitializeConnection.label</taskLabelKey>
+        <taskLabelValue>初始化连接</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.InitializeConnection.summary</taskSummaryKey>
+        <taskSummaryValue>初始化连接</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.Heartbeat">
+        <taskId>OpenSDS.Storage.Task.Heartbeat</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.Heartbeat.label</taskLabelKey>
+        <taskLabelValue>心跳连接</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.Heartbeat.summary</taskSummaryKey>
+        <taskSummaryValue>心跳连接</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.QueryLunGroupByLun">
+        <taskId>OpenSDS.Storage.Task.QueryLunGroupByLun</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryLunGroupByLun.label</taskLabelKey>
+        <taskLabelValue>查询LUN所在的LUN组</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryLunGroupByLun.summary</taskSummaryKey>
+        <taskSummaryValue>查询LUN所在的LUN组</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.RmvLunFromLunGroup">
+        <taskId>OpenSDS.Storage.Task.RmvLunFromLunGroup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.RmvLunFromLunGroup.label</taskLabelKey>
+        <taskLabelValue>将LUN从LUN组中移除</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.RmvLunFromLunGroup.summary</taskSummaryKey>
+        <taskSummaryValue>将LUN从LUN组中移除</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.Backup">
+        <taskId>OpenSDS.Storage.Task.Backup</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.Backup.label</taskLabelKey>
+        <taskLabelValue>备份</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.Backup.summary</taskSummaryKey>
+        <taskSummaryValue>备份</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.DeleteSnapshot">
+        <taskId>OpenSDS.Storage.Task.DeleteSnapshot</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.DeleteSnapshot.label</taskLabelKey>
+        <taskLabelValue>删除快照</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.DeleteSnapshot.summary</taskSummaryKey>
+        <taskSummaryValue>删除快照</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.Recovery">
+        <taskId>OpenSDS.Storage.Task.Recovery</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.Recovery.label</taskLabelKey>
+        <taskLabelValue>恢复</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.Recovery.summary</taskSummaryKey>
+        <taskSummaryValue>恢复</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.QueryAvailableDisksForVmfs">
+        <taskId>OpenSDS.Storage.Task.QueryAvailableDisksForVmfs</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.QueryAvailableDisksForVmfs.label</taskLabelKey>
+        <taskLabelValue>查询LUN是否可用于扩容</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.QueryAvailableDisksForVmfs.summary</taskSummaryKey>
+        <taskSummaryValue>查询LUN是否可用于扩容</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.MountLunToESXiHost">
+        <taskId>OpenSDS.Storage.Task.MountLunToESXiHost</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.MountLunToESXiHost.label</taskLabelKey>
+        <taskLabelValue>挂载完成</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.MountLunToESXiHost.summary</taskSummaryKey>
+        <taskSummaryValue>挂载完成</taskSummaryValue>
+    </TaskId>
+
+    <TaskId name="OpenSDS.Storage.Task.CreateFS">
+        <taskId>OpenSDS.Storage.Task.CreateFS</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateFS.label</taskLabelKey>
+        <taskLabelValue>创建文件系统</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateFS.summary</taskSummaryKey>
+        <taskSummaryValue>创建文件系统</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateHostEntityOnStorage">
+        <taskId>OpenSDS.Storage.Task.CreateHostEntityOnStorage</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateHostEntityOnStorage.label</taskLabelKey>
+        <taskLabelValue>在存储上创建主机实例</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateHostEntityOnStorage.summary</taskSummaryKey>
+        <taskSummaryValue>在存储上创建主机实例</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.MountNFSDatastore">
+        <taskId>OpenSDS.Storage.Task.MountNFSDatastore</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.MountNFSDatastore.label</taskLabelKey>
+        <taskLabelValue>挂载NFS数据存储</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.MountNFSDatastore.summary</taskSummaryKey>
+        <taskSummaryValue>挂载NFS数据存储，创建NFS数据存储的第三步</taskSummaryValue>
+    </TaskId>
+
+    <!--New-->
+    <TaskId name="OpenSDS.Storage.Task.MountLunToHost">
+        <taskId>OpenSDS.Storage.Task.MountLunToHost</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.MountLunToHost.label</taskLabelKey>
+        <taskLabelValue>挂载Lun到主机</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.MountLunToHost.summary</taskSummaryKey>
+        <taskSummaryValue>挂载Lun到主机</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.UnmountLunFromHost">
+        <taskId>OpenSDS.Storage.Task.UnmountLunFromHost</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.UnmountLunFromHost.label</taskLabelKey>
+        <taskLabelValue>从主机卸载Lun</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.UnmountLunFromHost.summary</taskSummaryKey>
+        <taskSummaryValue>从主机卸载Lun</taskSummaryValue>
+    </TaskId>
+
+    <TaskId name="OpenSDS.Storage.Task.CreateFileSystem">
+        <taskId>OpenSDS.Storage.Task.CreateFileSystem</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateFileSystem.label</taskLabelKey>
+        <taskLabelValue>创建文件系统</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateFileSystem.summary</taskSummaryKey>
+        <taskSummaryValue>创建文件系统</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateNFSShare">
+        <taskId>OpenSDS.Storage.Task.CreateNFSShare</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateNFSShare.label</taskLabelKey>
+        <taskLabelValue>创建NFS共享</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateNFSShare.summary</taskSummaryKey>
+        <taskSummaryValue>创建NFS共享</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.SetNFSSharePermission">
+        <taskId>OpenSDS.Storage.Task.SetNFSSharePermission</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.SetNFSSharePermission.label</taskLabelKey>
+        <taskLabelValue>设置共享权限</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.SetNFSSharePermission.summary</taskSummaryKey>
+        <taskSummaryValue>设置共享权限</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.DeleteNFSFilesystem">
+        <taskId>OpenSDS.Storage.Task.DeleteNFSFilesystem</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.DeleteNFSFilesystem.label</taskLabelKey>
+        <taskLabelValue>删除文件系统</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.DeleteNFSFilesystem.summary</taskSummaryKey>
+        <taskSummaryValue>删除文件系统</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.DeleteNFSShare">
+        <taskId>OpenSDS.Storage.Task.DeleteNFSShare</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.DeleteNFSShare.label</taskLabelKey>
+        <taskLabelValue>删除NFS共享</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.DeleteNFSShare.summary</taskSummaryKey>
+        <taskSummaryValue>删除NFS共享</taskSummaryValue>
+    </TaskId>
+    <!-- d00456872 add-->
+    <TaskId name="OpenSDS.Storage.Task.DeleteLun">
+        <taskId>OpenSDS.Storage.Task.DeleteLun</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.DeleteLun.label</taskLabelKey>
+        <taskLabelValue>删除LUN</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.DeleteLun.summary</taskSummaryKey>
+        <taskSummaryValue>删除LUN</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.DetachLun">
+        <taskId>OpenSDS.Storage.Task.DetachLun</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.DetachLun.label</taskLabelKey>
+        <taskLabelValue>从LUN组中移除LUN</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.DetachLun.summary</taskSummaryKey>
+        <taskSummaryValue>从LUN组中移除LUN</taskSummaryValue>
+    </TaskId>
+    <TaskId name="OpenSDS.Storage.Task.CreateDatastore">
+        <taskId>OpenSDS.Storage.Task.CreateDatastore</taskId>
+        <taskLabelKey>OpenSDS.Storage.Task.CreateDatastore.label</taskLabelKey>
+        <taskLabelValue>创建Datastore</taskLabelValue>
+        <taskSummaryKey>OpenSDS.Storage.Task.CreateDatastore.summary</taskSummaryKey>
+        <taskSummaryValue>创建Datastore</taskSummaryValue>
+    </TaskId>
+</ROOT>

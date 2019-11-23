@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<plugin id="org.opensds.vmware.ngc" defaultBundle="org_opensds_storage_devices">
+
+   <resources>
+      <resource locale="{locale}">
+         <module uri="locales/ngc-ui-{locale}.swf"/>
+      </resource>
+   </resources>
+
+   <dependencies>
+	  <!-- Allow HTML Client to display plugin icons in menus, shortcuts, object lists -->
+	  <dependency type="css" uri="opensds/assets/css/plugin-icons.css" />
+   </dependencies>
+
+   <!-- Add a "Chassis App" node to the Virtual Infrastructure view of the LHS
+   object navigator. This category node is used below for the chassis collection -->
+   <extension id="org.opensds.vmware.ngc.device.chassisAppCategory">
+      <extendedPoint>vise.navigator.nodespecs</extendedPoint>
+      <object>
+         <title>#{chassisAppCategory}</title>
+         <parentUid>vsphere.core.navigator.virtualInfrastructure</parentUid>
+      </object>
+   </extension>
+
+   <!-- Chassis objects collection template,
+   which creates the Chassis collection node
+    in the inventory under "Chassis App".
+
+   Variables:
+      - namespace: The namespace used in the extension points and extension ids,
+         it must be different than the one in vsphere.core.inventory.objectViewTemplate!
+      - title: resourceId of the title of the collection.
+      - icon: resourceId of the icon to use in the inventory list.
+      - objectType: the same object type as in objectViewTemplate above.
+      - listViewId: extension id of the object list view created by objectViewTemplate
+      - parentUid: extension id of the category node under which this belongs.
+   -->
+   <templateInstance id="org.opensds.vmware.ngc.lists.allDevice">
+      <templateId>vsphere.core.inventorylist.objectCollectionTemplate</templateId>
+      <variable name="namespace" value="org.opensds.vmware.ngc.device_collection"/>
+      <variable name="title" value="#{chassisLabel}"/>
+      <variable name="icon" value="#{chassis}"/>
+      <variable name="objectType" value="opensds:Storage"/>
+      <variable name="listViewId" value="org.opensds.vmware.ngc.device.list"/>
+      <variable name="parentUid" value="org.opensds.vmware.ngc.device.chassisAppCategory"/>
+   </templateInstance>
+
+   <!-- Chassis object view template instance,
+   which creates the object workspace (right hand side) for Chassis objects.
+   Variables:
+      - namespace: The prefix used in extension points and extension Ids.
+      - objectType: The view's object type, which should be qualified by
+         its own namespace to avoid collisions, i.e "opensds:Storage".
+   -->
+   <templateInstance id="org.opensds.vmware.ngc.device.viewTemplateInstance">
+      <templateId>vsphere.core.inventory.objectViewTemplate</templateId>
+      <variable name="namespace" value="org.opensds.vmware.ngc.device"/>
+      <variable name="objectType" value="opensds:Storage"/>
+   </templateInstance>
+
+
+   <!-- Chassis summary view -->
+   <extension id="org.opensds.vmware.ngc.device.SummaryView">
+      <extendedPoint>org.opensds.vmware.ngc.device.summaryViews</extendedPoint>
+      <object>
+         <name>#{summary.view}</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/device/device-summary.html</url>
+               </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>
+
+  <!--
+      Chassis columns, displayed in the Objects tab list.
+   -->
+   <extension id="org.opensds.vmware.ngc.device.list.sampleColumns">
+      <!-- This extension point is created by objectViewTemplate above -->
+      <extendedPoint>org.opensds.vmware.ngc.device.list.columns</extendedPoint>
+      <object>
+         <!-- XML representation of com.vmware.ui.lists.ColumnSetContainer -->
+         <items>
+            <!-- Chassis name column -->
+            <com.vmware.ui.lists.ColumnContainer>
+               <uid>org.opensds.vmware.ngc.device.column.name</uid>
+               <dataInfo>
+                  <com.vmware.ui.lists.ColumnDataSourceInfo>
+                     <!-- Column header -->
+                     <headerText>#{name}</headerText>
+                     <!-- Object property whose text value will be displayed (array of 1 element) -->
+                     <requestedProperties>
+                        <String>deviceName</String>
+                     </requestedProperties>
+                     <!-- Use sortProperty to allow column to be sorted with header click -->
+                     <sortProperty>deviceName</sortProperty>
+                     <!-- Use exportProperty to allow column data to be exported -->
+                     <exportProperty>deviceName</exportProperty>
+                  </com.vmware.ui.lists.ColumnDataSourceInfo>
+               </dataInfo>
+            </com.vmware.ui.lists.ColumnContainer>
+
+            <!-- Chassis model column -->
+            <com.vmware.ui.lists.ColumnContainer>
+               <uid>org.opensds.vmware.ngc.device.column.model</uid>
+               <dataInfo>
+                  <com.vmware.ui.lists.ColumnDataSourceInfo>
+                     <headerText>#{model}</headerText>
+                     <requestedProperties>
+                        <String>deviceModel</String>
+                     </requestedProperties>
+                     <exportProperty>deviceModel</exportProperty>
+                  </com.vmware.ui.lists.ColumnDataSourceInfo>
+               </dataInfo>
+            </com.vmware.ui.lists.ColumnContainer>
+
+            <!-- Chassis status column -->
+            <com.vmware.ui.lists.ColumnContainer>
+               <uid>org.opensds.vmware.ngc.device.column.status</uid>
+               <dataInfo>
+                  <com.vmware.ui.lists.ColumnDataSourceInfo>
+                     <headerText>#{status}</headerText>
+                     <requestedProperties>
+                        <String>deviceStatus</String>
+                     </requestedProperties>
+                     <exportProperty>deviceStatus</exportProperty>
+                  </com.vmware.ui.lists.ColumnDataSourceInfo>
+               </dataInfo>
+            </com.vmware.ui.lists.ColumnContainer>
+
+            <!-- Chassis SN column -->
+            <com.vmware.ui.lists.ColumnContainer>
+               <uid>org.opensds.vmware.ngc.device.column.id</uid>
+               <dataInfo>
+                  <com.vmware.ui.lists.ColumnDataSourceInfo>
+                     <headerText>#{sn}</headerText>
+                     <requestedProperties>
+                        <String>sn</String>
+                     </requestedProperties>
+                     <exportProperty>sn</exportProperty>
+                  </com.vmware.ui.lists.ColumnDataSourceInfo>
+               </dataInfo>
+            </com.vmware.ui.lists.ColumnContainer>
+
+            <!-- Chassis IP Address column -->
+            <com.vmware.ui.lists.ColumnContainer>
+               <uid>org.opensds.vmware.ngc.device.column.ip</uid>
+               <dataInfo>
+                  <com.vmware.ui.lists.ColumnDataSourceInfo>
+                     <headerText>#{ip}</headerText>
+                     <requestedProperties>
+                        <String>ip</String>
+                     </requestedProperties>
+                     <exportProperty>ip</exportProperty>
+                  </com.vmware.ui.lists.ColumnDataSourceInfo>
+               </dataInfo>
+            </com.vmware.ui.lists.ColumnContainer>
+         </items>
+      </object>
+   </extension>
+
+   <!-- Chassis Actions -->
+
+   <extension id="org.opensds.vmware.ngc.device.actionSet">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <!-- Delete Chassis -->
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.vmware.ngc.device.deleteDevice</uid>
+               <label>#{chassis.deleteAction}</label>
+               <icon>#{deleteChassis}</icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- actionUrl maps to ActionsControlleron the java side -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/device/delete-device.html</actionUrl>
+                     <dialogTitle>#{chassis.deleteAction}</dialogTitle>
+                     <dialogSize>450,210</dialogSize>
+                     <!--<actionUrl>/vsphere-client/opensds/rest/hwactions</actionUrl>-->
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+          </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>opensds:Storage</objectType>
+      </metadata>
+   </extension>
+
+   <!-- 'createChassis' list action is defined in a separate extension without any
+         objectType metadata because it is global. It should not show up in the
+         chassis object menu as it does not belong to any chassis object. -->
+
+   <extension id="org.opensds.vmware.ngc.device.listActionSet">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <!-- Create Chassis -->
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.vmware.ngc.device.addDevice</uid>
+               <label>#{chassis.createAction}</label>
+               <icon>#{addChassis}</icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/device/add-device.html</actionUrl>
+                     <dialogTitle>#{chassis.createAction}</dialogTitle>
+                     <dialogSize>680,545</dialogSize>
+                  </root></object>
+               </delegate>
+               <!-- All context-less actions should be marked as private to prevent them
+                  from showing up in all menus.-->
+               <privateAction>true</privateAction>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+   </extension>
+
+   <!-- change device info-->
+   <extension id="org.opensds.vmware.ngc.device.configActionSet">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <!-- Delete Chassis -->
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.vmware.ngc.device.configSetting</uid>
+               <label>#{chassis.configAction}</label>
+               <icon>#{configChassis}</icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- actionUrl maps to ActionsControlleron the java side -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/device/modify-device.html</actionUrl>
+                     <dialogTitle>#{chassis.configAction}</dialogTitle>
+                     <dialogSize>680,545</dialogSize>
+                     <!--<actionUrl>/vsphere-client/opensds/rest/hwactions</actionUrl>-->
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>opensds:Storage</objectType>
+      </metadata>
+   </extension>
+
+   <!-- UI info associated with the chassis type owned by this plugin.
+      This is used in conjonction with prioritization extensions, to verify that
+      only this plugin can modify prioritization settings on chassis. -->
+   <extension id="org.opensds.vmware.ngc.device.objectType">
+      <extendedPoint>vsphere.core.objectTypes</extendedPoint>
+      <object>
+         <types>
+            <String>opensds:Storage</String>
+         </types>
+         <label>#{chassisLabel}</label>
+         <labelPlural>#{chassisPlural}</labelPlural>
+         <icon>#{chassis}</icon>
+      </object>
+   </extension>
+
+   <!-- Global actions in the device list, i.e. actions that don't require a
+      selected object and appear in the toolbar LHS => addDevice here. -->
+   <extension id="org.opensds.vmware.ngc.device.listAction">
+      <extendedPoint>vmware.prioritization.listActions</extendedPoint>
+      <object>
+         <prioritizedIds>
+            <String>org.opensds.vmware.ngc.device.addDevice</String>
+            <String>org.opensds.vmware.ngc.device.deleteDevice</String>
+            <String>org.opensds.vmware.ngc.device.configSetting</String>
+         </prioritizedIds>
+         <regionId>org.opensds.vmware.ngc.device.list</regionId>
+      </object>
+   </extension>
+
+   <!-- home shortcut -->
+   <extension id="org.opensds.vmware.ngc.device.shortcut">
+      <extendedPoint>vise.home.shortcuts</extendedPoint>
+      <object>
+         <name>OpenSDS Storage Plugin</name>
+         <categoryUid>vsphere.core.controlcenter.administrationCategory</categoryUid>
+         <icon>#{editChassis}</icon>
+         <targetViewUid>org.opensds.vmware.ngc.device_collection.domainView</targetViewUid>
+      </object>
+   </extension>
+
+   <!-- ***********************action in vsphere ESXI host  ***********************-->
+   <!--esxi right click menus-->
+   <extension id="org.opensds.ngc.solution.hostMenus">
+      <extendedPoint>vsphere.core.menus.solutionMenus</extendedPoint>
+      <object>
+         <label>OpenSDS Storage Plugin</label>
+         <uid>org.opensds.ngc.solution.hostMenu</uid>
+         <children>
+            <Array>
+               <!--credatastoreInfotore in esxi host -->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.createDatastore</uid>
+                  <label>Create Datastore/Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>separator</type>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--Mount Volume -->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.mount</uid>
+                  <label>Mount Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--UNMount Volume -->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.unmount</uid>
+                  <label>Unmount Volume</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <!--Backup and Recovery-->
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>separator</type>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+               <com.vmware.actionsfw.ActionMenuItemSpec>
+                  <type>action</type>
+                  <uid>org.opensds.ngc.action.snapshot</uid>
+                  <label>Backup and Recovery</label>
+               </com.vmware.actionsfw.ActionMenuItemSpec>
+            </Array>
+         </children>
+      </object>
+      <metadata>
+         <!-- Filter creates this extension only for VirtualMachine objects -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+
+   <!--credatastoreInfotore in esxi host-->
+   <extension id="org.opensds.ngc.action.createDatastore">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.createDatastore</uid>
+               <label>Create Datastore/Volume</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/datastore/datastore-p0-forward.html?type=createDatastore</actionUrl>
+                     <dialogTitle>Create Datastore/Volume</dialogTitle>
+                     <dialogSize>900,460</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!--mount page in esxi host-->
+   <extension id="org.opensds.ngc.action.mount">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.mount</uid>
+               <label>Mount Volume</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/mount/mount-forward.html?type=mount</actionUrl>
+                     <dialogTitle>Mount Volume</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!--unmount page in esxi host-->
+   <extension id="org.opensds.ngc.action.unmount">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.unmount</uid>
+               <label>Unmount Volume</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/unmount/unmount-forward.html?type=unmount</actionUrl>
+                     <dialogTitle>Unmount Volume</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!-- Backup and Recovery page in exsi host-->
+   <extension id="org.opensds.ngc.action.snapshot">
+      <extendedPoint>vise.actions.sets</extendedPoint>
+      <object>
+         <actions>
+            <com.vmware.actionsfw.ActionSpec>
+               <uid>org.opensds.ngc.action.snapshot</uid>
+               <label>Backup and Recovery</label>
+               <icon></icon>
+               <delegate>
+                  <className>com.vmware.vsphere.client.htmlbridge.HtmlActionDelegate</className>
+                  <object><root>
+                     <!-- execute the action on client-side (html view in a modal dialog) -->
+                     <actionUrl>/vsphere-client/opensds/resources/html/snapshot/snapshot-forward.html?type=backupAndRecovery</actionUrl>
+                     <dialogTitle>Backup and Recovery</dialogTitle>
+                     <dialogSize>1024,600</dialogSize>
+                  </root></object>
+               </delegate>
+            </com.vmware.actionsfw.ActionSpec>
+         </actions>
+      </object>
+      <metadata>
+         <!-- This filters the actions to be visible only on Chassis -->
+         <objectType>HostSystem</objectType>
+      </metadata>
+   </extension>
+
+   <!-- ***********************action in vsphere Datastore  ***********************-->
+
+   <!-- host monitor page -->
+   <extension id="org.opensds.ngc.hostView">
+      <extendedPoint>vsphere.core.host.monitorViews</extendedPoint>
+      <object>
+         <name>OpenSDS Storage</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/host/host-main.html</url>
+                </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>
+
+   <!-- view monitor page -->
+   <extension id="org.opensds.ngc.VirtualmachineView">
+      <extendedPoint>vsphere.core.vm.monitorViews</extendedPoint>
+      <object>
+         <name>OpenSDS Storage</name>
+         <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
+            <object>
+               <root>
+                  <url>/vsphere-client/opensds/resources/html/vm/vm-main.html</url>
+               </root>
+            </object>
+         </componentClass>
+      </object>
+   </extension>
+
+</plugin>

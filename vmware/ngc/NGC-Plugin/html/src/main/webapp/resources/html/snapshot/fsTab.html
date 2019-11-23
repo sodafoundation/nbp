@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+<meta http-equiv="Cache-Control" content="no-cache" />
+<link type="text/css" rel="stylesheet" href="../../../assets/css/basic-table.css">
+<link type="text/css" rel="stylesheet" href="../../../assets/css/lun-snapshot-Tab.css">
+<style type="text/css">
+table thead tr th,table tbody tr td {
+	white-space: nowrap;
+}
+</style>
+</head>
+<body style="overflow-x:hidden;">
+	<table id="hostLunTable" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;overflow-x: hidden;">
+		<tbody class="tableBody">
+			<tr id="cloneLun">
+				<td name="id" title="" width="5%" align="left"></td>
+				<td name="displayName" title="" width="10%" align="left"></td>
+				<td name="name" title="" width="10%" align="left"></td>
+				<td name="healthStatus" title="" width="10%" align="left"></td>
+				<td name="runningStatus" title="" width="10%" align="left"></td>
+				<td name="allocType" title="" width="5%" align="left"></td>
+				<td name="capacity" title="" width="10%" style="text-align: left; padding-right: 4px;"></td>
+				<td name="deviceIp" title="" width="10%" align="left"></td>
+				<td name="serialNumber" style="display:none;"></td>
+				<td name="usedByStatus" width="10%" style="display:none;"></td>
+				<td name="datastoreId" width="10%" style="display:none;"></td>
+				<td name="localPath" width="10%" style="display:none;"></td>
+				<td name="remoteHost" width="10%" style="display:none;"></td>
+				<td name="remotePath" width="10%" style="display:none;"></td>
+				<td name="deviceId" width="10%" style="display:none;"></td>
+			</tr>
+		</tbody>
+	</table>
+<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/basic-table.js"></script>
+<script type="text/javascript" src="../../../resources/js/snapshot/lunTab.js"></script>
+</body>
+</html>

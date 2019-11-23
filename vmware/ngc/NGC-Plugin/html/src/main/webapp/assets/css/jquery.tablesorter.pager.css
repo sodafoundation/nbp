@@ -1,0 +1,82 @@
+div.tablesorterPager {
+	padding: 10px 0 10px 0;
+	background-color: #D6D2C2;
+	text-align: center;
+}
+div.tablesorterPager span {
+	padding: 0 5px 0 5px;
+}
+div.tablesorterPager input.prev {
+	width: auto;
+	margin-right: 10px;
+}
+div.tablesorterPager input.next {
+	width: auto;
+	margin-left: 10px;
+}
+div.tablesorterPager input {
+	font-size: 8px;
+	width: 50px;
+	border: 1px solid #330000;
+	text-align: center;
+}
+.pager {
+	background-color:white;
+	float:left;
+	width:100%;
+	border-top: 1px solid #C0C0C0;
+}
+.pagerDiv1 {
+	float:left;
+	line-height: 24px;
+}
+.pageDiv2 {
+	float:right;
+	line-height: 24px;
+	padding-right: 10px;
+}
+.pageDisplay{
+	font-size: 12px;
+	vertical-align: baseline;
+}
+.pageDisplaySpan {
+	font-size: 12px;
+	vertical-align: baseline;
+}
+.ytb-sep{
+	background-image: url("../images/grid-blue-split.gif");
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: 0 none;
+    cursor: default;
+    display: block;
+    font-size: 1px;
+    height: 12px;
+    margin: 0 2px;
+    overflow: hidden;
+    width: 4px;
+}
+.ytb-go{
+	cursor:hand;
+	vertical-align: middle;
+}
+.ytb-go:hover{
+	color:#0068FF;
+	cursor:hand;
+}
+#pageDisplay table{
+	margin:0px;
+	padding:0px;
+}
+#pageDisplay tr{
+	margin:0px;
+	padding:0px;
+}
+#pageDisplay td{
+	margin:0px;
+	padding:0px;
+}
+#pageDisplay tbody{
+	margin:0px;
+	padding:0px;
+}

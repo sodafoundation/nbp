@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ROOT>
+	<AuthId name="StorageAdmin">
+		<authName>StorageAdmin</authName>
+		<authNaLabelKey>privilege.StorageAdmin.label</authNaLabelKey>
+		<authNaLabelValue>存储管理员</authNaLabelValue>
+		<authNaSummaryKey>privilege.StorageAdmin.summary</authNaSummaryKey>
+		<authNaSummaryValue>管理存储设备的权限集合</authNaSummaryValue>
+		<authId>StorageAdmin.readwrite</authId>
+		<authIdLabelKey>privilege.StorageAdmin.readwrite.label</authIdLabelKey>
+		<authIdLabelValue>管理存储设备</authIdLabelValue>
+		<authIdSummaryKey>privilege.StorageAdmin.readwrite.summary</authIdSummaryKey>
+		<authIdSummaryValue>授权使用插件管理华为存储设备</authIdSummaryValue>
+	</AuthId>
+</ROOT>	

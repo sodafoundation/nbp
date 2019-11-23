@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Create Datastore</title>
+<link rel="stylesheet" href="../../../assets/css/icstyle.css" />
+<link rel="stylesheet" href="../../../assets/css/pure-min.css" />
+<link rel="stylesheet" href="../../../assets/css/datastore.css" />
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../assets/jquery-ui-1.10.3.custom.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script src="../../../resources/js/common/jquery-util.js"></script>
+<script src="../../../resources/js/common/json2.js"></script>
+<script src="../../../resources/js/common/storage.plugin.js"></script>
+<script src="../../../resources/js/datastore/datastore-main.js"></script>
+	<style type="text/css">
+		input[type="button"]{
+	    width: 76px;
+    	height: 35px;
+    	font-size: 14px;
+    	letter-spacing:1.44px;
+    	font-weight:500;
+		}
+		h3 {
+    	font-size: 1.17em;
+   	 	margin: 1em 0;
+    	padding-left: 15px;
+		}
+		h4 {
+    	font-size: 1.17em;
+    	margin: 0.5em 0;
+    	padding-left: 15px;
+    	font-weight: 400;
+		}
+		hr{
+		border-top:0px;
+		border-button:1px;
+		border-color:#a7a7a7;
+		margin-top:38px;
+		margin-left:15px;
+		margin-right:20px;
+		}
+		.dg_all_left{
+		margin-left: 6px;
+		}
+	</style>
+
+</head>
+<body>
+	<div id="mainPage" style="height: 100%; width: 100%;">
+		<div class="filterDiv1"></div>
+		<div id="main" style="background-color: white; width: 100%; margin-top: 3px;height:400px;">
+			<table style="height: 98%; width: 100%;">
+				<tr>
+					<td style="width: 160px; height: 100%;">
+						<div style="margin-left: 20px; margin-top: 3px; height: 100%; width: 215px; background-color: white; border-width: 0px;">
+							<div style="height: 98%; border-width: 0px; border-color: threeddarkshadow threedface threedface threeddarkshadow; border-style: solid;background-color:#efefef;border-radius:10px">
+								<div id="dtop" style="height:5px;margin-top:5px;"> </div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_1" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_1" class="dg_main_left" style="margin-left: 15px;">1 Select Storage Platform</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_2" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_2" class="dg_main_left" style="margin-left: 15px;">2 Choose Datastore Type</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_3" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_3" style="display: none;margin-left: 15px;" class="dg_main_left">3 Select Storage Pool</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_4" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_4" style="display: none;margin-left: 15px;" class="dg_main_left">4 Set Storage Resource Details</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_5" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_5" style="display: none;margin-left: 15px;" class="dg_main_left">5 Select File System Version</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_6" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_6" style="display: none;margin-left: 15px;" class="dg_main_left">6 Set Datastore Name</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_7" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_7" style="display: none;margin-left: 15px;" class="dg_main_left">7 Information Summary</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_nfs_4" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_nfs_4" style="display: none;margin-left: 15px;" class="dg_main_left">4 Set File System Details</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_nfs_5" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_nfs_5" style="display: none;margin-left: 15px;" class="dg_main_left">5 Set NFS Share Details</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_nfs_6" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_nfs_6" style="display: none;margin-left: 15px;" class="dg_main_left">6 Set Datastore Info Details</div>
+								</div>
+								<div class="dg_all_left" style="margin-left: 6px;">
+									<img id="img_main_left_nfs_7" src="../../../assets/images/yes.png" style="position:absolute;display: none;"/>
+									<div id="dg_main_left_nfs_7" style="display: none;margin-left: 15px;" class="dg_main_left">7 Information Summary</div>
+								</div>
+							</div>
+						</div>
+					</td>
+					<td style="height: 100%;">
+						<div style="margin-right: 3px; margin-top: 3px; height: 100%; background-color: white; border-width: 1px;">
+							<div id="top" style="width: 100%; hegith: 50px; background-color: white;">
+								<div id="dg_top_1" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Select Storage Platform</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Select the storage on which you want to create the
+											Datastore.</h4>
+									</div>
+								</div>
+								<div id="dg_top_2" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Choose Whether to create Datastore And Choose Storage Type</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please choose a Storage type for the Datastore/Lun that you want to create. </h4>
+									</div>
+								</div>
+								<div id="dg_top_3" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Select Storage Pool</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please select a storage pool to allocate storage resources
+											to the Datastore that you want to create.</h4>
+									</div>
+								</div>
+								<div id="dg_top_4" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Set Storage Resource Details</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:100px;">The system automatically creates a Volume to provide storage
+											space for the Datastore. Please set parameters for the LUN.</h4>
+									</div>
+								</div>
+								<div id="dg_top_5" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Select File System Version</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please select a file system version for the Datastore that
+											you want to create.</h4>
+									</div>
+								</div>
+								<div id="dg_top_6" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Set Datastore name</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please set a name for the Datastore to be created.</h4>
+									</div>
+								</div>
+								<div id="dg_top_7" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Information Summary</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please confirm the information of the Datastore that you
+											want to create.</h4>
+									</div>
+								</div>
+								<div id="dg_top_nfs_4" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Set File System Details</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:50px;">The system automatically creates a File System to provide storage
+											space for the Datastore. Please set parameters for the File System.</h4>
+									</div>
+								</div>
+								<div id="dg_top_nfs_5" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Set NFS Share Details</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:35px;">The system automatically creates a NFS share to provide share
+											information for the Datastore. Please set parameters for the NFS share.</h4>
+									</div>
+								</div>
+								<div id="dg_top_nfs_6" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Set Datastore Info Details</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please set the information for the Datastore to be created.</h4>
+									</div>
+								</div>
+								<div id="dg_top_nfs_7" style="display: none;" class="dg_top">
+									<div class="dg_top_up">
+										<h3>Information Summary</h3>
+									</div>
+									<div class="dg_top_down">
+										<h4 style="margin-right:3px;">Please confirm the information of the Datastore that you
+											want to create.</h4>
+									</div>
+								</div>
+								<hr style=""/>
+							</div>
+							<iframe id="mainFrame" name="mainIFrame" style="width: 100%; height: 288px;border-width:0px" src=""></iframe>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div id="dg_bottom" style="background-color: white; width: 100%; height: 45px;">
+			<div id="dg_spacing" style="height: 15px;"></div>
+			<div>
+				<table style="width: 100%;">
+					<tr>
+						<td>
+							<table style="float: right">
+								<tr>
+									<td style="padding-right: 8px;"><input type="button" id="cancel" value="CANCEL" style="border-color:#fff;background-color: white;color: #007cbb;border-width: 0px;letter-spacing:1.44px;font-weight:500;"/></td>
+									<td style="padding-right: 8px;"><input type="button" id="preStep" value="BACK"style="border-color:#007cbb;background-color: white;color: #007cbb;border-width: 1px;letter-spacing:1.44px;font-weight:500;" /></td>
+									<td style="padding-right: 8px;"><input type="button" id="nextStep" value="NEXT"style="border-color: #007cbb;background-color: #007cbb;color: #fff;border-width: 0px;letter-spacing:1.44px;font-weight:500;" /></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+
+		var maindivHight = $("#mainPage").height();
+		var spacing=$("#dg_spacing");
+		if(maindivHight>=450){
+           spacing.height(35);
+		}
+
+	</script>
+</html>

@@ -1,0 +1,63 @@
+.pure-control-group.aa {
+height: 50px;
+
+text-align: right;
+padding-right: 10px;
+}
+
+.storage-form fieldset div input {
+width: 300px;
+
+border-radius: 0px;border: 1px solid #949494;
+}
+
+.storage-form .deviceTypeSelect fieldset div label {
+float:left;
+text-align:left;
+padding-left: 50px;
+padding-top: 7px;
+width: 80px;
+}
+
+.storage-form fieldset div button {
+background: #FFFFFF;
+border-width:1px;
+border-radius:4px;
+border-color:#007cbb;
+width: 75px;
+height: 40px;
+cursor:pointer;
+outline:none;
+font-family:Microsoft YaHei;
+color:blue;
+font-size: 12px;
+font-weight:500;
+margin-top: 10px;
+margin-left: 15px;
+text-align: center;
+padding: 0px;
+letter-spacing:1.44px;
+
+}
+
+
+.storage-form fieldset div button[type=submit]{
+background: #007cbb;
+color:white;
+}
+
+body .storage-form fieldset {
+color: #595959;margin-bottom: 0px;
+padding-bottom: 0px;
+}
+
+body #header {
+padding: 10px;
+color: #333333;
+padding-top: 5px;
+padding-bottom: 5px;
+}
+
+.pure-form-aligned .pure-control-group {
+margin-bottom: 8px;
+}
