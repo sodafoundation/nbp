@@ -1,7 +1,6 @@
 <!doctype html>
 <html>
 <body>
-<!--<h3 id="header"><img src="../../../assets/images/addChassisIcon-2.png"/> Enter the new device information</h3>-->
 
 
 <div class="centerdiv">
@@ -135,10 +134,7 @@
         }
 
         .selection {
-
-            /*display: inline-block;*/
             vertical-align: middle;
-            /*width: 10em;*/
             margin: 0 1em 0 0;
             font-size: 90%;
         }
@@ -171,8 +167,6 @@
             border: none;
             border-bottom: 1px solid #C3C3C3;
             outline: none;
-
-
         }
 
         select::-ms-expand {
@@ -204,10 +198,8 @@
             top: 2px;
             left: 196px;
             height: 2px;
-            /*color: #26ca28;*/
             color: #4baa34;
             font-size: 15px;
-            /*font-weight:bold;*/
         }
 
         .pure-control-group .checkbox:after {
@@ -218,7 +210,6 @@
             height: 2px;
             color: #ddd;
             font-size: 15px;
-            /*font-weight:bold;*/
         }
 
         .pure-control-group .checkbox .switcher {
@@ -242,7 +233,6 @@
 
         .pure-control-group .checkbox input[type=checkbox]:checked + label {
             left: 242px;
-            /*background: #26ca28;*/
             background: #4baa34;
         }
 
@@ -398,8 +388,6 @@
             var result_password = false;
             var isFirstChg = true;
             var pwd_store = "";
-            //var serversInfo = WEB_PLATFORM.getUserSession().serversInfo;
-
 
             $("input[name='username']").val("");
             $("input[name='password']").val("");
@@ -432,9 +420,7 @@
                                 $("input[name ='deviceType']").css("background-color", "transparent");
                                 $("input[name ='deviceType']").css("fontWeight", "bold");
                                 $("input[name ='deviceType']").css("color", "black");
-                              //  $("input[name ='deviceType']").attr("disabled", "disabled");
                             }
-
                             if (!isEmpObj(reData.port)) {
                                 $("input[name ='port']").val(reData.port);
                                 $("input[name ='port']").css("background-color", "transparent");
@@ -502,7 +488,6 @@
                 deviceReq.contentType = "application/x-www-form-urlencoded";
                 var devhandler = new handler(function doSuccess(resp) {
                     if (resp.status=="ok") {
-                       // deviceId = resp.result;
                         $("#title").text("Success");
                         $("#diaLogBox").css("visibility", "visible");
                         $("#sucWords").html("Config storage successfully!");
@@ -599,13 +584,11 @@
                         this.value = getByteVal(value, 32);
                     }
                     for (var index = 0; index < this.value.length; index++) {
-                        //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]$/.test(this.value.charAt(index)))) {
                         if (/^[^\x00-\xff]$/.test(this.value.charAt(index))) {
                             this.value = this.value.substring(0, index);
                             break;
                         }
                     }
-                    //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/.test(this.value))) {
                     if (this.value == "" || this.value == "undefined") {
                         result_username = false;
                     } else if (/^[^\x00-\xff]+$/.test(this.value)) {
@@ -690,7 +673,6 @@
                     $("#title").text("");
                     unlock();
                     WEB_PLATFORM.closeDialog();
-//				WEB_PLATFORM.sendNavigationRequest(viewId , deviceId);
                 });
 
                 $("#errOp").click(function () {
@@ -785,7 +767,6 @@
                 return returnValue;
             }
 
-            //
             function commonResetFunc() {
                 result_ip = true;
                 result_port = true;

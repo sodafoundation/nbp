@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>page forward</title>
+<script src="../../../assets/jquery-1.10.2.min.js"></script>
+<script src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript">
+
+
+function GetQueryString(name)
+{
+     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+     var r = window.location.search.substr(1).match(reg);
+     if(r!=null)return  unescape(r[2]); return null;
+}
+var type = GetQueryString("type");
+var locale = GetQueryString("locale");
+var actionUid = GetQueryString("actionUid");
+var targets = GetQueryString("targets");
+var arr = targets.split(":");
+var hostId = arr[2] + ":" + arr[3];
+var serverGuid = arr[4];
+var ns = org_opensds_storage_devices;
+var hostUrl = ns.webContextPath + "/rest/data/host/getEXIStatus/" + hostId + "?serverGuid=" + serverGuid + "&t=" +
+    new Date();
+	$.ajax({
+		async:true,
+		type:"get",
+		url: encodeURI(hostUrl),
+		contentType:"application/json",
+		success:function(resp){
+			if("CONNECTED" == resp.data){
+				
+			window.location.href="unmount-main.html?actionUid="+actionUid+"&locale="+locale+"&hostId="+hostId + "&serverGuid="+serverGuid;
+
+			}else{
+			window.location.href=ns.webContextPath + "/resources/html/datastore/host-warning.html?type="+type;
+			}
+		},
+		error:function(XMLHttpRequest, textStatus, errorThrown){
+			alert(XMLHttpRequest.status);  
+            alert(XMLHttpRequest.readyState);  
+            alert(textStatus);  
+		}
+		});
+		
+</script>
+</head>
+<body>
+
+</body>
+</html>

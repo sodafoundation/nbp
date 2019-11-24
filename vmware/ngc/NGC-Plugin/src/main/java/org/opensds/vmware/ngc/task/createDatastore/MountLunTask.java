@@ -17,7 +17,7 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vise.usersession.ServerInfo;
 import org.opensds.vmware.ngc.base.TaskInfoConst;
 import org.opensds.vmware.ngc.entity.ResultInfo;
-import org.opensds.vmware.ngc.model.DatastoreInfo;
+import org.opensds.vmware.ngc.model.datastore.Datastore;
 import org.opensds.vmware.ngc.task.AbstractTask;
 import org.opensds.vmware.ngc.task.TaskExecution;
 import com.vmware.vim25.TaskInfo;
@@ -39,25 +39,30 @@ public class MountLunTask extends AbstractTask implements TaskExecution {
 
     private ConnectMO connectMO;
 
-    public MountLunTask(DatastoreInfo datastoreInfo,
+    public MountLunTask(Datastore datastoreInfo,
                         ManagedObjectReference[] hostMos,
                         ServerInfo serverInfo,
                         Storage storage) {
         super.serverInfo = serverInfo;
         super.hostMos = hostMos;
-        super.datastoreInfo = datastoreInfo;
+        super.datastore = datastoreInfo;
         super.storage = storage;
     }
 
     @Override
     public void setContext(Map context) {
-        this.volumeMO = (VolumeMO)context.get(VolumeMO.class.getName());
+        if (context.get(VolumeMO.class.getName()) instanceof VolumeMO) {
+            this.volumeMO = (VolumeMO)context.get(VolumeMO.class.getName());
+        };
     }
 
+    /**
+     * go run task to attach volume
+     * @throws Exception
+     */
     @Override
     public void runTask() throws Exception {
-
-        logger.info("---------MountTask, run create the datastoreInfo task and mount volume...");
+        logger.info("---------Step two, run create the datastoreInfo task and mount volume...");
 
         List<TaskInfo> taskInfoList = new ArrayList<>();
         try {
@@ -66,7 +71,7 @@ public class MountLunTask extends AbstractTask implements TaskExecution {
             if (resultInfo.getStatus().equals("ok")) {
                 connectMO = (ConnectMO)resultInfo.getData();
                 changeTaskState(taskInfoList, TaskInfoConst.Status.SUCCESS,
-                        String.format("Mount volume %s fininsh.", datastoreInfo.getDatastoreName()));
+                        String.format("Mount volume %s fininsh.", datastore.getName()));
             } else {
                 changeTaskState(taskInfoList, TaskInfoConst.Status.ERROR,
                         String.format("Mount volume failed: %s", resultInfo.getMsg()));

@@ -13,9 +13,7 @@
 // under the License.
 package org.opensds.vmware.ngc.task;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.opensds.vmware.ngc.model.DatastoreInfo;
+import org.opensds.vmware.ngc.model.datastore.Datastore;
 import org.opensds.vmware.ngc.service.HostService;
 import org.opensds.vmware.ngc.service.impl.HostServiceImpl;
 import com.vmware.vim25.ManagedObjectReference;
@@ -24,34 +22,39 @@ import com.vmware.vise.usersession.ServerInfo;
 import org.opensds.vmware.ngc.common.Storage;
 import java.util.List;
 
-
-/**
- * Step 1 : @CreateLunTask
- * Step 2:  @MountLunTask
- * Step 3:  @CreateDatastoreTask
- */
 public abstract class AbstractTask {
-
+    /**
+     * hostservice instance
+     */
     protected HostService hostServiceImpl = HostServiceImpl.getInstance();
 
-    private static Log logger = LogFactory.getLog(AbstractTask.class);
-
+    /**
+     * server info
+     */
     protected ServerInfo serverInfo;
 
+    /**
+     * host list
+     */
     protected ManagedObjectReference[] hostMos;
 
-    protected DatastoreInfo datastoreInfo;
+    /**
+     * datastore info
+     */
+    protected Datastore datastore;
 
+    /**
+     * Storage info
+     */
     protected Storage storage;
-
 
     protected AbstractTask() {
     }
 
     /**
      * create task in ESXI host
-     * @param taskInfoList
-     * @param taskType
+     * @param taskInfoList List<TaskInfo>
+     * @param taskType String
      */
     protected void createTaskList(List<TaskInfo> taskInfoList, String taskType) {
         for (ManagedObjectReference hostMo :hostMos) {
@@ -62,9 +65,9 @@ public abstract class AbstractTask {
 
     /**
      * change the task state
-     * @param taskInfoList
-     * @param taskStatus
-     * @param msg
+     * @param taskInfoList List<TaskInfo>
+     * @param taskStatus String
+     * @param msg String
      */
     protected void changeTaskState(List<TaskInfo> taskInfoList, String taskStatus, String msg) {
         for (TaskInfo taskInfo : taskInfoList) {

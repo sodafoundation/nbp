@@ -33,13 +33,7 @@ height:26px;
 	$(document).ready(function() {
 
 		init();
-		//shieldCombinationKey();
-		//if(parent.isExtentDataStor){
-		//	$("#operation").html("<s:text name='storage.plugin.action.create.datastore.extent'/>");
-		//}else{
 		$("#operation").html("Create datastore");
-		//}
-		//begin  data：2018-12-14 author:qwx615620
 		if(parent.isCreateDatastore){
 			$("#datastoreName").html(parent.datastoreName);
 			$("#fileSysVersion").html(parent.fileVersion);
@@ -64,7 +58,7 @@ height:26px;
 			$("#hosts").hide();
 			$("#hostsName").html("");
 		}
-		//end
+
 		document.getElementById("datastoreNameTD").title = parent.datastoreName;
 		$("#storType").html(parent.storType);
 		$("#deviceName").html(parent.deviceName);
@@ -90,7 +84,6 @@ height:26px;
 			$("#blockSizeTR").css("display", "table-row");
 			$("#fileSysVersion").html("VMFS-3");
 		} else {
-			//$("#fileSysVersion").html("VMFS-5");
 			$("#blockSizeTR").css("display", "none");
 		}
 		$(window).resize(function() {

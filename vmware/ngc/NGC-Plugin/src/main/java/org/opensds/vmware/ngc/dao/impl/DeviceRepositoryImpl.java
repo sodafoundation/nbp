@@ -19,17 +19,26 @@ import org.opensds.vmware.ngc.common.StorageFactory;
 import org.opensds.vmware.ngc.models.StorageMO;
 import org.opensds.vmware.ngc.dao.DeviceRepository;
 import org.opensds.vmware.ngc.model.DeviceInfo;
-import org.opensds.vmware.ngc.util.Constant;
-import org.opensds.vmware.ngc.util.FileManager;
+import org.opensds.vmware.ngc.base.Constant;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
+import java.io.ObjectInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Closeable;
+import java.io.ObjectOutputStream;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 @Repository
 @Lazy(value = false)
@@ -38,7 +47,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
     private static final Log logger = LogFactory.getLog(DeviceRepositoryImpl.class);
     private static Map<String, DeviceInfo> CACHE_DEVICE_INFO = new ConcurrentHashMap<>();
     private static Map<String, Storage> LOGINED_DEVICE = new ConcurrentHashMap<>();
-    private static final String DEVICE_DATA_FILE_PATH = FileManager.getDeviceConfigPath() + Constant.DEVICE_DATA_FILE;
+    private static final String DEVICE_DATA_FILE_PATH = Constant.DEVICE_DATA_FILE;
 
     @PostConstruct
     private void init() {
@@ -46,15 +55,16 @@ public class DeviceRepositoryImpl implements DeviceRepository {
         try {
             File file = new File(DEVICE_DATA_FILE_PATH);
             if (!file.exists()) {
-				logger.error("Can not find the device_data file!");
                 return;
             }
             objectInputStream = new ObjectInputStream(new FileInputStream(file));
             Map<String, DeviceInfo> deviceInfoMap = (Map<String, DeviceInfo>) objectInputStream.readObject();
             reLogin(deviceInfoMap);
             CACHE_DEVICE_INFO.putAll(deviceInfoMap);
-        } catch (Exception e) {
-            logger.warn(e.getMessage(),e);
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
+        } catch (ClassNotFoundException e) {
+            logger.warn(e.getMessage(), e);
         } finally {
             quietClose(objectInputStream);
         }
@@ -68,33 +78,33 @@ public class DeviceRepositoryImpl implements DeviceRepository {
     @Override
     public void remove(String uid) {
         DeviceInfo deviceInfo = CACHE_DEVICE_INFO.remove(uid);
-        LOGINED_DEVICE.remove(deviceInfo.ip);
+        LOGINED_DEVICE.remove(deviceInfo.uid);
         writeDataToFile();
     }
 
     @Override
     public void update(String uid, DeviceInfo deviceInfo) throws Exception {
-        initDevice(deviceInfo);
+        initDevice(deviceInfo, uid);
         CACHE_DEVICE_INFO.put(uid, deviceInfo);
         writeDataToFile();
     }
 
     @Override
     public void add(String uid, DeviceInfo deviceInfo) throws Exception {
-        initDevice(deviceInfo);
+        initDevice(deviceInfo, uid);
         CACHE_DEVICE_INFO.put(uid, deviceInfo);
         writeDataToFile();
     }
 
-
     @Override
     public DeviceInfo get(String uid) {
+        logger.info("uid :" +  uid);
         return CACHE_DEVICE_INFO.get(uid);
     }
 
     @Override
-    public Storage getLoggedInDeviceByIP(String deviceIP) {
-        return LOGINED_DEVICE.get(deviceIP);
+    public Storage getLoginedDeviceByID(String deviceUID) {
+        return LOGINED_DEVICE.get(deviceUID);
     }
 
 
@@ -106,22 +116,23 @@ public class DeviceRepositoryImpl implements DeviceRepository {
             synchronized (CACHE_DEVICE_INFO) {
                 objectOutputStream.writeObject(CACHE_DEVICE_INFO);
             }
-        } catch (Exception e) {
-            logger.error(e.getMessage(),e);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         } finally {
             quietClose(objectOutputStream);
         }
     }
 
-    private void initDevice(DeviceInfo deviceInfo) throws Exception {
+    private void initDevice(DeviceInfo deviceInfo, String uid) throws Exception {
         Storage device = StorageFactory.newStorage(getDeviceClassName(deviceInfo.deviceType), "");
         device.login(deviceInfo.ip, deviceInfo.port, deviceInfo.username, deviceInfo.password);
-        StorageMO deviceMO = device.getDeviceInfo();
-        deviceInfo.deviceModel = deviceMO.model;
-        deviceInfo.deviceName = deviceMO.name;
-        deviceInfo.deviceStatus = deviceMO.status;
-        deviceInfo.sn = deviceMO.sn;
-        LOGINED_DEVICE.put(deviceInfo.ip, device);
+        StorageMO stroageMO = device.getDeviceInfo();
+        deviceInfo.deviceModel = stroageMO.model;
+        deviceInfo.deviceName = stroageMO.name;
+        deviceInfo.deviceStatus = stroageMO.status;
+        deviceInfo.sn = stroageMO.sn;
+        deviceInfo.uid = uid;
+        LOGINED_DEVICE.put(deviceInfo.uid, device);
     }
 
     private String getDeviceClassName(String deviceType) {
@@ -139,7 +150,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
             try {
                 closeable.close();
             } catch (IOException e) {
-                //ignore it
+                logger.error(e.getMessage());
             }
         }
     }
@@ -156,7 +167,7 @@ public class DeviceRepositoryImpl implements DeviceRepository {
                 @Override
                 public void run() {
                     try {
-                        DeviceRepositoryImpl.this.initDevice(entry.getValue());
+                        DeviceRepositoryImpl.this.initDevice(entry.getValue(), entry.getKey());
                     } catch (Exception e) {
                         logger.error("The device " + entry.getValue().ip + " fail to login");
                     } finally {
@@ -168,9 +179,8 @@ public class DeviceRepositoryImpl implements DeviceRepository {
         try {
             countDownLatch.await(5, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-			logger.error(e.getMessage());
+            logger.error(e.getMessage());
         }
         executorService.shutdown();
     }
-
 }

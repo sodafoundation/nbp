@@ -102,12 +102,6 @@ if (!org_opensds_storage_devices) {
                 .exec(location.href) || [, ""])[1].replace(/\+/g, '%20') || null;
         }
 
-        //  function getURLParameter(name) {
-        //      var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
-        //      var r = window.location.search.substr(1).match(reg);
-        //      if(r!=null)return  unescape(r[2]); return null;
-        //  }
-
         // Build the REST url prefix to retrieve a list of properties,
         // this is mapped to the DataAccessController on the java side.
         function buildDataUrl(objectId, propList) {
