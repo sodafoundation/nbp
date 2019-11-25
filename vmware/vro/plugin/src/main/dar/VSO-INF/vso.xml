@@ -94,7 +94,6 @@
 						<parameter type="string" name="Description">Description</parameter>
 						<parameter type="number" name="Capacity">Capacity</parameter>
 						<parameter type="string" name="ProfileName">ProfileName</parameter>
-
 					</parameters>
 				</method>
 				<method script-name="deleteVolume" java-name="deleteVolume">
@@ -103,7 +102,6 @@
 						<parameter type="OpenSDSInfo" name="OpenSDSInfo">OpenSDSInfo
 						</parameter>
 						<parameter type="string" name="id">id</parameter>
-
 					</parameters>
 				</method>
 				<method script-name="createAndAttachVolume" java-name="createAndAttachVolume">
@@ -117,7 +115,6 @@
 						<parameter type="string" name="ProfileName">ProfileName</parameter>
 						<parameter type="string" name="Host">Host</parameter>
 						<parameter type="string" name="Iqn">Iqn</parameter>
-
 					</parameters>
 				</method>
 				<method script-name="expandVolume" java-name="expandVolume">
@@ -127,7 +124,6 @@
 						</parameter>
 						<parameter type="string" name="id">id</parameter>
 						<parameter type="number" name="Capacity">Capacity</parameter>
-
 					</parameters>
 				</method>
 			</methods>

@@ -116,7 +116,6 @@ class RestClient {
 			// set default request parameters
 			request.setHeaders("Content-Type", "application/json");
 			request.setUrl(String.format("http://%s/identity/v3", ip));
-
 			JSONObject response = (JSONObject) request.post("/auth/tokens", requestData);
 			if (isFailed(response)) {
 				String msg = String.format("Login User %s error %d: %s", user, getErrorCode(response),
@@ -126,12 +125,10 @@ class RestClient {
 			// get Headers and select Auth Token
 			Header[] headers = request.getResponseHeaders();
 			String token = getAuthToken(headers);
-
 			String tenantId = response.getJSONObject("token").getJSONObject("project").getString("id");
 			request.setHeaders("X-Auth-Token", token);
 			this.request = request;
 			findDeviceInfo(ip, port);
-
 			this.request.setUrl(String.format("http://%s:%d/%s/%s", ip, port, storage.model, tenantId));
 		}
 	}
@@ -170,9 +167,7 @@ class RestClient {
 		String availabilityZone = "default";
 		if (!availabilityZone.isEmpty())
 			requestData.put("availabilityZone", availabilityZone);
-
 		JSONObject response = (JSONObject) request.post("/block/volumes", requestData);
-
 		if (isFailed(response)) {
 			String msg = String.format("Create volume %s error %d: %s", name, getErrorCode(response),
 					getErrorMessage(response));
@@ -192,44 +187,43 @@ class RestClient {
 		}
 	}
 
-    JSONObject attachVolume(String volumeId, String initiator, String initiatorIp) throws Exception {
-        JSONObject requestData = new JSONObject();
-        JSONObject hostInfo = new JSONObject();
-        requestData.put("volumeId", volumeId);
-        hostInfo.put("initiator", initiator);
-        hostInfo.put("ip", initiatorIp);
-        requestData.put("hostInfo", hostInfo);
+	JSONObject attachVolume(String volumeId, String initiator, String initiatorIp) throws Exception {
+		JSONObject requestData = new JSONObject();
+		JSONObject hostInfo = new JSONObject();
+		requestData.put("volumeId", volumeId);
+		hostInfo.put("initiator", initiator);
+		hostInfo.put("ip", initiatorIp);
+		requestData.put("hostInfo", hostInfo);
+		JSONObject response = (JSONObject) request.post("/block/attachments", requestData);
+		if (isFailed(response)) {
+			String msg = String.format("Attach volume %s error %d: %s", volumeId, getErrorCode(response),
+					getErrorMessage(response));
+			throw new Exception(msg);
+		}
+		return response;
+	}
 
-        JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
+	JSONObject getVolume(String volumeId) throws Exception {
 
-        if (isFailed(response)) {
-            String msg = String.format("Attach volume %s error %d: %s",
-                    volumeId, getErrorCode(response), getErrorMessage(response));
-            throw new Exception(msg);
-        }
-        return response;
-    }
-    JSONObject getVolume(String volumeId) throws Exception {
+		JSONObject response = (JSONObject) request.get(String.format("/block/volumes/%s", volumeId));
+		if (response.isEmpty()) {
+			String msg = String.format("List Volume for WWN error: No Volumes Found");
+			throw new Exception(msg);
+		}
+		return response;
+	}
 
-    	JSONObject response =(JSONObject) request.get(String.format("/block/volumes/%s", volumeId));
-        if (response.isEmpty()) {
-            String msg = String.format("List Volume for WWN error: No Volumes Found");
-            throw new Exception(msg);
-        }
-       // JSONObject volume = (JSONObject) response.get(0);
-        return response;
-    }
-    void expandVolume(String volumeId, long capacity) throws Exception {
-        JSONObject requestData = new JSONObject();
-        requestData.put("newSize", capacity);
+	void expandVolume(String volumeId, long capacity) throws Exception {
+		JSONObject requestData = new JSONObject();
+		requestData.put("newSize", capacity);
 
-        JSONObject response = (JSONObject)request.post(String.format("/block/volumes/%s/resize", volumeId), requestData);
-
-        if (isFailed(response)) {
-            String msg = String.format("Expand Volume %s error %d: %s",
-                    volumeId, getErrorCode(response), getErrorMessage(response));
-            throw new Exception(msg);
-        }
-    }
+		JSONObject response = (JSONObject) request.post(String.format("/block/volumes/%s/resize", volumeId),
+				requestData);
+		if (isFailed(response)) {
+			String msg = String.format("Expand Volume %s error %d: %s", volumeId, getErrorCode(response),
+					getErrorMessage(response));
+			throw new Exception(msg);
+		}
+	}
 
 }
