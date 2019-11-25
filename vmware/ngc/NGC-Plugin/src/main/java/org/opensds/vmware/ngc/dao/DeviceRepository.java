@@ -32,7 +32,6 @@ public interface DeviceRepository {
 
     DeviceInfo get(String uid);
 
-    Storage getLoggedInDeviceByIP(String deviceIP);
-
+    Storage getLoginedDeviceByID(String deviceUID);
 
 }

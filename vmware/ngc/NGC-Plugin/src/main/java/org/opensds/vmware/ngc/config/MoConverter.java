@@ -16,17 +16,25 @@ package org.opensds.vmware.ngc.config;
 
 import com.vmware.vim25.ManagedObjectReference;
 import org.springframework.core.convert.converter.Converter;
+import java.util.Locale;
 
 public class MoConverter implements Converter<String, ManagedObjectReference> {
+
     @Override
-    public ManagedObjectReference convert(String s) {
-        return getMoFromUId(s);
+    public ManagedObjectReference convert(String str) {
+        return getMoFromUId(str);
     }
+
+    /**
+     * get mob object from UID
+     * @param moId string
+     * @return ManagedObjectReference
+     */
     public static ManagedObjectReference getMoFromUId(String moId) {
         ManagedObjectReference moRef = new ManagedObjectReference();
         String[] moData = moId.split(":");
         if (moData.length < 2) {
-            throw new RuntimeException(String.format("The moId is not valid :{}", moId));
+            throw new IllegalArgumentException(String.format(Locale.ROOT, "The moId is not valid :{}", moId));
         }
         String moType = moData[0];
         String moValue = moData[1];

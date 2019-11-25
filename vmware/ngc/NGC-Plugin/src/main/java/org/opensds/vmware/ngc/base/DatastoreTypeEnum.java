@@ -16,7 +16,7 @@ package org.opensds.vmware.ngc.base;
 
 public enum DatastoreTypeEnum {
     NFS_DATASTORE("nfsDatastore"),
-    VMFS_DATASTORE("lunDatastore");
+    VMFS_DATASTORE("vmfsDatastore");
 
     private String type;
 
@@ -24,7 +24,7 @@ public enum DatastoreTypeEnum {
         return type;
     }
 
-    DatastoreTypeEnum(String lunDatastore) {
-        this.type = lunDatastore;
+    DatastoreTypeEnum(String vmfsDatastore) {
+        this.type = vmfsDatastore;
     }
 }

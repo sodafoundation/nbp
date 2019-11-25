@@ -1,7 +1,6 @@
 <!doctype html>
 <html>
 <body>
-<!--<h3 id="header"><img src="../../../assets/images/addChassisIcon-2.png"/> Enter the new device information</h3>-->
 
 
 <div class="centerdiv">
@@ -85,7 +84,6 @@
     <!-- others -->
     <div id="messageDiv" class="alertBox" style="position: relative;">
         <div id="message" class="alertWords infWords" style="word-break: break-all;font-size: 13px;"></div>
-        <!-- <div style="margin: 10px 0px;padding:5px 4px 0px 10px;">Tips:</div>
         <input type="text" id="message" readonly="readonly" style="border: none;width: 100%;padding-left: 4px;" value="" /> -->
         <hr style="position: relative;left: -15px;width: calc(100% + 31px);border-width: 1px 0px 0px 0px;"
             color="#007cbb"/>
@@ -140,9 +138,7 @@
 
         .selection {
 
-            /*display: inline-block;*/
             vertical-align: middle;
-            /*width: 10em;*/
             margin: 0 1em 0 0;
             font-size: 90%;
         }
@@ -208,10 +204,8 @@
             top: 2px;
             left: 196px;
             height: 2px;
-            /*color: #26ca28;*/
             color: #4baa34;
             font-size: 15px;
-            /*font-weight:bold;*/
         }
 
         .pure-control-group .checkbox:after {
@@ -222,7 +216,6 @@
             height: 2px;
             color: #ddd;
             font-size: 15px;
-            /*font-weight:bold;*/
         }
 
         .pure-control-group .checkbox .switcher {
@@ -246,7 +239,6 @@
 
         .pure-control-group .checkbox input[type=checkbox]:checked + label {
             left: 242px;
-            /*background: #26ca28;*/
             background: #4baa34;
         }
 
@@ -353,7 +345,6 @@
         input[type="button"] {
             width: 77px;
             height: 22px;
-            /*background-image: url('../../../assets/css/images/btn_normal.png');*/
             border: 0px;
             padding-top: 1px;
             font-family: Tahoma;
@@ -401,8 +392,6 @@
             var result_username = false;
             var result_password = false;
             var pwd_store = "";
-            // viewId = "";
-            // var serversInfo = WEB_PLATFORM.getUserSession().serversInfo;
 
             $("#storagetypeselect").empty();
             $.ajax({
@@ -442,9 +431,6 @@
                 deviceReq.contentType = "application/x-www-form-urlencoded";
                 var devhandler = new handler(function doSuccess(resp) {
                     if (resp.status=="ok") {
-                        //  deviceId = resp.data;
-                        //window.location.reload();
-                        //parent.location.reload();
                         $("#title").text("Success");
                         $("#diaLogBox").css("visibility", "visible");
                         $("#sucWords").html("Add storage platform successfully!");
@@ -543,13 +529,11 @@
                         this.value = getByteVal(value, 32);
                     }
                     for (var index = 0; index < this.value.length; index++) {
-                        //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]$/.test(this.value.charAt(index)))) {
                         if (/^[^\x00-\xff]$/.test(this.value.charAt(index))) {
                             this.value = this.value.substring(0, index);
                             break;
                         }
                     }
-                    //if (!(/^[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/.test(this.value))) {
                     if (this.value == "" || this.value == "undefined") {
                         result_username = false;
                     } else if (/^[^\x00-\xff]+$/.test(this.value)) {
@@ -633,7 +617,6 @@
                     $("#title").text("");
                     unlock();
                     WEB_PLATFORM.closeDialog();
-//				WEB_PLATFORM.sendNavigationRequest(viewId , deviceId);
                 });
 
                 $("#errOp").click(function () {

@@ -43,8 +43,7 @@ function dragTable_iframe(TableHeadID,iframeID,TableID){
                     tTD.style.width =widthString;
                     tTD.style.cursor = 'col-resize';
                     TableHead = tTD;
-                   // Table=$("#storagepoolTable");
-                   iframe01 = document.getElementById(iframeID);
+                    iframe01 = document.getElementById(iframeID);
                     Table =  iframe01.contentWindow.document.getElementById(TableID);
                     while (Table.tagName != 'TABLE'){
                     Table = Table.parentElement;
