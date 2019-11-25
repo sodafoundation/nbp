@@ -24,7 +24,7 @@ const (
 // CSI publish attribute keywords
 const (
 	PublishHostIp            = "hostIp"
-	PublishHostName          = "hostName"
+	PublishHostId            = "hostId"
 	PublishAttachId          = "attachmentId"
 	PublishSecondaryAttachId = "secondaryAttachmentId"
 	PublishAttachStatus      = "attachmentStatus"
@@ -33,6 +33,8 @@ const (
 
 const (
 	DefaultAvailabilityZone = "default"
+	TenantId                = "tenantId"
+	AccessMode              = "agentless"
 )
 
 // PluginName setting

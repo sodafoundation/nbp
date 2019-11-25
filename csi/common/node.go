@@ -18,11 +18,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
+	"runtime"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
+	nbputil "github.com/opensds/nbp/util"
+	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/contrib/connector"
+	"github.com/opensds/opensds/pkg/model"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -106,7 +109,8 @@ func ValidateNodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) error {
 func NodeGetInfo(
 	ctx context.Context,
 	req *csi.NodeGetInfoRequest,
-	topologyZoneKey string) (
+	topologyZoneKey string,
+	Client *client.Client) (
 	*csi.NodeGetInfoResponse, error) {
 
 	glog.Info("start to get node info")
@@ -119,38 +123,60 @@ func NodeGetInfo(
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	var initiators []string
+	host, err := nbputil.GetHostByHostName(Client, hostName)
+	if err != nil {
+	        //Host not found, create a host
+		var initiators []*model.Initiator
 
-	volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver}
+		volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver}
 
-	for _, volDriverType := range volDriverTypes {
-		volDriver := connector.NewConnector(volDriverType)
-		if volDriver == nil {
-			glog.Errorf("unsupport volume driver: %s", volDriverType)
-			continue
+		for _, volDriverType := range volDriverTypes {
+			volDriver := connector.NewConnector(volDriverType)
+			if volDriver == nil {
+				glog.Errorf("unsupport volume driver: %s", volDriverType)
+				continue
+			}
+
+			portName, err := volDriver.GetInitiatorInfo()
+			if err != nil {
+				glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
+				continue
+			}
+
+			initiator := &model.Initiator{
+				PortName: portName,
+				Protocol: volDriverType,
+			}
+
+			initiators = append(initiators, initiator)
 		}
 
-		initiator, err := volDriver.GetInitiatorInfo()
+		if len(initiators) == 0 {
+			msg := fmt.Sprintf("cannot get any initiator for host %s", hostName)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
+		hostSpec := &model.HostSpec{
+			TenantId:          TenantId,
+			HostName:          hostName,
+			OsType:            runtime.GOOS,
+			AccessMode:        AccessMode,
+			IP:                connector.GetHostIP(),
+			AvailabilityZones: []string{DefaultAvailabilityZone},
+			Initiators:        initiators,
+		}
+
+		host, err = Client.HostMgr.CreateHost(hostSpec)
 		if err != nil {
-			glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
-			continue
+			msg := fmt.Sprintf("failed to create host with host name: %s, err: %v", hostName, err)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
-
-		initiators = append(initiators, initiator)
 	}
-
-	if len(initiators) == 0 {
-		msg := fmt.Sprintf("cannot get any initiator for host %s", hostName)
-		glog.Error(msg)
-		return nil, status.Error(codes.FailedPrecondition, msg)
-	}
-
-	nodeId := hostName + "," + strings.Join(initiators, ",") + "," + connector.GetHostIP()
-
-	glog.Infof("node info is %s", nodeId)
 
 	return &csi.NodeGetInfoResponse{
-		NodeId: nodeId,
+		NodeId: host.Id,
 		// driver works only on this zone
 		AccessibleTopology: &csi.Topology{
 			Segments: map[string]string{
