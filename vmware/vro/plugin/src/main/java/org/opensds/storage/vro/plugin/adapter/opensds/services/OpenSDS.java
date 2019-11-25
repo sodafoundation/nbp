@@ -19,12 +19,15 @@ import org.opensds.storage.vro.plugin.adapter.opensds.model.*;
 
 class VolumeMOBuilder {
 	static public VolumeMO build(JSONObject jsonObject) {
+		String wwn = "";
 		String name = jsonObject.getString("name");
 		String id = jsonObject.getString("id");
-		String wwn = jsonObject.getString("id");
+		if (jsonObject.has("identifier")) {
+			JSONObject identifier = jsonObject.getJSONObject("identifier");
+			wwn = identifier.getString("durableName");
+		}
 		ALLOC_TYPE allocType = ALLOC_TYPE.THIN;
 		long capacity = jsonObject.getLong("size");
-
 		return new VolumeMO(name, id, wwn, allocType, capacity);
 	}
 }
@@ -57,6 +60,25 @@ public class OpenSDS {
 
 	public void deleteVolume(String volumeId) throws Exception {
 		client.deleteVolume(volumeId);
+	}
+
+	public void attachVolume(String volumeId, ConnectMO connect) throws Exception {
+		client.attachVolume(volumeId, connect.iscsiInitiator, connect.initiatorIp);
+	}
+
+	public VolumeMO queryVolumeByID(String volumeId) throws Exception {
+		JSONObject volume = client.getVolume(volumeId);
+		return VolumeMOBuilder.build(volume);
+	}
+
+	public String getVolumeWWN(String volid) throws Exception {
+		VolumeMO volume = queryVolumeByID(volid);
+
+		return volume.wwn;
+	}
+
+	public void expandVolume(String volumeId, long capacity) throws Exception {
+		client.expandVolume(volumeId, capacity);
 	}
 
 }
