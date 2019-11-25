@@ -12,5 +12,5 @@ container orchestration (CO) systems include Kubernetes, Mesos, Docker,
 Cloud Foundry and so forth.
 
 This project will implement all the interfaces defined by
-Container Storage Interface (CSI).
+Container Storage Interface (CSI). It has seperate plugins for supporting block and file storages.
 
