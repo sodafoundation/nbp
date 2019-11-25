@@ -61,8 +61,11 @@ public interface VimFieldsConst {
         String ServiceInstance = "ServiceInstance";
         String SessionManager = "SessionManager";
         String Task = "Task";
+        String Disk = "disk";
     }
+
     interface PropertyNameConst {
+
         interface HostSystem {
             String Datastore = "datastore";
             String Config = "config";
@@ -81,7 +84,7 @@ public interface VimFieldsConst {
             String Name = "name";
         }
 
-        interface VM{
+        interface VM {
             String Config = "config";
             String Runtime = "runtime";
         }

@@ -26,7 +26,7 @@ if(type == "createDatastoreOrLun"){
 } else {
     var hostId = arr[2] + ":" + arr[3];
     var ns = org_opensds_storage_devices;
-    var hostUrl = ns.webContextPath + "/rest/data/hoststatus/" + hostId + "?serverGuid=" + serverGuid + "&t=" + new Date();
+    var hostUrl = ns.webContextPath + "/rest/data/host/getEXIStatus/" + hostId + "?serverGuid=" + serverGuid + "&t=" + new Date();
         $.ajax({
             async:true,
             type:"get",

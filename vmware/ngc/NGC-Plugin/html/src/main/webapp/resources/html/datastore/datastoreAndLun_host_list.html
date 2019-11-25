@@ -30,7 +30,7 @@ table thead tr th,table tbody tr td {
 		$("#divLoadingAlarm").css("display", "block");
 		parent.$("#nextStep").prop("disabled", "disabled");
         parent.$("#nextStep").css("background","#57C7FF");
-        url = ns.webContextPath + "/rest/data/hostList?objectId=" + objectId + "&serverGuid=" + serverGuid;
+        url = ns.webContextPath + "/rest/data/host/getESXIList?objectId=" + objectId + "&serverGuid=" + serverGuid;
 
 		function refreshData() {
 			$.getJSON(encodeURI(url), function(resp) {

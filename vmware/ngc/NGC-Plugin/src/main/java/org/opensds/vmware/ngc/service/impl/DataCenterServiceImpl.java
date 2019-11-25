@@ -58,7 +58,6 @@ public class DataCenterServiceImpl extends VimCommonServiceImpl implements DataC
 
         }catch (Exception e) {
             ExpectionHandle.handleExceptions(resultInfo, e);
-            resultInfo.setMsg(e.getMessage());
         }
 
         resultInfo.setData(hosts);
@@ -79,7 +78,6 @@ public class DataCenterServiceImpl extends VimCommonServiceImpl implements DataC
             resultInfo.setData(hosts);
         }catch (Exception e) {
             ExpectionHandle.handleExceptions(resultInfo, e);
-            resultInfo.setMsg(e.getMessage());
         }
         resultInfo.setData(new ArrayList<HostInfo>());
         return resultInfo;

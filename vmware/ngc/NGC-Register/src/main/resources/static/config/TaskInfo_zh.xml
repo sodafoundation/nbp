@@ -183,14 +183,6 @@
         <taskSummaryKey>OpenSDS.Storage.Task.CreateFS.summary</taskSummaryKey>
         <taskSummaryValue>创建文件系统</taskSummaryValue>
     </TaskId>
-    <!--<TaskId name="OpenSDS.Storage.Task.CreateNFSShare">-->
-        <!--<taskId>OpenSDS.Storage.Task.CreateNFSShare</taskId>-->
-        <!--<taskLabelKey>OpenSDS.Storage.Task.CreateNFSShare.label</taskLabelKey>-->
-        <!--<taskLabelValue>创建NFS共享</taskLabelValue>-->
-        <!--<taskSummaryKey>OpenSDS.Storage.Task.CreateNFSShare.summary</taskSummaryKey>-->
-        <!--<taskSummaryValue>创建NFS共享，创建NFS datastore的第二步</taskSummaryValue>-->
-    <!--</TaskId>-->
-    <!--new-->
     <TaskId name="OpenSDS.Storage.Task.CreateHostEntityOnStorage">
         <taskId>OpenSDS.Storage.Task.CreateHostEntityOnStorage</taskId>
         <taskLabelKey>OpenSDS.Storage.Task.CreateHostEntityOnStorage.label</taskLabelKey>

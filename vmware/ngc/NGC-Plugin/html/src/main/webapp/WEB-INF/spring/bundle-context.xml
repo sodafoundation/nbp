@@ -16,7 +16,6 @@
     <!-- DO NOT CHANGE this section, it enables Spring MVC @Controller programming
         model -->
     <context:annotation-config/>
-    <!--<mvc:annotation-driven conversion-service="conversionService"/>-->
     <context:component-scan base-package="org.opensds.vmware.ngc"/>
 
     <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">

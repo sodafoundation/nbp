@@ -25,9 +25,9 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public Map<String, String> handleException(Exception ex, HttpServletResponse response) {
@@ -42,7 +42,6 @@ public class GlobalExceptionHandler {
         PrintWriter pw = new PrintWriter(sw);
         ex.printStackTrace(pw);
         errorMap.put("stackTrace", sw.toString());
-
         return errorMap;
     }
 }

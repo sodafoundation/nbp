@@ -16,24 +16,43 @@ package org.opensds.vmware.ngc.adapter;
 
 import org.opensds.vmware.ngc.dao.DeviceRepository;
 import org.opensds.vmware.ngc.model.DeviceInfo;
-import org.opensds.vmware.ngc.util.Constant;
+import org.opensds.vmware.ngc.base.Constant;
 import com.vmware.vise.data.Constraint;
 import com.vmware.vise.data.PropertySpec;
 import com.vmware.vise.data.ResourceSpec;
 import com.vmware.vise.data.query.Comparator;
-import com.vmware.vise.data.query.*;
+import com.vmware.vise.data.query.type;
+import com.vmware.vise.data.query.DataProviderAdapter;
+import com.vmware.vise.data.query.Response;
+import com.vmware.vise.data.query.RequestSpec;
+import com.vmware.vise.data.query.QuerySpec;
+import com.vmware.vise.data.query.ResultSet;
+import com.vmware.vise.data.query.ResultItem;
+import com.vmware.vise.data.query.ObjectIdentityConstraint;
 import com.vmware.vise.vim.data.VimObjectReferenceService;
+import com.vmware.vise.data.query.CompositeConstraint;
+import com.vmware.vise.data.query.PropertyConstraint;
+import com.vmware.vise.data.query.PropertyValue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Locale;
 
 @type(Constant.DEVICE_TYPE)
 @Component
 public class DeviceDataAdapter implements DataProviderAdapter {
 
+    /**
+     * device type
+     */
     public static final String DEVICE_TYPE = Constant.DEVICE_TYPE;
 
     private static final Log logger = LogFactory.getLog(DeviceDataAdapter.class);
@@ -41,19 +60,23 @@ public class DeviceDataAdapter implements DataProviderAdapter {
     @Autowired
     private VimObjectReferenceService objectRefService;
 
-    @Autowired(required=false)
+    @Autowired
     private DeviceRepository deviceRepository;
 
-
+    /**
+     * get data from RequestSpec
+     * @param request RequestSpec
+     * @return Response
+     */
     @Override
-	public Response getData(RequestSpec request) {
+    public Response getData(RequestSpec request) {
         if (request == null) {
             throw new IllegalArgumentException("request must be non-null.");
         }
         QuerySpec[] querySpecs = request.querySpec;
         List<ResultSet> results = new ArrayList<ResultSet>(querySpecs.length);
         for (QuerySpec qs : querySpecs) {
-            ResultSet rs = _processQuery(qs);
+            ResultSet rs = processQuery(qs);
             results.add(rs);
         }
 
@@ -62,12 +85,12 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return response;
     }
 
-    private ResultSet _processQuery(QuerySpec qs) {
+    private ResultSet processQuery(QuerySpec qs) {
         ResultSet rs = new ResultSet();
-        if (!_validateQuerySpec(qs)) {
+        if (!validateQuerySpec(qs)) {
             return rs;
         }
-        List<ResultItem> items = _processConstraint(qs.resourceSpec.constraint, qs.resourceSpec.propertySpecs);
+        List<ResultItem> items = processConstraint(qs.resourceSpec.constraint, qs.resourceSpec.propertySpecs);
         if (null != items) {
             rs.totalMatchedObjectCount = items.size();
         } else {
@@ -82,7 +105,7 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return rs;
     }
 
-    private String[] _convertPropertySpec(PropertySpec[] pSpecs) {
+    private String[] convertPropertySpec(PropertySpec[] pSpecs) {
         Set<String> properties = new HashSet<String>();
         if (pSpecs != null) {
             for (PropertySpec pSpec : pSpecs) {
@@ -94,37 +117,39 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return properties.toArray(new String[]{});
     }
 
-    private List<ResultItem> _processConstraint(Constraint constraint, PropertySpec[] propertySpecs) {
+    private List<ResultItem> processConstraint(Constraint constraint, PropertySpec[] propertySpecs) {
         List<ResultItem> items = null;
 
         if (constraint instanceof ObjectIdentityConstraint) {
             ObjectIdentityConstraint oic = (ObjectIdentityConstraint) constraint;
-            items = _processObjectIdentityConstraint(oic, propertySpecs);
+            items = processObjectIdentityConstraint(oic, propertySpecs);
         } else if (constraint instanceof CompositeConstraint) {
             CompositeConstraint cc = (CompositeConstraint) constraint;
-            items = _processCompositeConstraint(cc, propertySpecs);
+            items = processCompositeConstraint(cc, propertySpecs);
         } else if (constraint instanceof PropertyConstraint) {
             PropertyConstraint pc = (PropertyConstraint) constraint;
-            items = _processPropertyConstraint(pc, propertySpecs);
-        } else if (_isSimpleConstraint(constraint)) {
-            items = _processSimpleConstraint(constraint, propertySpecs);
+            items = processPropertyConstraint(pc, propertySpecs);
+        } else if (isSimpleConstraint(constraint)) {
+            items = processSimpleConstraint(constraint, propertySpecs);
+        } else {
+            logger.error("can not find any property process.");
         }
         return items;
     }
 
-    private List<ResultItem> _processCompositeConstraint(CompositeConstraint cc, PropertySpec[] propertySpecs) {
+    private List<ResultItem> processCompositeConstraint(CompositeConstraint cc, PropertySpec[] propertySpecs) {
         List<ResultItem> items = new ArrayList<ResultItem>();
         for (Constraint constraint : cc.nestedConstraints) {
-            List<ResultItem> individualItems = _processConstraint(constraint, propertySpecs);
+            List<ResultItem> individualItems = processConstraint(constraint, propertySpecs);
             items.addAll(individualItems);
         }
         return items;
     }
 
-    private List<ResultItem> _processSimpleConstraint(Constraint constraint, PropertySpec[] propertySpecs) {
-
-        String[] requestedProperties = _convertPropertySpec(propertySpecs);
-        logger.debug(String.format("ProcessSimpleConstraint: %s  %s", constraint.targetType, requestedProperties));
+    private List<ResultItem> processSimpleConstraint(Constraint constraint, PropertySpec[] propertySpecs) {
+        String[] requestedProperties = convertPropertySpec(propertySpecs);
+        logger.debug(String.format(Locale.ROOT, "ProcessSimpleConstraint: %s  %s",
+                constraint.targetType, requestedProperties));
         Map<String, DeviceInfo> allDevices = deviceRepository.getAll();
         return processAll(allDevices, requestedProperties);
     }
@@ -134,29 +159,25 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         for (Map.Entry<String, DeviceInfo> entry : allDevice.entrySet()) {
             String uid = entry.getKey();
             DeviceInfo deviceInfo = entry.getValue();
-            logger.info("Trying to get data for device uid:" + uid);
-            ResultItem ri = _addDeviceResultItem(uid, deviceInfo, requestedProperties);
+            logger.info(String.format(Locale.ROOT, "Trying to get data for device uid{}", uid));
+            ResultItem ri = addDeviceResultItem(uid, deviceInfo, requestedProperties);
             if (ri != null) {
                 items.add(ri);
             }
         }
         return items;
-
-
     }
 
-
-    private List<ResultItem> _processObjectIdentityConstraint(ObjectIdentityConstraint constraint,
-                                                              PropertySpec[] propertySpecs) {
-
+    private List<ResultItem> processObjectIdentityConstraint(
+            ObjectIdentityConstraint constraint, PropertySpec[] propertySpecs) {
         List<ResultItem> items = new ArrayList<ResultItem>();
-        String[] requestedProperties = _convertPropertySpec(propertySpecs);
+        String[] requestedProperties = convertPropertySpec(propertySpecs);
 
         String uid = objectRefService.getUid(constraint.target);
         DeviceInfo deviceInfo = deviceRepository.get(uid);
 
         if (deviceInfo != null) {
-            ResultItem ri = _addDeviceResultItem(uid, deviceInfo, requestedProperties);
+            ResultItem ri = addDeviceResultItem(uid, deviceInfo, requestedProperties);
             if (ri != null) {
                 items.add(ri);
             }
@@ -164,21 +185,20 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return items;
     }
 
-
-    private List<ResultItem> _processPropertyConstraint(PropertyConstraint pc, PropertySpec[] propertySpecs) {
+    private List<ResultItem> processPropertyConstraint(PropertyConstraint pc, PropertySpec[] propertySpecs) {
         assert (pc.comparator == Comparator.EQUALS);
         String comparableValue = pc.comparableValue.toString();
         List<ResultItem> items = new ArrayList<ResultItem>();
-        String[] requestedProperties = _convertPropertySpec(propertySpecs);
+        String[] requestedProperties = convertPropertySpec(propertySpecs);
         Map<String, DeviceInfo> currentObjects = deviceRepository.getAll();
-        Iterator<String> i = currentObjects.keySet().iterator();
+        Iterator<String> it = currentObjects.keySet().iterator();
 
-        while (i.hasNext()) {
-            String uid = i.next();
+        while (it.hasNext()) {
+            String uid = it.next();
             DeviceInfo deviceInfo = currentObjects.get(uid);
 
             if (comparableValue.equals(deviceInfo.getProperty(pc.propertyName))) {
-                ResultItem ri = _addDeviceResultItem(uid, deviceInfo, requestedProperties);
+                ResultItem ri = addDeviceResultItem(uid, deviceInfo, requestedProperties);
                 if (ri != null) {
                     items.add(ri);
                 }
@@ -187,9 +207,8 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return items;
     }
 
-    private ResultItem _addDeviceResultItem(String uid, DeviceInfo deviceInfo, String[] requestedProperties) {
-
-        logger.info(String.format("requestedProperties for device %s are %s",
+    private ResultItem addDeviceResultItem(String uid, DeviceInfo deviceInfo, String[] requestedProperties) {
+        logger.info(String.format(Locale.ROOT, "requestedProperties for device %s are %s",
                 deviceInfo.ip, Arrays.toString(requestedProperties)));
         ResultItem ri = new ResultItem();
         Object deviceRef = deviceInfo.getDeviceReference();
@@ -198,7 +217,7 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         List<PropertyValue> propValArr = new ArrayList<PropertyValue>(requestedProperties.length);
         for (int i = 0; i < requestedProperties.length; ++i) {
             String requestedProperty = requestedProperties[i];
-            logger.info(String.format("Processing property:%s", requestedProperty));
+            logger.info(String.format(Locale.ROOT, "Processing property:%s", requestedProperty));
             Object value = deviceInfo.getProperty(requestedProperty);
             if (value != null) {
                 PropertyValue pv = new PropertyValue();
@@ -212,7 +231,7 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         return ri;
     }
 
-    private Boolean _validateQuerySpec(QuerySpec qs) {
+    private Boolean validateQuerySpec(QuerySpec qs) {
         if (qs == null) {
             return false;
         }
@@ -221,10 +240,10 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         if (resourceSpec == null || resourceSpec.constraint == null) {
             return false;
         }
-        return _validateConstraint(resourceSpec.constraint);
+        return validateConstraint(resourceSpec.constraint);
     }
 
-    private Boolean _validateConstraint(Constraint constraint) {
+    private Boolean validateConstraint(Constraint constraint) {
         if (constraint instanceof ObjectIdentityConstraint) {
             Object source = ((ObjectIdentityConstraint) constraint).target;
             return (source != null && DEVICE_TYPE.equals(objectRefService.getResourceObjectType(source)));
@@ -232,7 +251,7 @@ public class DeviceDataAdapter implements DataProviderAdapter {
         } else if (constraint instanceof CompositeConstraint) {
             CompositeConstraint cc = (CompositeConstraint) constraint;
             for (Constraint c : cc.nestedConstraints) {
-                if (!_validateConstraint(c)) {
+                if (!validateConstraint(c)) {
                     return false;
                 }
             }
@@ -242,15 +261,15 @@ public class DeviceDataAdapter implements DataProviderAdapter {
             return DEVICE_TYPE.equals(constraint.targetType)
                     && ((PropertyConstraint) constraint).comparator == Comparator.EQUALS;
 
-        } else if (_isSimpleConstraint(constraint)) {
+        } else if (isSimpleConstraint(constraint)) {
             return (DEVICE_TYPE.equals(constraint.targetType));
+
+        } else {
+            return false;
         }
-        return false;
     }
 
-
-    private Boolean _isSimpleConstraint(Object constraint) {
+    private Boolean isSimpleConstraint(Object constraint) {
         return (constraint.getClass().getSimpleName().equals(Constraint.class.getSimpleName()));
     }
-
 }
