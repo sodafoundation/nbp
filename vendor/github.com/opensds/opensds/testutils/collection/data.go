@@ -44,12 +44,16 @@ var (
 			CustomProperties: model.CustomPropertiesSpec{
 				"dataStorage": map[string]interface{}{
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true,
+					"compression":        true,
+					"deduplication":      true,
 				},
 				"ioConnectivity": map[string]interface{}{
 					"accessProtocol": "rbd",
 					"maxIOPS":        float64(5000000),
 					"maxBWS":         float64(500),
+					"minIOPS":        float64(1000000),
+					"minBWS":         float64(100),
+					"latency":        float64(100),
 				},
 			},
 		},
@@ -75,12 +79,16 @@ var (
 			CustomProperties: model.CustomPropertiesSpec{
 				"dataStorage": map[string]interface{}{
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true,
+					"compression":        true,
+					"deduplication":      false,
 				},
 				"ioConnectivity": map[string]interface{}{
 					"accessProtocol": "NFS",
 					"maxIOPS":        float64(5000000),
 					"maxBWS":         float64(500),
+					"minIOPS":        float64(1000000),
+					"minBWS":         float64(100),
+					"latency":        float64(100),
 				},
 			},
 		},
@@ -89,12 +97,16 @@ var (
 	SampleCustomProperties = model.CustomPropertiesSpec{
 		"dataStorage": map[string]interface{}{
 			"provisioningPolicy": "Thin",
-			"isSpaceEfficient":   true,
+			"compression":        true,
+			"deduplication":      true,
 		},
 		"ioConnectivity": map[string]interface{}{
 			"accessProtocol": "rbd",
 			"maxIOPS":        float64(5000000),
 			"maxBWS":         float64(500),
+			"minIOPS":        float64(1000000),
+			"minBWS":         float64(100),
+			"latency":        float64(100),
 		},
 	}
 
@@ -127,12 +139,16 @@ var (
 			Extras: model.StoragePoolExtraSpec{
 				DataStorage: model.DataStorageLoS{
 					ProvisioningPolicy: "Thin",
-					IsSpaceEfficient:   true,
+					Compression:        true,
+					Deduplication:      false,
 				},
 				IOConnectivity: model.IOConnectivityLoS{
 					AccessProtocol: "rbd",
 					MaxIOPS:        8000000,
 					MaxBWS:         700,
+					MinIOPS:        1000000,
+					MinBWS:         100,
+					Latency:        100,
 				},
 				Advanced: map[string]interface{}{
 					"diskType": "SSD",
@@ -154,12 +170,16 @@ var (
 			Extras: model.StoragePoolExtraSpec{
 				DataStorage: model.DataStorageLoS{
 					ProvisioningPolicy: "Thin",
-					IsSpaceEfficient:   true,
+					Compression:        true,
+					Deduplication:      false,
 				},
 				IOConnectivity: model.IOConnectivityLoS{
 					AccessProtocol: "rbd",
 					MaxIOPS:        3000000,
 					MaxBWS:         350,
+					MinIOPS:        1000000,
+					MinBWS:         100,
+					Latency:        100,
 				},
 				Advanced: map[string]interface{}{
 					"diskType": "SAS",
@@ -181,13 +201,17 @@ var (
 			Extras: model.StoragePoolExtraSpec{
 				DataStorage: model.DataStorageLoS{
 					ProvisioningPolicy:      "Thin",
-					IsSpaceEfficient:        false,
+					Compression:             false,
+					Deduplication:           false,
 					StorageAccessCapability: []string{"Read", "Write", "Execute"},
 				},
 				IOConnectivity: model.IOConnectivityLoS{
 					AccessProtocol: "nfs",
 					MaxIOPS:        7000000,
 					MaxBWS:         600,
+					MinIOPS:        1000000,
+					MinBWS:         100,
+					Latency:        100,
 				},
 				Advanced: map[string]interface{}{
 					"diskType": "SSD",
@@ -248,6 +272,7 @@ var (
 				Id: "6ad25d59-a160-45b2-8920-211be282e2df",
 			},
 			Description:      "This is a sample Acl for testing",
+			ProfileId:        "1106b972-66ef-11e7-b172-db03f3689c9c",
 			Type:             "ip",
 			AccessCapability: []string{"Read", "Write"},
 			AccessTo:         "10.32.109.15",
@@ -257,12 +282,12 @@ var (
 			BaseModel: &model.BaseModel{
 				Id: "ad25d59-a160-45b2-8920-211be282e2dfh",
 			},
-			Description: "This is a sample Acl for testing",
-			ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
-			Type: "ip",
+			Description:      "This is a sample Acl for testing",
+			ProfileId:        "1106b972-66ef-11e7-b172-db03f3689c9c",
+			Type:             "ip",
 			AccessCapability: []string{"Read", "Write"},
-			AccessTo: "10.32.109.151",
-			FileShareId: "d2975ebe-d82c-430f-b28e-f373746a71ca",
+			AccessTo:         "10.32.109.151",
+			FileShareId:      "d2975ebe-d82c-430f-b28e-f373746a71ca",
 		},
 	}
 
@@ -274,6 +299,7 @@ var (
 			Name:         "sample-snapshot-01",
 			Description:  "This is the first sample snapshot for testing",
 			SnapshotSize: int64(1),
+			FileShareId:  "d2975ebe-d82c-430f-b28e-f373746a71ca",
 			Status:       "available",
 		},
 		{
@@ -294,25 +320,27 @@ var (
 			BaseModel: &model.BaseModel{
 				Id: "bd5b12a8-a101-11e7-941e-d77981b584d8",
 			},
-			Name:        "sample-volume",
-			Description: "This is a sample volume for testing",
-			Size:        int64(1),
-			Status:      "available",
-			PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
-			SnapshotId:  "",
+			Name:             "sample-volume",
+			Description:      "This is a sample volume for testing",
+			AvailabilityZone: "default",
+			Size:             int64(1),
+			Status:           "available",
+			PoolId:           "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			ProfileId:        "1106b972-66ef-11e7-b172-db03f3689c9c",
+			SnapshotId:       "",
 		},
 		{
 			BaseModel: &model.BaseModel{
 				Id: "bd5b12a8-a101-11e7-941e-d77981b584d8",
 			},
-			Name:        "sample-volume",
-			Description: "This is a sample volume for testing",
-			Size:        int64(1),
-			Status:      "available",
-			PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			ProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
-			SnapshotId:  "3769855c-a102-11e7-b772-17b880d2f537",
+			Name:             "sample-volume",
+			AvailabilityZone: "default",
+			Description:      "This is a sample volume for testing",
+			Size:             int64(1),
+			Status:           "available",
+			PoolId:           "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			ProfileId:        "1106b972-66ef-11e7-b172-db03f3689c9c",
+			SnapshotId:       "3769855c-a102-11e7-b772-17b880d2f537",
 		},
 	}
 
@@ -362,7 +390,7 @@ var (
 			},
 			Status:   "available",
 			VolumeId: "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			HostInfo: model.HostInfo{},
+			HostId:   "202964b5-8e73-46fd-b41b-a8e403f3c30b",
 			ConnectionInfo: model.ConnectionInfo{
 				DriverVolumeType: "iscsi",
 				ConnectionData: map[string]interface{}{
@@ -461,6 +489,47 @@ var (
 			PoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 		},
 	}
+
+	SampleHosts = []model.HostSpec{
+		{
+			BaseModel: &model.BaseModel{
+				Id:        "202964b5-8e73-46fd-b41b-a8e403f3c30b",
+				CreatedAt: "2019-11-11T11:01:33",
+			},
+			TenantId:          "x",
+			AccessMode:        "agentless",
+			HostName:          "sap1",
+			IP:                "192.168.56.12",
+			AvailabilityZones: []string{"default", "az2"},
+			Initiators: []*model.Initiator{
+				&model.Initiator{
+					PortName: "20000024ff5bb888",
+					Protocol: "iscsi",
+				},
+				&model.Initiator{
+					PortName: "20000024ff5bc999",
+					Protocol: "iscsi",
+				},
+			},
+		},
+		{
+			BaseModel: &model.BaseModel{
+				Id:        "eb73e59a-8b0f-4517-8b95-023ec134aec9",
+				CreatedAt: "2019-11-11T11:13:57",
+			},
+			TenantId:          "x",
+			AccessMode:        "agentless",
+			HostName:          "sap2",
+			IP:                "192.168.56.13",
+			AvailabilityZones: []string{"default", "az2"},
+			Initiators: []*model.Initiator{
+				&model.Initiator{
+					PortName: "20012324ff5ac132",
+					Protocol: "iscsi",
+				},
+			},
+		},
+	}
 )
 
 // The Byte*** variable here is designed for unit test in client package.
@@ -488,12 +557,16 @@ var (
 			"customProperties": {
 				"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": true
 				},
 				"ioConnectivity": {
 					"accessProtocol": "rbd",
 					"maxIOPS":        5000000,
-					"maxBWS":         500
+					"maxBWS":         500,
+					"minIOPS": 	  1000000,
+					"minBWS": 	  100,
+					"latency":	  100
 				}
 			}
 		}
@@ -502,12 +575,16 @@ var (
 	ByteCustomProperties = `{
 		"dataStorage": {
 			"provisioningPolicy": "Thin",
-			"isSpaceEfficient":   true
+			"compression":   true,
+			"deduplication": true
 		},
 		"ioConnectivity": {
 			"accessProtocol": "rbd",
 			"maxIOPS":        5000000,
-			"maxBWS":         500
+			"maxBWS":         500,
+			"minIOPS": 	  1000000,
+			"minBWS": 	  100,
+			"latency":	  100
 		}
 	}`
 
@@ -540,7 +617,8 @@ var (
 		"extras": {
 			"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": true
 				},
 			"ioConnectivity": {
 				"accessProtocol": "rbd",
@@ -565,12 +643,16 @@ var (
 			"extras": {
 				"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": true
 				},
 				"ioConnectivity": {
 					"accessProtocol": "rbd",
 					"maxIOPS":        8000000,
-					"maxBWS": 	      700
+					"maxBWS": 	  700,
+					"minIOPS": 	  1000000,
+					"minBWS": 	  100,
+					"latency":	  100
 				},
 				"advanced": {
 					"diskType": "SSD",
@@ -589,12 +671,16 @@ var (
 			"extras": {
 				"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": true
 				},
 				"ioConnectivity": {
 					"accessProtocol": "rbd",
 					"maxIOPS":        3000000,
-					"maxBWS": 	      350
+					"maxBWS": 	  350,
+					"minIOPS": 	  1000000,
+					"minBWS": 	  100,
+					"latency":	  100
 				},
 				"advanced": {
 					"diskType": "SAS",
@@ -682,7 +768,7 @@ var (
 
 	ByteFileShareAcl = `{
 		"id": "d2975ebe-d82c-430f-b28e-f373746a71ca",
-		"description": "This is a sample Acl for testing"	
+		"description": "This is a sample Acl for testing"
     }`
 
 	ByteFileSharesAcls = `[
@@ -705,6 +791,7 @@ var (
 		"name": "sample-volume",
 		"description": "This is a sample volume for testing",
 		"size": 1,
+        "availabilityZone": "default",
 		"status": "available",
 		"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
 		"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
@@ -716,6 +803,7 @@ var (
 			"name": "sample-volume",
 			"description": "This is a sample volume for testing",
 			"size": 1,
+            "availabilityZone": "default",
 			"status": "available",
 			"poolId": "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			"profileId": "1106b972-66ef-11e7-b172-db03f3689c9c"
@@ -728,7 +816,7 @@ var (
 		"description": "This is a sample volume attachment for testing",
 		"status": "available",
 		"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-		"hostInfo": {},
+		"hostId": "202964b5-8e73-46fd-b41b-a8e403f3c30b",
 		"connectionInfo": {
 			"driverVolumeType": "iscsi",
 			"data": {
@@ -747,7 +835,7 @@ var (
 			"description": "This is a sample volume attachment for testing",
 			"status": "available",
 			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			"hostInfo": {},
+			"hostId": "202964b5-8e73-46fd-b41b-a8e403f3c30b",
 			"connectionInfo": {
 				"driverVolumeType": "iscsi",
 				"data": {
@@ -849,6 +937,72 @@ var (
 			"updatedAt": "2017-07-10T14:36:58.014Z"
 		}
 	]`
+
+	ByteHost = `{
+        "id": "202964b5-8e73-46fd-b41b-a8e403f3c30b",
+        "accessMode": "agentless",
+        "createdAt": "2019-11-11T11:01:33",
+        "tenantId": "x",
+        "hostName": "sap1",
+        "ip": "192.168.56.12",
+        "availabilityZones": [
+            "default",
+            "az2"
+        ],
+        "initiators": [
+            {
+                "portName": "20000024ff5bb888",
+                "protocol": "iscsi"
+            },
+            {
+                "portName": "20000024ff5bc999",
+                "protocol": "iscsi"
+            }
+        ]
+    }`
+
+	ByteHosts = `[
+            {
+                "id": "202964b5-8e73-46fd-b41b-a8e403f3c30b",
+                "accessMode": "agentless",
+                "createdAt": "2019-11-11T11:01:33",
+                "tenantId": "x",
+                "hostName": "sap1",
+                "ip": "192.168.56.12",
+                "availabilityZones": [
+                    "default",
+                    "az2"
+                ],
+                "initiators": [
+                    {
+                        "portName": "20000024ff5bb888",
+                        "protocol": "iscsi"
+                    },
+                    {
+                        "portName": "20000024ff5bc999",
+                        "protocol": "iscsi"
+                    }
+                ]
+            },
+            {
+                "id": "eb73e59a-8b0f-4517-8b95-023ec134aec9",
+                "accessMode": "agentless",
+                "createdAt": "2019-11-11T11:13:57",
+                "tenantId": "x",
+                "hostName": "sap2",
+                "ip": "192.168.56.13",
+                "availabilityZones": [
+                    "default",
+                    "az2"
+                ],
+                "initiators": [
+                    {
+                        "portName": "20012324ff5ac132",
+                        "protocol": "iscsi"
+                    }
+                ]
+            }
+    	]`
 )
 
 // The StringSlice*** variable here is designed for unit test in etcd package.
@@ -871,12 +1025,16 @@ var (
 			"customProperties": {
 				"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": true
 				},
 				"ioConnectivity": {
 					"accessProtocol": "rbd",
 					"maxIOPS":        5000000,
-					"maxBWS":         500
+					"maxBWS":         500,
+					"minIOPS": 	  1000000,
+					"minBWS": 	  100,
+					"latency":	  100
 				}
 			}
 		}`,
@@ -907,12 +1065,16 @@ var (
 			"extras": {
 				"dataStorage": {
 					"provisioningPolicy": "Thin",
-					"isSpaceEfficient":   true
+					"compression":   true,
+					"deduplication": false
 				},
 				"ioConnectivity": {
 					"accessProtocol": "rbd",
 					"maxIOPS":        8000000,
-					"maxBWS": 	      700
+					"maxBWS": 	  700,
+					"minIOPS": 	  1000000,
+					"minBWS": 	  100,
+					"latency":	  100
 				},
 				"advanced": {
 					"diskType": "SSD",
@@ -928,6 +1090,7 @@ var (
 			"name":        "sample-volume",
 			"description": "This is a sample volume for testing",
 			"size":        1,
+            "availabilityZone": "default",
 			"status":      "available",
 			"poolId":      "084bf71e-a102-11e7-88a8-e31fe6d52248",
 			"profileId":   "1106b972-66ef-11e7-b172-db03f3689c9c"
@@ -939,7 +1102,7 @@ var (
 			"id": "f2dda3d2-bf79-11e7-8665-f750b088f63e",
 			"status":   "available",
 			"volumeId": "bd5b12a8-a101-11e7-941e-d77981b584d8",
-			"hostInfo": {},
+			"hostId": "202964b5-8e73-46fd-b41b-a8e403f3c30b",
 			"connectionInfo": {
 				"driverVolumeType": "iscsi",
 				"data": {

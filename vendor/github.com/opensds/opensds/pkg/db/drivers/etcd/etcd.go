@@ -40,9 +40,6 @@ import (
 )
 
 const (
-	defaultLimit            = 50
-	defaultOffset           = 0
-	defaultSortDir          = "desc"
 	defaultSortKey          = "ID"
 	defaultBlockProfileName = "default_block"
 	defaultFileProfileName  = "default_file"
@@ -106,11 +103,11 @@ func (c *Client) GetLimit(m map[string][]string) int {
 		limit, err = strconv.Atoi(v[0])
 		if err != nil || limit < 0 {
 			log.Warning("Invalid input limit:", limit, ",use default value instead:50")
-			return defaultLimit
+			return constants.DefaultLimit
 		}
 	} else {
 		log.Warning("The parameter limit is not present,use default value instead:50")
-		return defaultLimit
+		return constants.DefaultLimit
 	}
 	return limit
 }
@@ -127,12 +124,12 @@ func (c *Client) GetOffset(m map[string][]string, size int) int {
 		if err != nil || offset < 0 || offset > size {
 			log.Warning("Invalid input offset or input offset is out of bounds:", offset, ",use default value instead:0")
 
-			return defaultOffset
+			return constants.DefaultOffset
 		}
 
 	} else {
 		log.Warning("The parameter offset is not present,use default value instead:0")
-		return defaultOffset
+		return constants.DefaultOffset
 	}
 	return offset
 }
@@ -145,11 +142,11 @@ func (c *Client) GetSortDir(m map[string][]string) string {
 		sortDir = v[0]
 		if !strings.EqualFold(sortDir, "desc") && !strings.EqualFold(sortDir, "asc") {
 			log.Warning("Invalid input sortDir:", sortDir, ",use default value instead:desc")
-			return defaultSortDir
+			return constants.DefaultSortDir
 		}
 	} else {
 		log.Warning("The parameter sortDir is not present,use default value instead:desc")
-		return defaultSortDir
+		return constants.DefaultSortDir
 	}
 	return sortDir
 }
@@ -182,7 +179,7 @@ func (c *Client) ParameterFilter(m map[string][]string, size int, sortKeys []str
 	endIdx := limit + offset
 
 	// If use not specified the limit return all the items.
-	if limit == defaultLimit || endIdx > size {
+	if limit == constants.DefaultLimit || endIdx > size {
 		endIdx = size
 	}
 
@@ -1993,6 +1990,9 @@ func (c *Client) UpdateVolume(ctx *c.Context, vol *model.VolumeSpec) (*model.Vol
 	if vol.Metadata != nil {
 		result.Metadata = utils.MergeStringMaps(result.Metadata, vol.Metadata)
 	}
+	if vol.Identifier != nil {
+		result.Identifier = vol.Identifier
+	}
 	if vol.PoolId != "" {
 		result.PoolId = vol.PoolId
 	}
@@ -2099,6 +2099,10 @@ func (c *Client) ExtendVolume(ctx *c.Context, vol *model.VolumeSpec) (*model.Vol
 
 // CreateVolumeAttachment
 func (c *Client) CreateVolumeAttachment(ctx *c.Context, attachment *model.VolumeAttachmentSpec) (*model.VolumeAttachmentSpec, error) {
+	if attachment.Id == "" {
+		attachment.Id = uuid.NewV4().String()
+	}
+	attachment.CreatedAt = time.Now().Format(constants.TimeFormat)
 	attachment.TenantId = ctx.TenantId
 
 	atcBody, err := json.Marshal(attachment)
@@ -2184,109 +2188,24 @@ func (c *Client) ListVolumeAttachments(ctx *c.Context, volumeId string) ([]*mode
 
 }
 
-var volumeAttachmentSortKey string
-
-type VolumeAttachmentSlice []*model.VolumeAttachmentSpec
-
-func (volumeAttachment VolumeAttachmentSlice) Len() int { return len(volumeAttachment) }
-
-func (volumeAttachment VolumeAttachmentSlice) Swap(i, j int) {
-
-	volumeAttachment[i], volumeAttachment[j] = volumeAttachment[j], volumeAttachment[i]
-}
-
-func (volumeAttachment VolumeAttachmentSlice) Less(i, j int) bool {
-	switch volumeAttachmentSortKey {
-	case "ID":
-		return volumeAttachment[i].Id < volumeAttachment[j].Id
-	case "VOLUMEID":
-		return volumeAttachment[i].VolumeId < volumeAttachment[j].VolumeId
-	case "STATUS":
-		return volumeAttachment[i].Status < volumeAttachment[j].Status
-	case "USERID":
-		return volumeAttachment[i].UserId < volumeAttachment[j].UserId
-	case "TENANTID":
-		return volumeAttachment[i].TenantId < volumeAttachment[j].TenantId
-	}
-	return false
-}
-
-func (c *Client) FindAttachmentValue(k string, p *model.VolumeAttachmentSpec) string {
-	switch k {
-	case "Id":
-		return p.Id
-	case "CreatedAt":
-		return p.CreatedAt
-	case "UpdatedAte":
-		return p.UpdatedAt
-	case "TenantId":
-		return p.TenantId
-	case "UserId":
-		return p.UserId
-	case "VolumeId":
-		return p.VolumeId
-	case "Mountpoint":
-		return p.Mountpoint
-	case "Status":
-		return p.Status
-	}
-	return ""
-}
-
-func (c *Client) SelectVolumeAttachments(m map[string][]string, attachments []*model.VolumeAttachmentSpec) []*model.VolumeAttachmentSpec {
-	if !c.SelectOrNot(m) {
-		return attachments
-	}
-
-	var atcs = []*model.VolumeAttachmentSpec{}
-	var flag bool
-	for _, attachment := range attachments {
-		flag = true
-		for key := range m {
-			if utils.Contained(key, validKey) {
-				continue
-			}
-			v := c.FindAttachmentValue(key, attachment)
-			if !strings.EqualFold(m[key][0], v) {
-				flag = false
-				break
-			}
-		}
-		if flag {
-			atcs = append(atcs, attachment)
-		}
-	}
-	return atcs
-
-}
-
-func (c *Client) SortVolumeAttachments(attachments []*model.VolumeAttachmentSpec, p *Parameter) []*model.VolumeAttachmentSpec {
-	volumeAttachmentSortKey = p.sortKey
-
-	if strings.EqualFold(p.sortDir, "asc") {
-		sort.Sort(VolumeAttachmentSlice(attachments))
-	} else {
-		sort.Sort(sort.Reverse(VolumeAttachmentSlice(attachments)))
-	}
-	return attachments
-
-}
-
 func (c *Client) ListVolumeAttachmentsWithFilter(ctx *c.Context, m map[string][]string) ([]*model.VolumeAttachmentSpec, error) {
 	var volumeId string
 	if v, ok := m["VolumeId"]; ok {
 		volumeId = v[0]
 	}
-	volumeAttachments, err := c.ListVolumeAttachments(ctx, volumeId)
+	attachments, err := c.ListVolumeAttachments(ctx, volumeId)
 	if err != nil {
 		log.Error("List volumes failed: ", err)
 		return nil, err
 	}
 
-	atcs := c.SelectVolumeAttachments(m, volumeAttachments)
-	p := c.ParameterFilter(m, len(atcs), []string{"ID", "VOLUMEID", "STATUS", "USERID", "PROJECTID"})
-
-	return c.SortVolumeAttachments(atcs, p)[p.beginIdx:p.endIdx], nil
+	tmpAttachments := utils.Filter(attachments, m)
+	tmpAttachments = utils.Slice(tmpAttachments, c.GetOffset(m, len(attachments)), c.GetLimit(m))
+	var res = []*model.VolumeAttachmentSpec{}
+	for _, data := range tmpAttachments.([]interface{}) {
+		res = append(res, data.(*model.VolumeAttachmentSpec))
+	}
+	return res, nil
 }
 
 // UpdateVolumeAttachment
@@ -2302,10 +2221,6 @@ func (c *Client) UpdateVolumeAttachment(ctx *c.Context, attachmentId string, att
 		result.Status = attachment.Status
 	}
 
-	// Update metadata
-	if attachment.Metadata != nil {
-		result.Metadata = utils.MergeStringMaps(result.Metadata, attachment.Metadata)
-	}
 	// Update DriverVolumeType
 	if len(attachment.DriverVolumeType) > 0 {
 		result.DriverVolumeType = attachment.DriverVolumeType
@@ -3254,4 +3169,199 @@ func (c *Client) SelectVolumeGroup(param map[string][]string, vgs []*model.Volum
 		}
 	}
 	return vglist
+}
+
+func (c *Client) ListHosts(ctx *c.Context, m map[string][]string) ([]*model.HostSpec, error) {
+	dbReq := &Request{
+		Url: urls.GenerateHostURL(urls.Etcd, ctx.TenantId),
+	}
+
+	if IsAdminContext(ctx) {
+		dbReq.Url = urls.GenerateHostURL(urls.Etcd, "")
+	}
+
+	dbRes := c.List(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When list hosts in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+
+	var hosts = []*model.HostSpec{}
+	if len(dbRes.Message) == 0 {
+		return hosts, nil
+	}
+	for _, msg := range dbRes.Message {
+		var host = &model.HostSpec{}
+		if err := json.Unmarshal([]byte(msg), host); err != nil {
+			log.Error("When parsing host in db:", dbRes.Error)
+			return nil, errors.New(dbRes.Error)
+		}
+		hosts = append(hosts, host)
+	}
+
+	tmpHosts := utils.Filter(hosts, m)
+	if len(m["sortKey"]) > 0 && utils.Contains([]string{"hostName", "createdAt"}, m["sortKey"][0]) {
+		tmpHosts = utils.Sort(tmpHosts, m["sortKey"][0], c.GetSortDir(m))
+	}
+
+	tmpHosts = utils.Slice(tmpHosts, c.GetOffset(m, len(hosts)), c.GetLimit(m))
+	var res = []*model.HostSpec{}
+	for _, data := range tmpHosts.([]interface{}) {
+		res = append(res, data.(*model.HostSpec))
+	}
+
+	return res, nil
+}
+
+func (c *Client) ListHostsByName(ctx *c.Context, hostName string) ([]*model.HostSpec, error) {
+	hosts, err := c.ListHosts(ctx, map[string][]string{"hostName": []string{hostName}})
+	if err != nil {
+		log.Error("List hosts failed: ", err)
+		return nil, err
+	}
+
+	var res []*model.HostSpec
+	for _, host := range hosts {
+		if hostName == host.HostName {
+			res = append(res, host)
+		}
+	}
+
+	return res, nil
+}
+
+func (c *Client) CreateHost(ctx *c.Context, host *model.HostSpec) (*model.HostSpec, error) {
+	host.TenantId = ctx.TenantId
+	if host.Id == "" {
+		host.Id = uuid.NewV4().String()
+	}
+	host.CreatedAt = time.Now().Format(constants.TimeFormat)
+	hostBody, err := json.Marshal(host)
+	if err != nil {
+		return nil, err
+	}
+
+	dbReq := &Request{
+		Url:     urls.GenerateHostURL(urls.Etcd, ctx.TenantId, host.Id),
+		Content: string(hostBody),
+	}
+	dbRes := c.Create(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When create host in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+
+	return host, nil
+}
+
+func (c *Client) UpdateHost(ctx *c.Context, host *model.HostSpec) (*model.HostSpec, error) {
+	result, err := c.GetHost(ctx, host.Id)
+	if err != nil {
+		return nil, err
+	}
+	if host.HostName != "" {
+		result.HostName = host.HostName
+	}
+	if host.IP != "" {
+		result.IP = host.IP
+	}
+	if host.Port > 0 {
+		result.Port = host.Port
+	}
+	if host.AccessMode != "" {
+		result.AccessMode = host.AccessMode
+	}
+	if host.Username != "" {
+		result.Username = host.Username
+	}
+	if host.Password != "" {
+		result.Password = host.Password
+	}
+	if len(host.AvailabilityZones) > 0 {
+		result.AvailabilityZones = host.AvailabilityZones
+	}
+	if len(host.Initiators) > 0 {
+		result.Initiators = host.Initiators
+	}
+	// Set update time
+	result.UpdatedAt = time.Now().Format(constants.TimeFormat)
+	body, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
+
+	// If an admin want to access other tenant's resource just fake other's tenantId.
+	if !IsAdminContext(ctx) && !AuthorizeProjectContext(ctx, result.TenantId) {
+		return nil, fmt.Errorf("opertaion is not permitted")
+	}
+
+	dbReq := &Request{
+		Url:        urls.GenerateHostURL(urls.Etcd, result.TenantId, result.Id),
+		NewContent: string(body),
+	}
+
+	dbRes := c.Update(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When update host in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+	return result, nil
+}
+
+func (c *Client) GetHost(ctx *c.Context, hostId string) (*model.HostSpec, error) {
+	host, err := c.getHost(ctx, hostId)
+	if !IsAdminContext(ctx) || err == nil {
+		return host, err
+	}
+	hosts, err := c.ListHosts(ctx, map[string][]string{"id": []string{hostId}})
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range hosts {
+		if v.Id == hostId {
+			return v, nil
+		}
+	}
+	return nil, fmt.Errorf("specified host(%s) can't find", hostId)
+}
+
+func (c *Client) getHost(ctx *c.Context, hostId string) (*model.HostSpec, error) {
+	dbReq := &Request{
+		Url: urls.GenerateHostURL(urls.Etcd, ctx.TenantId, hostId),
+	}
+	dbRes := c.Get(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When get host in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+
+	var host = &model.HostSpec{}
+	if err := json.Unmarshal([]byte(dbRes.Message[0]), host); err != nil {
+		log.Error("When parsing host in db:", dbRes.Error)
+		return nil, errors.New(dbRes.Error)
+	}
+	return host, nil
+}
+
+func (c *Client) DeleteHost(ctx *c.Context, hostId string) error {
+	// If an admin want to access other tenant's resource just fake other's tenantId.
+	tenantId := ctx.TenantId
+	if IsAdminContext(ctx) {
+		host, err := c.GetHost(ctx, hostId)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		tenantId = host.TenantId
+	}
+	dbReq := &Request{
+		Url: urls.GenerateHostURL(urls.Etcd, tenantId, hostId),
+	}
+
+	dbRes := c.Delete(dbReq)
+	if dbRes.Status != "Success" {
+		log.Error("When delete host in db:", dbRes.Error)
+		return errors.New(dbRes.Error)
+	}
+	return nil
 }
