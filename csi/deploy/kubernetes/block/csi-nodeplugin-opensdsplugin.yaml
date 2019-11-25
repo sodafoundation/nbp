@@ -1,0 +1,174 @@
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects,
+# which are necessary to run csi nodeplugin for opensds.
+
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-nodeplugin-opensdsplugin-block
+spec:
+  selector:
+    matchLabels:
+      app: csi-nodeplugin-opensdsplugin-block
+  template:
+    metadata:
+      labels:
+        app: csi-nodeplugin-opensdsplugin-block
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      serviceAccount: csi-nodeplugin-block
+      hostNetwork: true
+      containers:
+        - name: node-driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          args:
+            - "--v=5"
+            - "--csi-address=/csi/csi.sock"
+            - "--kubelet-registration-path=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        - name: opensds
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: opensdsio/csiplugin-block:latest
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+            - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "--v=8"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsendpoint
+            - name: OPENSDS_AUTH_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsauthstrategy
+            - name: OS_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osauthurl
+            - name: OS_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osusername
+            - name: OS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ospassword
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: enableEncrypted
+            - name: OS_TENANT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ostenantname
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: enableEncrypted
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osprojectname
+            - name: OS_USER_DOMAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osuserdomainid
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin-block
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: "Bidirectional"
+            - name: volume-devices-dir
+              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
+              mountPropagation: "Bidirectional"
+            - name: pods-probe-dir
+              mountPath: /dev
+              mountPropagation: "HostToContainer"
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
+            - name: ceph-dir
+              mountPath: /etc/ceph/
+            - name: certificate-path
+              mountPath: /opt/opensds-security
+            - name: hosts
+              mountPath: /etc
+      volumes:
+        - name: socket-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-opensdsplugin-block
+            type: DirectoryOrCreate
+        - name: volume-devices-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - name: pods-probe-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi/
+            type: Directory
+        - name: ceph-dir
+          hostPath:
+            path: /etc/ceph/
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: DirectoryOrCreate
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: DirectoryOrCreate
+        - name: hosts
+          hostPath:
+             path: /etc
+             type: Directory
