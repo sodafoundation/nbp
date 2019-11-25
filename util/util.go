@@ -25,7 +25,7 @@ import (
 	"github.com/opensds/opensds/pkg/model"
 )
 
-// GetHostIdByHostName returns hostid for given hostname if found
+// GetHostByHostName returns hostid for given hostname if found
 func GetHostByHostName(client *client.Client, hostName string) (*model.HostSpec, error) {
 	hostLists, err := client.HostMgr.ListHosts()
 	if nil != err {
@@ -40,7 +40,7 @@ func GetHostByHostName(client *client.Client, hostName string) (*model.HostSpec,
 	return nil, fmt.Errorf("Failed to find host for hostname %s", hostName)
 }
 
-// GetHostIdByHostName returns hostid for given hostId if found
+// GetHostByHostId returns hostid for given hostId if found
 func GetHostByHostId(client *client.Client, hostId string) (*model.HostSpec, error) {
 	hostLists, err := client.HostMgr.ListHosts()
 	if nil != err {
