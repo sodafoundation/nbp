@@ -151,7 +151,7 @@ class RestClient {
     }
 
     void findDeviceInfo(String ip, int port) throws Exception {
-        logger.info(String.format("OpenSDS Getting Storage Device info for OpenSDS Storage Device "
+        logger.info(String.format("OpenSDS Getting Storage Device info "
                     + "with IP %s", ip));
 
         request.setUrl(String.format("http://%s:%d/v1beta", ip, port));

@@ -86,7 +86,7 @@ public enum Constants {
 				properties.load(this.getClass().getResourceAsStream(PATH));
 			}
 			catch (Exception ex) {
-				logger.error(String.format("Error in loading Constant Properties Error Message is: %s", ex));
+				logger.error(String.format("Error in loading Constant Properties, Error Message is: %s", ex));
 			}
 		}
 		value = (String) properties.get(this.toString());
