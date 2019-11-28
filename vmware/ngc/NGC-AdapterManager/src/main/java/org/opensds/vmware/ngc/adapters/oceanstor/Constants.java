@@ -15,7 +15,9 @@
 package org.opensds.vmware.ngc.adapters.oceanstor;
 
 enum ERROR_CODE {
-    VOLUME_NOT_EXIST(1077936859);
+    VOLUME_NOT_EXIST(1077936859),
+    SNAPSHOT_NOT_EXIST(1077937880),
+    SNAPSHOT_NOT_ACTIVATED(1077937891);
 
     private long value;
 

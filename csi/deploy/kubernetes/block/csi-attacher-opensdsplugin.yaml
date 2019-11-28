@@ -1,0 +1,155 @@
+# This YAML file contains attacher & csi driver API objects,
+# which are necessary to run external csi attacher for opensds.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-attacher-opensdsplugin-block
+  labels:
+    app: csi-attacher-opensdsplugin-block
+spec:
+  selector:
+    app: csi-attacher-opensdsplugin-block
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-attacher-opensdsplugin-block
+spec:
+  serviceName: "csi-attacher-opensdsplugin-block"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-attacher-opensdsplugin-block
+  template:
+    metadata:
+      labels:
+        app: csi-attacher-opensdsplugin-block
+    spec:
+      serviceAccount: csi-attacher-block
+      containers:
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:v1.1.1
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
+        - name: cluster-driver-registrar
+          image: quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1
+          args:
+            - "--v=5"
+            - "--pod-info-mount-version=\"v1\""
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: opensds
+          image: opensdsio/csiplugin-block:latest
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+            - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "--v=8"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://csi/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsendpoint
+            - name: OPENSDS_AUTH_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsauthstrategy
+            - name: OS_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osauthurl
+            - name: OS_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osusername
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: enableEncrypted
+            - name: OS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ospassword
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: enableEncrypted
+            - name: OS_TENANT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ostenantname
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osprojectname
+            - name: OS_USER_DOMAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osuserdomainid
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: iscsi-dir
+              mountPath: /etc/iscsi/
+            - name: ceph-dir
+              mountPath: /etc/ceph/
+            - name: certificate-path
+              mountPath: /opt/opensds-security
+      volumes:
+        - name: socket-dir
+          emptyDir:
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi/
+            type: Directory
+        - name: ceph-dir
+          hostPath:
+            path: /etc/ceph/
+            type: DirectoryOrCreate
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: DirectoryOrCreate

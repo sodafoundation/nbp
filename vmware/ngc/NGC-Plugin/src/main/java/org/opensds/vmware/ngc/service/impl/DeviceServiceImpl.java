@@ -13,6 +13,7 @@
 // under the License.
 package org.opensds.vmware.ngc.service.impl;
 
+import org.opensds.vmware.ngc.dao.VolumesRepository;
 import org.opensds.vmware.ngc.models.StoragePoolMO;
 import org.opensds.vmware.ngc.adapter.DeviceDataAdapter;
 import org.opensds.vmware.ngc.dao.DeviceRepository;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -43,8 +45,10 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Autowired
     private VimObjectReferenceService vimObjectReferenceService;
-    @Autowired(required=false)
+    @Autowired
     private DeviceRepository deviceRepository;
+    @Autowired
+    private VolumesRepository volumesRepository;
 
     private static final String ERROR = "error";
     private static final String OK = "ok";
@@ -52,6 +56,7 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public ResultInfo<Object> add(DeviceInfo deviceInfo) {
+        logger.info("-----------Begin add the device!");
         ResultInfo resultInfo = new ResultInfo();
         if (isContainDevice(deviceInfo)) {
             resultInfo.setMsg("The device " + deviceInfo.ip + " is already exist");
@@ -64,11 +69,13 @@ public class DeviceServiceImpl implements DeviceService {
                     (DeviceDataAdapter.DEVICE_TYPE, deviceInfo.ip, null);
             deviceInfo.setDeviceReference(deviceReference);
             String uid = vimObjectReferenceService.getUid(deviceReference);
-            deviceInfo.id = uid;
+            deviceInfo.uid = uid;
             deviceInfo.name = deviceInfo.ip;
             deviceRepository.add(uid, deviceInfo);
+            volumesRepository.addDevice(deviceInfo);
             resultInfo.setData(deviceInfo);
             resultInfo.setStatus(OK);
+            logger.info("-----------Add the device success!");
         } catch (Exception e) {
             logger.error(e.getMessage(),e);
             resultInfo.setStatus(ERROR);
@@ -99,6 +106,7 @@ public class DeviceServiceImpl implements DeviceService {
         try {
             String uid = vimObjectReferenceService.getUid(deviceReference);
             deviceRepository.remove(uid);
+            volumesRepository.removeDevice(uid);
             resultInfo.setStatus(OK);
         } catch (Exception e) {
             logger.error(e.getMessage(),e);
@@ -144,15 +152,24 @@ public class DeviceServiceImpl implements DeviceService {
         return resultInfo;
     }
 
+    /**
+     * get device list form cache
+     * @return list of deviceInfo
+     */
     @Override
     public ResultInfo<Object> getList() {
+        logger.info("-----------Get the device list!");
         ResultInfo resultInfo = new ResultInfo();
-        resultInfo.setData(new ArrayList(deviceRepository.getAll().values()));
+        List<DeviceInfo> deviceInfoList = new ArrayList<>();
+        deviceInfoList.addAll(deviceRepository.getAll().values());
+        resultInfo.setData(deviceInfoList);
+        logger.info("-----------Get the device list finished! list size = " + deviceInfoList.size());
         return resultInfo;
     }
 
     @Override
     public ResultInfo<Object> getDeviceBlockPools(String deviceId) {
+        logger.info(String.format(Locale.ROOT, "-----------Get the pool list from %s", deviceId));
         ResultInfo resultInfo = new ResultInfo();
         List poolList = new ArrayList();
         DeviceInfo deviceInfo = null;
@@ -160,10 +177,11 @@ public class DeviceServiceImpl implements DeviceService {
             deviceInfo = deviceRepository.get(deviceId);
             if (deviceInfo != null) {
                 logger.info(String.format("DeviceInfo msg: %s!", deviceInfo.toString()));
-                Storage device = deviceRepository.getLoggedInDeviceByIP(deviceInfo.ip);
+                Storage device = deviceRepository.getLoginedDeviceByID(deviceInfo.uid);
                 for (StoragePoolMO poolMO: device.listStoragePools()) {
                     if (poolMO.type == POOL_TYPE.BLOCK) {
-                        StoragePoolInfo poolInfo = convertPoolMoToCommon(poolMO);
+                        StoragePoolInfo poolInfo = new StoragePoolInfo();
+                        poolInfo.convertPoolMo2Info(poolMO);
                         poolList.add(poolInfo);
                     }
                 }
@@ -172,11 +190,13 @@ public class DeviceServiceImpl implements DeviceService {
             //"This operation fails to be performed because of the unauthorized REST."
             try {
                 if (e.getMessage().contains("unauthorized")) {
+                    poolList.clear();
                     deviceRepository.update(deviceId, deviceInfo);
-                    Storage device = deviceRepository.getLoggedInDeviceByIP(deviceInfo.ip);
+                    Storage device = deviceRepository.getLoginedDeviceByID(deviceInfo.uid);
                     for (StoragePoolMO poolMO: device.listStoragePools()) {
                         if (poolMO.type == POOL_TYPE.BLOCK) {
-                            StoragePoolInfo poolInfo = convertPoolMoToCommon(poolMO);
+                            StoragePoolInfo poolInfo = new StoragePoolInfo();
+                            poolInfo.convertPoolMo2Info(poolMO);
                             poolList.add(poolInfo);
                         }
                     }
@@ -185,23 +205,12 @@ public class DeviceServiceImpl implements DeviceService {
                     ExpectionHandle.handleExceptions(resultInfo, e);
                 }
             } catch (Exception ex) {
-                logger.error(String.format("Get error in relogin (%s)", ex.getMessage()));
                 ExpectionHandle.handleExceptions(resultInfo, e);
             }
         }
+        logger.info("-----------Get the pool list finshed!");
         resultInfo.setData(poolList);
         return resultInfo;
-    }
-
-    private StoragePoolInfo convertPoolMoToCommon(final StoragePoolMO poolMO) {
-        StoragePoolInfo poolInfo= new StoragePoolInfo();
-        poolInfo.setName(poolMO.name)
-                .setId(poolMO.id)
-                .setUsageType(poolMO.type.name())
-                .setTotalCapacity(CapacityUtil.convert512BToCap(poolMO.totalCapacity))
-                .setFreeCapacity(CapacityUtil.convert512BToCap(poolMO.freeCapacity))
-                .setAvailableCapacity(CapacityUtil.convert512BToCap(poolMO.totalCapacity - poolMO.freeCapacity));
-        return poolInfo;
     }
 
     private boolean isContainDevice(DeviceInfo deviceInfo) {

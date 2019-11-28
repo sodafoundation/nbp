@@ -21,15 +21,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class TaskProcessor {
-    private static Log logger = LogFactory.getLog(TaskProcessor.class);
 
+    private static final Log logger = LogFactory.getLog(TaskProcessor.class);
+
+    /**
+     * Run Task List
+     * @param taskList List<TaskExecution>
+     */
     public static void runTaskWithThread(final List<TaskExecution> taskList) {
         Thread taskThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                final Map context= new HashMap();
+                final Map context = new HashMap();
                 List<TaskExecution> taskStack = new ArrayList<>();
                 try {
                     try {
@@ -50,6 +54,6 @@ public class TaskProcessor {
                 }
             }
         });
-        taskThread.run();
+        taskThread.start();
     }
 }

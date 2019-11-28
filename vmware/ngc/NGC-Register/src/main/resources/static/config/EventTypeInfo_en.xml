@@ -2,23 +2,14 @@
 <ROOT>
 	<EventID name="Device discover" severity="green">
 		<EventType>
-			<eventTypeID>storage-discover-device</eventTypeID>
-			<eventType>vim.event.EventEx</eventType>
-			<description>The infomation is generated when the device was discover.</description>
+			<eventTypeID>org.opensds.vmware.ngc.discover.device</eventTypeID>
+			<description>The infomation is generated when the storage was discover.</description>
 		</EventType>
 	</EventID>
 	<EventID name="Delete device" severity="green">
 		<EventType>
-			<eventTypeID>storage-delete-device</eventTypeID>
-			<eventType>vim.event.EventEx</eventType>
-			<description>The infomation is generated when the device was delete.</description>
-		</EventType>
-	</EventID>
-	<EventID name="Create Datastore" severity="green">
-		<EventType>
-			<eventTypeID>storage-createdatastore-device</eventTypeID>
-			<eventType>vim.event.EventEx</eventType>
-			<description>The infomation is generated when the datastore was create.</description>
+			<eventTypeID>org.opensds.vmware.ngc.delete.device</eventTypeID>
+			<description>The infomation is generated when the storage was delete.</description>
 		</EventType>
 	</EventID>
 </ROOT>

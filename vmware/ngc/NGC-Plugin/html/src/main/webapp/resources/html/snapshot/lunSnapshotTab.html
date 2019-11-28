@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8" />
+   <title>SnapshotTable</title>
+   <meta http-equiv="Cache-Control" content="no-cache" />
+   <style type="text/css">
+   .hid{display:none}
+   #cloneSnap{display:none}
+   html body div table tr td{margin:0;padding:0}
+   table{width:100%;height:100%}
+	table thead tr th,table tbody tr td {
+		white-space: nowrap;
+	}
+   </style>
+   <link type="text/css" rel="stylesheet" href="../../../assets/css/basic-table.css">
+   <link type="text/css" rel="stylesheet" href="../../../assets/css/lun-snapshot-Tab.css">
+</head>
+<body style="overflow-x:hidden;">
+	<table id="snapshotTable" class="tablesorter" style="table-layout: fixed;overflow-x:hidden;cellspacing: 0;cellpadding: 0;">
+		<tbody class="tableBody">
+			<tr id="cloneSnap">
+				<td name="" class="hid"></td>
+				<td width="4%" align="center" style="text-align: center;">
+					<input id="snapCheckbox_" type="checkbox"/>
+				</td>
+                <td title="" width="8%" align="left" name="id"></td>
+                <td title="" width="22%" align="left" name="name"></td>
+                <td title="" width="15%" align="left" name="status"></td>
+                <td title="" width="15%" align="left" name="capacity"></td>
+                <td title="" width="20%" align="left" name="timeStamp" style="border-right: 0px;"></td>
+				<td name="parentId"  style="display:none;"></td>
+                <td name="storageId"  style="display:none;"></td>
+			</tr>
+		</tbody>
+	</table>
+<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/basic-table.js"></script>
+<script type="text/javascript" src="../../../resources/js/snapshot/snapshotTab.js"></script>
+</body>
+</html>
