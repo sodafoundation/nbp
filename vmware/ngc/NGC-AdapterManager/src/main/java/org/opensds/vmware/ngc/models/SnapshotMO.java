@@ -30,4 +30,11 @@ public class SnapshotMO {
         this.parentID = parentID;
         this.timeStamp = timeStamp;
     }
+
+	@Override
+	public String toString() {
+		return "SnapshotMO [name=" + name + ", id=" + id + ", healthStatus=" + healthStatus + ", capacity=" + capacity
+				+ ", parentID=" + parentID + ", timeStamp=" + timeStamp + "]";
+	}
+
 }

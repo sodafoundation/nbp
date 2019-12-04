@@ -52,14 +52,13 @@ public abstract class Storage {
     public abstract void detachVolume(String volumeId, ConnectMO connect) throws Exception;
 
     /**
-     * query the volume mob by volume id
+     * query the volume mob by an identifier
      *
-     * @param volumeId in oceanstor volume id is wwn
-     *                 in opensds volume id is volume id
+     * @param identifier
      * @return volume mob
      * @throws Exception
      */
-    public abstract VolumeMO queryVolumeByID(String volumeId) throws Exception;
+    public abstract VolumeMO queryVolumeByID(String identifier) throws Exception;
 
     /**
      * get the list of volumes from a specified volume by volumeID

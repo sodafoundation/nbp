@@ -16,11 +16,12 @@ package org.opensds.vmware.ngc.adapters.oceanstor;
 
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.opensds.vmware.ngc.common.Request;
-import org.opensds.vmware.ngc.exceptions.HttpException;
 import org.opensds.vmware.ngc.exceptions.NotAuthorizedException;
 import org.opensds.vmware.ngc.models.ALLOC_TYPE;
 import org.opensds.vmware.ngc.models.HOST_OS_TYPE;
@@ -46,10 +47,11 @@ class RestClient {
     }
 
     private Request request;
-    String ip;
-    int port;
-    String user;
-    String password;
+    private String ip;
+    private int port;
+    private String user;
+    private String password;
+    private static final Log logger = LogFactory.getLog(RestClient.class);
 
     RestClient(String ip, int port, String user, String password) {
         this.ip = ip;
@@ -90,17 +92,22 @@ class RestClient {
         requestData.put("password", password);
         requestData.put("scope", "0");
 
+        logger.info("----------OceanStor Storage Device Login Getting Auth Token and "
+                    + "Device Info----------");
         JSONObject response = (JSONObject)request.post(
                 "/deviceManager/rest/xxxxx/sessions", requestData);
+        logger.debug(String.format("OceanStor Storage Device Login Response: %s", response));
+
         if (isFailed(response)) {
             String msg = String.format("Login %s error %d: %s",
                     ip, getErrorCode(response), getErrorDescription(response));
+            logger.error(String.format("OceanStor Logout Error: %s", msg));
             throw new Exception(msg);
         }
 
-        JSONObject respondData = response.getJSONObject("data");
-        String token = respondData.getString("iBaseToken");
-        String deviceId = respondData.getString("deviceid");
+        JSONObject responseData = response.getJSONObject("data");
+        String token = responseData.getString("iBaseToken");
+        String deviceId = responseData.getString("deviceid");
 
         request.setUrl(String.format("https://%s:%d/deviceManager/rest/%s", ip, port, deviceId));
         request.setHeaders("iBaseToken", token);
@@ -112,7 +119,7 @@ class RestClient {
             request.delete("/sessions");
             request.close();
         } catch (Exception e) {
-            // Ignore any exception here
+            logger.error(String.format("OceanStor Logout Error: %s", e));
         } finally {
             request = null;
         }
@@ -130,140 +137,201 @@ class RestClient {
             requestData.put("ALLOCTYPE", 0);
         }
 
+        logger.info("----------OceanStor Creating Volume----------");
+
         JSONObject response = (JSONObject)request.post("/lun", requestData);
+        logger.debug(String.format("OceanStor Create Volume Response: %s", response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create volume %s error %d: %s",
+            String msg = String.format("OeanStor Create Volume %s Error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info("OceanStor Volume Created.");
         return response.getJSONObject("data");
     }
 
     void deleteVolume(String volumeId) throws Exception {
+        logger.info(String.format("----------OceanStor Deleting Volume for VolumeId "
+                    + "%s----------", volumeId));
+
         JSONObject response = (JSONObject)request.delete(String.format("/lun/%s", volumeId));
+        logger.debug(String.format("OceanStor Delete Volume Response: %s", response));
+
         if (getErrorCode(response) == ERROR_CODE.VOLUME_NOT_EXIST.getValue()) {
-            // Volume doesn't exist, return success
+            String msg = String.format("No Volumes Found");
+            logger.error(String.format("OceanStor List Volumes: %s", msg));
             return;
         }
 
         if (isFailed(response)) {
-            String msg = String.format("Delete volume %s error %d: %s",
+            String msg = String.format("OceanStor Delete Volume %s Error %d: %s",
                     volumeId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OceanStor Volume for VolumeId %s Deleted.", volumeId));
     }
 
     JSONArray listVolumes(String poolId) throws Exception {
-        String lunCountUrl;
-        if (!poolId.isEmpty()) {
-            lunCountUrl = String.format("/lun/count?filter=PARENTID::%s", poolId);
-        } else {
-            lunCountUrl = String.format("/lun/count");
-        }
-
-        JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
-        if (isFailed(countResponse)) {
-            String msg = String.format("Get lun count error %d: %s",
-                    getErrorCode(countResponse), getErrorDescription(countResponse));
-            throw new Exception(msg);
-        }
-
-        JSONObject countData = countResponse.getJSONObject("data");
-        int count = countData.getInt("COUNT");
-        JSONArray luns = new JSONArray();
-
-        for (int i = 0; i < count; i += 100) {
-            String batchQueryLunUrl;
-
+        try {
+            String lunCountUrl;
             if (!poolId.isEmpty()) {
-                batchQueryLunUrl = String.format("/lun?filter=PARENTID::%s&range=[%d-%d]", poolId, i, i + 100);
+                lunCountUrl = String.format("/lun/count?filter=PARENTID::%s", poolId);
             } else {
-                batchQueryLunUrl = String.format("/lun?range=[%d-%d]", i, i + 100);
+                lunCountUrl = String.format("/lun/count");
             }
 
-            JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
-            if (isFailed(lunsResponse)) {
-                String msg = String.format("Batch get luns error %d: %s",
-                        getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
+            logger.info("----------OceanStor Listing Volumes----------");
+
+            JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
+            logger.debug(String.format("OceanStor Lun Count Response: %s", countResponse));
+
+            if (isFailed(countResponse)) {
+                String msg = String.format("OceanStor Get Lun Count Error %d: %s",
+                        getErrorCode(countResponse), getErrorDescription(countResponse));
+                logger.error(msg);
                 throw new Exception(msg);
             }
 
-            if (!lunsResponse.has("data")) {
-                break;
+            JSONObject countData = countResponse.getJSONObject("data");
+            int count = countData.getInt("COUNT");
+            JSONArray luns = new JSONArray();
+
+            for (int i = 0; i < count; i += 100) {
+                String batchQueryLunUrl;
+
+                if (!poolId.isEmpty()) {
+                    batchQueryLunUrl = String.format("/lun?filter=PARENTID::%s&range=[%d-%d]", poolId, i, i + 100);
+                } else {
+                    batchQueryLunUrl = String.format("/lun?range=[%d-%d]", i, i + 100);
+                }
+
+                JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
+                logger.debug(String.format("OceanStor List Lun Response: %s", countResponse));
+
+                if (isFailed(lunsResponse)) {
+                    String msg = String.format("Batch Get Luns Error %d: %s",
+                            getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
+                    logger.error(msg);
+                    throw new Exception(msg);
+                }
+
+                if (!lunsResponse.has("data")) {
+                    String msg = String.format("No Data Found");
+                    logger.error(String.format("OceanStor Listing Luns: %s", msg));
+                    break;
+                }
+
+                for (Object lun: lunsResponse.getJSONArray("data")) {
+                    luns.put(lun);
+                }
             }
 
-            for (Object lun: lunsResponse.getJSONArray("data")) {
-                luns.put(lun);
-            }
+            return luns;
         }
-
-        return luns;
+        catch(Exception e) {
+            logger.error(String.format("Error in Listing Volumes, Error Message is: %s", e));
+            throw new JSONException("Error in Listing Volumes", e);
+        }
     }
 
     JSONArray listVolumes(String filterKey, String filterValue) throws Exception {
-        String lunCountUrl ="";
-        if (!filterValue.isEmpty()) {
-            lunCountUrl = String.format("/lun/count?filter=%s::%s", filterKey, filterValue);
-        }
-
-        JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
-        if (isFailed(countResponse)) {
-            String msg = String.format("Get lun count error %d: %s",
-                    getErrorCode(countResponse), getErrorDescription(countResponse));
-            throw new Exception(msg);
-        }
-
-        JSONObject countData = countResponse.getJSONObject("data");
-        int count = countData.getInt("COUNT");
-        JSONArray luns = new JSONArray();
-
-        for (int i = 0; i < count; i += 100) {
-            String batchQueryLunUrl="";
-
+       try {
+            String lunCountUrl ="";
             if (!filterValue.isEmpty()) {
-                batchQueryLunUrl = String.format("/lun?filter=%s::%s&range=[%d-%d]", filterKey, filterValue, i, i + 100);
+                lunCountUrl = String.format("/lun/count?filter=%s::%s", filterKey, filterValue);
             }
 
-            JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
-            if (isFailed(lunsResponse)) {
-                String msg = String.format("Batch get luns error %d: %s",
-                        getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
+            logger.info("----------OceanStor Listing Volumes----------");
+
+            JSONObject countResponse = (JSONObject)request.get(lunCountUrl);
+            logger.debug(String.format("OceanStor List Volumes Response: %s", countResponse));
+
+            if (isFailed(countResponse)) {
+                String msg = String.format("Get Lun Count Error %d: %s",
+                        getErrorCode(countResponse), getErrorDescription(countResponse));
+                logger.error(msg);
                 throw new Exception(msg);
             }
 
-            if (!lunsResponse.has("data")) {
-                break;
+            JSONObject countData = countResponse.getJSONObject("data");
+            int count = countData.getInt("COUNT");
+            JSONArray luns = new JSONArray();
+
+            for (int i = 0; i < count; i += 100) {
+                String batchQueryLunUrl="";
+
+                if (!filterValue.isEmpty()) {
+                    batchQueryLunUrl = String.format("/lun?filter=%s::%s&range=[%d-%d]", filterKey, filterValue, i, i + 100);
+                }
+
+                JSONObject lunsResponse = (JSONObject)request.get(batchQueryLunUrl);
+                logger.debug(String.format("OceanStor List Lun Response: %s", countResponse));
+
+                if (isFailed(lunsResponse)) {
+                    String msg = String.format("Batch Get Luns Error %d: %s",
+                            getErrorCode(lunsResponse), getErrorDescription(lunsResponse));
+                    logger.error(msg);
+                    throw new Exception(msg);
+                }
+
+                if (!lunsResponse.has("data")) {
+                    String msg = String.format("No Data Found");
+                    logger.error(String.format("OceanStor Listing Luns: %s", msg));
+                    break;
+                }
+
+                for (Object lun: lunsResponse.getJSONArray("data")) {
+                    luns.put(lun);
+                }
             }
 
-            for (Object lun: lunsResponse.getJSONArray("data")) {
-                luns.put(lun);
-            }
+            return luns;
         }
-
-        return luns;
+        catch(Exception e) {
+            logger.error(String.format("Error in Listing Volumes, Error Message is: %s", e));
+            throw new JSONException("Error in Listing Volumes", e);
+        }
     }
 
     JSONArray listStoragePools() throws Exception {
+        logger.info("----------OceanStor Listing Storage Pools----------");
+
         JSONObject response = (JSONObject)request.get("/storagepool");
+        logger.debug(String.format("OceanStor List Storage Pools Response: %s", response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get storage pools error %d: %s",
+            String msg = String.format("List Storage Pools Error %d: %s",
                     getErrorCode(response), getErrorDescription(response));
+            logger.error( msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
-            return null;
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Listing Storage Pools: %s", msg));
+            return new JSONArray();
         }
 
         return response.getJSONArray("data");
     }
 
     JSONObject getStoragePool(String poolId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Info for Storage Pool %s----------",
+                    poolId));
+
         JSONObject response = (JSONObject)request.get(String.format("/storagepool/%s", poolId));
+        logger.debug(String.format("OceanStor Getting Storage Pool for %s Response: %s", poolId,
+                    response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get storage pool %s error %d: %s",
+            String msg = String.format("Get Storage Pool %s Error %d: %s",
                     poolId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
@@ -271,24 +339,41 @@ class RestClient {
     }
 
     private JSONObject getInitiator(String iniType, String initiator) throws Exception {
-        String encoded = URLEncoder.encode(initiator.replace(":", "\\:"), "utf-8");
-        JSONObject response = (JSONObject)request.get(String.format("/%s?filter=ID::%s", iniType, encoded));
-        if (isFailed(response)) {
-            String msg = String.format("Get %s %s error %d: %s",
-                    iniType, initiator, getErrorCode(response), getErrorDescription(response));
-            throw new Exception(msg);
-        }
+        try {
+            logger.info(String.format("----------OceanStor Getting Info for Initiator Type %s "
+                    + "for Initiator %s----------", iniType, initiator));
 
-        if (!response.has("data")) {
-            return null;
-        }
+            String encoded = URLEncoder.encode(initiator.replace(":", "\\:"), "utf-8");
+            JSONObject response = (JSONObject)request.get(String.format("/%s?filter=ID::%s", iniType, encoded));
+            logger.info(String.format("OceanStor Getting Info for Initiator Type %s "
+                    + "for Initiator %s Response: %s", iniType, initiator, response));
 
-        JSONArray data = response.getJSONArray("data");
-        if (data.isEmpty()) {
-            return null;
-        }
+            if (isFailed(response)) {
+                String msg = String.format("Get %s %s error %d: %s",
+                        iniType, initiator, getErrorCode(response), getErrorDescription(response));
+                logger.error(msg);
+                throw new Exception(msg);
+            }
 
-        return data.getJSONObject(0);
+            if (!response.has("data")) {
+                String msg = String.format("No Data Found");
+                logger.error(String.format("OceanStor Getting Initiator Info: %s", msg));
+                return null;
+            }
+
+            JSONArray data = response.getJSONArray("data");
+            if (data.isEmpty()) {
+                String msg = String.format("No Initiator Found");
+                logger.error(String.format("OceanStor Getting Initiator Info: %s", msg));
+                return null;
+            }
+
+            return data.getJSONObject(0);
+        }
+        catch(Exception e) {
+            logger.error(String.format("Error in Getting Initiator Info, Error Message is: %s", e));
+            throw new JSONException("Error in Getting Initiator Info", e);
+       }
     }
 
     JSONObject getISCSIInitiator(String initiator) throws Exception {
@@ -319,22 +404,34 @@ class RestClient {
                 requestData.put("OPERATIONSYSTEM", 0);
                 break;
         }
+        logger.info(String.format("----------OceanStor Creating Host %s for OSType %s----------",
+                    name, osType));
 
         JSONObject response = (JSONObject)request.post("/host", requestData);
+        logger.debug(String.format("OceanStor Creating Host %s for OSType %s Response: %s", name,
+                    osType, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create host %s error %d: %s",
+            String msg = String.format("Create Host %s Error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info(String.format("OceanStor Host %s for OSType %s is Created.", name, osType));
         return response.getJSONObject("data");
     }
 
     JSONObject getHostById(String id) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Host for Id %s----------", id));
+
         JSONObject response = (JSONObject)request.get(String.format("/host/%s", id));
+        logger.debug(String.format("OceanStor Getting Host for Id %s, Response: %s", id, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get host by ID %s error %d: %s",
+            String msg = String.format("Get Host by ID %s error %d: %s",
                     id, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
@@ -342,15 +439,22 @@ class RestClient {
     }
 
     JSONArray getHostsByLun(String lunId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Hosts for LunId %s----------", lunId));
+
         JSONObject response = (JSONObject)request.get(
                 String.format("/host/associate?ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", lunId));
+        logger.debug(String.format("OceanStor Getting Hosts for LunId %s, Response: %s", lunId, response));
+
         if (isFailed(response)) {
             String msg = String.format("Get hosts by LUN ID %s error %d: %s",
                     lunId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting Hosts for the LunId %s: %s", lunId, msg));
             return null;
         }
 
@@ -361,13 +465,22 @@ class RestClient {
         JSONObject requestData = new JSONObject();
         requestData.put("PARENTTYPE", 21);
         requestData.put("PARENTID", hostId);
+        logger.info(String.format("----------OceanStor Adding Initiator %s of Type %s to Host %s----------",
+                    initiator, type, hostId));
 
         JSONObject response = (JSONObject)request.put(String.format("/%s/%s", type, initiator), requestData);
+        logger.debug(String.format("OceanStor Adding Initiator %s of Type %s to Host %s, Response:",
+                    initiator, type, hostId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Add initiator %s of type %s to host error %d: %s",
+            String msg = String.format("Add Initiator %s of Type %s to Host Error %d: %s",
                     initiator, type, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OceanStor Initiator %s of Type %s is added to Host %s",
+                    initiator, type, hostId));
     }
 
     void addISCSIInitiatorToHost(String initiator, String hostId) throws Exception {
@@ -379,15 +492,24 @@ class RestClient {
     }
 
     JSONArray getHostsByHostGroup(String hostGroupId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Host for HostGroup %s----------",
+                    hostGroupId));
+
         JSONObject response = (JSONObject)request.get(
                 String.format("/host/associate?ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s", hostGroupId));
+        logger.debug(String.format("OceanStor Getting Hosts for HostGroup %s, Response: %s",
+                    hostGroupId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Batch query host in group %s error %d: %s",
+            String msg = String.format("Batch query Host in HostGroup %s Error %d: %s",
                     hostGroupId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting Hosts for HostGroup %s: %s", hostGroupId, msg));
             return null;
         }
 
@@ -397,14 +519,19 @@ class RestClient {
     JSONObject createHostGroup(String name) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("NAME", name);
+        logger.info(String.format("----------OceanStor Creating HostGroup %s----------", name));
 
         JSONObject response = (JSONObject)request.post("/hostgroup", requestData);
+        logger.debug(String.format("OceanStor Creating HostGroup %s, response: %s", name, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create hostgroup %s error %d: %s",
+            String msg = String.format("Create HostGroup %s Error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info(String.format("OceanStor HostGroup %s is Created.", name));
         return response.getJSONObject("data");
     }
 
@@ -413,28 +540,45 @@ class RestClient {
         requestData.put("ID", hostGroupId);
         requestData.put("ASSOCIATEOBJTYPE", 21);
         requestData.put("ASSOCIATEOBJID", hostId);
+        logger.info(String.format("----------OceanStor Adding Host %s to HostGroup %s----------",
+                    hostId, hostGroupId));
 
         JSONObject response = (JSONObject)request.post("/hostgroup/associate", requestData);
+        logger.debug(String.format("OceanStor Adding Host %s to HostGroup %s, Response: %s",
+                    hostId, hostGroupId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Associate host %s to hostgroup %s error %d: %s",
+            String msg = String.format("Associate Host %s to HostGroup %s Error %d: %s",
                     hostId,
                     hostGroupId,
                     getErrorCode(response),
                     getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OceanStor Host %s is added to HostGroup %s.", hostId, hostGroupId));
     }
 
     JSONArray getHostGroupsByHost(String hostId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting HostGroup for Host %s----------",
+                    hostId));
+
         JSONObject response = (JSONObject)request.get(
                 String.format("/hostgroup/associate?ASSOCIATEOBJTYPE=21&ASSOCIATEOBJID=%s", hostId));
+        logger.debug(String.format("OceanStor Getting HostGroup for Host %s, Response: %s",
+                    hostId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Batch query hostgroup which host %s belongs to error %d: %s",
+            String msg = String.format("Batch query HostGroup for the Host %s Error %d: %s",
                     hostId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting HostGroups for Host %s: %s", hostId, msg));
             return null;
         }
 
@@ -444,27 +588,41 @@ class RestClient {
     JSONObject createMappingView(String name) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("NAME", name);
+        logger.info(String.format("----------OceanStor Creating Mapping View %s----------", name));
 
         JSONObject response = (JSONObject)request.post("/mappingview", requestData);
+        logger.debug(String.format("OceanStor Creating Mapping View %s, Response: %s", name, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create mappingview %s error %d: %s",
+            String msg = String.format("Create MappingView %s Error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info(String.format("OceanStor Mapping View %s Created.", name));
         return response.getJSONObject("data");
     }
 
     JSONArray getMappingViewsByHostGroup(String hostGroupId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting MappingViews for HostGroup %s----------",
+                    hostGroupId));
+
         JSONObject response = (JSONObject)request.get(
                 String.format("/mappingview/associate?ASSOCIATEOBJTYPE=14&ASSOCIATEOBJID=%s", hostGroupId));
+        logger.debug(String.format("OceanStor Getting MappingViews for HostGroup %s, Response: %s",
+                    hostGroupId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Batch query mappingview which hostgroup %s belongs to error %d: %s",
+            String msg = String.format("Batch query MappingView for HostGroup %s Error %d: %s",
                     hostGroupId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting  MappingView for HostGroup %s: %s", hostGroupId, msg));
             return null;
         }
 
@@ -475,32 +633,48 @@ class RestClient {
         JSONObject requestData = new JSONObject();
         requestData.put("NAME", name);
         requestData.put("APPTYPE", 0);
+        logger.info(String.format("----------OceanStor Creating LunGroup %s----------", name));
 
         JSONObject response = (JSONObject)request.post("/lungroup", requestData);
+        logger.debug(String.format("OceanStor Creating LunGroup %s, Response: %s", name, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create lungroup %s error %d: %s",
+            String msg = String.format("Create LunGroup %s Error %d: %s",
                     name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info(String.format("OceanStor LunGroup %s Created.", name));
         return response.getJSONObject("data");
     }
 
     JSONObject getLunGroupByMappingView(String mappingViewId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting LunGroups for MappingView %s----------",
+                    mappingViewId));
+
         JSONObject response = (JSONObject)request.get(
                 String.format("/lungroup/associate?ASSOCIATEOBJTYPE=245&ASSOCIATEOBJID=%s", mappingViewId));
+        logger.debug(String.format("OceanStor Getting LunGroups for MappingView %s, Response: %s",
+                    mappingViewId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Batch query lungroup associated to mappingview %s error %d: %s",
+            String msg = String.format("Batch query LunGroup associated to MappingView %s Error %d: %s",
                     mappingViewId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting LunGroup for MappingView  %s: %s", mappingViewId, msg));
             return null;
         }
 
         JSONArray data = response.getJSONArray("data");
         if (data.isEmpty()) {
+            String msg = String.format("No LunGroups Found");
+            logger.error(String.format("OceanStor Getting LunGroups for MappingView %s: %s", mappingViewId, msg));
             return null;
         }
 
@@ -512,29 +686,46 @@ class RestClient {
         requestData.put("ID", lunGroupId);
         requestData.put("ASSOCIATEOBJTYPE", 11);
         requestData.put("ASSOCIATEOBJID", lunId);
+ 
+        logger.info(String.format("----------OceanStor Adding Lun %s to the Lun Group %s----------",
+                    lunId, lunGroupId));
 
         JSONObject response = (JSONObject)request.post("/lungroup/associate", requestData);
+        logger.debug(String.format("OceanStor Add Lun %s to the Lun Groups %s Response: %s",
+                    lunId, lunGroupId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Add lun %s to lungroup %s error %d: %s",
+            String msg = String.format("Add Lun %s to the LunGroup %s Error %d: %s",
                     lunId,
                     lunGroupId,
                     getErrorCode(response),
                     getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+        logger.info(String.format("OceanStor Lun %s is added to the Lun Group %s.", lunId, lunGroupId));
     }
 
     void removeLunFromLunGroup(String lunId, String lunGroupId) throws Exception {
+        logger.info(String.format("----------OceanStor Removing Lun %s from the Lun Group %s----------",
+                    lunId, lunGroupId));
+
         JSONObject response = (JSONObject)request.delete(
-                String.format("/lungroup/associate?ID=%s&ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", lunGroupId, lunId));
+                String.format("/lungroup/associate?ID=%s&ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s",
+                    lunGroupId, lunId));
+        logger.debug(String.format("OceanStor Remove Lun from the Lun Groups for lunId %s Response: %s",
+                    lunId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Remove lun %s from lungroup %s error %d: %s",
+            String msg = String.format("Remove Lun %s from LunGroup %s Error %d: %s",
                     lunId,
                     lunGroupId,
                     getErrorCode(response),
                     getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+        logger.info(String.format("OceanStor Lun %s is removed from the Lun Group %s.", lunId, lunGroupId));
     }
 
     void associateGroupToMappingView(String groupId, Integer groupType, String mappingViewId) throws Exception {
@@ -543,27 +734,46 @@ class RestClient {
         requestData.put("ASSOCIATEOBJTYPE", groupType.intValue());
         requestData.put("ASSOCIATEOBJID", groupId);
 
+        logger.info(String.format("----------OceanStor Associating Lun Group %s to Mapping View %s----------",
+                    groupId, mappingViewId));
+
         JSONObject response = (JSONObject)request.put("/mappingview/create_associate", requestData);
+        logger.debug(String.format("OceanStor Associating Lun Group %s to Mapping View %s Response: %s",
+                    groupId, mappingViewId, response));
+
         if (isFailed(response)) {
             String msg = String.format("Associate group %s to mappingview %s error %d: %s",
                     groupId,
                     mappingViewId,
                     getErrorCode(response),
                     getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OceanStor Lun Group %s is associated to Mapping View %s",
+                    groupId, mappingViewId));
     }
 
     JSONArray getLunGroupsByLun(String volumeId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Lun Groups for volumeId %s----------",
+                    volumeId));
+
         JSONObject response = (JSONObject)this.request.get(
                 String.format("/lungroup/associate?ASSOCIATEOBJTYPE=11&ASSOCIATEOBJID=%s", volumeId));
+        logger.debug(String.format("OceanStor Lun Group for VolumeId %s Response: %s",
+                    volumeId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get lungroup which lun %s belongs to error %d: %s",
+            String msg = String.format("Get Lun Groups for the lun %s Error %d: %s",
                     volumeId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Lun Groups for %s Error: %s", volumeId, msg));
             return null;
         }
 
@@ -571,19 +781,32 @@ class RestClient {
     }
 
     private JSONObject getObjectByName(String type, String name) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Results with Type %s for %s----------",
+                    type, name));
+
         JSONObject response = (JSONObject)request.get(String.format("/%s?filter=NAME::%s", type, name));
+        logger.debug(String.format("OceanStor Getting Results with Type %s for %s, Result: %s",
+                    type, name, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get %s by name %s error %d: %s",
+            String msg = String.format("Get %s by Name %s Error %d: %s",
                     type, name, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         if (!response.has("data")) {
+            String msg = String.format("No Data Found");
+            logger.error(String.format("OceanStor Getting Result with Type %s for %s, Error: %s",
+                    type, name, msg));
             return null;
         }
 
         JSONArray data = response.getJSONArray("data");
         if (data.isEmpty()) {
+            String msg = String.format("No Results Found");
+            logger.error(String.format("OceanStor Getting Result with Type %s for %s, Error: %s",
+                    type, name, msg));
             return null;
         }
 
@@ -607,21 +830,33 @@ class RestClient {
     }
 
     JSONObject getSystem() throws Exception {
+        logger.info("----------OceanStor Getting System Information----------");
+
         JSONObject response = (JSONObject)request.get("/system/");
+        logger.debug(String.format("OceanStor Getting System Info Response: %s", response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get system info error %d: %s",
+            String msg = String.format("Get System Info Error %d: %s",
                     getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         return response.getJSONObject("data");
     }
 
-    JSONObject getVolumeById(String volumeId) throws Exception {
-        JSONObject response = (JSONObject)request.get(String.format("/lun/%s", volumeId));
+    JSONObject getVolumeById(String lunId) throws Exception {
+        logger.info(String.format("----------OceanStor Getting Lun for LunId %s----------",
+                    lunId));
+    	
+        JSONObject response = (JSONObject)request.get(String.format("/lun/%s", lunId));
+        logger.debug(String.format("OceanStor Getting Lun for LunId %s Response: %s",
+                    lunId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Get lun by Id %s error %d: %s",
-                    volumeId, getErrorCode(response), getErrorDescription(response));
+            String msg = String.format("Get Lun for LunId %s error %d: %s",
+                    lunId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
@@ -629,11 +864,18 @@ class RestClient {
     }
 
     JSONArray listSnapshots(String volumeId) throws Exception {
+        logger.info(String.format("----------OceanStor Listing Snapshots for VolumeId %s----------",
+                    volumeId));
+
         JSONObject countResponse = (JSONObject)request.get(
                 String.format("/snapshot/count?filter=PARENTID::%s", volumeId));
+        logger.debug(String.format("OceanStor Lun Count for VolumeId %s Response: %s",
+                    volumeId, countResponse));
+
         if (isFailed(countResponse)) {
-            String msg = String.format("Get snapshot count of lun %s error %d: %s",
+            String msg = String.format("Get Lun Count for the lun %s Error %d: %s",
                     volumeId, getErrorCode(countResponse), getErrorDescription(countResponse));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
@@ -643,9 +885,14 @@ class RestClient {
         for (int i = 0; i < countData.getInt("COUNT"); i += 100) {
             JSONObject snapshotsResponse = (JSONObject)request.get(
                     String.format("/snapshot?filter=PARENTID::%s&range=[%d-%d]", volumeId, i, i + 100));
+
+            logger.debug(String.format("OceanStor List Volume Snapshots for VolumeId %s Response: %s",
+                    volumeId, snapshotsResponse));
+            
             if (isFailed(snapshotsResponse)) {
-                String msg = String.format("Batch get snapshots of lun %s error %d: %s",
+                String msg = String.format("Batch Get Snapshots for the lun %s error %d: %s",
                         volumeId, getErrorCode(snapshotsResponse), getErrorDescription(snapshotsResponse));
+                logger.error(msg);
                 throw new Exception(msg);
             }
 
@@ -666,13 +913,21 @@ class RestClient {
         requestData.put("NAME", name);
         requestData.put("PARENTID", volumeId);
 
+        logger.info(String.format("----------OceanStor Creating Snapshot for VolumeId %s----------",
+                    volumeId));
+
         JSONObject response = (JSONObject)request.post("/snapshot", requestData);
+        logger.debug(String.format("OceanStor CreateVolumeSnapshots for the VolumeId %s Response: %s",
+                    volumeId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Create snapshot %s for %s error %d: %s",
+            String msg = String.format("Create Snapshot %s for %s Error %d: %s",
                     name, volumeId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
+        logger.info(String.format("OceanStor Snapshot Created for VolumeId %s.", volumeId));
         return response.getJSONObject("data");
     }
 
@@ -680,56 +935,104 @@ class RestClient {
         JSONObject requestData = new JSONObject();
         requestData.put("SNAPSHOTLIST", String.format("[%s]", snapshotId));
 
+        logger.info(String.format("----------Oceanstor Activating Lun Snapshot for SnapshotId"
+                    + " %s----------", snapshotId));
+
         JSONObject response = (JSONObject)request.post("/snapshot/activate", requestData);
+        logger.debug(String.format("OceanStor Activate Lun Snapshot for the SnapshotId %s Response: %s",
+                    snapshotId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Activate snapshot %s error %d: %s",
+            String msg = String.format("Activate Lun Snapshot %s Error %d: %s",
                     snapshotId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("Oceanstor Lun Snapshot Activated for SnapshotId %s.", snapshotId));
     }
 
     private void deactivateLunSnapshot(String snapshotId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("ID", snapshotId);
 
+        logger.info(String.format("----------Oceanstor Deactivating Lun Snapshot for SnapshotId"
+                    + " %s----------", snapshotId));
+
         JSONObject response = (JSONObject)request.put("/snapshot/stop", requestData);
-        if ((getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_EXIST.getValue()) ||
-                (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_ACTIVATED.getValue())) {
-            // Snapshot doesn't exist or isn't activated, return success
+        logger.debug(String.format("OceanStor Deactivate Lun Snapshot for the SnapshotId %s Response: %s",
+                    snapshotId, response));
+
+        if (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_EXIST.getValue()) {
+            logger.error(String.format("Deactivate Lun Snapshot Error: No Snapshot is Found"
+                    + " with SnapshotId %s", snapshotId));
+            return;
+        }
+
+        if (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_ACTIVATED.getValue()) {
+            logger.error(String.format("Deactivate Lun Snapshot Error: Snapshot is not Activated"
+                    + " with SnapshotId %s", snapshotId));
             return;
         }
 
         if (isFailed(response)) {
-            String msg = String.format("deactivate snapshot %s error %d: %s",
+            String msg = String.format("Deactivate Lun Snapshot %s Error %d: %s",
                     snapshotId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("Oceanstor Lun Snapshot Deactivated for SnapshotId %s.", snapshotId));
     }
 
     private void deleteLunSnapshot(String snapshotId) throws Exception {
-        JSONObject response = (JSONObject)request.delete(String.format("/snapshot/%s", snapshotId));
+        logger.info(String.format("----------Oceanstor Deleting Lun Snapshot for SnapshotId"
+                    + " %s----------", snapshotId));
+
+    	JSONObject response = (JSONObject)request.delete(String.format("/snapshot/%s", snapshotId));
+        logger.debug(String.format("OceanStor Delete Lun Snapshot for the SnapshotId %s Response: %s",
+                    snapshotId, response));
+    	
         if (getErrorCode(response) == ERROR_CODE.SNAPSHOT_NOT_EXIST.getValue()) {
-            // Snapshot doesn't exist, return success
+            logger.error(String.format("Delete Lun Snapshot Error: No Snapshot is Found"
+                    + " with SnapshotId %s", snapshotId));
             return;
         }
 
         if (isFailed(response)) {
-            String msg = String.format("Delete snapshot %s error %d: %s",
+            String msg = String.format("Delete Lun Snapshot %s Error %d: %s",
                     snapshotId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("Oceanstor Lun Snapshot Deleted for SnapshotId %s.", snapshotId));
     }
 
     void createVolumeSnapshot(String volumeId, String name) throws Exception {
-        JSONObject snapshot = createLunSnapshot(volumeId, name);
-        String snapshotId = snapshot.getString("ID");
+        String snapshotId = "";
 
         try {
+            JSONObject snapshot = createLunSnapshot(volumeId, name);
+            logger.info(String.format("OceanStor Snapshot: %s", snapshot));
+
+            snapshotId = snapshot.getString("ID");
             activateLunSnapshot(snapshotId);
-        } catch (Exception e) {
-            deleteLunSnapshot(snapshotId);
-            throw e;
+        }catch (JSONException e) {
+            logger.error(String.format("Oceanstor Create Volume Snapshot Error Message is: %s", e));
+            throw new Exception("Error in Creating Volume Snapshot ", e);
+        }catch (Exception e) {
+            String msg = String.format("Activating Snapshot for VolumeId %s Failed, "
+                    + "Deleting the Created Snapshot with SnapshotId %s", volumeId, snapshotId);
+            logger.error(msg);
+            throw new Exception(msg);
+        }finally {
+            if(!snapshotId.isEmpty()) {
+                deleteLunSnapshot(snapshotId);
+            }
         }
+
+        logger.info(String.format("OceanStor Snapshot Created for VolumeId %s.", volumeId));
     }
 
     void deleteVolumeSnapshot(String snapshotId) throws Exception {
@@ -742,12 +1045,20 @@ class RestClient {
         requestData.put("ID", snapshotId);
         requestData.put("ROLLBACKSPEED", rollbackSpeed);
 
+        logger.info(String.format("----------OceanStor Rollingback Snapshot for snapshotId %s", snapshotId));
+
         JSONObject response = (JSONObject)request.put(String.format("/snapshot/rollback"), requestData);
+        logger.debug(String.format("OceanStor Rollingback Snapshot for snapshotId %s, Response:",
+                    snapshotId, response));
+
         if (isFailed(response)) {
-            String msg = String.format("Rollback snapshot %s error %d: %s",
+            String msg = String.format("Rollback Snapshot %s Error %d: %s",
                     snapshotId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("Oceanstor Lun Snapshot Rollback Done for SnapshotId %s.", snapshotId));
     }
 	
 	void expandVolume(String volumeId, long capacity) throws Exception {
@@ -755,12 +1066,22 @@ class RestClient {
         requestData.put("ID", volumeId);
         requestData.put("CAPACITY", capacity / 512L);
 
+        logger.info(String.format("----------OceanStor Expanding Volume Size for VolumeId %s by"
+                    + " %s----------", volumeId, capacity));
+
         JSONObject response = (JSONObject)request.put(String.format("/lun/expand"), requestData);
+        logger.debug(String.format("OceanStor Expand Volume for the VolumeId %s Response: %s",
+                    volumeId, response));
+
         if (isFailed(response)) {
             String msg = String.format("Expand volume %s error %d: %s",
                     volumeId, getErrorCode(response), getErrorDescription(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OceanStor Expanded Volume Size for VolumeId %s by %s",
+                    volumeId, capacity));
     }
 }
 

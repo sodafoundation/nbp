@@ -15,7 +15,6 @@
 package util
 
 import (
-	"context"
 	"errors"
 	"log"
 	"net"
@@ -24,10 +23,6 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/opensds/opensds/contrib/connector"
-	"google.golang.org/grpc"
 )
 
 // getProtoandAdd return protocal and address
@@ -48,8 +43,8 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-// GetCSIEndPoint from environment variable
-func GetCSIEndPoint(csiEndpoint string) (string, error) {
+// getCSIEndPoint from environment variable
+func getCSIEndPoint(csiEndpoint string) (string, error) {
 	// example: CSI_ENDPOINT=unix://path/to/unix/domain/socket.sock
 	csiEndpoint = strings.TrimSpace(csiEndpoint)
 
@@ -64,7 +59,7 @@ func GetCSIEndPoint(csiEndpoint string) (string, error) {
 
 // GetCSIEndPointListener from endpoint
 func GetCSIEndPointListener(csiEndpoint string) (net.Listener, error) {
-	target, err := GetCSIEndPoint(csiEndpoint)
+	target, err := getCSIEndPoint(csiEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -83,50 +78,6 @@ func GetCSIEndPointListener(csiEndpoint string) (net.Listener, error) {
 	}
 
 	return net.Listen(proto, addr)
-}
-
-// GetCSIClientConn from endpoint
-func GetCSIClientConn(csiEndpoint string) (*grpc.ClientConn, error) {
-	// Get parameters for grpc
-	ctx := context.Background()
-	target, err := GetCSIEndPoint(csiEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	dialOpts := []grpc.DialOption{
-		grpc.WithInsecure(),
-		grpc.WithDialer(
-			func(target string, timeout time.Duration) (net.Conn, error) {
-				proto, addr := getProtoAndAdd(target)
-				return net.DialTimeout(proto, addr, timeout)
-			}),
-	}
-
-	// Set up a connection to the server
-	return grpc.DialContext(ctx, target, dialOpts...)
-}
-
-// IsSupportPotocol ...
-func IsSupportProtocol(protocol string) bool {
-	supportProtocols := [...]string{connector.FcDriver, connector.IscsiDriver,connector.NvmeofDriver}
-	for _, v := range supportProtocols {
-		if strings.ToLower(protocol) == v {
-			return true
-		}
-	}
-	return false
-}
-
-// IsSupportFstype ...
-func IsSupportFstype(fstype string) bool {
-	supportFstypes := [...]string{"ext2", "ext3", "ext4", "cramfs", "minix", ""}
-	for _, v := range supportFstypes {
-		if strings.ToLower(fstype) == v {
-			return true
-		}
-	}
-	return false
 }
 
 // Contained ...
