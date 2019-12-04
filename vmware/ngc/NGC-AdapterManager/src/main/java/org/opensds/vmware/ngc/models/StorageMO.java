@@ -28,4 +28,10 @@ public class StorageMO {
         this.status = status;
         this.vendor = vendor;
     }
+
+	@Override
+	public String toString() {
+		return "StorageMO [name=" + name + ", model=" + model + ", sn=" + sn + ", status=" + status + ", vendor="
+				+ vendor + "]";
+	}
 }
