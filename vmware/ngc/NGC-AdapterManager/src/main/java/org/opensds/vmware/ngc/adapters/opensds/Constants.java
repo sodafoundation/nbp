@@ -69,7 +69,8 @@ public enum Constants {
 	OPENSDS_DOMAIN,
 	OPENSDS_AVAILABILITYZONE,
 	OPENSDS_STORAGENAME,
-	OPENSDS_VENDOR;
+	OPENSDS_VENDOR,
+	OPENSDS_HOST_ACCESSMODE;
 
 	private static final String PATH = "/constants.properties";
 
