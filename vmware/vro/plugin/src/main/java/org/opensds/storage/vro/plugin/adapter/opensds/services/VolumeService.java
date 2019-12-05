@@ -48,7 +48,7 @@ public class VolumeService {
 		opensds.login(openSDSInfo);
 		VolumeMO volume = opensds.createVolume(name, description, capacity, profile);
 		TimeUnit.SECONDS.sleep(10);
-		ConnectMO connect = new ConnectMO("attach", HOST_OS_TYPE.ESXI, iqn, hostIP, null, ATTACH_MODE.RW,
+		ConnectMO connect = new ConnectMO(hostIP, HOST_OS_TYPE.ESXI, iqn, hostIP, null, ATTACH_MODE.RW,
 				ATTACH_PROTOCOL.ISCSI);
 		opensds.attachVolume(volume.id, connect);
 		String volume_wwn = opensds.getVolumeWWN(volume.id);

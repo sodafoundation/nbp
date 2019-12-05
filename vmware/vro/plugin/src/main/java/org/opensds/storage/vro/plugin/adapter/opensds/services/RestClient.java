@@ -17,14 +17,19 @@ package org.opensds.storage.vro.plugin.adapter.opensds.services;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONArray;
 import org.opensds.storage.vro.plugin.adapter.opensds.services.exceptions.NotAuthorizedException;
 import org.opensds.storage.vro.plugin.adapter.opensds.model.StorageMO;
+import org.opensds.storage.vro.plugin.adapter.opensds.model.ConnectMO;
 
 class RestClient {
+	private static final Logger logger = Logger.getLogger(RestClient.class);
+	private static final String OPENSDS_HOST_ACCESSMODE="agentless";
+	private static final String OPENSDS_AVAILABILITYZONE = "default";
 	class Handler implements Request.RequestHandler {
 		@Override
 		public void setRequestBody(HttpEntityEnclosingRequestBase req, Object body) {
@@ -187,21 +192,94 @@ class RestClient {
 		}
 	}
 
-	JSONObject attachVolume(String volumeId, String initiator, String initiatorIp) throws Exception {
-		JSONObject requestData = new JSONObject();
-		JSONObject hostInfo = new JSONObject();
-		requestData.put("volumeId", volumeId);
-		hostInfo.put("initiator", initiator);
-		hostInfo.put("ip", initiatorIp);
-		requestData.put("hostInfo", hostInfo);
-		JSONObject response = (JSONObject) request.post("/block/attachments", requestData);
-		if (isFailed(response)) {
-			String msg = String.format("Attach volume %s error %d: %s", volumeId, getErrorCode(response),
-					getErrorMessage(response));
-			throw new Exception(msg);
+	JSONObject attachVolume(String volumeId, ConnectMO connect) throws Exception {
+        try {
+            JSONObject host = getHost(connect.name);
+
+            if(host.isEmpty()) {
+                host = createHost(connect);
+            }
+            String hostId = host.getString("id");
+
+            JSONObject requestData = new JSONObject();
+            requestData.put("volumeId", volumeId);
+            requestData.put("hostId", hostId);
+
+            logger.info(String.format("----------OpenSDS Creating Volume Attachment for Volume %s "
+                        + "to Host %s----------", volumeId, hostId));
+
+            JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
+            logger.debug(String.format("OpenSDS Create Volume Attachment Response: %s", response));
+
+            if (isFailed(response)) {
+                String msg = String.format("Attach Volume %s Error %d: %s",
+                    volumeId, getErrorCode(response), getErrorMessage(response));
+                logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            logger.info("OpenSDS Volume Attachment Created.");
+            return response;
+        }
+        catch (Exception e) {
+            logger.error(String.format("Error in creating Volume Attachment, Error Message is: %s", e));
+            throw new JSONException("Error in creating Volume Attachment ", e);
+        }
+    }
+	JSONObject getHost(String hostName) throws Exception {
+        logger.info(String.format("----------OpenSDS Getting Host %s----------", hostName));
+
+        JSONArray response = (JSONArray)request.get(String.format("/host/hosts?hostName=%s", hostName));
+        logger.debug(String.format("OpenSDS Getting Host %s Response: %s", hostName,
+                    response));
+
+        if (response.isEmpty()) {
+            String msg = String.format("No Host Found");
+            logger.info(String.format("OpenSDS Get Host for %s Error: %s", hostName, msg));
+            return new JSONObject();
+        }
+
+        JSONObject host = (JSONObject) response.get(0);
+        return host;
+    }
+	JSONObject createHost(ConnectMO connect) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("hostName", connect.name);
+        requestData.put("ip", connect.initiatorIp);
+        requestData.put("osType", connect.osType.toString().toLowerCase());
+        requestData.put("accessMode", OPENSDS_HOST_ACCESSMODE);
+        String availabilityZone = OPENSDS_AVAILABILITYZONE;
+
+        if(!availabilityZone.isEmpty()) {
+			JSONArray availabilityZones = new JSONArray();
+			availabilityZones.put(availabilityZone);
+			requestData.put("availabilityZones", availabilityZones);
 		}
-		return response;
-	}
+
+		JSONObject initiatorData = new JSONObject();
+		initiatorData.put("portName", connect.iscsiInitiator);
+		initiatorData.put("protocol", connect.attachProtocol.toString().toLowerCase());
+
+		JSONArray initiators = new JSONArray();
+		initiators.put(initiatorData);
+		requestData.put("initiators", initiators);
+
+		logger.info("----------OpenSDS Creating Host----------");
+
+        JSONObject response = (JSONObject)request.post("/host/hosts", requestData);
+        logger.debug(String.format("OpenSDS Create Host Response: %s", response));
+
+        if (isFailed(response)) {
+            String msg = String.format("Create Host %s Error %d: %s",
+                    connect.name, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        logger.info("OpenSDS Host Created.");
+        return response;
+    }
+
 
 	JSONObject getVolume(String volumeId) throws Exception {
 
