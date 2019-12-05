@@ -33,7 +33,6 @@ const (
 
 const (
 	DefaultAvailabilityZone = "default"
-	TenantId                = "tenantId"
 	AccessMode              = "agentless"
 )
 

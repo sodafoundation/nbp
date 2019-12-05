@@ -152,13 +152,11 @@ func NodeGetInfo(
 		}
 
 		if len(initiators) == 0 {
-			msg := fmt.Sprintf("cannot get any initiator for host %s", hostName)
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
+			msg := fmt.Sprintf("initiator providied is empty for host %s", hostName)
+			glog.Info(msg)
 		}
 
 		hostSpec := &model.HostSpec{
-			TenantId:          TenantId,
 			HostName:          hostName,
 			OsType:            runtime.GOOS,
 			AccessMode:        AccessMode,

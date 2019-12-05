@@ -265,7 +265,6 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId:       req.VolumeId,
 		HostId:         req.NodeId,
-		AccessProtocol: protocol,
 		AttachMode:     attachMode,
 		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: protocol,
@@ -637,6 +636,18 @@ func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.Node
 
 // NodePublishVolume implementation
 func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	volId := req.VolumeId
+	attachmentId := req.PublishContext[common.PublishAttachId]
+
+	if r := v.getReplicationByVolume(volId); r != nil {
+		volId = r.Metadata[AttachedVolumeId]
+		attachmentId = r.Metadata[AttachedId]
+	}
+
+	_, _, err := v.getVolumeAndAttachment(volId, attachmentId)
+	if nil != err {
+		return nil, err
+	}
 
 	device := req.StagingTargetPath
 	mountpoint := req.TargetPath
