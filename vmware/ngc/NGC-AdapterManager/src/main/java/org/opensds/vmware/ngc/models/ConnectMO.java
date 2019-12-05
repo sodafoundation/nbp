@@ -14,6 +14,8 @@
 
 package org.opensds.vmware.ngc.models;
 
+import java.util.Arrays;
+
 public class ConnectMO {
     public String name;
     public HOST_OS_TYPE osType;
@@ -38,4 +40,12 @@ public class ConnectMO {
         this.attachMode = attachMode;
         this.attachProtocol = attachProtocol;
     }
+
+	@Override
+	public String toString() {
+		return "ConnectMO [name=" + name + ", osType=" + osType + ", iscsiInitiator=" + iscsiInitiator
+				+ ", initiatorIp=" + initiatorIp + ", fcInitiators=" + Arrays.toString(fcInitiators) + ", attachMode="
+				+ attachMode + ", attachProtocol=" + attachProtocol + "]";
+	}
+
 }
