@@ -17,16 +17,20 @@ package org.opensds.vmware.ngc.adapters.opensds;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.StringEntity;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.JSONArray;
 import org.opensds.vmware.ngc.common.Request;
-import org.opensds.vmware.ngc.exceptions.NotAuthorizedException;
 import org.opensds.vmware.ngc.models.ALLOC_TYPE;
+import org.opensds.vmware.ngc.models.ConnectMO;
 import org.opensds.vmware.ngc.models.StorageMO;
 
 import static org.opensds.vmware.ngc.adapters.opensds.Constants.*;
+
+import java.util.concurrent.TimeUnit;
 
 
 class RestClient {
@@ -39,8 +43,6 @@ class RestClient {
 
         @Override
         public Object parseResponseBody(String body) throws JSONException {
-            if(body.isEmpty())
-                return null;
             Object json = new JSONTokener(body).nextValue();
             if(json instanceof JSONArray)
                 return new JSONArray(body);
@@ -50,6 +52,7 @@ class RestClient {
 
     private Request request;
     private StorageMO storage;
+    private static final Log logger = LogFactory.getLog(RestClient.class);
     
     private int getErrorCode(JSONObject response) {
         return (int) response.getLong("code");
@@ -60,14 +63,11 @@ class RestClient {
     }
 
     private boolean isFailed(JSONObject response) throws Exception {
-        if(!response.has("code"))
+        if(!response.has("code") || response.isNull("code"))
             return false;
-        int errorCode = getErrorCode(response);
-        if (errorCode == 401) {
-            throw new NotAuthorizedException(getErrorMessage(response));
-        }
         return true;
     }
+
     private String getAuthToken(Header[] headers) 
     {
     	for (Header header : headers) {
@@ -80,40 +80,55 @@ class RestClient {
     }
 
 	void login(String ip, int port, String user, String password) throws Exception {
-		JSONObject requestData = new JSONObject();
-		JSONObject userField = new JSONObject();
+
 		JSONObject domainField = new JSONObject();
-		JSONObject passwdField = new JSONObject();
-		JSONObject identityField = new JSONObject();
-		JSONArray passwdArray = new JSONArray();
-		JSONObject authField = new JSONObject();
-		JSONObject scopeField = new JSONObject();
-		JSONObject projectField = new JSONObject();
-		// create post body required for login
 		domainField.put("id", OPENSDS_DOMAIN.getValue());
+
+		JSONObject userField = new JSONObject();
 		userField.put("name", user);
 		userField.put("password", password);
 		userField.put("domain", domainField);
+
+		JSONObject passwdField = new JSONObject();
 		passwdField.put("user", userField);
+
+		JSONArray passwdArray = new JSONArray();
 		passwdArray.put("password");
+
+		JSONObject identityField = new JSONObject();
 		identityField.put("methods", passwdArray);
 		identityField.put("password", passwdField);
-		authField.put("identity", identityField);
+
+		JSONObject projectField = new JSONObject();
 		projectField.put("name", OPENSDS_TENANT.getValue());
 		projectField.put("domain", domainField);
+
+		JSONObject scopeField = new JSONObject();
 		scopeField.put("project", projectField);
+
+		JSONObject authField = new JSONObject();
+		authField.put("identity", identityField);
 		authField.put("scope", scopeField);
+
+		// create post body required for login
+		JSONObject requestData = new JSONObject();
 		requestData.put("auth", authField);
+
 		// prepare post request identity token service
 		Request request = new Request(ip, port, new Handler());
+
 		//set default request parameters
 		request.setHeaders("Content-Type", "application/json");
 		request.setUrl(String.format("http://%s/identity/v3", ip));
 
+		logger.info("OpenSDS Storage Device Login Getting Auth Token");
 		JSONObject response = (JSONObject)request.post("/auth/tokens", requestData);
+		logger.debug(String.format("OpenSDS Storage Device Login Response: %s", response));
+
 		if (isFailed(response)) {
-			String msg = String.format("Login User %s error %d: %s",
+			String msg = String.format("Login User %s Error %d: %s",
 					user, getErrorCode(response), getErrorMessage(response));
+			logger.error(String.format("OpenSDS Login Error: %s", msg));
 			throw new Exception(msg);
 		}
 		// get Headers and select Auth Token
@@ -132,29 +147,40 @@ class RestClient {
         try {
              request.close();
         } catch (Exception e) {
-            // Ignore any exception here
+             logger.error(String.format("OpenSDS Logout Error: %s", e));
         } finally {
-            request = null;
+             request = null;
         }
     }
 
     void findDeviceInfo(String ip, int port) throws Exception {
-	    request.setUrl(String.format("http://%s:%d/v1beta", ip, port));
+        logger.info(String.format("OpenSDS Getting Storage Device info "
+                    + "with IP %s", ip));
+
+        request.setUrl(String.format("http://%s:%d/v1beta", ip, port));
 	    JSONObject response = (JSONObject)request.get(String.format("/"));
+	    logger.debug(String.format("OpenSDS Storage Device Info Response: %s", response));
+
 	    if (isFailed(response)) {
-            String msg = String.format("OpenSDS Device Info error %d: %s",
+            String msg = String.format("OpenSDS Device Info Error %d: %s",
                     getErrorCode(response), getErrorMessage(response));
             throw new Exception(msg);
         }
+
 	    storage = new StorageMO(OPENSDS_STORAGENAME.getValue(), response.getString("name"),
 	    "", response.getString("status"), OPENSDS_VENDOR.getValue());
+
+	    logger.info(String.format("OpenSDS Storage Device: %s", storage));
     }
 
     StorageMO getDeviceInfo() {
+        logger.info("OpenSDS Getting Storage Device Info");
+        logger.info(String.format("OpenSDS Storage Device: %s", storage));
         return storage;
     }
 
-    JSONObject createVolume(String name, String description, ALLOC_TYPE allocType, long capacity, String poolId) throws Exception {
+    JSONObject createVolume(String name, String description, ALLOC_TYPE allocType, long capacity,
+            String poolId) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("name", name);
         requestData.put("size", capacity);
@@ -163,47 +189,106 @@ class RestClient {
 		if(!availabilityZone.isEmpty())
 			requestData.put("availabilityZone", availabilityZone);
 
+		logger.info("----------OpenSDS Creating Volume----------");
+
         JSONObject response = (JSONObject)request.post("/block/volumes", requestData);
+        logger.debug(String.format("OpenSDS Create Volume Response: %s", response));
 
         if (isFailed(response)) {
-            String msg = String.format("Create volume %s error %d: %s",
+            String msg = String.format("Create volume %s Error %d: %s",
                     name, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
-        return response;
+
+        int retryCount = 0;
+
+        String volumeId = response.getString("id");
+        JSONObject volume = new JSONObject();
+
+        while(retryCount<10) {
+            volume = getVolume(volumeId);
+            String volumeStatus = volume.getString("status");
+            if(volumeStatus.equals("available")) {
+                logger.info("OpenSDS Volume Created.");
+                return volume;
+            }
+            retryCount++;
+            TimeUnit.SECONDS.sleep(10);
+        }
+
+        return volume;
     }
 
     void deleteVolume(String volumeId) throws Exception {
-        JSONObject response = (JSONObject)request.delete(String.format("/block/volumes/%s", volumeId));
+        logger.info(String.format("----------OpenSDS Deleting Volume for VolumeId "
+                    + "%s----------", volumeId));
+
+        JSONObject response = (JSONObject)request.delete(String.format("/block/volumes/%s",
+                    volumeId));
+        logger.debug(String.format("OpenSDS Delete Volume Response: %s", response));
+
         if (isFailed(response)) {
-            String msg = String.format("Delete volume %s error %d: %s",
+            String msg = String.format("Delete volume %s Error %d: %s",
                     volumeId, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OpenSDS Volume for VolumeId %s Deleted. ", volumeId));
     }
 
     JSONArray listVolumes(String poolId) throws Exception {
         String volumeUrl;
         if (!poolId.isEmpty()) {
-            volumeUrl = String.format("/block/volumes?poolId=%s", poolId);
+            volumeUrl = String.format("/block/volumes?PoolId=%s", poolId);
         } else {
             volumeUrl = String.format("/block/volumes");
         }
+
+        logger.info("----------OpenSDS Listing Volumes----------");
+
         JSONArray response = (JSONArray)request.get(volumeUrl);
+        logger.debug(String.format("OpenSDS List Volumes Response: %s", response));
+
         if(response.isEmpty()) {
-            String msg = String.format("List Volumes error: No Volumes Found");
-            throw new Exception(msg);
+            String msg = String.format("No Volumes Found");
+            logger.error(String.format("OpenSDS List Volumes: %s", msg));
         }
 
         return response;
     }
 
     JSONArray listVolumes(String filterKey, String filterValue) throws Exception {
+        logger.info("----------OpenSDS Listing Volumes----------");
+
         String volumeUrl;
         volumeUrl = String.format("/block/volumes?%s=%s", filterKey, filterValue);
         JSONArray response = (JSONArray)request.get(volumeUrl);
+        logger.debug(String.format("OpenSDS List Volumes for the filter %s Response: %s",
+                    filterKey, response));
+
         if(response.isEmpty()) {
-            String msg = String.format("List Volumes error: No Volumes Found");
+            String msg = String.format("No Volumes Found");
+            logger.error(String.format("OpenSDS List Volumes for the filter Error: %s %s",
+                    filterKey, msg));
+        }
+
+        return response;
+    }
+
+    JSONObject getVolume(String volumeId) throws Exception {
+		logger.info(String.format("----------OpenSDS Getting Info for Volume %s----------",
+                    volumeId));
+
+		JSONObject response = (JSONObject)request.get(String.format("/block/volumes/%s", volumeId));
+        logger.debug(String.format("OpenSDS Getting Volume for %s Response: %s", volumeId,
+                    response));
+
+        if (isFailed(response)) {
+            String msg = String.format("Get Volume %s Error %d: %s",
+                    volumeId, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
@@ -211,81 +296,191 @@ class RestClient {
     }
 
     JSONArray listStoragePools() throws Exception {
+        logger.info("----------OpenSDS Listing Storage Pools----------");
+
         JSONArray response = (JSONArray)request.get("/pools");
+        logger.debug(String.format("OpenSDS List Storage Pools Response: %s", response));
+
         if(response.isEmpty()) {
-             String msg = String.format("List Storage Pools error: No Pools Found");
-               throw new Exception(msg);
+             String msg = String.format("No Pools Found");
+             logger.error(String.format("OpenSDS List Storage Pools: %s", msg));
         }
 
         return response;
     }
 
     JSONObject getStoragePool(String poolId) throws Exception {
+		logger.info(String.format("----------OpenSDS Getting Info for Storage Pool %s----------",
+                    poolId));
 
-        JSONObject response = (JSONObject)request.get(String.format("/pools/%s", poolId));
+		JSONObject response = (JSONObject)request.get(String.format("/pools/%s", poolId));
+        logger.debug(String.format("OpenSDS Getting Storage Pool for %s Response: %s", poolId,
+                    response));
+
         if (isFailed(response)) {
-            String msg = String.format("List Storage Pool %s error %d: %s",
+            String msg = String.format("Get Storage Pool %s Error %d: %s",
                     poolId, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
         return response;
     }
 
-    JSONObject attachVolume(String volumeId, String initiator, String initiatorIp) throws Exception {
-        JSONObject requestData = new JSONObject();
-        JSONObject hostInfo = new JSONObject();
-        requestData.put("volumeId", volumeId);
-        hostInfo.put("initiator", initiator);
-        hostInfo.put("ip", initiatorIp);
-        requestData.put("hostInfo", hostInfo);
+    JSONObject getHost(String hostName) throws Exception {
+        logger.info(String.format("----------OpenSDS Getting Host %s----------", hostName));
 
-        JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
+        JSONArray response = (JSONArray)request.get(String.format("/host/hosts?hostName=%s", hostName));
+        logger.debug(String.format("OpenSDS Getting Host %s Response: %s", hostName,
+                    response));
+
+        if (response.isEmpty()) {
+            String msg = String.format("No Host Found");
+            logger.info(String.format("OpenSDS Get Host for %s Error: %s", hostName, msg));
+            return new JSONObject();
+        }
+
+        JSONObject host = (JSONObject) response.get(0);
+        return host;
+    }
+
+    JSONObject createHost(ConnectMO connect) throws Exception {
+        JSONObject requestData = new JSONObject();
+        requestData.put("hostName", connect.name);
+        requestData.put("ip", connect.initiatorIp);
+        requestData.put("osType", connect.osType.toString().toLowerCase());
+        requestData.put("accessMode", OPENSDS_HOST_ACCESSMODE.getValue());
+        String availabilityZone = OPENSDS_AVAILABILITYZONE.getValue();
+
+        if(!availabilityZone.isEmpty()) {
+			JSONArray availabilityZones = new JSONArray();
+			availabilityZones.put(availabilityZone);
+			requestData.put("availabilityZones", availabilityZones);
+		}
+
+		JSONObject initiatorData = new JSONObject();
+		initiatorData.put("portName", connect.iscsiInitiator);
+		initiatorData.put("protocol", connect.attachProtocol.toString().toLowerCase());
+
+		JSONArray initiators = new JSONArray();
+		initiators.put(initiatorData);
+		requestData.put("initiators", initiators);
+
+		logger.info("----------OpenSDS Creating Host----------");
+
+        JSONObject response = (JSONObject)request.post("/host/hosts", requestData);
+        logger.debug(String.format("OpenSDS Create Host Response: %s", response));
 
         if (isFailed(response)) {
-            String msg = String.format("Attach volume %s error %d: %s",
-                    volumeId, getErrorCode(response), getErrorMessage(response));
+            String msg = String.format("Create Host %s Error %d: %s",
+                    connect.name, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info("OpenSDS Host Created.");
         return response;
+    }
+
+    JSONObject attachVolume(String volumeId, ConnectMO connect) throws Exception {
+        try {
+            JSONObject host = getHost(connect.name);
+
+            if(host.isEmpty()) {
+                host = createHost(connect);
+            }
+            String hostId = host.getString("id");
+
+            JSONObject requestData = new JSONObject();
+            requestData.put("volumeId", volumeId);
+            requestData.put("hostId", hostId);
+
+            logger.info(String.format("----------OpenSDS Creating Volume Attachment for Volume %s "
+                        + "to Host %s----------", volumeId, hostId));
+
+            JSONObject response = (JSONObject)request.post("/block/attachments", requestData);
+            logger.debug(String.format("OpenSDS Create Volume Attachment Response: %s", response));
+
+            if (isFailed(response)) {
+                String msg = String.format("Attach Volume %s Error %d: %s",
+                    volumeId, getErrorCode(response), getErrorMessage(response));
+                logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            logger.info("OpenSDS Volume Attachment Created.");
+            return response;
+        }
+        catch (Exception e) {
+            logger.error(String.format("Error in creating Volume Attachment, Error Message is: %s", e));
+            throw new JSONException("Error in creating Volume Attachment ", e);
+        }
     }
 
     JSONObject detachVolume(String volumeId) throws Exception {
-        JSONArray response = (JSONArray)request.get(String.format("/block/attachments?VolumeId=%s", volumeId));
+        logger.info(String.format("OpenSDS Getting Volume for VolumeId %s", volumeId));
+
+        JSONArray response = (JSONArray)request.get(String.format("/block/attachments?VolumeId=%s",
+                    volumeId));
+        logger.debug(String.format("OpenSDS Get Volume Attachment for VolumeId %s Response: %s",
+                    volumeId, response));
+
         JSONObject attachment = (JSONObject)response.get(0);
         String attachmentId = (String) attachment.get("id");
 
         if(response.isEmpty() || attachmentId.isEmpty()) {
-         String msg = String.format("Detach volume %s error: No Attachment Found",
+            String msg = String.format("Detach Volume %s Error: No Attachment Found",
                     volumeId);
+            logger.error(msg);
             throw new Exception(msg);
         }
 
-        JSONObject responseDelete = (JSONObject)request.delete(String.format("/block/attachments/%s", attachmentId));
+        logger.info(String.format("----------OpenSDS Deleting Volume Attachment for AttachmentId"
+                    + " %s----------", attachmentId));
+        JSONObject responseDelete = (JSONObject)request.delete(String.format("/block/attachments/%s",
+                    attachmentId));
+        logger.debug(String.format("OpenSDS DeleteVolumeAttachment for the attachmentId %s  Response: %s",
+                    attachmentId, responseDelete));
+
         if (isFailed(responseDelete)) {
             String msg = String.format("Detach volume %s error %d: %s",
                     volumeId, getErrorCode(responseDelete), getErrorMessage(responseDelete));
+            logger.error(msg);
             throw new Exception(msg);
         }
 
         JSONObject requestData = new JSONObject();
         requestData.put("status", VOLUME_STATUS.AVAILABLE.getValue());
-        JSONObject responsePut = (JSONObject)request.put(String.format("/block/volumes/%s", volumeId), requestData);
+
+        logger.info("OpenSDS Updating Volume Status to Available");
+        JSONObject responsePut = (JSONObject)request.put(String.format("/block/volumes/%s", volumeId),
+                    requestData);
+        logger.debug(String.format("OpenSDS Update Volume for VolumeId %s Response: %s", volumeId,
+                    responsePut));
 
         if (isFailed(responsePut)) {
-            String msg = String.format("Detach volume %s error %d: %s",
+            String msg = String.format("Detach volume %s Error %d: %s",
                     volumeId, getErrorCode(responsePut), getErrorMessage(responsePut));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
         return responseDelete;
     }
 
-    JSONObject getVolume(String volumeId) throws Exception {
+    JSONObject getVolumeByIdentifier(String identifier) throws Exception {
+        logger.info(String.format("----------OpenSDS Getting Volume for Identifier %s----------",
+                    identifier));
 
-        JSONArray response = (JSONArray)request.get(String.format("/block/volumes?wwn=%s", volumeId));
+        JSONArray response = (JSONArray)request.get(String.format("/block/volumes?DurableName=%s", identifier));
+        logger.debug(String.format("OpenSDS Getting Volume for Identifier %s Response: %s", identifier,
+                    response));
+
         if (response.isEmpty()) {
-            String msg = String.format("List Volume for WWN error: No Volumes Found");
-            throw new Exception(msg);
+            String msg = String.format("No Volumes Found");
+            logger.error(String.format("OpenSDS Get Volume for %s Error: %s", identifier, msg));
         }
+
         JSONObject volume = (JSONObject) response.get(0);
         return volume;
     }
@@ -297,10 +492,17 @@ class RestClient {
         } else {
             snapshotUrl = String.format("/block/snapshots");
         }
+
+        logger.info(String.format("----------OpenSDS Listing Snapshots for VolumeId %s----------",
+                    volumeId));
+
         JSONArray response = (JSONArray)request.get(snapshotUrl);
+        logger.debug(String.format("OpenSDS List Volume Snapshots for VolumeId %s Response: %s",
+                    volumeId, response));
+
         if(response.isEmpty()) {
-            String msg = String.format("List Volume Snapshots error: No Volumes Found");
-            throw new Exception(msg);
+            String msg = String.format("No Snapshots Found");
+            logger.error(String.format("OpenSDS List Volume Snapshots: %s", msg));
         }
 
         return response;
@@ -311,30 +513,51 @@ class RestClient {
         requestData.put("name", name);
         requestData.put("volumeId", volumeId);
 
+        logger.info(String.format("----------OpenSDS Creating Snapshot for VolumeId %s----------",
+                    volumeId));
         JSONObject response = (JSONObject)request.post("/block/snapshots", requestData);
+        logger.debug(String.format("OpenSDS CreateVolumeSnapshots for the VolumeId %s Response: %s",
+                    volumeId, response));
 
         if (isFailed(response)) {
-            String msg = String.format("Create volume snapshot %s error %d: %s",
+            String msg = String.format("Create Volume Snapshot %s Error %d: %s",
                     name, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
         return response;
     }
 
     void deleteVolumeSnapshot(String snapshotId) throws Exception {
-        request.delete(String.format("/block/snapshots/%s", snapshotId));
+        logger.info(String.format("----------OpenSDS Deleting Snapshot for SnapshotId %s----------",
+                    snapshotId));
+
+        JSONObject response = (JSONObject)request.delete(String.format("/block/snapshots/%s",
+                    snapshotId));
+        logger.debug(String.format("OpenSDS Delete Volume Snapshot for the SnapshotId %s Response: %s",
+                    snapshotId, response));
     }
 
     void expandVolume(String volumeId, long capacity) throws Exception {
         JSONObject requestData = new JSONObject();
         requestData.put("newSize", capacity);
 
-        JSONObject response = (JSONObject)request.post(String.format("/block/volumes/%s/resize", volumeId), requestData);
+        logger.info(String.format("----------OpenSDS Expanding Volume Size for VolumeId %s by"
+                    + " %s----------", volumeId, capacity));
+        
+        JSONObject response = (JSONObject)request.post(String.format("/block/volumes/%s/resize",
+                    volumeId), requestData);
+        logger.debug(String.format("OpenSDS Expand Volume for the VolumeId %s Response: %s",
+                    volumeId, response));
 
         if (isFailed(response)) {
             String msg = String.format("Expand Volume %s error %d: %s",
                     volumeId, getErrorCode(response), getErrorMessage(response));
+            logger.error(msg);
             throw new Exception(msg);
         }
+
+        logger.info(String.format("OpenSDS Expanded Volume Size for VolumeId %s by %s",
+                    volumeId, capacity));
     }
 }

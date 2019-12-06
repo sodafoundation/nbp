@@ -15,6 +15,8 @@
 package org.opensds.vmware.ngc.adapters.opensds;
 
 import java.util.Properties;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
  enum UNIT_TYPE {
 
@@ -67,13 +69,16 @@ public enum Constants {
 	OPENSDS_DOMAIN,
 	OPENSDS_AVAILABILITYZONE,
 	OPENSDS_STORAGENAME,
-	OPENSDS_VENDOR;
+	OPENSDS_VENDOR,
+	OPENSDS_HOST_ACCESSMODE;
 
 	private static final String PATH = "/constants.properties";
 
 	private static Properties properties;
 
 	private String value;
+
+    private static final Log logger = LogFactory.getLog(Constants.class);
 
 	private void init() {
 		if (properties == null) {
@@ -82,7 +87,7 @@ public enum Constants {
 				properties.load(this.getClass().getResourceAsStream(PATH));
 			}
 			catch (Exception ex) {
-				ex.printStackTrace();
+				logger.error(String.format("Error in loading Constant Properties, Error Message is: %s", ex));
 			}
 		}
 		value = (String) properties.get(this.toString());

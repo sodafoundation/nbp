@@ -15,7 +15,8 @@
 package org.opensds.vmware.ngc.models;
 
 public class StoragePoolMO {
-    public String name;
+
+	public String name;
     public String id;
     public POOL_TYPE type;
     public long totalCapacity;
@@ -28,4 +29,10 @@ public class StoragePoolMO {
         this.totalCapacity = totalCapacity;
         this.freeCapacity = freeCapacity;
     }
+
+    @Override
+	public String toString() {
+		return "StoragePoolMO [name=" + name + ", id=" + id + ", type=" + type + ", totalCapacity=" + totalCapacity
+				+ ", freeCapacity=" + freeCapacity + "]";
+	}
 }
