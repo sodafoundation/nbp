@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -26,6 +25,7 @@ import (
 	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/nbp/csi/util"
 	"github.com/opensds/opensds/client"
+	nbputil "github.com/opensds/nbp/util"	
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
@@ -262,63 +262,9 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 	}
 
 	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
-
-	var initator string
-	var nodeInfo = req.NodeId
-
-	switch protocol {
-	case connector.FcDriver:
-		wwpns, err := ExtractFCInitiatorFromNodeInfo(nodeInfo)
-		if err != nil {
-			msg := fmt.Sprintf("extract FC initiator from node info failed: %v",
-				err)
-			glog.Error(msg)
-			return nil, status.Error(codes.Internal, msg)
-		}
-
-		initator = strings.Join(wwpns, ",")
-		break
-	case connector.IscsiDriver:
-		iqn, err := ExtractISCSIInitiatorFromNodeInfo(nodeInfo)
-		if err != nil {
-			msg := fmt.Sprintf("extract ISCSI initiator from node info failed: %v", err)
-			glog.Error(msg)
-			return nil, status.Error(codes.Internal, msg)
-		}
-
-		initator = iqn
-		break
-	case connector.RbdDriver:
-		break
-	case connector.NvmeofDriver:
-		nqn, err := ExtractNvmeofInitiatorFromNodeInfo(nodeInfo)
-		if err != nil {
-			msg := fmt.Sprintf("extract Nvmeof initiator from node info failed, %v",
-				err.Error())
-			glog.Error(msg)
-			return nil, status.Error(codes.FailedPrecondition, msg)
-		}
-
-		initator = nqn
-		break
-	default:
-		msg := fmt.Sprintf("protocol:%s not support", protocol)
-		glog.Error(msg)
-		return nil, status.Error(codes.InvalidArgument, msg)
-	}
-
-	nodeInfoValues := strings.Split(nodeInfo, ",")
 	attachReq := &model.VolumeAttachmentSpec{
-		VolumeId: req.VolumeId,
-		HostInfo: model.HostInfo{
-			Host:      nodeInfoValues[0],
-			Platform:  runtime.GOARCH,
-			OsType:    runtime.GOOS,
-			Initiator: initator,
-			Ip:        nodeInfoValues[len(nodeInfoValues)-1],
-		},
-		Metadata:       req.VolumeContext,
-		AccessProtocol: protocol,
+		VolumeId:       req.VolumeId,
+		HostId:         req.NodeId,
 		AttachMode:     attachMode,
 		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: protocol,
@@ -349,8 +295,8 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 
 	resp := &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{
-			common.PublishHostIp:       newAttachment.Ip,
-			common.PublishHostName:     newAttachment.Host,
+			common.PublishHostIp:       connector.GetHostIP(),
+			common.PublishHostId:       newAttachment.HostId,
 			common.PublishAttachId:     newAttachment.Id,
 			common.PublishAttachStatus: newAttachment.Status,
 			common.PublishAttachMode:   attachMode,
@@ -410,18 +356,18 @@ func (v *Volume) isVolumeCanBePublished(canAtMultiNode bool, attachReq *model.Vo
 
 	for _, attachSpec := range attachments {
 		if attachSpec.VolumeId == attachReq.VolumeId {
-			if attachSpec.Host == attachReq.Host {
-				msg := fmt.Sprintf("the volume %s is publishing to the current node %s and no need to publish again", attachReq.VolumeId, attachReq.Host)
+			if attachSpec.HostId == attachReq.HostId {
+				msg := fmt.Sprintf("the volume %s is publishing to the current node %s and no need to publish again", attachReq.VolumeId, attachReq.HostId)
 				glog.Infof(msg)
 				return nil
 			}
 			if !canAtMultiNode {
-				msg := fmt.Sprintf("the volume %s has been published to the node %s and kubernetes does not have MULTI_NODE volume capability", attachReq.VolumeId, attachSpec.Host)
+				msg := fmt.Sprintf("the volume %s has been published to the node %s and kubernetes does not have MULTI_NODE volume capability", attachReq.VolumeId, attachSpec.HostId)
 				glog.Error(msg)
 				return status.Error(codes.FailedPrecondition, msg)
 			}
 			if !volMultiAttach {
-				msg := fmt.Sprintf("the volume %s has been published to the node %s, but the volume does not enable multiattach", attachReq.VolumeId, attachSpec.Host)
+				msg := fmt.Sprintf("the volume %s has been published to the node %s, but the volume does not enable multiattach", attachReq.VolumeId, attachSpec.HostId)
 				glog.Error(msg)
 				return status.Error(codes.FailedPrecondition, msg)
 			}
@@ -449,12 +395,10 @@ func (v *Volume) ControllerUnpublishVolume(req *csi.ControllerUnpublishVolumeReq
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	hostName := strings.Split(req.NodeId, ",")[0]
-
 	var acts []*model.VolumeAttachmentSpec
 
 	for _, attachSpec := range attachments {
-		if attachSpec.VolumeId == req.VolumeId && attachSpec.Host == hostName {
+		if attachSpec.VolumeId == req.VolumeId && attachSpec.HostId == req.NodeId {
 			acts = append(acts, attachSpec)
 			break
 		}
@@ -462,7 +406,7 @@ func (v *Volume) ControllerUnpublishVolume(req *csi.ControllerUnpublishVolumeReq
 
 	if r := v.getReplicationByVolume(req.VolumeId); r != nil {
 		for _, attachSpec := range attachments {
-			if attachSpec.VolumeId == r.SecondaryVolumeId && attachSpec.Host == hostName {
+			if attachSpec.VolumeId == r.SecondaryVolumeId && attachSpec.HostId == req.NodeId {
 				acts = append(acts, attachSpec)
 				break
 			}
@@ -634,11 +578,6 @@ func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStag
 		}
 	}
 
-	err = v.updateAttachment(mountpoint, StagingTargetPath, attachment)
-	if err != nil {
-		return nil, status.Error(codes.Aborted, err.Error())
-	}
-
 	_, err = v.Client.UpdateVolume(vol.Id, vol)
 	if err != nil {
 		msg := fmt.Sprintf("update volume failed: %v", err)
@@ -652,7 +591,8 @@ func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStag
 
 // NodeUnstageVolume implementation
 func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	vol, attachment, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
+
+	vol, _, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -690,11 +630,6 @@ func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.Node
 		}
 	}
 
-	err = v.delTargetPathInAttachment(attachment, StagingTargetPath, req.StagingTargetPath)
-	if err != nil {
-		return nil, err
-	}
-
 	glog.V(5).Info("node unstage volume success")
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
@@ -709,7 +644,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 		attachmentId = r.Metadata[AttachedId]
 	}
 
-	_, attachment, err := v.getVolumeAndAttachment(volId, attachmentId)
+	_, _, err := v.getVolumeAndAttachment(volId, attachmentId)
 	if nil != err {
 		return nil, err
 	}
@@ -763,7 +698,7 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 			return nil, status.Errorf(codes.FailedPrecondition, msg)
 		}
 	} else {
-		err = CreateSymlink(device, mountpoint)
+		err := CreateSymlink(device, mountpoint)
 
 		if err != nil {
 			msg := fmt.Sprintf("failed to create a link: oldname=%v, newname=%v, %v", device, mountpoint, err)
@@ -772,19 +707,13 @@ func (v *Volume) NodePublishVolume(req *csi.NodePublishVolumeRequest) (*csi.Node
 		}
 	}
 
-	// update volume attachment
-	err = v.updateAttachment(mountpoint, TargetPath, attachment)
-	if err != nil {
-		return nil, err
-	}
-
 	glog.V(5).Info("node publish volume success")
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 // NodeUnpublishVolume implementation
 func (v *Volume) NodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-	vol, attachment, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
+	vol, _, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, err
 	}
@@ -812,11 +741,6 @@ func (v *Volume) NodeUnpublishVolume(req *csi.NodeUnpublishVolumeRequest) (*csi.
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	err = v.delTargetPathInAttachment(attachment, TargetPath, req.TargetPath)
-	if err != nil {
-		return nil, err
 	}
 
 	glog.V(5).Info("node unpublish volume success")
@@ -852,8 +776,15 @@ func (v *Volume) getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSp
 		return nil, nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
+	host, err := nbputil.GetHostByHostName(v.Client, hostName)
+	if err != nil {
+		msg := fmt.Sprintf("faild to get host name: %v", err)
+		glog.Error(msg)
+		return nil, nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
 	for _, attach := range attachments {
-		if attach.VolumeId == volId && attach.Host == hostName {
+		if attach.VolumeId == volId && attach.HostId == host.Id {
 			attachment = attach
 			break
 		}
@@ -866,57 +797,6 @@ func (v *Volume) getVolumeAndAttachmentByVolumeId(volId string) (*model.VolumeSp
 	}
 
 	return vol, attachment, nil
-}
-
-// delTargetPathInAttachment Delete a targetPath (stagingTargetPath) from the attachment
-func (v *Volume) delTargetPathInAttachment(attachment *model.VolumeAttachmentSpec, key string, TargetPath string) error {
-	targetPathList, exist := attachment.Metadata[key]
-	if !exist {
-		return nil
-	}
-
-	paths := strings.Split(targetPathList, ";")
-	for index, path := range paths {
-		if path == TargetPath {
-			paths = append(paths[:index], paths[index+1:]...)
-			break
-		}
-	}
-
-	if 0 == len(paths) {
-		glog.V(5).Infof("no more %s", key)
-		delete(attachment.Metadata, key)
-	} else {
-		attachment.Metadata[key] = strings.Join(paths, ";")
-	}
-
-	if StagingTargetPath == key {
-		volConnector := connector.NewConnector(attachment.DriverVolumeType)
-
-		if volConnector == nil {
-			msg := fmt.Sprintf("unsupport driver volume type: %s", attachment.DriverVolumeType)
-			glog.Error(msg)
-			return status.Error(codes.FailedPrecondition, msg)
-		}
-
-		err := volConnector.Detach(attachment.ConnectionData)
-		if err != nil {
-			msg := fmt.Sprintf("detach failed: %v", err)
-			glog.Error(msg)
-			return status.Errorf(codes.FailedPrecondition, "%s", msg)
-		}
-
-		attachment.Mountpoint = "-"
-	}
-
-	_, err := v.Client.UpdateVolumeAttachment(attachment.Id, attachment)
-	if err != nil {
-		msg := fmt.Sprintf("update volume attachment failed: %v", err)
-		glog.Error(msg)
-		return status.Error(codes.FailedPrecondition, msg)
-	}
-
-	return nil
 }
 
 // getVolumeAndAttachment Get volume and attachment with volumeId and attachmentId
@@ -936,31 +816,4 @@ func (v *Volume) getVolumeAndAttachment(volumeId string, attachmentId string) (*
 	}
 
 	return vol, attachment, nil
-}
-
-// updateAttachment Update attachment
-func (v *Volume) updateAttachment(mountpoint string, key string, attachment *model.VolumeAttachmentSpec) error {
-	// update volume Attachmentment
-	paths := strings.Split(attachment.Metadata[key], ";")
-	isExist := false
-
-	for _, path := range paths {
-		if mountpoint == path {
-			isExist = true
-			break
-		}
-	}
-
-	if !isExist {
-		paths = append(paths, mountpoint)
-		attachment.Metadata[key] = strings.Join(paths, ";")
-		_, err := v.Client.UpdateVolumeAttachment(attachment.Id, attachment)
-		if err != nil {
-			msg := fmt.Sprintf("update volume attachmentment failed: %v", err)
-			glog.Error(msg)
-			return status.Error(codes.FailedPrecondition, msg)
-		}
-	}
-
-	return nil
 }
