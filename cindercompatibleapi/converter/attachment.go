@@ -19,7 +19,13 @@ This module implements a entry into the OpenSDS northbound service.
 package converter
 
 import (
+	"fmt"
+	"github.com/golang/glog"
 	"github.com/opensds/opensds/pkg/model"
+	nbputil "github.com/opensds/nbp/util"
+	"github.com/opensds/opensds/client"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ExtraSpec ...
@@ -69,7 +75,7 @@ func ShowAttachmentResp(attachment *model.VolumeAttachmentSpec) *ShowAttachmentR
 	resp.VolumeAttachment.ConnectionInfo.DriverVolumeType = attachment.ConnectionInfo.DriverVolumeType
 	resp.VolumeAttachment.ConnectionInfo.ConnectionData = attachment.ConnectionInfo.ConnectionData
 	//resp.VolumeAttachment.AttachedAt = attachment.Mountpoint
-	resp.VolumeAttachment.Instance = attachment.Metadata["instance_uuid"]
+	//resp.VolumeAttachment.Instance = attachment.Metadata["instance_uuid"]
 	resp.VolumeAttachment.VolumeID = attachment.VolumeId
 	resp.VolumeAttachment.ID = attachment.BaseModel.Id
 
@@ -109,7 +115,7 @@ func ListAttachmentsDetailsResp(attachments []*model.VolumeAttachmentSpec) *List
 			cinderAttachment.ConnectionInfo.DriverVolumeType = attachment.ConnectionInfo.DriverVolumeType
 			cinderAttachment.ConnectionInfo.ConnectionData = attachment.ConnectionInfo.ConnectionData
 			//cinderAttachment.AttachedAt = attachment.Mountpoint
-			cinderAttachment.Instance = attachment.Metadata["instance_uuid"]
+			//cinderAttachment.Instance = attachment.Metadata["instance_uuid"]
 			cinderAttachment.VolumeID = attachment.VolumeId
 			cinderAttachment.ID = attachment.Id
 
@@ -146,7 +152,7 @@ func ListAttachmentsResp(attachments []*model.VolumeAttachmentSpec) *ListAttachm
 	} else {
 		for _, attachment := range attachments {
 			cinderAttachment.Status = attachment.Status
-			cinderAttachment.Instance = attachment.Metadata["instance_uuid"]
+			//cinderAttachment.Instance = attachment.Metadata["instance_uuid"]
 			cinderAttachment.VolumeID = attachment.VolumeId
 			cinderAttachment.ID = attachment.Id
 
@@ -189,19 +195,30 @@ type CreateRespAttachment struct {
 }
 
 // CreateAttachmentReq ...
-func CreateAttachmentReq(cinderReq *CreateAttachmentReqSpec) *model.VolumeAttachmentSpec {
+func CreateAttachmentReq(cinderReq *CreateAttachmentReqSpec, client *client.Client) (*model.VolumeAttachmentSpec, error) {
+	host, err := nbputil.GetHostByHostName(client, cinderReq.Attachment.Connector.Host)
+	if err != nil {
+		msg := fmt.Sprintf("faild to get host name: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
 	attachment := model.VolumeAttachmentSpec{}
-	attachment.Metadata = make(map[string]string)
+	attachment.HostId = host.Id
+
+	/*attachment.Metadata = make(map[string]string)
 	attachment.Metadata["instance_uuid"] = cinderReq.Attachment.InstanceUuID
-	attachment.HostInfo.Initiator = cinderReq.Attachment.Connector.Initiator
+	attachment.Initiator = cinderReq.Attachment.Connector.Initiator
 	attachment.HostInfo.Ip = cinderReq.Attachment.Connector.IP
 	attachment.HostInfo.Platform = cinderReq.Attachment.Connector.Platform
 	attachment.HostInfo.Host = cinderReq.Attachment.Connector.Host
-	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType
+	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType */
+	
 	attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint
 	attachment.VolumeId = cinderReq.Attachment.VolumeUuID
 
-	return &attachment
+
+	return &attachment, nil
 }
 
 // CreateAttachmentResp ...
@@ -211,7 +228,7 @@ func CreateAttachmentResp(attachment *model.VolumeAttachmentSpec) *CreateAttachm
 	resp.Attachment.ConnectionInfo.DriverVolumeType = attachment.ConnectionInfo.DriverVolumeType
 	resp.Attachment.ConnectionInfo.ConnectionData = attachment.ConnectionInfo.ConnectionData
 	//resp.Attachment.AttachedAt = attachment.Mountpoint
-	resp.Attachment.Instance = attachment.Metadata["instance_uuid"]
+	//resp.Attachment.Instance = attachment.Metadata["instance_uuid"]
 	resp.Attachment.VolumeID = attachment.VolumeId
 	resp.Attachment.ID = attachment.BaseModel.Id
 
@@ -250,11 +267,13 @@ type UpdateRespAttachment struct {
 // UpdateAttachmentReq ...
 func UpdateAttachmentReq(cinderReq *UpdateAttachmentReqSpec) *model.VolumeAttachmentSpec {
 	attachment := model.VolumeAttachmentSpec{}
-	attachment.HostInfo.Initiator = cinderReq.Attachment.Connector.Initiator
+
+	/*attachment.HostInfo.Initiator = cinderReq.Attachment.Connector.Initiator
 	attachment.HostInfo.Ip = cinderReq.Attachment.Connector.IP
 	attachment.HostInfo.Platform = cinderReq.Attachment.Connector.Platform
 	attachment.HostInfo.Host = cinderReq.Attachment.Connector.Host
-	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType
+	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType */
+	
 	attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint
 
 	return &attachment
@@ -267,7 +286,7 @@ func UpdateAttachmentResp(attachment *model.VolumeAttachmentSpec) *UpdateAttachm
 	resp.Attachment.ConnectionInfo.DriverVolumeType = attachment.ConnectionInfo.DriverVolumeType
 	resp.Attachment.ConnectionInfo.ConnectionData = attachment.ConnectionInfo.ConnectionData
 	//resp.Attachment.AttachedAt = attachment.Mountpoint
-	resp.Attachment.Instance = attachment.Metadata["instance_uuid"]
+	//resp.Attachment.Instance = attachment.Metadata["instance_uuid"]
 	resp.Attachment.VolumeID = attachment.VolumeId
 	resp.Attachment.ID = attachment.BaseModel.Id
 

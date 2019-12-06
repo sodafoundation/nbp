@@ -20,8 +20,16 @@ package converter
 
 import (
 	"errors"
+	"fmt"
+	"github.com/golang/glog"
+	"github.com/opensds/opensds/contrib/connector"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"strings"
 
 	"github.com/opensds/opensds/pkg/model"
+	nbputil "github.com/opensds/nbp/util"
+	"github.com/opensds/opensds/client"
 )
 
 var (
@@ -419,19 +427,95 @@ type InitializeConnectionInfo struct {
 }
 
 // InitializeConnectionReq ...
-func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpec, volumeID string) *model.VolumeAttachmentSpec {
-	attachment := model.VolumeAttachmentSpec{}
-	attachment.Metadata = make(map[string]string)
-	//attachment.Metadata["instance_uuid"] = cinderReq.Attachment.InstanceUuID
-	attachment.HostInfo.Initiator = initializeConnectionReq.InitializeConnection.Connector.Initiator
+func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpec, volumeID string, client *
+	client.Client) (*model.VolumeAttachmentSpec, error) {
+
+	//attachment, err := api.opensdsClient.
+	hostName := initializeConnectionReq.InitializeConnection.Connector.Host
+	host, err := nbputil.GetHostByHostName(client, hostName)
+	if err != nil {
+		// Host not found, create host with necessary input
+		var initiators []*model.Initiator
+
+		volDriverTypes := strings.Split(initializeConnectionReq.InitializeConnection.Connector.Initiator, ",")
+
+		for _, volDriverType := range volDriverTypes {
+			volDriver := connector.NewConnector(volDriverType)
+			if volDriver == nil {
+				glog.Errorf("unsupport volume driver: %s", volDriverType)
+				continue
+			}
+
+			portName, err := volDriver.GetInitiatorInfo()
+			if err != nil {
+				glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
+				continue
+			}
+
+			initiator := &model.Initiator{
+				PortName: portName,
+				Protocol: volDriverType,
+			}
+
+			initiators = append(initiators, initiator)
+		}
+
+		if len(initiators) == 0 {
+			msg := fmt.Sprintf("Creating host without any initiator for hostname %s", hostName)
+			glog.Error(msg)
+		}
+
+		hostSpec := &model.HostSpec{
+			HostName:          hostName,
+			OsType:            initializeConnectionReq.InitializeConnection.Connector.OsType,
+			IP:                initializeConnectionReq.InitializeConnection.Connector.IP,
+			//AvailabilityZones: []string{DefaultAvailabilityZone},
+			Initiators:        initiators,
+		}
+
+		host, err = client.HostMgr.CreateHost(hostSpec)
+		if err != nil {
+			msg := fmt.Sprintf("failed to create host with host name: %s, err: %v", hostName, err)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+	}
+
+	/* attachment.Metadata = make(map[string]string)
+	attachment.Metadata["instance_uuid"] = cinderReq.Attachment.InstanceUuID
+
 	attachment.HostInfo.Ip = initializeConnectionReq.InitializeConnection.Connector.IP
 	attachment.HostInfo.Platform = initializeConnectionReq.InitializeConnection.Connector.Platform
 	attachment.HostInfo.Host = initializeConnectionReq.InitializeConnection.Connector.Host
 	attachment.HostInfo.OsType = initializeConnectionReq.InitializeConnection.Connector.OsType
-	//attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint
-	attachment.VolumeId = volumeID
+	//attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint */
+	
+	//check volume is exist
+	volSpec, err := client.GetVolume(volumeID)
+	if err != nil || volSpec == nil {
+		msg := fmt.Sprintf("the volume %s does not exist: %v",
+			volumeID, err)
+		glog.Error(msg)
+		return nil, status.Error(codes.NotFound, msg)
+	}
 
-	return &attachment
+	pool, err := client.GetPool(volSpec.PoolId)
+	if err != nil || pool == nil {
+		msg := fmt.Sprintf("the pool %s does not exist: %v",
+			volSpec.PoolId, err)
+		glog.Error(msg)
+		return nil, status.Error(codes.NotFound, msg)
+	}
+
+	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
+	attachment := model.VolumeAttachmentSpec{}
+	attachment.HostId = host.Id
+	attachment.VolumeId = volumeID
+	attachment.ConnectionInfo = model.ConnectionInfo{
+		DriverVolumeType: protocol,
+	}
+
+	return &attachment, nil
 }
 
 // InitializeConnectionResp ...
