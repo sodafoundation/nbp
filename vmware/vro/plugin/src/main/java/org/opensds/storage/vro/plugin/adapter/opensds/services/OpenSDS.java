@@ -63,7 +63,7 @@ public class OpenSDS {
 	}
 
 	public void attachVolume(String volumeId, ConnectMO connect) throws Exception {
-		client.attachVolume(volumeId, connect.iscsiInitiator, connect.initiatorIp);
+		client.attachVolume(volumeId, connect);
 	}
 
 	public VolumeMO queryVolumeByID(String volumeId) throws Exception {

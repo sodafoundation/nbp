@@ -110,7 +110,7 @@ func (p *Plugin) NodeGetInfo(
 	req *csi.NodeGetInfoRequest) (
 	*csi.NodeGetInfoResponse, error) {
 
-	return common.NodeGetInfo(ctx, req, TopologyZoneKey)
+	return common.NodeGetInfo(ctx, req, TopologyZoneKey, p.FileShareClient.Client)
 }
 
 // NodeGetCapabilities implementation

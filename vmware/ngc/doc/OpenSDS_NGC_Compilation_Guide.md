@@ -76,7 +76,6 @@ Install JDK by following instructions provided on the Oracle official website.
 
 ```
 Install ANT by following instructions provided on the Apache official website
--If %ANT_HOME%/lib does not contain maven-ant-tasks-2.1.3.jar, download this jar and place in %ANT_HOME%/lib
 ```
 ### 3.3 Configuring the Maven Environment
 
