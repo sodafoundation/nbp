@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+<meta http-equiv="Cache-Control" content="no-cache" />
+<link type="text/css" rel="stylesheet" href="../../../assets/css/basic-table.css">
+<link type="text/css" rel="stylesheet" href="../../../assets/css/lun-snapshot-Tab.css">
+<style type="text/css">
+table thead tr th,table tbody tr td {
+	white-space: nowrap;
+}
+
+</style>
+</head>
+<body style="overflow-x:hidden;">
+	<table id="hostLunTable" class="tablesorter" style="table-layout: fixed; cellspacing: 0; cellpadding: 0;overflow-x: hidden;">
+		<tbody id="hostLunTbody" class="tableBody">
+			<tr id="cloneLun">
+				<td name="check" title="" width="4%" align="left"style="padding-left:8px;"></td>
+				<td name="id" title="" width="4%" align="left"style="padding-left:8px;"></td>
+				<td name="name" title="" width="13%" align="left"style="padding-left:8px;"></td>
+				<td name="status" title="" width="4%" align="left"style="padding-left:8px;"></td>
+				<td name="capacity" title="" width="8%" style="text-align: left; padding-left: 8px;"></td>
+				<td name="capacityUsage" title="" width="16%" style="text-align: left; padding-left: 8px;"></td>
+				<td name="storagePoolName" title="" width="13%" style="text-align: left; padding-left: 8px;"></td>
+				<td name="storagePoolCapactiy" title="" width="8%" style="text-align: left; padding-left: 8px;"></td>
+				<td name="poolCapUsage" title="" width="16%" style="text-align: left; padding-left: 8px;"></td>
+				<td name="hideDeviceId_" style="display:none;"></td>
+				<td name="hideLunId_" style="display:none;"></td>
+			</tr>
+		</tbody>
+	</table>
+<script type="text/javascript" src="../../../assets/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/web-platform.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/jquery-util.js"></script>
+<script type="text/javascript" src="../../../resources/js/common/basic-table.js"></script>
+<script type="text/javascript" src="../../../resources/js/mount/lunTab.js"></script>
+	<script type="text/javascript" src="../../../resources/js/common/storage.plugin.js"></script>
+</body>
+</html>

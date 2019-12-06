@@ -1,0 +1,50 @@
+# This YAML file contains nginx & csi opensds driver objects,
+# which are necessary to run nginx with csi opensds block driver.
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-sc-opensdsplugin-block
+provisioner: csi-opensdsplugin-block
+parameters:
+  attachMode: rw
+  profile: abc
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.csi-opensdsplugin-block/zone
+    values:
+    - default
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-pvc-opensdsplugin-block
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: csi-sc-opensdsplugin-block
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-block 
+spec:
+  containers:
+  - image: nginx
+    imagePullPolicy: IfNotPresent
+    name: nginx
+    ports:
+    - containerPort: 80
+      protocol: TCP
+    volumeMounts:
+      - mountPath: /var/lib/www/html
+        name: csi-data-opensdsplugin 
+  volumes:
+  - name: csi-data-opensdsplugin
+    persistentVolumeClaim:
+      claimName: csi-pvc-opensdsplugin-block
+      readOnly: false

@@ -15,11 +15,17 @@
 package org.opensds.vmware.ngc.models;
 
 public class VolumeMO {
-    public String name;
+
+	public String name;
     public String id;
     public String wwn;
     public ALLOC_TYPE allocType;
     public long capacity;
+
+    //add 0903
+    public long allocCapacity;
+    public StatusE status;
+    public String storagePoolId;
 
     public VolumeMO(String name, String id, String wwn, ALLOC_TYPE allocType, long capacity) {
         this.name = name;
@@ -28,4 +34,23 @@ public class VolumeMO {
         this.allocType = allocType;
         this.capacity = capacity;
     }
+
+    @Override
+	public String toString() {
+		return "VolumeMO [name=" + name + ", id=" + id + ", wwn=" + wwn + ", allocType=" + allocType + ", capacity="
+				+ capacity + ", allocCapacity=" + allocCapacity + ", status=" + status + ", storagePoolId="
+				+ storagePoolId + "]";
+	}
+
+    public static enum StatusE {
+
+        Normal(1),
+        Faulty(2);
+
+        private int value;
+        StatusE(int  value) {
+            this.value = value;
+        }
+    }
 }
+

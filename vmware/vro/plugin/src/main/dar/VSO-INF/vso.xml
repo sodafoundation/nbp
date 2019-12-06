@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://www.vmware.com/support/orchestrator/plugin-4-0.xsd"
+	name="OpenSDS" version="1.0.0" build-number="__build.number__"
+	image="images/opensds_80x28.png"
+	display-name="OpenSDS">
+	<description>OpenSDS Storage</description>
+	<installation mode="version">
+		<action type="install-package"
+			resource="packages/org.OpenSDS.DataManagement.package" />
+	</installation>
+	<inventory type="OpenSDS" />
+	<finder-datasources>
+		<finder-datasource name="opensds-datasource"
+			adaptor-class="org.opensds.storage.vro.plugin.core.OpenSDSStorageAdapter"
+			anonymous-login-mode="internal" />
+	</finder-datasources>
+	<finders>
+		<finder type="OpenSDS" datasource="opensds-datasource"
+			image="images/opensds_80x28.png">
+			<relations>
+				<relation type="OpenSDSInfo" name="OpenSDSInfos" />
+			</relations>
+			<inventory-children>
+				<relation-link name="OpenSDSInfos"></relation-link>
+			</inventory-children>
+		</finder>
+		<finder type="OpenSDSInfo" datasource="opensds-datasource"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.OpenSDSInfo"
+			script-object="OpenSDSOpenSDSInfo"
+			image="images/opensds_80x28.png">
+			<id accessor="getId()" />
+			<properties>
+				<property display-name="OpenSDS Name" name="arrayName"
+					bean-property="arrayName" />
+				<property display-name="Host Name" name="hostName"
+					bean-property="hostName" />
+				<property display-name="Port" name="port"
+					bean-property="port" />
+				<property display-name="Product Name" name="productName"
+					bean-property="productName" />
+				<property display-name="Product Version"
+					name="productVersion" bean-property="productVersion" />
+				<property display-name="Whether keystone auth is enabled"
+					name="authEnabled" bean-property="authEnabled" />
+				<property display-name="Product Model" name="productModel"
+					bean-property="productModel" />
+			</properties>
+		</finder>
+		<finder type="VolumeService" datasource="opensds-datasource"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.VolumeService"
+			script-object="OpenSDSVolumeService">
+			<id accessor="getId()"></id>
+			<properties></properties>
+		</finder>
+		<finder type="Conf" datasource="opensds-datasource"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.Configuration"
+			script-object="OpenSDSConf">
+			<id accessor="getId()"></id>
+			<properties></properties>
+		</finder>
+	</finders>
+	<scripting-objects>
+		<object script-name="OpenSDSOpenSDSInfo"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.OpenSDSInfo"
+			create="false" strict="true">
+			<description></description>
+			<attributes>
+				<attribute script-name="id" java-name="id"
+					return-type="string">The
+					unique Id of the instance
+				</attribute>
+				<attribute script-name="hostName" java-name="hostName"
+					return-type="string">The name of opensds </attribute>
+				<attribute script-name="port" java-name="port"
+					return-type="string">port number </attribute>
+			</attributes>
+			<methods>
+			</methods>
+		</object>
+		<object script-name="OpenSDSVolumeService"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.VolumeService"
+			create="false" strict="true">
+			<description>VolumeService</description>
+			<attributes>
+			</attributes>
+			<methods>
+				<method script-name="createVolume" java-name="createVolume">
+					<description>createVolume</description>
+					<parameters>
+						<parameter type="OpenSDSInfo" name="OpenSDSInfo">OpenSDSInfo
+						</parameter>
+						<parameter type="string" name="VolumeName">VolumeName</parameter>
+						<parameter type="string" name="Description">Description</parameter>
+						<parameter type="number" name="Capacity">Capacity</parameter>
+						<parameter type="string" name="ProfileName">ProfileName</parameter>
+					</parameters>
+				</method>
+				<method script-name="deleteVolume" java-name="deleteVolume">
+					<description>deleteVolume</description>
+					<parameters>
+						<parameter type="OpenSDSInfo" name="OpenSDSInfo">OpenSDSInfo
+						</parameter>
+						<parameter type="string" name="id">id</parameter>
+					</parameters>
+				</method>
+				<method script-name="createAndAttachVolume" java-name="createAndAttachVolume">
+					<description>createAndAttachVolume</description>
+					<parameters>
+						<parameter type="OpenSDSInfo" name="OpenSDSInfo">OpenSDSInfo
+						</parameter>
+						<parameter type="string" name="VolumeName">VolumeName</parameter>
+						<parameter type="string" name="Description">Description</parameter>
+						<parameter type="number" name="Capacity">Capacity</parameter>
+						<parameter type="string" name="ProfileName">ProfileName</parameter>
+						<parameter type="string" name="Host">Host</parameter>
+						<parameter type="string" name="Iqn">Iqn</parameter>
+					</parameters>
+				</method>
+				<method script-name="expandVolume" java-name="expandVolume">
+					<description>expandVolume</description>
+					<parameters>
+						<parameter type="OpenSDSInfo" name="OpenSDSInfo">OpenSDSInfo
+						</parameter>
+						<parameter type="string" name="id">id</parameter>
+						<parameter type="number" name="Capacity">Capacity</parameter>
+					</parameters>
+				</method>
+			</methods>
+		</object>
+		<object script-name="OpenSDSConf"
+			java-class="org.opensds.storage.vro.plugin.adapter.opensds.services.Configuration"
+			create="false" strict="true">
+			<description>Configuration</description>
+			<attributes>
+			</attributes>
+			<methods>
+				<method script-name="register" java-name="register">
+					<description>register</description>
+					<parameters>
+						<parameter type="string" name="arrayName"></parameter>
+						<parameter type="string" name="hostname"></parameter>
+						<parameter type="string" name="port"></parameter>
+						<parameter type="string" name="username"></parameter>
+						<parameter type="string" name="password"></parameter>
+						<parameter type="boolean" name="authEnabled"></parameter>
+						<parameter type="string" name="productModel"></parameter>
+					</parameters>
+				</method>
+				<method script-name="unregister" java-name="unregister">
+					<description></description>
+					<parameters>
+						<parameter type="OpenSDSInfo" name="opensdsInfo"></parameter>
+					</parameters>
+				</method>
+
+			</methods>
+		</object>
+	</scripting-objects>
+</module>

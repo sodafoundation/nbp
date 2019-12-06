@@ -27,16 +27,13 @@ var ns = org_opensds_storage_devices;
 	    parent.$("#nextStep").prop("disabled", "disabled");
         parent.$("#nextStep").css("background","#57C7FF");
         var url = "";
-        if (parent.datastoreType == "lunDatastore") {
+        if (parent.datastoreType == "vmfsDatastore") {
             url = ns.webContextPath + "/rest/data/storagepoolListForBlock/" + deviceId + "?t=" + new Date();
-		} else if (parent.datastoreType == "nfsDatastore") {
-            //url = ns.webContextPath + "/rest/data/storagepoolListForNFS/" + deviceId + "?t=" + new Date();
 		}
 
 		function refreshData() {
 			$.getJSON(encodeURI(url), function(resp) {
 				$("#divLoadingAlarm").css("display", "none");
-				//var table = document.getElementById("storagepoolList");
 				var tbody = document.getElementById("tbody_pool");
 				var arr = eval(resp.data);
 				for ( var i = 0; i < arr.length; i++) {
@@ -75,7 +72,7 @@ var ns = org_opensds_storage_devices;
 				if ("" != text && text == parent.storagePoolId) {
 				    if (parent.datastoreType == "nfsDatastore") {
                         parent.useableCapa = $(this).find('td:eq(3)').text();
-					} else if (parent.datastoreType == "lunDatastore") {
+					} else if (parent.datastoreType == "vmfsDatastore") {
                         parent.useableCapa = $(this).find('td:eq(3)').text();
 					}
 					$(this).find("td").css("background-color","#abcefc");
@@ -99,7 +96,7 @@ var ns = org_opensds_storage_devices;
 				parent.storagePoolName = $(this).find('td:eq(1)').text();
                 if (parent.datastoreType == "nfsDatastore") {
                     parent.useableCapa = $(this).find('td:eq(2)').text();
-                } else if (parent.datastoreType == "lunDatastore") {
+                } else if (parent.datastoreType == "vmfsDatastore") {
                     parent.useableCapa = $(this).find('td:eq(3)').text();
                 }
 				parent.$("#nextStep").prop("disabled", "");

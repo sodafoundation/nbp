@@ -46,26 +46,28 @@ public enum CapabilityUnitTypeEnum {
      */
     PB(1024L * 1024L * 1024L * 1024L * 1024L);
 
-    private long scale;
+    private final long scale;
 
-    CapabilityUnitTypeEnum(long scale)
-    {
+    CapabilityUnitTypeEnum(long scale) {
         this.scale = scale;
     }
 
-
-    public long getUnit()
-    {
+    /**
+     * get Unit
+     * @return long
+     */
+    public long getUnit() {
         return this.scale;
     }
 
-
-    public static CapabilityUnitTypeEnum getCapabilityUnitTypeByorder(int order)
-    {
-        for (CapabilityUnitTypeEnum one : CapabilityUnitTypeEnum.values())
-        {
-            if (one.ordinal() == order)
-            {
+    /**
+     * Get Capability Unit
+     * @param order int
+     * @return CapabilityUnitTypeEnum
+     */
+    public static CapabilityUnitTypeEnum getCapabilityUnitTypeByorder(int order) {
+        for (CapabilityUnitTypeEnum one : CapabilityUnitTypeEnum.values()) {
+            if (one.ordinal() == order) {
                 return one;
             }
         }

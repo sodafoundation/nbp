@@ -28,7 +28,7 @@ public class DeviceInfo implements Serializable {
     public String deviceType;
     public String username;
     public String password;
-    public String id;
+    public String uid;
     public String name;
     public String labelIds;
     public String primaryIconId;
