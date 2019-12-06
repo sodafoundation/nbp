@@ -357,12 +357,11 @@ public class VimCommonServiceImpl {
             vmfsSpec.getVmfs().setMajorVersion(Integer.valueOf(datastoreInfo.getVmfsVersion().substring(4)));
             try
             {
-            return vimPort.createVmfsDatastore(hostDatastoreSystem, vmfsSpec);
+            	return vimPort.createVmfsDatastore(hostDatastoreSystem, vmfsSpec);
             }
             catch(Exception e)
             {
-            	logger.info("Exception caught in createVmfsDatastore, error is %s",e);
-            	logger.info("Retry createVmfsDatastore creation with VMFS5.");
+            	logger.info("Exception caught in createVmfsDatastore, error is " + e + "\nRetry createVmfsDatastore creation with VMFS5.");
             	vmfsSpec.getVmfs().setMajorVersion(5);
             	return vimPort.createVmfsDatastore(hostDatastoreSystem, vmfsSpec);
             }
