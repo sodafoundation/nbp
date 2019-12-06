@@ -32,8 +32,8 @@ class VolumeMOBuilder {
        try {
     		String name = jsonObject.getString("name");
             String id = jsonObject.getString("id");
-            JSONObject metadata = jsonObject.has("poolId") ? jsonObject.getJSONObject("metadata") : null;
-            String wwn = (metadata != null) ? metadata.getString("wwn") : "";
+            JSONObject identifier = jsonObject.has("identifier") ? jsonObject.getJSONObject("identifier") : null;
+            String durableName = (identifier != null) ? identifier.getString("durableName") : "";
             ALLOC_TYPE allocType = ALLOC_TYPE.THIN;
             long capacity = jsonObject.getLong("size")*UNIT_TYPE.GB.getUnit();
             long allocCapacity = jsonObject.getLong("size") * UNIT_TYPE.GB.getUnit();
@@ -42,7 +42,7 @@ class VolumeMOBuilder {
                     volStatus.equals("inUse")) ? VolumeMO.StatusE.Normal : VolumeMO
                     .StatusE.Faulty;
             String storagePoolId = jsonObject.has("poolId") ? jsonObject.getString("poolId") : "";
-            VolumeMO volumeMO = new VolumeMO(name, id, wwn, allocType, capacity);
+            VolumeMO volumeMO = new VolumeMO(name, id, durableName, allocType, capacity);
             volumeMO.status = status;
             volumeMO.allocCapacity = allocCapacity;
             volumeMO.storagePoolId = storagePoolId;
@@ -200,7 +200,7 @@ public class OpenSDS extends Storage {
     }
 
     public void attachVolume(String volumeId, ConnectMO connect) throws Exception {
-        client.attachVolume(volumeId, connect.iscsiInitiator, connect.initiatorIp);
+        client.attachVolume(volumeId, connect);
     }
 
     public void detachVolume(String volumeId, ConnectMO connect) throws Exception {
@@ -210,7 +210,7 @@ public class OpenSDS extends Storage {
 	
     @Override
     public VolumeMO queryVolumeByID(String identifier) throws Exception {
-        JSONObject volume = client.getVolume(identifier);
+        JSONObject volume = client.getVolumeByIdentifier(identifier);
 
         logger.info(String.format("OpenSDS For Indentifier %s Volume %s:", identifier, volume));
         return VolumeMOBuilder.build(volume);
