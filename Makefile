@@ -26,7 +26,7 @@ BUILD_TGT := opensds-sushi-$(VERSION)-linux-amd64
 
 all: build
 #build: csi.block.opensds csi.file.opensds flexvolume.server.opensds service-broker cindercompatibleapi
-build: csi.block.opensds csi.file.opensds
+build: csi.block.opensds csi.file.opensds cindercompatibleapi
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)
@@ -53,8 +53,8 @@ csi.file.opensds: prebuild
 #service-broker: prebuild
 #	go build -ldflags '-w -s' -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
 
-#cindercompatibleapi: prebuild
-#	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
+cindercompatibleapi: prebuild
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
 
 docker: build
 	cp $(BUILD_DIR)/csi.block.opensds ./csi/
