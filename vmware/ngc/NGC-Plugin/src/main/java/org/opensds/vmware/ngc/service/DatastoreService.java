@@ -15,11 +15,17 @@
 package org.opensds.vmware.ngc.service;
 
 import org.opensds.vmware.ngc.entity.ResultInfo;
-import org.opensds.vmware.ngc.model.DatastoreInfo;
+import org.opensds.vmware.ngc.model.datastore.Datastore;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vise.usersession.ServerInfo;
 
 public interface DatastoreService {
 
-    ResultInfo<Object> createDatastore(ManagedObjectReference[] hostMo, ServerInfo serverInfo, DatastoreInfo datastoreInfo);
+    ResultInfo<Object> create(ManagedObjectReference[] hostMo, ServerInfo serverInfo, Datastore datastoreInfo);
+
+    ResultInfo<Object> extendSize(ServerInfo serverInfo, Datastore datastoreInfo);
+
+    ResultInfo<Object> delete(ServerInfo serverInfo, ManagedObjectReference datastoreMo, Datastore datastoreInfo);
+
+    ResultInfo<Object> getInfo(ManagedObjectReference dsMo, ServerInfo serverInfo);
 }

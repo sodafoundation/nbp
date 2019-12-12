@@ -28,15 +28,13 @@ table thead tr th,table tbody tr td {
 
 	function refreshData() {
 		$("#divLoadingAlarm").css("display", "block");
-		var url = ns.webContextPath + "/rest/data/devicelist?t=" + new Date();
+		var url = ns.webContextPath + "/rest/device/getList?t=" + new Date();
 		$.getJSON(encodeURI(url), function(resp) {
 			$("#divLoadingAlarm").css("display", "none");
-			//var table = document.getElementById("deviceList");
 			var tbody = document.getElementById("tbody_device");
 			var arr = eval(resp.data);
 			for ( var i = 0; i < arr.length; i++) {
 				var jsonObj = arr[i];
-				//var tr = table.insertRow(table.rows.length);
 				var tr = document.createElement("tr");
 				var td0 = tr.insertCell(0);
 				td0.align = "center";
@@ -62,14 +60,14 @@ table thead tr th,table tbody tr td {
 				td2.innerHTML = jsonObj.deviceModel;
 				td3.innerHTML = jsonObj.ip;
 				td4.innerHTML = jsonObj.sn;
-				td5.innerHTML = jsonObj.id;
+				td5.innerHTML = jsonObj.uid;
 				td6.innerHTML = jsonObj.deviceType;
 				td7.innerHTML = jsonObj.supportNFS;
 				td1.title = jsonObj.deviceName;
 				td2.title = jsonObj.deviceModel;
 				td3.title = jsonObj.ip;
 				td4.title = jsonObj.sn;
-				td5.title = jsonObj.id;
+				td5.title = jsonObj.uid;
 				td6.title = jsonObj.deviceType;
 				td7.title = jsonObj.supportNFS;
 				

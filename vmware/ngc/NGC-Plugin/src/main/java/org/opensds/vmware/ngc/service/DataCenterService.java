@@ -18,7 +18,6 @@ import org.opensds.vmware.ngc.entity.ResultInfo;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vise.usersession.ServerInfo;
 
-
 public interface DataCenterService {
 
     ResultInfo<Object> getHostListByClusterId(ManagedObjectReference clusterMOR, final ServerInfo serverInfo);

@@ -1,0 +1,9 @@
+apiVersion: snapshot.storage.k8s.io/v1alpha1
+kind: VolumeSnapshot
+metadata:
+  name: new-snapshot-demo-block
+spec:
+  snapshotClassName: csi-opensds-snapclass-block
+  source:
+    name: opensdspvc-block
+    kind: PersistentVolumeClaim

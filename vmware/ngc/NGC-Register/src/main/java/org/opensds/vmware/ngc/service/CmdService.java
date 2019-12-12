@@ -27,16 +27,5 @@ public class CmdService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-       /* Options options = new Options();
-        options.addOption("h", false, "list help");
-        options.addOption("t", true, "set time on system");
-        try {
-            CommandLineParser parser = new DefaultParser();
-            CommandLine cmd = parser.parse(options, args);
-
-
-        }catch (ParseException ex) {
-            logger.error("cmd error: " + ex.getMessage());
-        }*/
     }
 }

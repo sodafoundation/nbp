@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: NGCPlugin-service
+Bundle-Name: NGC-Plugin-service
 Bundle-SymbolicName: org.opensds.vmware.ngc.service
-Bundle-Version: 1.5.50
+Bundle-Version: 1.1.0
 Bundle-Vendor: OpenSDS
 Bundle-ClassPath: .
 Tool: Bundlor 1.1.0.RELEASE

@@ -61,8 +61,7 @@ input[type="text"]:focus{
 <script type="text/javascript">
 	var showTip = false;
 	$(document).ready(function() {
-		
-		//shieldCombinationKey();
+
 		$("#lunName").val(parent.lunName);
 		if (parent.license) {
 			$("#smartThinTr").css("display", "table-row");
@@ -322,14 +321,6 @@ input[type="text"]:focus{
 				<td style="padding-top: 5px;"><textarea id="lunDescript" style="padding-left: 5px;width: 220px; height: 40px; overflow: auto;resize: none;">
 				</textarea></td>
 			</tr>
-			<!-- <tr id="smartThinTr">
-				<td style="white-space: nowrap;">SmartThin:</td>
-				<td><input type="checkbox" id="check_lunAllocType" />Enable After the SmartThin function is enabled, </td>
-			</tr>
-			<tr id="smartThinExploreTr">
-				<td>&nbsp;</td>
-				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thin LUNs are created.</td>
-			</tr> -->
 			<tr id="smartThinTr">
 				<td style="white-space: nowrap;vertical-align: top;height:48px;padding-top:10px;">Thin</td>
 				<td>
@@ -370,29 +361,6 @@ input[type="text"]:focus{
 				<td>Min. capacity</td>
 				<td style="padding-left: 5px;">2GB</td>
 			</tr>
-			<!-- <tr style="display: none;" id="initCapacity">
-				<td style="white-space: nowrap;">Initially Allocated Capacity:</td>
-				<td>
-					<table>
-						<tr>
-							<td><span><input type="text" id="txtInitCapa" /></span></td>
-							<td>&nbsp; <select id="initCapaUnit">
-									<option value="GB">GB</option>
-							</select>
-							</td>
-							<td><span id="initCapaTip" style="color: red;font-size: 12px;display: none;"></span></td>
-						</tr>
-					</table>
-				</td>
-				<td style="width: 16px; display: none;" id="initCapaRangeImage">
-					<div style="width: 16px; height: 16px; background-image: url(../../image/error.png)"></div>
-				</td>
-				<td><span id="initCapaRange" style="display: none; color: red;"></span></td>
-			</tr>
-			<tr style="display: none;" id="initCapacityRange">
-				<td>&nbsp;</td>
-				<td>Min. initially allocated capacity:&nbsp;1 GB</td>
-			</tr> -->
 		</table>
 	</div>
 </body>
