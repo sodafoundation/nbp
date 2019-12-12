@@ -270,13 +270,21 @@ func (portal *VolumePortal) VolumeAction() {
 			log.Error(reason)
 			return
 		}
-
-		attachment := converter.InitializeConnectionReq(&cinderReq, id)
 		NewClient(portal.Ctx)
-		attachment, err := opensdsClient.CreateVolumeAttachment(attachment)
 
+		attachment, err := converter.InitializeConnectionReq(&cinderReq, id, opensdsClient)
 		if err != nil {
 			reason := fmt.Sprintf("Initialize connection failed: %s", err.Error())
+			portal.Ctx.Output.SetStatus(model.ErrorInternalServer)
+			portal.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
+			log.Error(reason)
+			return
+		}
+
+		attachment, err = opensdsClient.CreateVolumeAttachment(attachment)
+
+		if err != nil {
+			reason := fmt.Sprintf("Create volume attachment failed: %s", err.Error())
 			portal.Ctx.Output.SetStatus(model.ErrorInternalServer)
 			portal.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
 			log.Error(reason)
