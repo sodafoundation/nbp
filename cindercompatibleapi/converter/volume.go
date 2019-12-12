@@ -437,12 +437,13 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 		// Host not found, create host with necessary input
 		var initiators []*model.Initiator
 
-		volDriverTypes := strings.Split(initializeConnectionReq.InitializeConnection.Connector.Initiator, ",")
+		//InitiatorList is comma seperated list of volume drivers supported
+		InitiatorList:= []string{connector.IscsiDriver}
 
-		for _, volDriverType := range volDriverTypes {
+		for _, volDriverType := range InitiatorList {
 			volDriver := connector.NewConnector(volDriverType)
 			if volDriver == nil {
-				glog.Errorf("unsupport volume driver: %s", volDriverType)
+				glog.Errorf("unsupported volume driver: %s", volDriverType)
 				continue
 			}
 
@@ -461,8 +462,9 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 		}
 
 		if len(initiators) == 0 {
-			msg := fmt.Sprintf("Creating host without any initiator for hostname %s", hostName)
+			msg := fmt.Sprintf("Failed to create host due to nil initiator for hostname %s", hostName)
 			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
 
 		hostSpec := &model.HostSpec{
@@ -481,15 +483,6 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 		}
 	}
 
-	/* attachment.Metadata = make(map[string]string)
-	attachment.Metadata["instance_uuid"] = cinderReq.Attachment.InstanceUuID
-
-	attachment.HostInfo.Ip = initializeConnectionReq.InitializeConnection.Connector.IP
-	attachment.HostInfo.Platform = initializeConnectionReq.InitializeConnection.Connector.Platform
-	attachment.HostInfo.Host = initializeConnectionReq.InitializeConnection.Connector.Host
-	attachment.HostInfo.OsType = initializeConnectionReq.InitializeConnection.Connector.OsType
-	//attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint */
-	
 	//check volume is exist
 	volSpec, err := client.GetVolume(volumeID)
 	if err != nil || volSpec == nil {

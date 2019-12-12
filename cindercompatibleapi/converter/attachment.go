@@ -205,18 +205,8 @@ func CreateAttachmentReq(cinderReq *CreateAttachmentReqSpec, client *client.Clie
 
 	attachment := model.VolumeAttachmentSpec{}
 	attachment.HostId = host.Id
-
-	/*attachment.Metadata = make(map[string]string)
-	attachment.Metadata["instance_uuid"] = cinderReq.Attachment.InstanceUuID
-	attachment.Initiator = cinderReq.Attachment.Connector.Initiator
-	attachment.HostInfo.Ip = cinderReq.Attachment.Connector.IP
-	attachment.HostInfo.Platform = cinderReq.Attachment.Connector.Platform
-	attachment.HostInfo.Host = cinderReq.Attachment.Connector.Host
-	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType */
-	
 	attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint
 	attachment.VolumeId = cinderReq.Attachment.VolumeUuID
-
 
 	return &attachment, nil
 }
@@ -268,12 +258,6 @@ type UpdateRespAttachment struct {
 func UpdateAttachmentReq(cinderReq *UpdateAttachmentReqSpec) *model.VolumeAttachmentSpec {
 	attachment := model.VolumeAttachmentSpec{}
 
-	/*attachment.HostInfo.Initiator = cinderReq.Attachment.Connector.Initiator
-	attachment.HostInfo.Ip = cinderReq.Attachment.Connector.IP
-	attachment.HostInfo.Platform = cinderReq.Attachment.Connector.Platform
-	attachment.HostInfo.Host = cinderReq.Attachment.Connector.Host
-	attachment.HostInfo.OsType = cinderReq.Attachment.Connector.OsType */
-	
 	attachment.Mountpoint = cinderReq.Attachment.Connector.Mountpoint
 
 	return &attachment
