@@ -330,13 +330,15 @@ class RestClient {
     JSONObject getHost(String hostName) throws Exception {
         logger.info(String.format("----------OpenSDS Getting Host %s----------", hostName));
 
-        JSONArray response = (JSONArray)request.get(String.format("/host/hosts?hostName=%s", hostName));
-        logger.debug(String.format("OpenSDS Getting Host %s Response: %s", hostName,
+        // replace all  "_" to "-" from hostName as OpenSDS does not support. 
+        String osdsHostName = hostName.replaceAll("_","-");
+        JSONArray response = (JSONArray)request.get(String.format("/host/hosts?hostName=%s", osdsHostName));
+        logger.debug(String.format("OpenSDS Getting Host %s Response: %s", osdsHostName,
                     response));
 
         if (response.isEmpty()) {
             String msg = String.format("No Host Found");
-            logger.info(String.format("OpenSDS Get Host for %s Error: %s", hostName, msg));
+            logger.info(String.format("OpenSDS Get Host for %s Error: %s", osdsHostName, msg));
             return new JSONObject();
         }
 
@@ -345,8 +347,10 @@ class RestClient {
     }
 
     JSONObject createHost(ConnectMO connect) throws Exception {
-        JSONObject requestData = new JSONObject();
-        requestData.put("hostName", connect.name);
+    	// replace all  "_" to "-" from hostName as OpenSDS does not support.
+        String hostName = connect.name.replaceAll("_","-");
+    	JSONObject requestData = new JSONObject();
+        requestData.put("hostName", hostName);
         requestData.put("ip", connect.initiatorIp);
         requestData.put("osType", connect.osType.toString().toLowerCase());
         requestData.put("accessMode", OPENSDS_HOST_ACCESSMODE.getValue());
@@ -373,7 +377,7 @@ class RestClient {
 
         if (isFailed(response)) {
             String msg = String.format("Create Host %s Error %d: %s",
-                    connect.name, getErrorCode(response), getErrorMessage(response));
+            		hostName, getErrorCode(response), getErrorMessage(response));
             logger.error(msg);
             throw new Exception(msg);
         }
