@@ -24,8 +24,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/nbp/csi/util"
+	nbputil "github.com/opensds/nbp/util"
 	"github.com/opensds/opensds/client"
-	nbputil "github.com/opensds/nbp/util"	
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
@@ -263,9 +263,9 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 
 	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
 	attachReq := &model.VolumeAttachmentSpec{
-		VolumeId:       req.VolumeId,
-		HostId:         req.NodeId,
-		AttachMode:     attachMode,
+		VolumeId:   req.VolumeId,
+		HostId:     req.NodeId,
+		AttachMode: attachMode,
 		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: protocol,
 		},
@@ -591,8 +591,7 @@ func (v *Volume) NodeStageVolume(req *csi.NodeStageVolumeRequest) (*csi.NodeStag
 
 // NodeUnstageVolume implementation
 func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-
-	vol, _, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
+	vol, attachment, err := v.getVolumeAndAttachmentByVolumeId(req.VolumeId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
@@ -616,6 +615,20 @@ func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.Node
 		err = connector.Umount(req.StagingTargetPath)
 		if err != nil {
 			msg := fmt.Sprintf("failed to umount, %v", err)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
+		volConnector := connector.NewConnector(attachment.DriverVolumeType)
+		if volConnector == nil {
+			msg := fmt.Sprintf("unsupport driver volume type: %s", attachment.DriverVolumeType)
+			glog.Error(msg)
+			return nil, status.Error(codes.FailedPrecondition, msg)
+		}
+
+		err = volConnector.Detach(attachment.ConnectionData)
+		if err != nil {
+			msg := fmt.Sprintf("failed to detach device: %v", err)
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
