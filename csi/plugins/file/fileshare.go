@@ -23,12 +23,16 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/util"
+	nbputil "github.com/opensds/nbp/util"
 	"github.com/opensds/opensds/client"
-	nbputil "github.com/opensds/nbp/util"	
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	DefaultAttachMode = "Read,Write"
 )
 
 type FileShare struct {
@@ -46,7 +50,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 	// fileshare name
 	name = strings.Replace(req.GetName(), "-", "_", -1)
 
-	var attachMode = "read,write"
+	var attachMode = DefaultAttachMode
 	for k, v := range req.GetParameters() {
 		switch k {
 		case common.ParamProfile:
@@ -60,7 +64,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 		case common.PublishAttachMode:
 			if strings.ToLower(v) == "read" {
 				// attach mode
-				attachMode = "read"
+				attachMode = "Read"
 			} else {
 				glog.Infof("use default attach mode: %s", attachMode)
 			}
