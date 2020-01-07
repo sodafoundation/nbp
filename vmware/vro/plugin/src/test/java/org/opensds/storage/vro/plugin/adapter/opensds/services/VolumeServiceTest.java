@@ -23,7 +23,6 @@ class VolumeServiceTest {
 		esxIP = p.getProperty("ESX_IP");
 		esxIQN = p.getProperty("ESX_IQN");
 		volId = p.getProperty("VOLUME_ID");
-
 	}
 
 	void setOpenSDSInfo(Properties p) {
@@ -41,7 +40,6 @@ class VolumeServiceTest {
 		readDefaultConfig();
 		VolumeService volumeService = new VolumeService();
 		volumeService.createVolume(arrayInfo, "test_script_vol", "test_script_vol", 1, profileId);
-
 	}
 
 	@Test
@@ -49,7 +47,6 @@ class VolumeServiceTest {
 		VolumeService volumeService = new VolumeService();
 		readDefaultConfig();
 		volumeService.createAndAttachVolume(arrayInfo, "attach_vol", "attach volume test", 1, profileId, esxIP, esxIQN);
-
 	}
 
 	@Test
@@ -57,7 +54,6 @@ class VolumeServiceTest {
 		VolumeService volumeService = new VolumeService();
 		readDefaultConfig();
 		volumeService.deleteVolume(arrayInfo, volId);
-
 	}
 
 	@Test
@@ -65,7 +61,6 @@ class VolumeServiceTest {
 		VolumeService volumeService = new VolumeService();
 		readDefaultConfig();
 		volumeService.expandVolume(arrayInfo, volId, 2);
-
 	}
 
 }
