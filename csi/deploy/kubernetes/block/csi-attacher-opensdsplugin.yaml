@@ -33,7 +33,7 @@ spec:
       serviceAccount: csi-attacher-block
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v1.1.1
+          image: quay.io/k8scsi/csi-attacher:v1.2.1
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
