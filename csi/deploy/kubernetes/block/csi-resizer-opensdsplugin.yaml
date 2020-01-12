@@ -1,0 +1,124 @@
+# This YAML file contains attacher & csi driver API objects,
+# which are necessary to run external csi resizer for opensds.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-resizer-opensdsplugin-block
+  labels:
+    app: csi-resizer-opensdsplugin-block
+spec:
+  selector:
+    app: csi-resizer-opensdsplugin-block
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-resizer-opensdsplugin-block
+spec:
+  serviceName: "csi-resizer-opensdsplugin-block"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-resizer-opensdsplugin-block
+  template:
+    metadata:
+      labels:
+        app: csi-resizer-opensdsplugin-block
+    spec:
+      serviceAccount: csi-resizer-block
+      containers:
+        - name: csi-resizer
+          image: quay.io/k8scsi/csi-resizer:v0.3.0
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--csiTimeout=15s"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: opensds
+          image: opensdsio/csiplugin-block:latest
+          args :
+            - "--csiEndpoint=$(CSI_ENDPOINT)"
+            - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
+            - "--opensdsAuthStrategy=$(OPENSDS_AUTH_STRATEGY)"
+            - "--v=8"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://csi/csi.sock
+            - name: OPENSDS_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsendpoint
+            - name: OPENSDS_AUTH_STRATEGY
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: opensdsauthstrategy
+            - name: OS_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osauthurl
+            - name: OS_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osusername
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: OS_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ospassword
+            - name: PASSWORD_ENCRYPTER
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: passwordencrypter
+            - name: ENABLE_ENCRYPTED
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: enableEncrypted
+            - name: OS_TENANT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: ostenantname
+            - name: OS_PROJECT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osprojectname
+            - name: OS_USER_DOMAIN_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-configmap-opensdsplugin-block
+                  key: osuserdomainid
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: certificate-path
+              mountPath: /opt/opensds-security
+      volumes:
+        - name: socket-dir
+          emptyDir:
+        - name: certificate-path
+          hostPath:
+            path: /opt/opensds-security
+            type: DirectoryOrCreate

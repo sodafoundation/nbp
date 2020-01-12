@@ -261,6 +261,13 @@ func TestControllerGetCapabilities(t *testing.T) {
 				},
 			},
 		},
+		&csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+				},
+			},
+		},		
 	}
 
 	rs, err := fakePlugin.ControllerGetCapabilities(fakeCtx, fakeReq)
