@@ -46,70 +46,70 @@
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-core</artifactId>
 		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-core-4.3.9.RELEASE.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\spring-core-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-web</artifactId>
 		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-web-4.3.9.RELEASE.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\spring-web-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-context</artifactId>
 		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-context-4.3.9.RELEASE.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\spring-context-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-beans</artifactId>
 		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-beans-4.3.9.RELEASE.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\spring-beans-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>com.vmware</groupId>
 		    <artifactId>vim25</artifactId>
 		    <version>6.7.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/vim25.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\vim25.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>com.vmware</groupId>
 		    <artifactId>vsphere-client-lib</artifactId>
 		    <version>6.7.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/vsphere-client-lib.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\vsphere-client-lib.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>commons-logging</groupId>
 		    <artifactId>commons-logging</artifactId>
 		    <version>1.1.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/commons-logging-1.1.1.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\commons-logging-1.1.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>com.google.code.gson</groupId>
 		    <artifactId>gson</artifactId>
 		    <version>2.3.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/gson-2.3.1.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\gson-2.3.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>javax.servlet</groupId>
 		    <artifactId>servlet-api</artifactId>
 		    <version>3.0.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/javax.servlet-api-3.0.1.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\javax.servlet-api-3.0.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>com.springsource.org.apache.commons.lang</artifactId>
 		    <version>2.5.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/com.springsource.org.apache.commons.lang-2.5.0.jar</systemPath>
+		    <systemPath>E:\\opensds\\vSphere Client SDK\\html-client-sdk-6.7.0-8170180\\libs\\com.springsource.org.apache.commons.lang-2.5.0.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-dependency-plugin -->
@@ -122,9 +122,24 @@
 		    <groupId>org.opensds.vmware</groupId>
 			 <artifactId>NGC</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		    <systemPath>${basedir}/lib/ngc-adapter-manager.jar</systemPath>
+		    <systemPath>E:\opensds\code\nbp\vmware\ngc\NGC-AdapterManager\target\NGC-AdapterManager-0.0.1-SNAPSHOT.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+           <groupId>junit</groupId>
+           <artifactId>junit</artifactId>
+           <version>4.13</version>
+           <scope>test</scope>
+        </dependency>		
+        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
+		<dependency>
+		    <groupId>org.mockito</groupId>
+		    <artifactId>mockito-all</artifactId>
+		    <version>1.10.19</version>
+		    <scope>test</scope>
+		</dependency>
+        
     </dependencies>
 
 </project>
