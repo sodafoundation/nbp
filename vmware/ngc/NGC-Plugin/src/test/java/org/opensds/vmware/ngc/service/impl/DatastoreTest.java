@@ -2,7 +2,7 @@
  * 
  */
 
-package service.impl;
+package org.opensds.vmware.ngc.service.impl;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
