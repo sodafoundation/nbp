@@ -224,6 +224,8 @@ public class OpenSDS extends Storage {
 	    if (jsonArray != null) {
 	        for (int i = 0; i < jsonArray.length(); i++) {
 	            JSONObject snapshot = jsonArray.getJSONObject(i);
+	            if(!snapshot.getString("status").equals("error"))
+		            snapshots.add(SnapshotMOBuilder.build(snapshot));
 	            snapshots.add(SnapshotMOBuilder.build(snapshot));
 	        }
 	    }
