@@ -155,7 +155,7 @@ spec:
         - name: iscsi-dir
           hostPath:
             path: /etc/iscsi/
-            type: Directory
+            type: DirectoryOrCreate
         - name: ceph-dir
           hostPath:
             path: /etc/ceph/
