@@ -33,7 +33,7 @@ spec:
       serviceAccount: csi-provisioner-file
       containers:
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v1.1.0
+          image: quay.io/k8scsi/csi-provisioner:v1.4.0
           args:
             - "--provisioner=csi-opensdsplugin-file"
             - "--csi-address=$(ADDRESS)"
