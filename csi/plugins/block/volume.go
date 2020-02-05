@@ -621,7 +621,7 @@ func (v *Volume) NodeUnstageVolume(req *csi.NodeUnstageVolumeRequest) (*csi.Node
 
 		volConnector := connector.NewConnector(attachment.DriverVolumeType)
 		if volConnector == nil {
-			msg := fmt.Sprintf("unsupport driver volume type: %s", attachment.DriverVolumeType)
+			msg := fmt.Sprintf("unsupported driver volume type: %s", attachment.DriverVolumeType)
 			glog.Error(msg)
 			return nil, status.Error(codes.FailedPrecondition, msg)
 		}
