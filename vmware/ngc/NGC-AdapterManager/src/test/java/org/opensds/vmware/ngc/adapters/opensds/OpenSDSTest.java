@@ -26,6 +26,9 @@ class OpenSDSTest {
 	private int port;
 	private String esxIP;
 	private String esxIQN;
+	private static int VOLUME_SIZE=1;
+	private static int VOLUME_EXPAND_SIZE=2;
+	private static int SLEEP_DURATION=2000;
 
 	@Test
 	void ITtestOpenSDS() throws Exception {
@@ -38,16 +41,16 @@ class OpenSDSTest {
 		if (pool == null) {
 			fail("List Pool  Failure");
 		}
-		VolumeMO volume = osds.createVolume("test_volume", "test volume creation", ALLOC_TYPE.THIN, 1024 * 1024 * 1024,
+		VolumeMO volume = osds.createVolume("test_volume", "test volume creation", ALLOC_TYPE.THIN, VOLUME_SIZE*UNIT_TYPE.GB.getUnit(),
 				pool.id);
-		Thread.sleep(2000);
+		Thread.sleep(SLEEP_DURATION);
 		if (volume == null) {
 			fail("Volume Creation Failure");
 		}
-		osds.expandVolume(volume.id, (long) 2 * 1024 * 1024 * 1024);
-		Thread.sleep(2000);
+		osds.expandVolume(volume.id, (long) VOLUME_EXPAND_SIZE * UNIT_TYPE.GB.getUnit());
+		Thread.sleep(SLEEP_DURATION);
 		osds.createVolumeSnapshot(volume.id, "test_volume_snap");
-		Thread.sleep(2000);
+		Thread.sleep(SLEEP_DURATION);
 		List<VolumeMO> volumes = osds.listVolumes();
 		if (volumes == null) {
 			fail("List Volumes  Failure");
@@ -75,11 +78,11 @@ class OpenSDSTest {
 		ConnectMO connectMO = new ConnectMO("esx_host", HOST_OS_TYPE.ESXI, esxIQN, esxIP, null, ATTACH_MODE.RW,
 				ATTACH_PROTOCOL.ISCSI);
 		osds.attachVolume(volume.id, connectMO);
-		Thread.sleep(2000);
+		Thread.sleep(SLEEP_DURATION);
 		osds.detachVolume(volume.id, connectMO);
-		Thread.sleep(2000);
+		Thread.sleep(SLEEP_DURATION);
 		osds.deleteVolumeSnapshot(snapshots.get(0).id);
-		Thread.sleep(2000);
+		Thread.sleep(SLEEP_DURATION);
 		osds.deleteVolume(volume.id);
 		osds.logout();
 	}
