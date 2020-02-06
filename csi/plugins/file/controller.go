@@ -19,6 +19,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/common"
 	"golang.org/x/net/context"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,6 +98,17 @@ func (p *Plugin) ControllerUnpublishVolume(
 	}
 
 	return p.FileShareClient.ControllerUnpublishFileShare(req)
+}
+// ControllerExpandVolume implementation
+func (p *Plugin) ControllerExpandVolume(
+	ctx context.Context,
+	req *csi.ControllerExpandVolumeRequest) (
+	*csi.ControllerExpandVolumeResponse, error) {
+
+	glog.V(5).Infof("start to controller expand volume")
+	defer glog.V(5).Info("end to controller expand volume")
+
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ValidateVolumeCapabilities implementation

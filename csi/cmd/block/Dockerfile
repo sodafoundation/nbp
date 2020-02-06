@@ -10,7 +10,7 @@ COPY nvme-cli-1.8.1  /nvme-cli-1.8.1
 
 # Install iscsi
 RUN apt-get update && \
-    apt-get -y install open-iscsi \
+    apt-get -y install open-iscsi lsscsi\
     sysfsutils \
     sg3-utils \
     kmod \

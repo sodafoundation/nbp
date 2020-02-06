@@ -98,6 +98,18 @@ func (p *Plugin) ControllerUnpublishVolume(
 	return p.VolumeClient.ControllerUnpublishVolume(req)
 }
 
+// ControllerExpandVolume implementation
+func (p *Plugin) ControllerExpandVolume(
+	ctx context.Context,
+	req *csi.ControllerExpandVolumeRequest) (
+	*csi.ControllerExpandVolumeResponse, error) {
+
+	glog.V(5).Infof("start to controller expand volume")
+	defer glog.V(5).Info("end to controller expand volume")
+
+	return p.VolumeClient.ExpandVolume(req)
+}
+
 // ValidateVolumeCapabilities implementation
 func (p *Plugin) ValidateVolumeCapabilities(
 	ctx context.Context,

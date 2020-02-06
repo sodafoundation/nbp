@@ -67,6 +67,13 @@ func TestNodeGetCapabilities(t *testing.T) {
 				},
 			},
 		},
+		&csi.NodeServiceCapability{
+			Type: &csi.NodeServiceCapability_Rpc{
+				Rpc: &csi.NodeServiceCapability_RPC{
+					Type: csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+				},
+			},
+		},
 	}
 
 	rs, err := fakePlugin.NodeGetCapabilities(fakeCtx, fakeReq)
