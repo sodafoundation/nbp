@@ -141,7 +141,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 	}
 
 	//create attachment to indicate the volume is been processed.
-	localIqn, _ := connector.NewConnector("iscsi").GetInitiatorInfo()
+	localIqnList, _ := connector.NewConnector("iscsi").GetInitiatorInfo()
 
 	attachReq := &model.VolumeAttachmentSpec{
 		VolumeId: volID,
@@ -150,7 +150,7 @@ func (plugin *OpenSDSPlugin) Attach(opts interface{}) Result {
 			OsType:    runtime.GOOS,
 			Ip:        connector.GetHostIP(),
 			Host:      hostname,
-			Initiator: localIqn,
+			Initiator: localIqnList[0],
 		},
 		Status:   VOLUME_STATUS_ATTACHING,
 		Metadata: vol.Metadata,

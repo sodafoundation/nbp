@@ -21,7 +21,7 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.2.0
           args:
             - "--v=5"
             - "--csi-address=/csi/csi.sock"
@@ -155,7 +155,7 @@ spec:
         - name: iscsi-dir
           hostPath:
             path: /etc/iscsi/
-            type: Directory
+            type: DirectoryOrCreate
         - name: ceph-dir
           hostPath:
             path: /etc/ceph/
