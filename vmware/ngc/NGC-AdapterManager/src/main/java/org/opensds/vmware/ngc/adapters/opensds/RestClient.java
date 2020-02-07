@@ -167,8 +167,8 @@ class RestClient {
             throw new Exception(msg);
         }
 
-	    storage = new StorageMO(OPENSDS_STORAGENAME.getValue(), response.getString("name"),
-	    "", response.getString("status"), OPENSDS_VENDOR.getValue());
+	    storage = new StorageMO(OPENSDS_STORAGENAME.getValue()+ip, response.getString("name"),
+	    "", "Available", OPENSDS_VENDOR.getValue());
 
 	    logger.info(String.format("OpenSDS Storage Device: %s", storage));
     }
