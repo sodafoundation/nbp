@@ -36,7 +36,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-
+import org.json.JSONObject;
 import org.opensds.vmware.ngc.exceptions.HttpException;
 
 public class Request {
@@ -109,6 +109,10 @@ public class Request {
         }
 
         String result = EntityUtils.toString(response.getEntity(), "utf-8");
+        if(result.equals(""))
+        {
+        	return new JSONObject();
+        }
         return this.handler.parseResponseBody(result);
     }
 

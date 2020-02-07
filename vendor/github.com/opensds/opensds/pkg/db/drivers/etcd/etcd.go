@@ -297,7 +297,7 @@ func (c *Client) CreateFileShareAcl(ctx *c.Context, fshare *model.FileShareAclSp
 
 	for _, acl := range acls {
 		if acl.AccessTo == fshare.AccessTo {
-			errstr :=  "for fileshareID: "+acl.FileShareId+", acl is already set with ip: "+acl.AccessTo+". If you want to set new acl, first delete the existing one"
+			errstr := "for fileshareID: " + acl.FileShareId + ", acl is already set with ip: " + acl.AccessTo + ". If you want to set new acl, first delete the existing one"
 			log.Error(errstr)
 			return nil, fmt.Errorf(errstr)
 		}
@@ -1426,6 +1426,8 @@ func (c *Client) CreateVolume(ctx *c.Context, vol *model.VolumeSpec) (*model.Vol
 	}
 
 	vol.TenantId = ctx.TenantId
+	// Set attached as false when creating volume
+	vol.Attached = new(bool)
 	volBody, err := json.Marshal(vol)
 	if err != nil {
 		return nil, err
@@ -1622,15 +1624,15 @@ func (c *Client) ListVolumesWithFilter(ctx *c.Context, m map[string][]string) ([
 	// If DurableName is there in filter we need to parse the sub structure 'identifier' to filter out matching volume spec
 	var vols = []*model.VolumeSpec{}
 	if val, ok := m["DurableName"]; ok {
-		for _,vol := range volumes {
-			v :=c.FindVolumeValue("DurableName",vol)
+		for _, vol := range volumes {
+			v := c.FindVolumeValue("DurableName", vol)
 			if v == val[0] {
-				vols =append(vols,vol)
-				return vols,nil
+				vols = append(vols, vol)
+				return vols, nil
 			}
 		}
 
-		return vols,nil
+		return vols, nil
 	}
 
 	tmpVolumes := c.FilterAndSort(volumes, m, sortableKeysMap[typeVolumes])
@@ -1682,6 +1684,10 @@ func (c *Client) UpdateVolume(ctx *c.Context, vol *model.VolumeSpec) (*model.Vol
 	}
 	if vol.GroupId != "" {
 		result.GroupId = vol.GroupId
+	}
+
+	if vol.Attached != nil {
+		result.Attached = vol.Attached
 	}
 
 	// Set update time

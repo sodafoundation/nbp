@@ -447,18 +447,19 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 				continue
 			}
 
-			portName, err := volDriver.GetInitiatorInfo()
+			portNameList, err := volDriver.GetInitiatorInfo()
 			if err != nil {
 				glog.Errorf("cannot get initiator for driver volume type %s, err: %v", volDriverType, err)
 				continue
 			}
 
-			initiator := &model.Initiator{
-				PortName: portName,
-				Protocol: volDriverType,
+			for _, portName := range portNameList {
+				initiator := &model.Initiator{
+					PortName: portName,
+					Protocol: volDriverType,
+				}
+				initiators = append(initiators, initiator)
 			}
-
-			initiators = append(initiators, initiator)
 		}
 
 		if len(initiators) == 0 {
