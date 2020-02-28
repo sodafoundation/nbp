@@ -19,6 +19,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/common"
 	"golang.org/x/net/context"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,6 +104,18 @@ func (p *Plugin) NodeUnpublishVolume(
 	}
 
 	return p.FileShareClient.NodeUnpublishFileShare(req)
+}
+
+// NodeExpandVolume implementation
+func (p *Plugin) NodeExpandVolume(
+	ctx context.Context,
+	req *csi.NodeExpandVolumeRequest) (
+	*csi.NodeExpandVolumeResponse, error) {
+
+	glog.V(5).Info("start to node expand volume")
+
+	defer glog.V(5).Info("end to node expand volume")
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // NodeGetInfo gets information on a node

@@ -9,6 +9,7 @@ provisioner: csi-opensdsplugin-block
 parameters:
   attachMode: rw
   profile: abc
+allowVolumeExpansion: true 
 allowedTopologies:
 - matchLabelExpressions:
   - key: topology.csi-opensdsplugin-block/zone
@@ -21,7 +22,7 @@ metadata:
   name: csi-pvc-opensdsplugin-block
 spec:
   accessModes:
-  - ReadWriteMany
+  - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi

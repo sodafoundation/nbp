@@ -24,8 +24,8 @@ import (
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/common"
 	"github.com/opensds/nbp/csi/util"
-	nbputil "github.com/opensds/nbp/util"
 	"github.com/opensds/opensds/client"
+	nbputil "github.com/opensds/nbp/util"	
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
@@ -225,6 +225,42 @@ func (v *Volume) DeleteVolume(volId string) (*csi.DeleteVolumeResponse, error) {
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
+// ExpandVolume implementation
+func (v *Volume) ExpandVolume(req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
+	volumeID := req.GetVolumeId()
+	if len(volumeID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "ControllerExpandVolume volume ID must be provided")
+	}
+	glog.V(5).Infof("expand volume called for volume id: %v", volumeID)
+
+	extendVolBody := &model.ExtendVolumeSpec{}
+	extendVolBody.NewSize = common.GetSize(req.GetCapacityRange())
+
+	volSpec, err := v.Client.ExtendVolume(volumeID, extendVolBody)
+	if err != nil {
+		msg := fmt.Sprintf("extend volume failed: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+
+	_, err = common.WaitForStatusStable(volSpec.Id, func(id string) (interface{}, error) {
+		return v.Client.GetVolume(id)
+	})
+
+	if err != nil {
+		msg := fmt.Sprintf("failed to extend volume: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.Internal, msg)
+	}
+
+	glog.V(5).Infof("expand volume succeded with new capacity(GB): %v", extendVolBody.NewSize)
+
+	return &csi.ControllerExpandVolumeResponse{
+		CapacityBytes:         extendVolBody.NewSize * util.GiB,
+		NodeExpansionRequired: true,
+	}, nil
+}
+
 // getReplicationByVolume implementation
 func (v *Volume) getReplicationByVolume(volId string) *model.ReplicationSpec {
 	replications, _ := v.Client.ListReplications()
@@ -263,9 +299,9 @@ func (v *Volume) ControllerPublishVolume(req *csi.ControllerPublishVolumeRequest
 
 	var protocol = strings.ToLower(pool.Extras.IOConnectivity.AccessProtocol)
 	attachReq := &model.VolumeAttachmentSpec{
-		VolumeId:   req.VolumeId,
-		HostId:     req.NodeId,
-		AttachMode: attachMode,
+		VolumeId:       req.VolumeId,
+		HostId:         req.NodeId,
+		AttachMode:     attachMode,
 		ConnectionInfo: model.ConnectionInfo{
 			DriverVolumeType: protocol,
 		},
