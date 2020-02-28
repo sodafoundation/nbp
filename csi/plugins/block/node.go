@@ -215,9 +215,8 @@ func extResize(devicePath string) (bool, error) {
 	//Output looks like : [4:0:0:1]    disk    IET      VIRTUAL-DISK     0001  /dev/sdb
 	// Need to parse and get host identifier (4 in above case)
 	glog.V(5).Infof("end to node expand volume, lsscsi: %v", output)
-	hostId := strings.Split(output, " ")[0]
-	hostId = strings.Split(hostId, ":")[0]
-	hostId = strings.Split(hostId, "[")[1]
+	idx := strings.Index(output, "[")
+	hostId := fmt.Sprintf("%c", output[idx+1])
 
 	scanCommandPara := "'- - -' > /sys/class/scsi_host/host" + hostId + "/scan"
 
