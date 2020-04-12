@@ -1,7 +1,7 @@
 # SODA NBP (NorthBoundPlugin)
 
-[![Releases](https://img.shields.io/github/release/sodafoundation/api/all.svg?style=flat-square)](https://github.com/sodafoundation/api/releases)
-[![LICENSE](https://img.shields.io/github/license/sodafoundation/api.svg?style=flat-square)](https://github.com/sodafoundation/api/blob/master/LICENSE)
+[![Releases](https://img.shields.io/github/release/sodafoundation/nbp/all.svg?style=flat-square)](https://github.com/sodafoundation/nbp/releases)
+[![LICENSE](https://img.shields.io/github/license/sodafoundation/nbp.svg?style=flat-square)](https://github.com/sodafoundation/nbp/blob/master/LICENSE)
 
 <img src="https://sodafoundation.io/wp-content/uploads/2020/01/SODA_logo_outline_color_800x800.png" width="200" height="200">
 
