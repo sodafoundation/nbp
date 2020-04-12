@@ -1,39 +1,62 @@
-# SUSHI
+# SODA NBP (NorthBoundPlugin)
+
+[![Releases](https://img.shields.io/github/release/sodafoundation/api/all.svg?style=flat-square)](https://github.com/sodafoundation/api/releases)
+[![LICENSE](https://img.shields.io/github/license/sodafoundation/api.svg?style=flat-square)](https://github.com/sodafoundation/api/blob/master/LICENSE)
+
+<img src="https://sodafoundation.io/wp-content/uploads/2020/01/SODA_logo_outline_color_800x800.png" width="200" height="200">
 
 ## Introduction
 
-The SUSHI Project is an umbrella project for all the [OpenSDS Project](https://opensds.io/)
-NorthBound Plugins, for OpenStack, Kubernetes, Mesos, VMware and more.
-The plugins themselves could have multiple hosting location,
-however the OpenSDS Sushi Project repo should always have the most up-to-date version.
+SODA nbp(North-Bound Plugin) Project focuses to extend all the industry platforms and application solutions to interface with SODA API or make the platform compliant with SODA API developing a plugin. So, with thin, easy to develop north-bound plugins, any platforms can be connected to SODA Platform.
 
-Sushi will also seek to collaborate with other upstream open source communities
-such as Cloud Native Computing Foundation, Docker, OpenStack, and Open Container Initiative.
+We support multiple top industry platforms like Kubernetes, OpenStack and VMWare. More getting added over the releases based on the users/community demands.
 
-## Community
+If the application or platform is already compliant with SODA API, the plugin is not needed, as the platform can directly connect to SODA API layer.
 
-The OpenSDS community welcomes anyone who is interested in software defined
-storage and shaping the future of cloud-era storage. If you are a company,
-you should consider joining the [OpenSDS Project](https://opensds.io/).
-If you are a developer want to be part of the code development that is happening
-now, please refer to the Contributing sections below.
+This is one of the SODA Core Projects and is maintained by SODA Foundation directly. We recommend building more northbound plugins under this project for each new platform. However there can be cases, one can develop a specific platform plugin and maintain separately. As long as it follows the SODA API standards, it can be submitted to add as a soda landscape project.
 
+## Documentation
 
-## Contact
+[https://docs.sodafoundation.io](https://docs.sodafoundation.io/)
 
-* Mailing list: [opensds-dev](https://groups.google.com/forum/?hl=en#!forum/opensds-dev)
-* slack: #[opensds](https://opensds.slack.com)
-* Ideas/Bugs: [issues](https://github.com/opensds/nbp/issues)
+## Quick Start - To Use/Experience
 
-## OpenSDS Sushi Work Group
-See [COMMUNITY](COMMUNITY.md) for details on discussion of the northbound architecture design and feature development.
+[https://docs.sodafoundation.io](https://docs.sodafoundation.io/)
 
-## Contributing
+## Quick Start - To Develop
 
-If you're interested in being a contributor and want to get involved in the
-NBP code developing, please see [CONTRIBUTING](CONTRIBUTING.md) for
-details on submitting patches and the contribution workflow.
+[https://docs.sodafoundation.io](https://docs.sodafoundation.io/)
 
-## License
+## Latest Releases
 
-NBP is under the Apache 2.0 license. See the [LICENSE](LICENSE) file for details.
+[https://github.com/sodafoundation/nbp/releases](https://github.com/sodafoundation/nbp/releases)
+
+## Support and Issues
+
+[https://github.com/sodafoundation/nbp/issues](https://github.com/sodafoundation/nbp/issues)
+
+## Project Community
+
+[https://sodafoundation.io/slack/](https://sodafoundation.io/slack/)
+
+## How to contribute to this project?
+
+Join [https://sodafoundation.io/slack/](https://sodafoundation.io/slack/) and share your interest in the ‘general’ channel
+
+Checkout [https://github.com/sodafoundation/nbp/issues](https://github.com/sodafoundation/nbp/issues) labelled with ‘good first issue’ or ‘help needed’ or ‘help wanted’ or ‘StartMyContribution’ or ‘SMC’
+
+## Project Roadmap
+
+We envision to support all the industry platforms with SODA Unified Data Framework, either directly or through the northbound plugins. Hence, we will be adding support for more platforms and clients through new plugins.
+
+[https://docs.sodafoundation.io](https://docs.sodafoundation.io/)
+
+## Join SODA Foundation
+
+Website : [https://sodafoundation.io](https://sodafoundation.io/)
+
+Slack  : [https://sodafoundation.io/slack/](https://sodafoundation.io/slack/)
+
+Twitter  : @sodafoundation
+
+Mailinglist  : [https://lists.opensds.io](https://lists.opensds.io/groups)
