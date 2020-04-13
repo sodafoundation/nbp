@@ -25,8 +25,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/opensds/nbp/cindercompatibleapi/api"
-	"github.com/opensds/opensds/pkg/utils/logs"
+	"github.com/sodafoundation/nbp/cindercompatibleapi/api"
+	"github.com/sodafoundation/api/pkg/utils/logs"
 )
 
 func main() {

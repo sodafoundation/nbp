@@ -19,7 +19,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	sdscontroller "github.com/opensds/nbp/client/opensds"
+	sdscontroller "github.com/sodafoundation/nbp/client/opensds"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

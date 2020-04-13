@@ -18,13 +18,13 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/csi/common"
-	"github.com/opensds/nbp/csi/plugins/file"
-	_ "github.com/opensds/opensds/contrib/connector/fc"
-	_ "github.com/opensds/opensds/contrib/connector/iscsi"
-	_ "github.com/opensds/opensds/contrib/connector/nfs"
-	_ "github.com/opensds/opensds/contrib/connector/nvmeof"
-	_ "github.com/opensds/opensds/contrib/connector/rbd"
+	"github.com/sodafoundation/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/plugins/file"
+	_ "github.com/sodafoundation/dock/contrib/connector/fc"
+	_ "github.com/sodafoundation/dock/contrib/connector/iscsi"
+	_ "github.com/sodafoundation/dock/contrib/connector/nfs"
+	_ "github.com/sodafoundation/dock/contrib/connector/nvmeof"
+	_ "github.com/sodafoundation/dock/contrib/connector/rbd"
 )
 
 func main() {

@@ -21,7 +21,7 @@ package converter
 import (
 	"errors"
 
-	"github.com/opensds/opensds/pkg/model"
+	"github.com/sodafoundation/api/pkg/model"
 )
 
 // *******************Create a volume type*******************

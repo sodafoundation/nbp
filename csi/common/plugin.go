@@ -23,9 +23,9 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/client/opensds"
-	"github.com/opensds/nbp/csi/util"
-	"github.com/opensds/opensds/client"
+	"github.com/sodafoundation/nbp/client/opensds"
+	"github.com/sodafoundation/nbp/csi/util"
+	"github.com/sodafoundation/api/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

@@ -22,14 +22,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/opensds/opensds/contrib/connector"
+	"github.com/sodafoundation/dock/contrib/connector"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
 
-	"github.com/opensds/opensds/pkg/model"
-	nbputil "github.com/opensds/nbp/util"
-	"github.com/opensds/opensds/client"
+	"github.com/sodafoundation/api/pkg/model"
+	nbputil "github.com/sodafoundation/nbp/util"
+	"github.com/sodafoundation/api/client"
 )
 
 var (

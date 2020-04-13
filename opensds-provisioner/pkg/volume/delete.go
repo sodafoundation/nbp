@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
-	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
+	"github.com/sodafoundation/nbp/opensds-provisioner/pkg/client"
 	v1 "k8s.io/api/core/v1"
 )
 

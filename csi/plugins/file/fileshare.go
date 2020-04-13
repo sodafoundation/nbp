@@ -17,16 +17,16 @@ package file
 import (
 	"errors"
 	"fmt"
-	"github.com/opensds/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/common"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/csi/util"
-	nbputil "github.com/opensds/nbp/util"
-	"github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/contrib/connector"
-	"github.com/opensds/opensds/pkg/model"
+	"github.com/sodafoundation/nbp/csi/util"
+	nbputil "github.com/sodafoundation/nbp/util"
+	"github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/dock/contrib/connector"
+	"github.com/sodafoundation/api/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

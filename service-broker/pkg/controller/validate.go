@@ -16,8 +16,8 @@ package controller
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/opensds/nbp/service-broker/pkg/store"
-	"github.com/opensds/opensds/pkg/utils"
+	"github.com/sodafoundation/nbp/service-broker/pkg/store"
+	"github.com/sodafoundation/api/pkg/utils"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 )
 

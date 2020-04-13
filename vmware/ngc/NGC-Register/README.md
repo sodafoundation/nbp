@@ -3,7 +3,7 @@
 **Dependencies:**
 NGC Plugin module: Module to communicate with vSphere components.
 Adapter Manager module: This is the adapter implementation of opensds and thirdparty storage.
-PR: https://github.com/opensds/nbp/pull/252
+PR: https://github.com/sodafoundation/nbp/pull/252
 
 ### support https/http
 * step 1: Import maven project.

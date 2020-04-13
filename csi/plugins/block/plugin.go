@@ -15,8 +15,8 @@
 package block
 
 import (
-	"github.com/opensds/nbp/csi/common"
-	"github.com/opensds/opensds/client"
+	"github.com/sodafoundation/nbp/csi/common"
+	"github.com/sodafoundation/api/client"
 )
 
 // Plugin define

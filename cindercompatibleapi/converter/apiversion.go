@@ -19,7 +19,7 @@ This module implements a entry into the OpenSDS northbound service.
 package converter
 
 import (
-	"github.com/opensds/opensds/pkg/model"
+	"github.com/sodafoundation/api/pkg/model"
 )
 
 // *******************List All Api Versions*******************

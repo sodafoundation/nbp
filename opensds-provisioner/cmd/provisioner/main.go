@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
-	"github.com/opensds/nbp/opensds-provisioner/pkg/client"
-	"github.com/opensds/nbp/opensds-provisioner/pkg/volume"
+	"github.com/sodafoundation/nbp/opensds-provisioner/pkg/client"
+	"github.com/sodafoundation/nbp/opensds-provisioner/pkg/volume"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"

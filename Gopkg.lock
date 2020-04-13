@@ -45,7 +45,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:22db66c6af48fe0e93e971d796cad565ee9e0039646bd59bc8e29b7a7bd2d24e"
+  digest = "1:511b0e48adf05b1d17e32af772a1e0a047b909f51d401a572caae26fcf0b2950"
   name = "github.com/coreos/etcd"
   packages = [
     "auth/authpb",
@@ -53,6 +53,8 @@
     "etcdserver/api/v3rpc/rpctypes",
     "etcdserver/etcdserverpb",
     "mvcc/mvccpb",
+    "pkg/tlsutil",
+    "pkg/transport",
     "pkg/types",
   ]
   pruneopts = "NUT"
@@ -77,6 +79,14 @@
   pruneopts = "NUT"
   revision = "48294d928ced5dd9b378f7fd7c6f5da3ff3f2c89"
   version = "v2.6.2"
+
+[[projects]]
+  digest = "1:d5ccc59a421cb02980a39f63c5847d44ddcbb229d26a8f380428845931e95eef"
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "39bc4ddcb8b9d0100f7a040816380ccda878b94a"
+  version = "v1.55.0"
 
 [[projects]]
   digest = "1:cd4f86461732066e277335465962660cbf02999e18d5bbb5e9285eac4608b970"
@@ -275,34 +285,6 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:55a80e7ac6b2089b52674b1d11c8ccf1517c8078ed5b74cca3a7a4ed3728c4ea"
-  name = "github.com/opensds/opensds"
-  packages = [
-    "client",
-    "contrib/connector",
-    "contrib/connector/fc",
-    "contrib/connector/iscsi",
-    "contrib/connector/nfs",
-    "contrib/connector/nvmeof",
-    "contrib/connector/rbd",
-    "contrib/drivers/utils/config",
-    "pkg/context",
-    "pkg/db/drivers/etcd",
-    "pkg/dock/client",
-    "pkg/model",
-    "pkg/model/proto",
-    "pkg/utils",
-    "pkg/utils/constants",
-    "pkg/utils/logs",
-    "pkg/utils/pwd",
-    "pkg/utils/urls",
-    "testutils/collection",
-  ]
-  pruneopts = "NUT"
-  revision = "51d7d749f310f2577d9e03f4327aec0a3fdc740f"
-  version = "v0.10.0"
-
-[[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
   name = "github.com/pborman/uuid"
   packages = ["."]
@@ -398,6 +380,45 @@
   pruneopts = "NUT"
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
   version = "v1.2.0"
+
+[[projects]]
+  digest = "1:55527c978b331c601c4faa17303752594eb1d51f174f70ff1c9aff97576638f0"
+  name = "github.com/sodafoundation/api"
+  packages = [
+    "client",
+    "pkg/context",
+    "pkg/db/drivers/etcd",
+    "pkg/model",
+    "pkg/model/proto",
+    "pkg/utils",
+    "pkg/utils/config",
+    "pkg/utils/constants",
+    "pkg/utils/logs",
+    "pkg/utils/pwd",
+    "pkg/utils/urls",
+    "testutils/collection",
+  ]
+  pruneopts = "NUT"
+  revision = "7a2c4c295ce1eaab4fb20a6019c265d2af0b94c0"
+  version = "v0.12.0"
+
+[[projects]]
+  digest = "1:21435ada7c7f0c2fee09ebb62ae5f3bed5e027b7269b0fd2136cd95e00d928ab"
+  name = "github.com/sodafoundation/dock"
+  packages = [
+    "contrib/connector",
+    "contrib/connector/fc",
+    "contrib/connector/iscsi",
+    "contrib/connector/nfs",
+    "contrib/connector/nvmeof",
+    "contrib/connector/rbd",
+    "contrib/drivers/utils/config",
+    "pkg/model",
+    "pkg/model/proto",
+  ]
+  pruneopts = "NUT"
+  revision = "08ff2f37f7624f5ce9e684d644ac1b321edadd51"
+  version = "v0.12.0"
 
 [[projects]]
   digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
@@ -517,10 +538,12 @@
   revision = "31ac5d88444a9e7ad18077db9a165d793ad06a2e"
 
 [[projects]]
-  digest = "1:2e7dd27ea7dcc06208eb8d813658f561f8ea1dd2719773fb4da023e034b63cef"
+  digest = "1:b687d87de0460a6e48febd09df247b0ae9917f354e2f23df31a1f0679e423d32"
   name = "google.golang.org/grpc"
   packages = [
     ".",
+    "attributes",
+    "backoff",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
@@ -535,11 +558,17 @@
     "health/grpc_health_v1",
     "internal",
     "internal/backoff",
+    "internal/balancerload",
     "internal/binarylog",
+    "internal/buffer",
     "internal/channelz",
     "internal/envconfig",
+    "internal/grpclog",
     "internal/grpcrand",
     "internal/grpcsync",
+    "internal/grpcutil",
+    "internal/resolver/dns",
+    "internal/resolver/passthrough",
     "internal/syscall",
     "internal/transport",
     "keepalive",
@@ -549,15 +578,14 @@
     "reflection",
     "reflection/grpc_reflection_v1alpha",
     "resolver",
-    "resolver/dns",
-    "resolver/passthrough",
+    "serviceconfig",
     "stats",
     "status",
     "tap",
   ]
   pruneopts = "NUT"
-  revision = "3507fb8e1a5ad030303c106fef3a47c9fdad16ad"
-  version = "v1.19.1"
+  revision = "ac54eec90516cee50fc6b9b113b34628a85f976f"
+  version = "v1.28.1"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -964,27 +992,26 @@
     "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/kubernetes-incubator/external-storage/lib/controller",
-    "github.com/opensds/opensds/client",
-    "github.com/opensds/opensds/contrib/connector",
-    "github.com/opensds/opensds/contrib/connector/fc",
-    "github.com/opensds/opensds/contrib/connector/iscsi",
-    "github.com/opensds/opensds/contrib/connector/nfs",
-    "github.com/opensds/opensds/contrib/connector/nvmeof",
-    "github.com/opensds/opensds/contrib/connector/rbd",
-    "github.com/opensds/opensds/pkg/context",
-    "github.com/opensds/opensds/pkg/db/drivers/etcd",
-    "github.com/opensds/opensds/pkg/dock/client",
-    "github.com/opensds/opensds/pkg/model",
-    "github.com/opensds/opensds/pkg/model/proto",
-    "github.com/opensds/opensds/pkg/utils",
-    "github.com/opensds/opensds/pkg/utils/constants",
-    "github.com/opensds/opensds/pkg/utils/logs",
     "github.com/pmorie/go-open-service-broker-client/v2",
     "github.com/pmorie/osb-broker-lib/pkg/broker",
     "github.com/pmorie/osb-broker-lib/pkg/metrics",
     "github.com/pmorie/osb-broker-lib/pkg/rest",
     "github.com/pmorie/osb-broker-lib/pkg/server",
     "github.com/prometheus/client_golang/prometheus",
+    "github.com/sodafoundation/api/client",
+    "github.com/sodafoundation/api/pkg/context",
+    "github.com/sodafoundation/api/pkg/db/drivers/etcd",
+    "github.com/sodafoundation/api/pkg/model",
+    "github.com/sodafoundation/api/pkg/model/proto",
+    "github.com/sodafoundation/api/pkg/utils",
+    "github.com/sodafoundation/api/pkg/utils/constants",
+    "github.com/sodafoundation/api/pkg/utils/logs",
+    "github.com/sodafoundation/dock/contrib/connector",
+    "github.com/sodafoundation/dock/contrib/connector/fc",
+    "github.com/sodafoundation/dock/contrib/connector/iscsi",
+    "github.com/sodafoundation/dock/contrib/connector/nfs",
+    "github.com/sodafoundation/dock/contrib/connector/nvmeof",
+    "github.com/sodafoundation/dock/contrib/connector/rbd",
     "golang.org/x/net/context",
     "golang.org/x/sys/unix",
     "google.golang.org/grpc",

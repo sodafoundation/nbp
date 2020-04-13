@@ -19,11 +19,11 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	sdsClient "github.com/opensds/opensds/client"
-	ctx "github.com/opensds/opensds/pkg/context"
-	dockClient "github.com/opensds/opensds/pkg/dock/client"
-	"github.com/opensds/opensds/pkg/model"
-	pb "github.com/opensds/opensds/pkg/model/proto"
+	sdsClient "github.com/sodafoundation/api/client"
+	ctx "github.com/sodafoundation/api/pkg/context"
+	//dockClient "github.com/opensds/opensds/pkg/dock/client"
+	"github.com/sodafoundation/api/pkg/model"
+	pb "github.com/sodafoundation/api/pkg/model/proto"
 	"golang.org/x/net/context"
 )
 

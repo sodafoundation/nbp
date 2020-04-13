@@ -23,8 +23,8 @@ echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 echo 'export GOPATH=$HOME/gopath' >> /etc/profile
 source /etc/profile
 cd $HOME
-mkdir -p gopath/src/github.com/opensds/nbp
-cd gopath/src/github.com/opensds/nbp
+mkdir -p gopath/src/github.com/sodafoundation/nbp
+cd gopath/src/github.com/sodafoundation/nbp
 cp -r ${BASE_DIR}/* .
 make docker
 cp csi/csi.block.opensds ${BASE_DIR}/csi

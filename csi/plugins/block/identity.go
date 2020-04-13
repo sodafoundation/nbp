@@ -15,7 +15,7 @@
 package block
 
 import (
-	"github.com/opensds/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/common"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
