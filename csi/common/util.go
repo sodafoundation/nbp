@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/opensds/nbp/csi/util"
+	"github.com/sodafoundation/nbp/csi/util"
 )
 
 // WaitForStatusStable waits for volume/fileshare to be created

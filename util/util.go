@@ -21,8 +21,8 @@ package util
 import (
 	"errors"
 	"fmt"
-	"github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/pkg/model"
+	"github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/api/pkg/model"
 )
 
 // GetHostByHostName returns hostid for given hostname if found

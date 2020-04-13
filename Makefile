@@ -32,7 +32,7 @@ prebuild:
 	mkdir -p  $(BUILD_DIR)
 
 csi.block.opensds: prebuild
-	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.block.opensds github.com/opensds/nbp/csi/cmd/block
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.block.opensds github.com/sodafoundation/nbp/csi/cmd/block
 	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
 	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
 	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
@@ -40,7 +40,7 @@ csi.block.opensds: prebuild
 	cp -a ./nvme-cli-1.8.1 ./csi/
 
 csi.file.opensds: prebuild
-	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.file.opensds github.com/opensds/nbp/csi/cmd/file
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/csi.file.opensds github.com/sodafoundation/nbp/csi/cmd/file
 	wget https://github.com/linux-nvme/nvme-cli/archive/v1.8.1.tar.gz -O ./nvmecli-1.8.1.tar.gz
 	tar -zxf ./nvmecli-1.8.1.tar.gz -C ./
 	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
@@ -48,13 +48,13 @@ csi.file.opensds: prebuild
 	cp -a ./nvme-cli-1.8.1 ./csi/
 
 #flexvolume.server.opensds: prebuild
-#	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/opensds/nbp/flexvolume/cmd/flex-plugin
+#	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/sodafoundation/nbp/flexvolume/cmd/flex-plugin
 
 #service-broker: prebuild
-#	go build -ldflags '-w -s' -o $(BUILD_DIR)/service-broker github.com/opensds/nbp/service-broker/cmd/service-broker
+#	go build -ldflags '-w -s' -o $(BUILD_DIR)/service-broker github.com/sodafoundation/nbp/service-broker/cmd/service-broker
 
 cindercompatibleapi: prebuild
-	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/opensds/nbp/cindercompatibleapi
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/cindercompatibleapi github.com/sodafoundation/nbp/cindercompatibleapi
 
 docker: build
 	cp $(BUILD_DIR)/csi.block.opensds ./csi/

@@ -2,7 +2,7 @@ dist: xenial
 sudo: false
 
 language: go
-go_import_path: github.com/opensds/nbp
+go_import_path: github.com/sodafoundation/nbp
 
 go:
   - 1.11.x
@@ -21,9 +21,9 @@ install:
   - make
 
 script:
-  - go test -v github.com/opensds/nbp/csi/... -cover
-  #- go test -v github.com/opensds/nbp/flexvolume/... -cover
-  #- go test -v github.com/opensds/nbp/cindercompatibleapi/... -cover
+  - go test -v github.com/sodafoundation/nbp/csi/... -cover
+  #- go test -v github.com/sodafoundation/nbp/flexvolume/... -cover
+  #- go test -v github.com/sodafoundation/nbp/cindercompatibleapi/... -cover
 
 after_success:
   # Clean OpenSDS northbound plugin built data

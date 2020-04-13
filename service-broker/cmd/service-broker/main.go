@@ -25,8 +25,8 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	sdsController "github.com/opensds/nbp/service-broker/pkg/controller"
-	"github.com/opensds/nbp/service-broker/pkg/store"
+	sdsController "github.com/sodafoundation/nbp/service-broker/pkg/controller"
+	"github.com/sodafoundation/nbp/service-broker/pkg/store"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"

@@ -17,7 +17,7 @@ package file
 import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	"github.com/opensds/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/common"
 	"golang.org/x/net/context"
 )
 

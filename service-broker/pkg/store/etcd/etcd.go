@@ -19,8 +19,8 @@ import (
 	"errors"
 
 	log "github.com/golang/glog"
-	"github.com/opensds/nbp/service-broker/pkg/model"
-	client "github.com/opensds/opensds/pkg/db/drivers/etcd"
+	"github.com/sodafoundation/nbp/service-broker/pkg/model"
+	client "github.com/sodafoundation/api/pkg/db/drivers/etcd"
 )
 
 // NewStore

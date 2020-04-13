@@ -17,8 +17,8 @@ package store
 import (
 	"strings"
 
-	"github.com/opensds/nbp/service-broker/pkg/model"
-	"github.com/opensds/nbp/service-broker/pkg/store/etcd"
+	"github.com/sodafoundation/nbp/service-broker/pkg/model"
+	"github.com/sodafoundation/nbp/service-broker/pkg/store/etcd"
 )
 
 // NewStore function can perform some initialization work of different databases.

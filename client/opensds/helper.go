@@ -3,8 +3,8 @@ package opensds
 import (
 	"log"
 
-	"github.com/opensds/opensds/client"
-	"github.com/opensds/opensds/pkg/utils/constants"
+	"github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/api/pkg/utils/constants"
 )
 
 // GetClient return OpenSDS Client

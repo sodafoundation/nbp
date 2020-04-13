@@ -42,8 +42,8 @@ When reporting issues, refer to this format:
 
 ### Propose blueprints
 
-- Raise your idea as an [issues](https://github.com/opensds/nbp/issues).
+- Raise your idea as an [issues](https://github.com/sodafoundation/nbp/issues).
 - After reaching consensus in the issue discussion, complete the development on the forked repo and submit a PR. 
-  Here are the [PRs](https://github.com/opensds/nbp/pulls?q=is%3Apr+is%3Aclosed) that are already closed.
+  Here are the [PRs](https://github.com/sodafoundation/nbp/pulls?q=is%3Apr+is%3Aclosed) that are already closed.
 - If a PR is submitted by one of the core members, it has to be merged by a different core member.
 - After PR is sufficiently discussed, it will get merged, abondoned or rejected depending on the outcome of the discussion.
