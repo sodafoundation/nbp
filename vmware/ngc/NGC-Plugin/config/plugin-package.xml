@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<pluginPackage id="org.opensds.vmware.ngc" version="1.0.0" type="html" name="OpenSDS Storage Plugin"
+<pluginPackage id="org.opensds.vmware.ngc" version="1.0.0" type="html" name="SODA Storage Plugin"
       description="OpenSDS Next Generation Client Plugin for basic storage operations" vendor="OpenSDS Community">
    <dependencies>
       <!-- Minimum vSphere Client version compatible with this plugin -->

@@ -285,7 +285,7 @@
    <extension id="org.opensds.vmware.ngc.device.shortcut">
       <extendedPoint>vise.home.shortcuts</extendedPoint>
       <object>
-         <name>OpenSDS Storage Plugin</name>
+         <name>SODA Storage Plugin</name>
          <categoryUid>vsphere.core.controlcenter.administrationCategory</categoryUid>
          <icon>#{editChassis}</icon>
          <targetViewUid>org.opensds.vmware.ngc.device_collection.domainView</targetViewUid>
@@ -297,7 +297,7 @@
    <extension id="org.opensds.ngc.solution.hostMenus">
       <extendedPoint>vsphere.core.menus.solutionMenus</extendedPoint>
       <object>
-         <label>OpenSDS Storage Plugin</label>
+         <label>SODA Storage Plugin</label>
          <uid>org.opensds.ngc.solution.hostMenu</uid>
          <children>
             <Array>
@@ -455,7 +455,7 @@
    <extension id="org.opensds.ngc.hostView">
       <extendedPoint>vsphere.core.host.monitorViews</extendedPoint>
       <object>
-         <name>OpenSDS Storage</name>
+         <name>SODA Storage</name>
          <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
             <object>
                <root>
@@ -470,7 +470,7 @@
    <extension id="org.opensds.ngc.VirtualmachineView">
       <extendedPoint>vsphere.core.vm.monitorViews</extendedPoint>
       <object>
-         <name>OpenSDS Storage</name>
+         <name>SODA Storage</name>
          <componentClass className="com.vmware.vsphere.client.htmlbridge.HtmlView">
             <object>
                <root>
