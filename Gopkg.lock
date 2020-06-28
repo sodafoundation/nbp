@@ -382,7 +382,7 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:55527c978b331c601c4faa17303752594eb1d51f174f70ff1c9aff97576638f0"
+  digest = "1:d0dddee0e3a60545557f30f73c00fdf3da1c12562871393145a76756850390f6"
   name = "github.com/sodafoundation/api"
   packages = [
     "client",
@@ -399,8 +399,8 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "7a2c4c295ce1eaab4fb20a6019c265d2af0b94c0"
-  version = "v0.12.0"
+  revision = "7d8aebbe0bd15f974f80a72e445fc64e77792995"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:21435ada7c7f0c2fee09ebb62ae5f3bed5e027b7269b0fd2136cd95e00d928ab"
@@ -417,8 +417,8 @@
     "pkg/model/proto",
   ]
   pruneopts = "NUT"
-  revision = "08ff2f37f7624f5ce9e684d644ac1b321edadd51"
-  version = "v0.12.0"
+  revision = "336a97c0bb4db9212917c5f6fcca45c3de8310a1"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
