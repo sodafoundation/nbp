@@ -43,11 +43,11 @@
 
 [[constraint]]
   name = "github.com/sodafoundation/dock"
-  version = "0.12.0"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/sodafoundation/api"
-  version = "0.12.0"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/pmorie/go-open-service-broker-client"
