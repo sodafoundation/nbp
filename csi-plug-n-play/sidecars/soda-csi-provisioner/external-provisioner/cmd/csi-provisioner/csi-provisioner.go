@@ -156,11 +156,13 @@ func main() {
 	}
 
 	// Autodetect provisioner name
-	provisionerName, err := ctrl.GetDriverName(grpcClient, *operationTimeout)
+	//SODA-CHANGE
+	/*provisionerName, err := ctrl.GetDriverName(grpcClient, *operationTimeout)
 	if err != nil {
 		klog.Fatalf("Error getting CSI driver name: %s", err)
-	}
-	klog.V(2).Infof("Detected CSI driver %s", provisionerName)
+	}*/
+	provisionerName := "soda-csi-block"
+	klog.Infof("Detected CSI driver %s", provisionerName)
 	metricsManager.SetDriverName(provisionerName)
 	metricsManager.StartMetricsEndpoint(*metricsAddress, *metricsPath)
 

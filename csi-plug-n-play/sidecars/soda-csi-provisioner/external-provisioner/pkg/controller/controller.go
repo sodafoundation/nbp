@@ -182,6 +182,8 @@ var (
 		secretNameKey:      prefixedControllerExpandSecretNameKey,
 		secretNamespaceKey: prefixedControllerExpandSecretNamespaceKey,
 	}
+	operationTimeout     =  10*time.Second
+
 )
 
 // ProvisionerCSITranslator contains the set of CSI Translation functionality
@@ -426,6 +428,55 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 	if options.StorageClass == nil {
 		return nil, controller.ProvisioningFinished, errors.New("storage class was nil")
 	}
+
+	//SODA-CHANGE
+	backendDriverName, err := GetDriverName(p.grpcClient, operationTimeout)
+	if err != nil {
+		klog.Fatalf("Error getting CSI driver name: %s", err)
+	}
+	klog.Infof("The Backend Driver Name is : %s ",backendDriverName)
+	klog.Infof("The provisioner.DriverName  is : %s ",p.driverName)
+
+	//TODO Make this code work with SODA API-Server (Issue is with Grpc version, soda uses v1.29.1 whereas csi-provisioner uses v1.26.0
+	/*client, err := opensds.GetClient("192.168.20.61:50040", "noauth")
+	if client == nil || err != nil {
+		klog.Errorf("get opensds client failed: %v", err)
+
+	}
+
+	if options.StorageClass.Provisioner == "soda-csi-block" {
+		for k, v := range options.StorageClass.Parameters {
+			klog.Infof("The parameters in the StorageClass are  : %s ===== %s",k,v)
+			if k == "profile" {
+
+				profile, errosds := client.GetProfile(v)
+				if errosds != nil {
+					klog.Infof("Got error in GetProfile  : %s ===== %s", errosds.Error())
+				}
+				klog.Infof("The profile name recieved in the storageClass is: %s ===== %s",profile.Name)
+				if backendDriverName != profile.Name {
+					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
+						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
+							p.driverName, profile.Name),
+					}
+				}
+			}
+		}
+	}*/
+	if options.StorageClass.Provisioner == "soda-csi-block" {
+		for k, v := range options.StorageClass.Parameters {
+			klog.Infof("The parameters in the StorageClass are  : %s ===== %s",k,v)
+			if k == "profile" {
+				if backendDriverName != v {
+					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
+						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
+							p.driverName, v),
+					}
+				}
+			}
+		}
+	}
+
 
 	if options.PVC.Annotations[annStorageProvisioner] != p.driverName && options.PVC.Annotations[annMigratedTo] != p.driverName {
 		// The storage provisioner annotation may not equal driver name but the
