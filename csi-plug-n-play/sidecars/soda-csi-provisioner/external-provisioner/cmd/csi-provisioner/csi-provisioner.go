@@ -161,7 +161,7 @@ func main() {
 	if err != nil {
 		klog.Fatalf("Error getting CSI driver name: %s", err)
 	}*/
-	provisionerName := "soda-csi-block"
+	provisionerName := "soda-csi"
 	klog.Infof("Detected CSI driver %s", provisionerName)
 	metricsManager.SetDriverName(provisionerName)
 	metricsManager.StartMetricsEndpoint(*metricsAddress, *metricsPath)

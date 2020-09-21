@@ -470,7 +470,7 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 				if backendDriverName != v {
 					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
 						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
-							p.driverName, v),
+							backendDriverName, v),
 					}
 				}
 			}
