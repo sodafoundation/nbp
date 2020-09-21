@@ -403,7 +403,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:21435ada7c7f0c2fee09ebb62ae5f3bed5e027b7269b0fd2136cd95e00d928ab"
+  digest = "1:ed5e6fbb8ccd32f770ae287acab934c6baf4cdd90e01ad539127eff14e3f4e0f"
   name = "github.com/sodafoundation/dock"
   packages = [
     "contrib/connector",
@@ -417,8 +417,8 @@
     "pkg/model/proto",
   ]
   pruneopts = "NUT"
-  revision = "336a97c0bb4db9212917c5f6fcca45c3de8310a1"
-  version = "v1.0.0"
+  revision = "ae4858c1bdba8f9f5e1050906371531db3650daf"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
