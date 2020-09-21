@@ -1,0 +1,6 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: test-csi-provisioner 
+provisioner: io.kubernetes.storage.mock
+parameters:
