@@ -15,7 +15,9 @@ git checkout csipnp_dev
 
 mkdir -p $GOPATH:/src/github.com/kubernetes-csi
 
-cp -r sidecars/soda-csi-provisioner/ $GOPATH:/src/github.com/kubernetes-csi
+cd csi-plug-n-play/sidecars/soda-csi-provisioner/
+
+cp -r external-provisioner/ $GOPATH/src/github.com/kubernetes-csi
 
 ```
 
@@ -23,7 +25,10 @@ cp -r sidecars/soda-csi-provisioner/ $GOPATH:/src/github.com/kubernetes-csi
 Build the and make the docker image
 ```
 
-cd $GOPATH:/src/github.com/kubernetes-csi/external-provisioner
+cd $GOPATH/src/github.com/kubernetes-csi/external-provisioner
+
+go mod vendor
+go mod download
 
 make all
 
