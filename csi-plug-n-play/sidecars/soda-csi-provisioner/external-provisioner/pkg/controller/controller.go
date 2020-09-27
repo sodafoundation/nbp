@@ -20,6 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
 	"math"
 	"os"
 	"strings"
@@ -182,8 +187,7 @@ var (
 		secretNameKey:      prefixedControllerExpandSecretNameKey,
 		secretNamespaceKey: prefixedControllerExpandSecretNamespaceKey,
 	}
-	operationTimeout     =  10*time.Second
-
+	operationTimeout = 10 * time.Second
 )
 
 // ProvisionerCSITranslator contains the set of CSI Translation functionality
@@ -424,6 +428,27 @@ func (p *csiProvisioner) Provision(options controller.ProvisionOptions) (*v1.Per
 	return pv, err
 }
 
+type CustomPropertiesSpec map[string]interface{}
+
+func (cps CustomPropertiesSpec) IsEmpty() bool {
+	if nil == cps {
+		return true
+	}
+	return false
+}
+
+func (cps CustomPropertiesSpec) GetDriverPreference() string {
+	var driverName string
+	if cps.IsEmpty() {
+		return "NoDriverFound"
+	}
+	for k, v := range cps {
+		if k == "driver" {
+			driverName = fmt.Sprintf("%v", v)
+		}
+	}
+	return driverName
+}
 func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.PersistentVolume, controller.ProvisioningState, error) {
 	if options.StorageClass == nil {
 		return nil, controller.ProvisioningFinished, errors.New("storage class was nil")
@@ -434,49 +459,31 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 	if err != nil {
 		klog.Fatalf("Error getting CSI driver name: %s", err)
 	}
-	klog.Infof("The Backend Driver Name is : %s ",backendDriverName)
-	klog.Infof("The provisioner.DriverName  is : %s ",p.driverName)
+	klog.Infof("The Backend Driver Name and provisioner name is : %s , %s", backendDriverName, p.driverName)
 
-	//TODO Make this code work with SODA API-Server (Issue is with Grpc version, soda uses v1.29.1 whereas csi-provisioner uses v1.26.0
-	/*client, err := opensds.GetClient("192.168.20.61:50040", "noauth")
-	if client == nil || err != nil {
-		klog.Errorf("get opensds client failed: %v", err)
-
-	}
-
-	if options.StorageClass.Provisioner == "soda-csi-block" {
+	if options.StorageClass.Provisioner == "soda-csi" {
 		for k, v := range options.StorageClass.Parameters {
-			klog.Infof("The parameters in the StorageClass are  : %s ===== %s",k,v)
+			klog.Infof("The parameters in the StorageClass are  : %s ===== %s", k, v)
 			if k == "profile" {
 
-				profile, errosds := client.GetProfile(v)
-				if errosds != nil {
-					klog.Infof("Got error in GetProfile  : %s ===== %s", errosds.Error())
-				}
-				klog.Infof("The profile name recieved in the storageClass is: %s ===== %s",profile.Name)
-				if backendDriverName != profile.Name {
-					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
-						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
-							p.driverName, profile.Name),
-					}
-				}
-			}
-		}
-	}*/
-	if options.StorageClass.Provisioner == "soda-csi-block" {
-		for k, v := range options.StorageClass.Parameters {
-			klog.Infof("The parameters in the StorageClass are  : %s ===== %s",k,v)
-			if k == "profile" {
-				if backendDriverName != v {
-					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
-						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
-							backendDriverName, v),
+				response, err := http.Get("http://soda-proxy:50029/getprofile/" + v)
+				if err != nil {
+					klog.Infof("Got error in GetProfile  : %s ===== %s", err.Error())
+				} else {
+					data, _ := ioutil.ReadAll(response.Body)
+					var customProperties *CustomPropertiesSpec
+					json.Unmarshal(data, &customProperties)
+					klog.Infof("The profile name received in the storageClass is: %s", customProperties.GetDriverPreference())
+					if backendDriverName != customProperties.GetDriverPreference() {
+						return nil, controller.ProvisioningFinished, &controller.IgnoredError{
+							Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
+								p.driverName, "profile.Name"),
+						}
 					}
 				}
 			}
 		}
 	}
-
 
 	if options.PVC.Annotations[annStorageProvisioner] != p.driverName && options.PVC.Annotations[annMigratedTo] != p.driverName {
 		// The storage provisioner annotation may not equal driver name but the
