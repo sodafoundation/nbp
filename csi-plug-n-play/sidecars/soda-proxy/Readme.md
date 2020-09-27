@@ -8,14 +8,12 @@ Please follow the below steps to build and run the proxy
 ```go
 go get github.com/sodafoundation/nbp
 
-git checkout csipnp_dev 
-
 cd $GOPATH/src/github.com/sodafoundation/nbp/csi-plug-n-play/sidecars/soda-proxy
 
 go build cmd/proxy.go
 ```
 
-Before running soda-proxy you need to export the below variables.
+Before running soda-proxy you need to export the below variables.(These are the same env variables which are required by osdsctl, for more reference you can see [this](https://github.com/sodafoundation/api/wiki/SODA-Projects-Cluster-Installation-through-Ansible#how-to-test-soda-projects-cluster))
 
 ```go
 
