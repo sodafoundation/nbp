@@ -445,7 +445,6 @@ func (cps CustomPropertiesSpec) GetDriverPreference() string {
 	for k, v := range cps {
 		if k == "driver" {
 			driverName = fmt.Sprintf("%v", v)
-			fmt.Println(driverName)
 		}
 	}
 	return driverName
@@ -460,9 +459,7 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 	if err != nil {
 		klog.Fatalf("Error getting CSI driver name: %s", err)
 	}
-	klog.Infof("The Backend Driver Name is : %s ", backendDriverName)
-	klog.Infof("The provisioner.DriverName  is : %s ", p.driverName)
-	klog.Infof("The  options.StorageClass.Provisioner  is : %s ", options.StorageClass.Provisioner)
+	klog.Infof("The Backend Driver Name and provisioner name is : %s , %s", backendDriverName, p.driverName)
 
 	if options.StorageClass.Provisioner == "soda-csi" {
 		for k, v := range options.StorageClass.Parameters {
@@ -476,7 +473,7 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 					data, _ := ioutil.ReadAll(response.Body)
 					var customProperties *CustomPropertiesSpec
 					json.Unmarshal(data, &customProperties)
-					klog.Infof("The profile name recieved in the storageClass is: %s",customProperties.GetDriverPreference())
+					klog.Infof("The profile name received in the storageClass is: %s", customProperties.GetDriverPreference())
 					if backendDriverName != customProperties.GetDriverPreference() {
 						return nil, controller.ProvisioningFinished, &controller.IgnoredError{
 							Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
@@ -487,19 +484,6 @@ func (p *csiProvisioner) ProvisionExt(options controller.ProvisionOptions) (*v1.
 			}
 		}
 	}
-	/*if options.StorageClass.Provisioner == "soda-csi-block" {
-		for k, v := range options.StorageClass.Parameters {
-			klog.Infof("The parameters in the StorageClass are  : %s ===== %s",k,v)
-			if k == "profile" {
-				if backendDriverName != v {
-					return nil, controller.ProvisioningFinished, &controller.IgnoredError{
-						Reason: fmt.Sprintf("PVC doesnot match the current driver name : %s with expected %s",
-							backendDriverName, v),
-					}
-				}
-			}
-		}
-	}*/
 
 	if options.PVC.Annotations[annStorageProvisioner] != p.driverName && options.PVC.Annotations[annMigratedTo] != p.driverName {
 		// The storage provisioner annotation may not equal driver name but the
