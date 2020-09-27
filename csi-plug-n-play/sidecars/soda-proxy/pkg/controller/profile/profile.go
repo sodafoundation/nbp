@@ -12,8 +12,8 @@ import (
 func GetProfile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["id"]
-	opensdsEndpoint, errr := os.LookupEnv("OPENSDS_ENDPOINT")
-	if !errr {
+	opensdsEndpoint, errLookUp := os.LookupEnv("OPENSDS_ENDPOINT")
+	if !errLookUp {
 		fmt.Println("No env variables found for endpoint, switching to default")
 		opensdsEndpoint = "http://127.0.0.1:50040"
 	}
@@ -23,7 +23,7 @@ func GetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	profile, errosds := client.GetProfile(key)
 	if errosds != nil {
-		fmt.Printf("Got error in GetProfile  : %s ===== %s", errosds.Error())
+		fmt.Printf("got error in GetProfile  : %s", errosds.Error())
 	}
 	json.NewEncoder(w).Encode(profile.CustomProperties)
 }
