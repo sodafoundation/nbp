@@ -11,7 +11,7 @@ git clone https://github.com/sodafoundation/nbp
 
 cd nbp
 
-mkdir -p $GOPATH:/src/github.com/kubernetes-csi
+mkdir -p $GOPATH/src/github.com/kubernetes-csi
 
 cd csi-plug-n-play/sidecars/soda-csi-provisioner/
 
