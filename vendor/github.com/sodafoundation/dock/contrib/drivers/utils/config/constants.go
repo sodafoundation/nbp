@@ -39,7 +39,8 @@ const (
 )
 
 const (
-	NFSDriverType = "nfs"
+	NFSDriverType            = "nfs"
+	NetappOntapNasDriverType = "netapp_ontap_nas"
 )
 
 // These constants below represent the access protocol type of all storage
