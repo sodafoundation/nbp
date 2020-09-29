@@ -43,7 +43,7 @@
 
 [[constraint]]
   name = "github.com/sodafoundation/dock"
-  version = "1.0.1"
+  version = "1.1.0"
 
 [[constraint]]
   name = "github.com/sodafoundation/api"
