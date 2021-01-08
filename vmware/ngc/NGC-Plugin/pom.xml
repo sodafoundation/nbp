@@ -45,7 +45,7 @@
         <dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-core</artifactId>
-		    <version>4.3.9.RELEASE</version>
+		    <version>4.3.21.RELEASE</version>
 		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-core-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
