@@ -9,7 +9,7 @@
 
 SODA nbp(North-Bound Plugin) Project focuses to extend all the industry platforms and application solutions to interface with SODA API or make the platform compliant with SODA API developing a plugin. So, with thin, easy to develop north-bound plugins, any platforms can be connected to SODA Platform.
 
-We support multiple top industry platforms like Kubernetes, OpenStack and VMWare. More getting added over the releases based on the users/community demands.
+We support industry's top platforms (i.e. Kubernetes, OpenStack, Vsphere, ...) with more platforms included in each new release based on users/community demands.
 
 If the application or platform is already compliant with SODA API, the plugin is not needed, as the platform can directly connect to SODA API layer.
 
