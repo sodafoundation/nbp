@@ -18,8 +18,11 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -139,6 +142,10 @@ const (
 	snapshotNotBound = "snapshot %s not bound"
 
 	pvcCloneFinalizer = "provisioner.storage.kubernetes.io/cloning-protection"
+
+	operationTimeout = 10 * time.Second
+
+	sodaEndpoint = "soda-proxy:50029/getprofile/"
 )
 
 var (
@@ -495,10 +502,73 @@ type prepareProvisionResult struct {
 	csiPVSource    *v1.CSIPersistentVolumeSource
 }
 
+type CustomPropertiesSpec map[string]interface{}
+
+// Get the driver name from the customProperties of Soda Profile
+func (cps CustomPropertiesSpec) GetDriverPreference() (string, error) {
+	var driverName string
+	if cps != nil {
+		for k, v := range cps {
+			if k != "driver" {
+				continue
+			}
+			driverName = fmt.Sprintf("%v", v)
+			return driverName, nil
+		}
+	}
+	return driverName, fmt.Errorf("DriverName not found in the customProperties of Soda Profile")
+}
+
+//func to equate the driverNameFromPlugin to driverNameFromProfileID
+func (p *csiProvisioner) isCallForCurrentDriver(profileID string) (string, error) {
+
+	var backendDriverNameFromPlugin string
+	url := "http://" + sodaEndpoint + profileID
+	response, err := http.Get(url)
+	if err != nil {
+		return backendDriverNameFromPlugin, fmt.Errorf("error in getting the Profile Details : %s", err.Error())
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		var customProperties *CustomPropertiesSpec
+		json.Unmarshal(data, &customProperties)
+		driverNameFromProfile, err := customProperties.GetDriverPreference()
+		if err != nil {
+			return backendDriverNameFromPlugin, err
+		}
+
+		//GetDriverName from Storage Plugin
+		backendDriverNameFromPlugin, err = GetDriverName(p.grpcClient, operationTimeout)
+		if err != nil {
+			return backendDriverNameFromPlugin, err
+		}
+
+		if backendDriverNameFromPlugin != driverNameFromProfile {
+			return backendDriverNameFromPlugin, fmt.Errorf("PVC doesnot match the current driver name : %s with expected %s",
+				p.driverName, "profile.Name")
+		}
+	}
+	return backendDriverNameFromPlugin, nil
+}
+
 // prepareProvision does non-destructive parameter checking and preparations for provisioning a volume.
 func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.PersistentVolumeClaim, sc *storagev1.StorageClass, selectedNode *v1.Node) (*prepareProvisionResult, controller.ProvisioningState, error) {
 	if sc == nil {
 		return nil, controller.ProvisioningFinished, errors.New("storage class was nil")
+	}
+
+	// Add Soda intelligence to pick the driver from ProfileID received in StorageClass Parameter
+	if sc.Provisioner == "soda-csi" {
+		for k, v := range sc.Parameters {
+			if k != "profile" {
+				continue
+			}
+			backendDriverName, err := p.isCallForCurrentDriver(v)
+			if err != nil {
+				return nil, controller.ProvisioningFinished, &controller.IgnoredError{
+					Reason: err.Error()}
+			}
+			sc.Provisioner = backendDriverName
+		}
 	}
 
 	migratedVolume := false
@@ -662,7 +732,7 @@ func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.Persist
 		return nil, controller.ProvisioningNoChange, err
 	}
 	csiPVSource := &v1.CSIPersistentVolumeSource{
-		Driver: p.driverName,
+		Driver: sc.Provisioner,
 		// VolumeHandle and VolumeAttributes will be added after provisioning.
 		ControllerPublishSecretRef: controllerPublishSecretRef,
 		NodeStageSecretRef:         nodeStageSecretRef,
