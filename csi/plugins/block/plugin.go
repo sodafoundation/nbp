@@ -15,8 +15,8 @@
 package block
 
 import (
-	"github.com/sodafoundation/nbp/csi/common"
 	"github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/nbp/csi/common"
 )
 
 // Plugin define

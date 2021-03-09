@@ -22,10 +22,10 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
-	nbputil "github.com/sodafoundation/nbp/util"
 	"github.com/sodafoundation/api/client"
-	"github.com/sodafoundation/dock/contrib/connector"
 	"github.com/sodafoundation/api/pkg/model"
+	"github.com/sodafoundation/dock/contrib/connector"
+	nbputil "github.com/sodafoundation/nbp/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -125,7 +125,7 @@ func NodeGetInfo(
 
 	host, err := nbputil.GetHostByHostName(Client, hostName)
 	if err != nil {
-	        //Host not found, create a host
+		//Host not found, create a host
 		var initiators []*model.Initiator
 
 		volDriverTypes := []string{connector.FcDriver, connector.IscsiDriver, connector.NvmeofDriver}

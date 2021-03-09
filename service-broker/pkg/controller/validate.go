@@ -16,9 +16,9 @@ package controller
 
 import (
 	"github.com/Masterminds/semver"
-	"github.com/sodafoundation/nbp/service-broker/pkg/store"
-	"github.com/sodafoundation/api/pkg/utils"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"github.com/sodafoundation/api/pkg/utils"
+	"github.com/sodafoundation/nbp/service-broker/pkg/store"
 )
 
 var (

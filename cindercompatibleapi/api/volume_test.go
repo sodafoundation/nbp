@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
-	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 	c "github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 )
 
 func init() {

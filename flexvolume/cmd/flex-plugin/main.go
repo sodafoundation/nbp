@@ -43,11 +43,11 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/sodafoundation/nbp/client/opensds"
-	"github.com/sodafoundation/nbp/flexvolume/pkg/volume"
+	"github.com/sodafoundation/api/pkg/model"
 	"github.com/sodafoundation/dock/contrib/connector"
 	_ "github.com/sodafoundation/dock/contrib/connector/rbd"
-	"github.com/sodafoundation/api/pkg/model"
+	"github.com/sodafoundation/nbp/client/opensds"
+	"github.com/sodafoundation/nbp/flexvolume/pkg/volume"
 )
 
 //TODO: if volume has status, opensds should supply the definition of status, and set status of volume.

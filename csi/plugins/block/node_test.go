@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/sodafoundation/nbp/csi/common"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"github.com/sodafoundation/nbp/csi/common"
 )
 
 type FakePlugin struct {

@@ -27,9 +27,9 @@ import (
 	"google.golang.org/grpc/status"
 	"strings"
 
+	"github.com/sodafoundation/api/client"
 	"github.com/sodafoundation/api/pkg/model"
 	nbputil "github.com/sodafoundation/nbp/util"
-	"github.com/sodafoundation/api/client"
 )
 
 var (
@@ -427,8 +427,7 @@ type InitializeConnectionInfo struct {
 }
 
 // InitializeConnectionReq ...
-func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpec, volumeID string, client *
-	client.Client) (*model.VolumeAttachmentSpec, error) {
+func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpec, volumeID string, client *client.Client) (*model.VolumeAttachmentSpec, error) {
 
 	//attachment, err := api.opensdsClient.
 	hostName := initializeConnectionReq.InitializeConnection.Connector.Host
@@ -438,7 +437,7 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 		var initiators []*model.Initiator
 
 		//InitiatorList is comma seperated list of volume drivers supported
-		InitiatorList:= []string{connector.IscsiDriver}
+		InitiatorList := []string{connector.IscsiDriver}
 
 		for _, volDriverType := range InitiatorList {
 			volDriver := connector.NewConnector(volDriverType)
@@ -469,11 +468,11 @@ func InitializeConnectionReq(initializeConnectionReq *InitializeConnectionReqSpe
 		}
 
 		hostSpec := &model.HostSpec{
-			HostName:          hostName,
-			OsType:            initializeConnectionReq.InitializeConnection.Connector.OsType,
-			IP:                initializeConnectionReq.InitializeConnection.Connector.IP,
+			HostName: hostName,
+			OsType:   initializeConnectionReq.InitializeConnection.Connector.OsType,
+			IP:       initializeConnectionReq.InitializeConnection.Connector.IP,
 			//AvailabilityZones: []string{DefaultAvailabilityZone},
-			Initiators:        initiators,
+			Initiators: initiators,
 		}
 
 		host, err = client.HostMgr.CreateHost(hostSpec)
