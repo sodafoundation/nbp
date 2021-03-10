@@ -26,8 +26,8 @@ import (
 
 	"github.com/astaxie/beego"
 	log "github.com/golang/glog"
-	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 	"github.com/sodafoundation/api/pkg/model"
+	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 )
 
 // AttachmentPortal ...

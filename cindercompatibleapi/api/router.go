@@ -28,9 +28,9 @@ import (
 	"github.com/astaxie/beego"
 	bctx "github.com/astaxie/beego/context"
 	log "github.com/golang/glog"
-	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 	c "github.com/sodafoundation/api/client"
 	"github.com/sodafoundation/api/pkg/utils/constants"
+	"github.com/sodafoundation/nbp/cindercompatibleapi/converter"
 )
 
 var (

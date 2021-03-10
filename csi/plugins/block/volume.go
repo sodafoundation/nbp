@@ -22,12 +22,12 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
+	"github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/api/pkg/model"
+	"github.com/sodafoundation/dock/contrib/connector"
 	"github.com/sodafoundation/nbp/csi/common"
 	"github.com/sodafoundation/nbp/csi/util"
 	nbputil "github.com/sodafoundation/nbp/util"
-	"github.com/sodafoundation/api/client"
-	"github.com/sodafoundation/dock/contrib/connector"
-	"github.com/sodafoundation/api/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

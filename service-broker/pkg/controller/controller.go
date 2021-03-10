@@ -21,14 +21,14 @@ import (
 	"reflect"
 
 	"github.com/golang/glog"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"github.com/pmorie/osb-broker-lib/pkg/broker"
+	sdsClient "github.com/sodafoundation/api/client"
+	"github.com/sodafoundation/api/pkg/model"
 	"github.com/sodafoundation/nbp/client/opensds"
 	"github.com/sodafoundation/nbp/csi/util"
 	sbmodel "github.com/sodafoundation/nbp/service-broker/pkg/model"
 	"github.com/sodafoundation/nbp/service-broker/pkg/store"
-	sdsClient "github.com/sodafoundation/api/client"
-	"github.com/sodafoundation/api/pkg/model"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"github.com/pmorie/osb-broker-lib/pkg/broker"
 )
 
 const (
