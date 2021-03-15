@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/kubernetes-csi/csi-lib-utils/rpc"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +18,7 @@ import (
 )
 
 var requestedBytes int64 = 1000
-var fakeSc1 string = "fake-sc-1"
+var fakeSc1 = "fake-sc-1"
 
 const (
 	srcName      = "clone-source-pvc"
@@ -108,6 +110,7 @@ func TestCloneFinalizerRemoval(t *testing.T) {
 		tc := tc
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
+			ctx := context.Background()
 
 			objects := append(tc.initialClaims, tc.cloneSource)
 			clientSet := fakeclientset.NewSimpleClientset(objects...)
@@ -115,10 +118,10 @@ func TestCloneFinalizerRemoval(t *testing.T) {
 
 			// Simulate Delete behavior
 			claim := pvcDeletionMarked(tc.cloneSource.(*v1.PersistentVolumeClaim))
-			err := cloningProtector.syncClaim(claim)
+			err := cloningProtector.syncClaim(ctx, claim)
 
 			// Get updated claim after reconcile finish
-			claim, _ = clientSet.CoreV1().PersistentVolumeClaims(claim.Namespace).Get(claim.Name, metav1.GetOptions{})
+			claim, _ = clientSet.CoreV1().PersistentVolumeClaims(claim.Namespace).Get(ctx, claim.Name, metav1.GetOptions{})
 
 			// Check finalizers removal
 			if tc.expectFinalizer && !checkFinalizer(claim, pvcCloneFinalizer) {
@@ -159,13 +162,14 @@ func TestEnqueueClaimUpadate(t *testing.T) {
 		tc := tc
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
+			ctx := context.Background()
 
 			objects := []runtime.Object{}
 			clientSet := fakeclientset.NewSimpleClientset(objects...)
 			cloningProtector := fakeCloningProtector(clientSet, objects...)
 
 			// Simulate queue behavior
-			cloningProtector.enqueueClaimUpadate(tc.claim)
+			cloningProtector.enqueueClaimUpdate(ctx, tc.claim)
 
 			if cloningProtector.claimQueue.Len() != tc.queueLen {
 				t.Errorf("claimQueue should contain %d items, got: %d", tc.queueLen, cloningProtector.claimQueue.Len())
@@ -176,6 +180,9 @@ func TestEnqueueClaimUpadate(t *testing.T) {
 
 func fakeCloningProtector(client *fakeclientset.Clientset, objects ...runtime.Object) *CloningProtectionController {
 	utilruntime.ReallyCrash = false
+	controllerCapabilities := rpc.ControllerCapabilitySet{
+		csi.ControllerServiceCapability_RPC_CLONE_VOLUME: true,
+	}
 
 	informerFactory := informers.NewSharedInformerFactory(client, 1*time.Second)
 	claimInformer := informerFactory.Core().V1().PersistentVolumeClaims().Informer()
@@ -195,5 +202,6 @@ func fakeCloningProtector(client *fakeclientset.Clientset, objects ...runtime.Ob
 		claimLister,
 		claimInformer,
 		claimQueue,
+		controllerCapabilities,
 	)
 }

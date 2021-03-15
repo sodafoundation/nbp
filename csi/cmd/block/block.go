@@ -18,13 +18,13 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	"github.com/sodafoundation/nbp/csi/common"
-	"github.com/sodafoundation/nbp/csi/plugins/block"
 	_ "github.com/sodafoundation/dock/contrib/connector/fc"
 	_ "github.com/sodafoundation/dock/contrib/connector/iscsi"
 	_ "github.com/sodafoundation/dock/contrib/connector/nfs"
 	_ "github.com/sodafoundation/dock/contrib/connector/nvmeof"
 	_ "github.com/sodafoundation/dock/contrib/connector/rbd"
+	"github.com/sodafoundation/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/plugins/block"
 )
 
 func main() {

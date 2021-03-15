@@ -21,9 +21,9 @@ package converter
 import (
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/sodafoundation/api/client"
 	"github.com/sodafoundation/api/pkg/model"
 	nbputil "github.com/sodafoundation/nbp/util"
-	"github.com/sodafoundation/api/client"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -25,11 +25,11 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sodafoundation/nbp/csi/util"
-	"github.com/sodafoundation/nbp/csi/common"
 	"github.com/sodafoundation/api/client"
 	c "github.com/sodafoundation/api/client"
 	"github.com/sodafoundation/api/pkg/model"
+	"github.com/sodafoundation/nbp/csi/common"
+	"github.com/sodafoundation/nbp/csi/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -502,7 +502,7 @@ func TestCreateVolume(t *testing.T) {
 			},
 		},
 		Parameters: map[string]string{
-			"profile":     "1106b972-66ef-11e7-b172-db03f3689c9c",
+			"profile": "1106b972-66ef-11e7-b172-db03f3689c9c",
 		},
 		VolumeContentSource: &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
@@ -529,12 +529,12 @@ func TestCreateVolume(t *testing.T) {
 		CapacityBytes: util.GiB,
 		VolumeId:      "bd5b12a8-a101-11e7-941e-d77981b584d8",
 		VolumeContext: map[string]string{
-			VolumeName:        "sample-volume",
-			VolumeStatus:      "available",
-			VolumeAZ:          "default",
-			VolumePoolId:      "084bf71e-a102-11e7-88a8-e31fe6d52248",
-			VolumeProfileId:   "1106b972-66ef-11e7-b172-db03f3689c9c",
-			VolumeLvPath:      "",
+			VolumeName:               "sample-volume",
+			VolumeStatus:             "available",
+			VolumeAZ:                 "default",
+			VolumePoolId:             "084bf71e-a102-11e7-88a8-e31fe6d52248",
+			VolumeProfileId:          "1106b972-66ef-11e7-b172-db03f3689c9c",
+			VolumeLvPath:             "",
 			common.PublishAttachMode: "rw",
 		},
 		AccessibleTopology: []*csi.Topology{
