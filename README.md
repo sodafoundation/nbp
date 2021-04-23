@@ -2,6 +2,7 @@
 
 [![Releases](https://img.shields.io/github/release/sodafoundation/nbp/all.svg?style=flat-square)](https://github.com/sodafoundation/nbp/releases)
 [![LICENSE](https://img.shields.io/github/license/sodafoundation/nbp.svg?style=flat-square)](https://github.com/sodafoundation/nbp/blob/master/LICENSE)
+[![SODA NBP CI](https://github.com/sodafoundation/nbp/actions/workflows/ci.yaml/badge.svg)](https://github.com/sodafoundation/nbp/actions/workflows/ci.yaml)
 
 <img src="https://sodafoundation.io/wp-content/uploads/2020/01/SODA_logo_outline_color_800x800.png" width="200" height="200">
 

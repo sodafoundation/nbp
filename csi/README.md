@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project is the [OpenSDS Project](https://opensds.io/) NorthBound Plugin for
+This project is the [SODA Foundation Project](https://sodafoundation.io/) NorthBound Plugin for
 [Container Storage Interface](https://github.com/container-storage-interface/spec).
 
 Container Storage Interface (CSI) aims to define an industry standard
