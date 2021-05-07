@@ -4,13 +4,13 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: csi-sc-opensdsplugin-file
-provisioner: csi-opensdsplugin-file
+provisioner: csi-soda-plugin-file
 parameters:
   attachMode: read
   profile: abc
 allowedTopologies:
 - matchLabelExpressions:
-  - key: topology.csi-opensdsplugin-file/zone
+  - key: topology.csi-soda-plugin-file/zone
     values:
     - default
 ---

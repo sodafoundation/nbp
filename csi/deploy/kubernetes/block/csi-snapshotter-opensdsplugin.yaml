@@ -35,7 +35,7 @@ spec:
         - name: csi-snapshotter
           image: quay.io/k8scsi/csi-snapshotter:v1.2.2
           args:
-            - "--snapshotter=csi-opensdsplugin-block"
+            - "--snapshotter=csi-soda-plugin-block"
             - "--csi-address=$(ADDRESS)"
             - "--connection-timeout=15s"
           env:

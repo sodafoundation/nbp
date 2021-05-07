@@ -28,7 +28,7 @@ spec:
             - "--kubelet-registration-path=$(ADDRESS)"
           env:
             - name: ADDRESS
-              value: /var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
+              value: /var/lib/kubelet/plugins/csi-soda-plugin-block/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -53,7 +53,7 @@ spec:
             - "--v=8"
           env:
             - name: CSI_ENDPOINT
-              value: unix://var/lib/kubelet/plugins/csi-opensdsplugin-block/csi.sock
+              value: unix://var/lib/kubelet/plugins/csi-soda-plugin-block/csi.sock
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
@@ -117,7 +117,7 @@ spec:
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/kubelet/plugins/csi-opensdsplugin-block
+              mountPath: /var/lib/kubelet/plugins/csi-soda-plugin-block
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: "Bidirectional"
@@ -138,7 +138,7 @@ spec:
       volumes:
         - name: socket-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/csi-opensdsplugin-block
+            path: /var/lib/kubelet/plugins/csi-soda-plugin-block
             type: DirectoryOrCreate
         - name: volume-devices-dir
           hostPath:
