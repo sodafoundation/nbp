@@ -10,10 +10,10 @@ go get github.com/sodafoundation/nbp
 
 cd $GOPATH/src/github.com/sodafoundation/nbp/csi-plug-n-play/sidecars/soda-proxy
 
-go build cmd/proxy.go
+go build -o soda-proxy cmd/proxy.go
 ```
 
-Before running soda-proxy you need to export the below variables.(These are the same env variables which are required by osdsctl, for more reference you can see [this](https://docs.sodafoundation.io/soda-gettingstarted/installation-using-ansible/#how-to-test-soda-projects-cluster))
+Before running soda-proxy you need to update the below variables in `scripts/start.sh`.(These are the same env variables which are required by osdsctl, for more reference you can see [this](https://docs.sodafoundation.io/soda-gettingstarted/installation-using-ansible/#how-to-test-soda-projects-cluster))
 
 ```go
 
@@ -28,8 +28,13 @@ export OS_USER_DOMAIN_ID=default
 ```
 
 ```go
-./proxy
+./scripts/start.sh
 
 ```
 
 By default soda-proxy runs on `0.0.0.0:50029`
+
+Cleanup
+```go
+./scripts/stop.sh
+```
