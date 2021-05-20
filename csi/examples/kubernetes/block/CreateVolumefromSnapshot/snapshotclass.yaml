@@ -2,7 +2,7 @@ apiVersion: snapshot.storage.k8s.io/v1alpha1
 kind: VolumeSnapshotClass
 metadata:
   name: csi-opensds-snapclass-block
-snapshotter: csi-opensdsplugin-block
+snapshotter: csi-soda-plugin-block
 parameters:
   profile:
 

@@ -35,7 +35,7 @@ spec:
         - name: csi-provisioner
           image: quay.io/k8scsi/csi-provisioner:v1.4.0
           args:
-            - "--provisioner=csi-opensdsplugin-block"
+            - "--provisioner=csi-soda-plugin-block"
             - "--csi-address=$(ADDRESS)"
             - "--connection-timeout=15s"
             - "--feature-gates=Topology=True"
