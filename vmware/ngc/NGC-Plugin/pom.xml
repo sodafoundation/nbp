@@ -1,143 +1,210 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>groupId</groupId>
-    <artifactId>NGC-Plugin</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <properties>
-	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	    <maven.compiler.source>1.8</maven.compiler.source>
-	    <maven.compiler.target>1.8</maven.compiler.target>
+	<groupId>groupId</groupId>
+	<artifactId>NGC-Plugin</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<properties>
+		<springVersion>4.1.7.RELEASE</springVersion>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<junit-version>4.13</junit-version>
+		<log4j-version>1.2.17</log4j-version>
+		<slf4j-api-version>1.7.12</slf4j-api-version>
 	</properties>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
 			</plugin>
-        </plugins>
-    </build>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.3</version>
+				<configuration>
+					<archive>
+						<addMavenDescriptor>false</addMavenDescriptor>
+					</archive>
+					<archiveClasses>true</archiveClasses>
+					<failOnMissingWebXml>false</failOnMissingWebXml>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat7-maven-plugin</artifactId>
+				<version>2.0</version>
+			</plugin>
+		</plugins>
+	</build>
 
-    <dependencies>
-        <!-- JSON -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.8.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.8.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.8.5</version>
-        </dependency>
-        <dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-core</artifactId>
-		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-core-4.3.9.RELEASE.jar</systemPath>
+	<dependencies>
+		<!-- JSON -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>4.3.9.RELEASE</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-core-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-web</artifactId>
-		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-web-4.3.9.RELEASE.jar</systemPath>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>4.3.9.RELEASE</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-web-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-context</artifactId>
-		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-context-4.3.9.RELEASE.jar</systemPath>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>4.3.9.RELEASE</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-context-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-beans</artifactId>
-		    <version>4.3.9.RELEASE</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-beans-4.3.9.RELEASE.jar</systemPath>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+			<version>4.3.9.RELEASE</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/spring-beans-4.3.9.RELEASE.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>com.vmware</groupId>
-		    <artifactId>vim25</artifactId>
-		    <version>6.7.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/vim25.jar</systemPath>
+			<groupId>com.vmware</groupId>
+			<artifactId>vim25</artifactId>
+			<version>6.7.0</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/vim25.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>com.vmware</groupId>
-		    <artifactId>vsphere-client-lib</artifactId>
-		    <version>6.7.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/vsphere-client-lib.jar</systemPath>
+			<groupId>com.vmware</groupId>
+			<artifactId>vsphere-client-lib</artifactId>
+			<version>6.7.0</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/vsphere-client-lib.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>commons-logging</groupId>
-		    <artifactId>commons-logging</artifactId>
-		    <version>1.1.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/commons-logging-1.1.1.jar</systemPath>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+			<version>1.1.1</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/commons-logging-1.1.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>com.google.code.gson</groupId>
-		    <artifactId>gson</artifactId>
-		    <version>2.3.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/gson-2.3.1.jar</systemPath>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.3.1</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/gson-2.3.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>javax.servlet</groupId>
-		    <artifactId>servlet-api</artifactId>
-		    <version>3.0.1</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/javax.servlet-api-3.0.1.jar</systemPath>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>3.0.1</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/javax.servlet-api-3.0.1.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>com.springsource.org.apache.commons.lang</artifactId>
-		    <version>2.5.0</version>
-		    <systemPath>${env.VSPHERE_SDK_HOME}/libs/com.springsource.org.apache.commons.lang-2.5.0.jar</systemPath>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>com.springsource.org.apache.commons.lang</artifactId>
+			<version>2.5.0</version>
+			<systemPath>${env.VSPHERE_SDK_HOME}/libs/com.springsource.org.apache.commons.lang-2.5.0.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-dependency-plugin -->
 		<dependency>
-		    <groupId>org.apache.maven.plugins</groupId>
-		    <artifactId>maven-dependency-plugin</artifactId>
-		    <version>3.1.1</version>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-dependency-plugin</artifactId>
+			<version>3.1.1</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.opensds.vmware</groupId>
-			 <artifactId>NGC</artifactId>
+			<groupId>org.opensds.vmware</groupId>
+			<artifactId>NGC</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
-		    <systemPath>${basedir}/lib/ngc-adapter-manager.jar</systemPath>
+			<systemPath>${basedir}/lib/ngc-adapter-manager.jar</systemPath>
 			<scope>system</scope>
 		</dependency>
 		<dependency>
-           <groupId>junit</groupId>
-           <artifactId>junit</artifactId>
-           <version>4.13</version>
-           <scope>test</scope>
-        </dependency>		
-        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>2.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-orm</artifactId>
+			<version>${springVersion}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${springVersion}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-oxm</artifactId>
+			<version>${springVersion}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit-version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${springVersion}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aop</artifactId>
+			<version>${springVersion}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.4</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
 		<dependency>
 		    <groupId>org.mockito</groupId>
 		    <artifactId>mockito-all</artifactId>
 		    <version>1.10.19</version>
 		    <scope>test</scope>
 		</dependency>
-    </dependencies>
-
-</project>
+	</dependencies>
+ </project>
