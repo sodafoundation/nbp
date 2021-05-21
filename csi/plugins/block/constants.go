@@ -54,7 +54,7 @@ const (
 
 // PluginName setting
 const (
-	PluginName = "csi-opensdsplugin-block"
+	PluginName = "csi-soda-plugin-block"
 )
 
 var TopologyZoneKey = "topology." + PluginName + "/zone"

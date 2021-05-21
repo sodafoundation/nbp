@@ -4,12 +4,12 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: csi-snapshotter-opensdsplugin-block
+  name: csi-snapshotter-opensdsplugin-file
   labels:
-    app: csi-snapshotter-opensdsplugin-block
+    app: csi-snapshotter-opensdsplugin-file
 spec:
   selector:
-    app: csi-snapshotter-opensdsplugin-block
+    app: csi-snapshotter-opensdsplugin-file
   ports:
     - name: dummy
       port: 12345
@@ -18,24 +18,24 @@ spec:
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: csi-snapshotter-opensdsplugin-block
+  name: csi-snapshotter-opensdsplugin-file
 spec:
-  serviceName: "csi-snapshotter-opensdsplugin-block"
+  serviceName: "csi-snapshotter-opensdsplugin-file"
   replicas: 1
   selector:
     matchLabels:
-      app: csi-snapshotter-opensdsplugin-block
+      app: csi-snapshotter-opensdsplugin-file
   template:
     metadata:
       labels:
-        app: csi-snapshotter-opensdsplugin-block
+        app: csi-snapshotter-opensdsplugin-file
     spec:
-      serviceAccount: csi-snapshotter-block
+      serviceAccount: csi-snapshotter-file
       containers:
         - name: csi-snapshotter
           image: quay.io/k8scsi/csi-snapshotter:v1.2.2
           args:
-            - "--snapshotter=csi-opensdsplugin-block"
+            - "--snapshotter=csi-soda-plugin-file"
             - "--csi-address=$(ADDRESS)"
             - "--connection-timeout=15s"
           env:
@@ -46,7 +46,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: opensds
-          image: sodafoundation/csiplugin-block:latest
+          image: sodafoundation/csiplugin-file:latest
           args :
             - "--csiEndpoint=$(CSI_ENDPOINT)"
             - "--opensdsEndpoint=$(OPENSDS_ENDPOINT)"
@@ -58,62 +58,62 @@ spec:
             - name: OPENSDS_ENDPOINT
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: opensdsendpoint
             - name: ENABLE_ENCRYPTED
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: enableEncrypted
             - name: PASSWORD_ENCRYPTER
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: passwordencrypter
             - name: OPENSDS_AUTH_STRATEGY
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: opensdsauthstrategy
             - name: OS_AUTH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: osauthurl
             - name: OS_USERNAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: osusername
             - name: OS_PASSWORD
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: ospassword
             - name: PASSWORD_ENCRYPTER
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: passwordencrypter
             - name: ENABLE_ENCRYPTED
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: enableEncrypted
             - name: OS_TENANT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: ostenantname
             - name: OS_PROJECT_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: osprojectname
             - name: OS_USER_DOMAIN_ID
               valueFrom:
                 configMapKeyRef:
-                  name: csi-configmap-opensdsplugin-block
+                  name: csi-configmap-opensdsplugin-file
                   key: osuserdomainid
           imagePullPolicy: "IfNotPresent"
           volumeMounts:

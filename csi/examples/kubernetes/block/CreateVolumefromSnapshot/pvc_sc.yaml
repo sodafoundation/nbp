@@ -5,7 +5,7 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: nginx-sc-block
-provisioner: csi-opensdsplugin-block
+provisioner: csi-soda-plugin-block
 parameters:
   fsType: ext4
   profile:
