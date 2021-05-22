@@ -84,7 +84,7 @@ public class Configuration {
 		arrayInfo.setHostName(hostname);
 		arrayInfo.setPort(port);
 		arrayInfo.setUsername(username);
-		arrayInfo.setPassword(EncryptHelper.encrypt(password));
+		arrayInfo.setPassword(password);
 		arrayInfo.setauthEnabled(authEnabled);
 		arrayInfo.setProductModel(productModel);
 		if (LOG.isInfoEnabled()) {

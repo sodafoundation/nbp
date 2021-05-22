@@ -12,6 +12,7 @@ COPY nvme-cli-1.8.1  /nvme-cli-1.8.1
 RUN apt-get update && \
     apt-get -y install open-iscsi \
     sysfsutils \
+    sg3-utils \
     kmod \
     ceph-common \
     nfs-common \
