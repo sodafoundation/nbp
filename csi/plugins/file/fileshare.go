@@ -23,11 +23,16 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	"github.com/opensds/nbp/csi/util"
+	nbputil "github.com/opensds/nbp/util"
 	"github.com/opensds/opensds/client"
 	"github.com/opensds/opensds/contrib/connector"
 	"github.com/opensds/opensds/pkg/model"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	DefaultAttachMode = "Read,Write"
 )
 
 type FileShare struct {
@@ -45,7 +50,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 	// fileshare name
 	name = strings.Replace(req.GetName(), "-", "_", -1)
 
-	var attachMode = "read,write"
+	var attachMode = DefaultAttachMode
 	for k, v := range req.GetParameters() {
 		switch k {
 		case common.ParamProfile:
@@ -59,7 +64,7 @@ func (f *FileShare) CreateFileShare(req *csi.CreateVolumeRequest) (*csi.CreateVo
 		case common.PublishAttachMode:
 			if strings.ToLower(v) == "read" {
 				// attach mode
-				attachMode = "read"
+				attachMode = "Read"
 			} else {
 				glog.Infof("use default attach mode: %s", attachMode)
 			}
@@ -183,9 +188,6 @@ func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeR
 		attachMode = "read,write"
 	}
 
-	//NodeId is a comma seperated string consisting of hostname, iqn(iSCSI Qualified Name), nqn(NVMe Qualified Name), ip address in order
-	nodeInfo := strings.Split(req.GetNodeId(), ",")
-	accessTo := nodeInfo[len(nodeInfo)-1]
 	// check if fileshare exists
 	shareSpec, err := f.Client.GetFileShare(req.VolumeId)
 	if err != nil || shareSpec == nil {
@@ -199,12 +201,19 @@ func (f *FileShare) ControllerPublishFileShare(req *csi.ControllerPublishVolumeR
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	host, err := nbputil.GetHostByHostId(f.Client, req.NodeId)
+	if err != nil {
+		msg := fmt.Sprintf("faild to get host name: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
+
 	attachReq := &model.FileShareAclSpec{
 		FileShareId: shareSpec.Id,
 		// Only support ip based mode
 		Type:             "ip",
 		AccessCapability: strings.Split(attachMode, ","),
-		AccessTo:         accessTo,
+		AccessTo:         host.IP,
 		ProfileId:        shareSpec.ProfileId,
 	}
 
@@ -282,12 +291,15 @@ func (f *FileShare) ControllerUnpublishFileShare(req *csi.ControllerUnpublishVol
 		return nil, status.Error(codes.FailedPrecondition, msg)
 	}
 
-	//NodeId is a comma seperated string consisting of hostname, iqn(iSCSI Qualified Name), nqn(NVMe Qualified Name), ip address in order
-	nodeInfo := strings.Split(req.GetNodeId(), ",")
-	accessTo := nodeInfo[len(nodeInfo)-1]
+	host, err := nbputil.GetHostByHostId(f.Client, req.NodeId)
+	if err != nil {
+		msg := fmt.Sprintf("faild to get host name: %v", err)
+		glog.Error(msg)
+		return nil, status.Error(codes.FailedPrecondition, msg)
+	}
 
 	for _, attachSpec := range attachments {
-		if attachSpec.FileShareId == shareSpec.Id && attachSpec.AccessTo == accessTo {
+		if attachSpec.FileShareId == shareSpec.Id && attachSpec.AccessTo == host.IP {
 			if ok := common.UnpublishAttachmentList.IsExist(attachSpec.Id); !ok {
 				glog.Infof("add attachment id %s into unpublish attachment list", attachSpec.Id)
 				common.UnpublishAttachmentList.Add(attachSpec)

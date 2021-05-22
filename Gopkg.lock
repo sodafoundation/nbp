@@ -221,14 +221,6 @@
   version = "v0.3.6"
 
 [[projects]]
-  digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
-  name = "github.com/inconshreveable/mousetrap"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-  version = "v1.0"
-
-[[projects]]
   digest = "1:8e36686e8b139f8fe240c1d5cf3a145bc675c22ff8e707857cdd3ae17b00d728"
   name = "github.com/json-iterator/go"
   packages = ["."]
@@ -283,8 +275,7 @@
   version = "1.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0497cfcd382f257803667b4807c701b10c0c8ed096c1213f11f3bf1e0ed2e0ed"
+  digest = "1:55a80e7ac6b2089b52674b1d11c8ccf1517c8078ed5b74cca3a7a4ed3728c4ea"
   name = "github.com/opensds/opensds"
   packages = [
     "client",
@@ -308,7 +299,8 @@
     "testutils/collection",
   ]
   pruneopts = "NUT"
-  revision = "089dca690fc4ff6e458421c7d9adf8b5d222f61a"
+  revision = "51d7d749f310f2577d9e03f4327aec0a3fdc740f"
+  version = "v0.10.0"
 
 [[projects]]
   digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
@@ -406,14 +398,6 @@
   pruneopts = "NUT"
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
   version = "v1.2.0"
-
-[[projects]]
-  digest = "1:343d44e06621142ab09ae0c76c1799104cdfddd3ffb445d78b1adf8dc3ffaf3d"
-  name = "github.com/spf13/cobra"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
-  version = "v0.0.3"
 
 [[projects]]
   digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
@@ -1001,7 +985,6 @@
     "github.com/pmorie/osb-broker-lib/pkg/rest",
     "github.com/pmorie/osb-broker-lib/pkg/server",
     "github.com/prometheus/client_golang/prometheus",
-    "github.com/spf13/cobra",
     "golang.org/x/net/context",
     "golang.org/x/sys/unix",
     "google.golang.org/grpc",

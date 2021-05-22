@@ -149,10 +149,17 @@ func (portal *AttachmentPortal) CreateAttachment() {
 		return
 	}
 
-	attachment := converter.CreateAttachmentReq(&cinderReq)
 	NewClient(portal.Ctx)
-	attachment, err := opensdsClient.CreateVolumeAttachment(attachment)
+	attachment, err := converter.CreateAttachmentReq(&cinderReq, opensdsClient)
+	if err != nil {
+		reason := fmt.Sprintf("Create attachment request failed: %s", err.Error())
+		portal.Ctx.Output.SetStatus(model.ErrorInternalServer)
+		portal.Ctx.Output.Body(model.ErrorInternalServerStatus(reason))
+		log.Error(reason)
+		return
+	}
 
+	attachment, err = opensdsClient.CreateVolumeAttachment(attachment)
 	if err != nil {
 		reason := fmt.Sprintf("Create attachment failed: %s", err.Error())
 		portal.Ctx.Output.SetStatus(model.ErrorInternalServer)
