@@ -26,7 +26,7 @@ BUILD_TGT := opensds-sushi-$(VERSION)-linux-amd64
 
 all: build
 #build: csi.block.opensds csi.file.opensds flexvolume.server.opensds service-broker cindercompatibleapi
-build: csi.block.opensds csi.file.opensds cindercompatibleapi
+build: csi.block.opensds csi.file.opensds cindercompatibleapi soda-syncer.snapshot
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)
@@ -46,6 +46,9 @@ csi.file.opensds: prebuild
 	cd ./nvme-cli-1.8.1 && sudo make && sudo make install
 	cd ..
 	cp -a ./nvme-cli-1.8.1 ./csi/
+
+soda-syncer.snapshot: prebuild
+	go build -ldflags '-w -s' -o $(BUILD_DIR)/soda-syncer.snapshot github.com/sodafoundation/nbp/soda-syncer/cmd/snapshot
 
 #flexvolume.server.opensds: prebuild
 #	go build -ldflags '-w -s' -o $(BUILD_DIR)/flexvolume.server.opensds github.com/sodafoundation/nbp/flexvolume/cmd/flex-plugin
