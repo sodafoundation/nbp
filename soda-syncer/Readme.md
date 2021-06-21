@@ -15,3 +15,11 @@ Consistent snapshot is provided by few CSI Plugin Drivers, but most of them lack
 Soda leverages the Soda profile and [CSI Plug-N-Play](../csi-plug-n-play/) design to configure the snapshot policy and does the backup independently without platform support, currently this solution is available for K8s, and it doesn't require any operator/crd to add on this feature to existing CSI plugins.
 
 ![Consistent Snapshot Solution](static/assets/consistent-snapshot.png)
+
+Flow :
+ 1. soda-csi-provisioner watches for the sc,pvc & pv objects  
+ 2. soda-csi-provisioner fetches the profile details from [soda-proxy](https://github.com/sodafoundation/nbp/tree/master/csi-plug-n-play/sidecars/soda-proxy)   
+ 3. soda-proxy connects to soda-api server with proper authentication to get the profile details.
+ 4. Using the profile details soda-csi-provisioner picks the backend the CSI driver and provisions the volume.
+ 5. soda-csi-provisioner sends the consitent snapshot request to soda-syncer based on the profile configuration recived in Step 2.
+ 6. soda-syncer at configured intervals invokes restic to do the cloud backup. 
