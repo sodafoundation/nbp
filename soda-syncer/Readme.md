@@ -21,5 +21,34 @@ Flow :
  2. soda-csi-provisioner fetches the profile details from [soda-proxy](https://github.com/sodafoundation/nbp/tree/master/csi-plug-n-play/sidecars/soda-proxy)   
  3. soda-proxy connects to soda-api server with proper authentication to get the profile details.
  4. Using the profile details soda-csi-provisioner picks the backend the CSI driver and provisions the volume.
- 5. soda-csi-provisioner sends the consitent snapshot request to soda-syncer based on the profile configuration recived in Step 2.
+ 5. soda-csi-provisioner sends the consistent snapshot request to soda-syncer based on the profile configuration received in Step 2.
  6. soda-syncer at configured intervals invokes restic to do the cloud backup. 
+
+
+### Quick Start Guide  
+To deploy the above solution you need to ensure the below pre-requisite
+ - Kubernetes 1.17+  is installed
+ - CSI drivers are installed using soda [csi-plug-n-play mechanism](https://docs.sodafoundation.io/guides/integration-guides/csi-integration/soda-csi-pnp/).
+ - Soda J release or above is installed (at least hotpot component)
+ - [Restic](https://restic.readthedocs.io/en/latest/020_installation.html) is installed on all the K8s nodes.  
+
+Please follow the below steps to Build and run the soda-syncer on all the k8s node.
+
+``` 
+go get github.com/sodafoundation/nbp
+
+cd $GOPATH/src/github.com/sodafoundation/nbp/soda-syncer
+
+go build -o soda-syncer cmd/snapshot.go
+```
+
+To start the process
+```
+./scripts/start.sh
+```
+This will by default start the soda-syncer on 0.0.0.0:50030
+
+Cleanup
+```
+./scripts/stop.sh
+```
