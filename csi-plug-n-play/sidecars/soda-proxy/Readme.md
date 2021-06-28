@@ -1,9 +1,25 @@
 ## soda-proxy
 
-soda-proxy is a simple http server which helps to call the api's of SodaFoundation in a simpler way, it bypasses the authentication and directly helps to connect the osdsapi-server using the client provided by sodafoundation/api.
+soda-proxy is a simple http server which helps to call the api's of SodaFoundation Components in a simpler way, it uses the authentication and directly helps to connect the osdsapi-server using the client provided by sodafoundation/api.
 
-### Build
-Please follow the below steps to build and run the proxy
+### Quick Start Guide
+
+Simplest way to use soda-proxy is to get the latest image from [here](https://hub.docker.com/repository/docker/sodafoundation/soda-proxy)
+
+After getting the image please download the deployment yaml for soda-porxy from [here](https://github.com/sodafoundation/nbp/blob/master/csi-plug-n-play/sidecars/soda-proxy/deploy/sodaProxy.yaml)
+```go
+wget https://github.com/sodafoundation/nbp/blob/master/csi-plug-n-play/sidecars/soda-proxy/deploy/sodaProxy.yaml
+
+```
+Please edit the Sodafoundation env variables in the above yaml, for reference you can visit this [link](https://docs.sodafoundation.io/soda-gettingstarted/installation-using-ansible/#how-to-test-soda-projects-cluster)
+
+After editing you can follow the below guide to start the soda-proxy
+```go
+kubectl create -f sodaProxy.yaml
+```
+
+### Build the image through code
+If you want to try our latest and greatest one then you can follow the below guide
 
 ```go
 go get github.com/sodafoundation/nbp
@@ -12,29 +28,11 @@ cd $GOPATH/src/github.com/sodafoundation/nbp/csi-plug-n-play/sidecars/soda-proxy
 
 go build -o soda-proxy cmd/proxy.go
 ```
-
-Before running soda-proxy you need to update the below variables in `scripts/start.sh`.(These are the same env variables which are required by osdsctl, for more reference you can see [this](https://docs.sodafoundation.io/soda-gettingstarted/installation-using-ansible/#how-to-test-soda-projects-cluster))
-
-```go
-
-export OPENSDS_ENDPOINT=http://{your_host_ip}:50040
-export OPENSDS_AUTH_STRATEGY=keystone
-export OS_AUTH_URL=http://{your_host_ip}/identity
-export OS_USERNAME=admin
-export OS_PASSWORD=opensds@123
-export OS_TENANT_NAME=admin
-export OS_PROJECT_NAME=admin
-export OS_USER_DOMAIN_ID=default
-```
+ Once the code is build, then next step will be to build the docker images
 
 ```go
-./scripts/start.sh
 
+docker build -t sodafoundation/soda-proxy:dev .
 ```
 
-By default soda-proxy runs on `0.0.0.0:50029`
-
-Cleanup
-```go
-./scripts/stop.sh
-```
+Once the image is build then you can  follow the above Quick start guide to run the soda-proxy
