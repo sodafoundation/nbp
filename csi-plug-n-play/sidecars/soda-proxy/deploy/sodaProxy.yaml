@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soda-proxy
+  namespace: default
+  labels:
+    soda-app: proxy
+spec:
+  selector:
+    matchLabels:
+      soda-app: proxy
+  template:
+    metadata:
+      labels:
+        soda-app: proxy
+    spec:
+      containers:
+        - name: soda-proxy
+          image: sodafoundation/soda-proxy:v1.0
+          env:
+            - name: OPENSDS_ENDPOINT
+              value: "http://{YourHOSTIP}:50040"
+            - name: OPENSDS_AUTH_STRATEGY
+              value: "keystone"
+            - name: OS_AUTH_URL
+              value: "http://{YourHOSTIP}/identity"
+            - name: OS_USERNAME
+              value: "admin"
+            - name: OS_PASSWORD
+              value: "opensds@123"
+            - name: OS_TENANT_NAME
+              value: "admin"
+            - name: OS_PROJECT_NAME
+              value: "admin"
+            - name: OS_USER_DOMAIN_ID
+              value: "default"
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          ports:
+            - containerPort: 50029
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: soda-proxy
+  labels:
+    soda-app: proxy
+spec:
+  ports:
+    - port: 50029
+      protocol: TCP
+  selector:
+    soda-app: proxy
