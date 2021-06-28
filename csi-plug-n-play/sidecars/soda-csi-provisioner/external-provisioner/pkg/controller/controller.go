@@ -145,7 +145,9 @@ const (
 
 	operationTimeout = 10 * time.Second
 
-	sodaEndpoint = "soda-proxy:50029/getprofile/"
+	sodaProfileEndpoint = "soda-proxy:50029/getprofile/"
+	sodaSnapShotEnableEndpoint = "soda-proxy:50029/getprofile/"
+
 )
 
 var (
@@ -504,7 +506,7 @@ type prepareProvisionResult struct {
 
 type CustomPropertiesSpec map[string]interface{}
 
-// Get the driver name from the customProperties of Soda Profile
+//GetDriverPreference get the driver name from the customProperties of Soda Profile
 func (cps CustomPropertiesSpec) GetDriverPreference() (string, error) {
 	var driverName string
 	if cps != nil {
@@ -515,6 +517,7 @@ func (cps CustomPropertiesSpec) GetDriverPreference() (string, error) {
 			driverName = fmt.Sprintf("%v", v)
 			return driverName, nil
 		}
+
 	}
 	return driverName, fmt.Errorf("DriverName not found in the customProperties of Soda Profile")
 }
@@ -523,7 +526,7 @@ func (cps CustomPropertiesSpec) GetDriverPreference() (string, error) {
 func (p *csiProvisioner) isCallForCurrentDriver(profileID string) (string, error) {
 
 	var backendDriverNameFromPlugin string
-	url := "http://" + sodaEndpoint + profileID
+	url := "http://" + sodaProfileEndpoint + profileID
 	response, err := http.Get(url)
 	if err != nil {
 		return backendDriverNameFromPlugin, fmt.Errorf("error in getting the Profile Details : %s", err.Error())
@@ -550,18 +553,35 @@ func (p *csiProvisioner) isCallForCurrentDriver(profileID string) (string, error
 	return backendDriverNameFromPlugin, nil
 }
 
+// Call the soda-syncer for Snapshot
+func (p *csiProvisioner) snapShotEnable(profileID string) (error) {
+
+	// Call the SnapshotEnable
+	url := "http://" + sodaSnapShotEnableEndpoint + profileID
+	response, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error in getting the Profile Details : %s", err.Error())
+	} else {
+		klog.V(2).Infof("SnapshotEnabled, ", response.Body)
+	}
+	return nil
+}
+
+
 // prepareProvision does non-destructive parameter checking and preparations for provisioning a volume.
 func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.PersistentVolumeClaim, sc *storagev1.StorageClass, selectedNode *v1.Node) (*prepareProvisionResult, controller.ProvisioningState, error) {
 	if sc == nil {
 		return nil, controller.ProvisioningFinished, errors.New("storage class was nil")
 	}
 
+	var profileID string
 	// Add Soda intelligence to pick the driver from ProfileID received in StorageClass Parameter
 	if sc.Provisioner == "soda-csi" {
 		for k, v := range sc.Parameters {
 			if k != "profile" {
 				continue
 			}
+			profileID = v
 			backendDriverName, err := p.isCallForCurrentDriver(v)
 			if err != nil {
 				return nil, controller.ProvisioningFinished, &controller.IgnoredError{
@@ -570,6 +590,10 @@ func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.Persist
 			sc.Provisioner = backendDriverName
 		}
 	}
+	fmt.Println("Calling the SnapshotFunction in GoRoutine")
+	go p.snapShotEnable(profileID)
+	fmt.Println("Continuing With the Flow")
+
 
 	migratedVolume := false
 	if p.supportsMigrationFromInTreePluginName != "" {
