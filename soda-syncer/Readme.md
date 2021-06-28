@@ -21,7 +21,8 @@ Flow :
  2. soda-csi-provisioner fetches the profile details from [soda-proxy](https://github.com/sodafoundation/nbp/tree/master/csi-plug-n-play/sidecars/soda-proxy)   
  3. soda-proxy connects to soda-api server with proper authentication to get the profile details.
  4. Using the profile details soda-csi-provisioner picks the backend the CSI driver and provisions the volume.
- 5. soda-csi-provisioner sends the consistent snapshot request to soda-syncer based on the profile configuration received in Step 2.
+ 5. soda-csi-provisioner sends the consistent snapshot request to soda-proxy.
+ 6. soda-proxy gets the Profile detalis and fetches the snapshot policy and sends request to soda-syncer at current node to backup.
  6. soda-syncer at configured intervals invokes restic to do the cloud backup. 
 
 
