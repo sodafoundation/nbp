@@ -7,7 +7,7 @@ Soda-syncer will be providing the following features :-
  - [ ] CSI Meta-data sync between Soda and K8s
 
 
-*Note*: This is an experimental project and is not ready to be used in production.
+*Note*: This is an experimental project and is not ready to be used in production. This solutions curretly works for single node k8s env, we are working regularly to make this solution scalable.
 
 ### Consistent Snapshot Solution for CSI Plugins
 Consistent Snapshot is considered as snapshots which are taken at regular intervals and pushed to cloud for DR Solutions.   
