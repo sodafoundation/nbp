@@ -37,7 +37,7 @@ spec:
             - name: NODE_IP
               valueFrom:
                 fieldRef:
-                  status.hostIP
+                  fieldPath: status.hostIP
           ports:
             - containerPort: 50029
           resources:
