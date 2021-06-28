@@ -19,11 +19,11 @@ spec:
           image: sodafoundation/soda-proxy:v1.0
           env:
             - name: OPENSDS_ENDPOINT
-              value: "http://192.168.20.62:50040"
+              value: "http://{YourHOSTIP}:50040"
             - name: OPENSDS_AUTH_STRATEGY
               value: "keystone"
             - name: OS_AUTH_URL
-              value: "http://192.168.20.62/identity"
+              value: "http://{YourHOSTIP}/identity"
             - name: OS_USERNAME
               value: "admin"
             - name: OS_PASSWORD

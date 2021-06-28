@@ -145,9 +145,8 @@ const (
 
 	operationTimeout = 10 * time.Second
 
-	sodaProfileEndpoint = "soda-proxy:50029/getprofile/"
+	sodaProfileEndpoint        = "soda-proxy:50029/getprofile/"
 	sodaSnapShotEnableEndpoint = "soda-proxy:50029/getprofile/"
-
 )
 
 var (
@@ -554,7 +553,7 @@ func (p *csiProvisioner) isCallForCurrentDriver(profileID string) (string, error
 }
 
 // Call the soda-syncer for Snapshot
-func (p *csiProvisioner) snapShotEnable(profileID string) (error) {
+func (p *csiProvisioner) snapShotEnable(profileID string) error {
 
 	// Call the SnapshotEnable
 	url := "http://" + sodaSnapShotEnableEndpoint + profileID
@@ -566,7 +565,6 @@ func (p *csiProvisioner) snapShotEnable(profileID string) (error) {
 	}
 	return nil
 }
-
 
 // prepareProvision does non-destructive parameter checking and preparations for provisioning a volume.
 func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.PersistentVolumeClaim, sc *storagev1.StorageClass, selectedNode *v1.Node) (*prepareProvisionResult, controller.ProvisioningState, error) {
@@ -590,10 +588,7 @@ func (p *csiProvisioner) prepareProvision(ctx context.Context, claim *v1.Persist
 			sc.Provisioner = backendDriverName
 		}
 	}
-	fmt.Println("Calling the SnapshotFunction in GoRoutine")
 	go p.snapShotEnable(profileID)
-	fmt.Println("Continuing With the Flow")
-
 
 	migratedVolume := false
 	if p.supportsMigrationFromInTreePluginName != "" {

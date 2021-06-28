@@ -25,41 +25,41 @@ import (
 )
 
 type SnapshotProfile struct {
-	AwsAccesskey string `json:"AWS_ACCESS_KEY_ID"`
-	AwsSecretkey string `json:"AWS_SECRET_ACCESS_KEY"`
+	AwsAccesskey     string `json:"AWS_ACCESS_KEY_ID"`
+	AwsSecretkey     string `json:"AWS_SECRET_ACCESS_KEY"`
 	ResticRepository string `json:"RESTIC_REPOSITORY"`
-	ResticPassword string `json:"RESTIC_PASSWORD"`
-	TimeInterval int	`json:"timeInterval"`
+	ResticPassword   string `json:"RESTIC_PASSWORD"`
+	TimeInterval     int    `json:"timeInterval"`
 	ResticSourceRepo string `json:"resticSourceRepo"`
 }
 
 func CreateSnapshot(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Remove this Sleep time after changing provisioner to send request after PVC Attachment event
-	time.Sleep(20*time.Second)
-	w.Header().Set("Content-Type","application/json")
+	time.Sleep(20 * time.Second)
+	w.Header().Set("Content-Type", "application/json")
 
 	fmt.Println("---------------------Getting Source Mount Point ---------------------")
 	//TODO Configure grep based on the pvc name recieved in this request
 	cmdToGetPVCMountPoint := "df -h --output=target | grep csi"
 	cmdToGetFileSystemMountPoint, errno := exec.Command("bash", "-c", cmdToGetPVCMountPoint).Output()
 	if errno != nil {
-		 fmt.Sprintf("Failed to execute command: %s", cmdToGetFileSystemMountPoint)
+		fmt.Sprintf("Failed to execute command: %s", cmdToGetFileSystemMountPoint)
 	}
 	mountPointToBeBackedUp := string(cmdToGetFileSystemMountPoint)
-	fmt.Println("The MountPoint to be backed up : ",mountPointToBeBackedUp )
+	fmt.Println("The MountPoint to be backed up : ", mountPointToBeBackedUp)
 
 	fmt.Println("---------------------Backing Up ---------------------")
 	var snapshotProfile SnapshotProfile
 	_ = json.NewDecoder(r.Body).Decode(&snapshotProfile)
 	fmt.Println(snapshotProfile)
-	os.Setenv("AWS_ACCESS_KEY_ID",snapshotProfile.AwsAccesskey)
-	os.Setenv("AWS_SECRET_ACCESS_KEY",snapshotProfile.AwsSecretkey)
-	os.Setenv("RESTIC_REPOSITORY",snapshotProfile.ResticRepository)
-	os.Setenv("RESTIC_PASSWORD",snapshotProfile.ResticPassword)
+	os.Setenv("AWS_ACCESS_KEY_ID", snapshotProfile.AwsAccesskey)
+	os.Setenv("AWS_SECRET_ACCESS_KEY", snapshotProfile.AwsSecretkey)
+	os.Setenv("RESTIC_REPOSITORY", snapshotProfile.ResticRepository)
+	os.Setenv("RESTIC_PASSWORD", snapshotProfile.ResticPassword)
 
-	timeD := time.Duration(snapshotProfile.TimeInterval )
-	ticker := time.NewTicker(timeD* time.Second)
+	timeD := time.Duration(snapshotProfile.TimeInterval)
+	ticker := time.NewTicker(timeD * time.Second)
 	done := make(chan bool)
 	go func() {
 		for {
@@ -68,7 +68,7 @@ func CreateSnapshot(w http.ResponseWriter, r *http.Request) {
 				return
 			case t := <-ticker.C:
 				fmt.Println("Backup Started at", t)
-				cmdToDoBackup := "restic backup "+mountPointToBeBackedUp
+				cmdToDoBackup := "restic backup " + mountPointToBeBackedUp
 				cmdOutputForBackup, errBck := exec.Command("bash", "-c", cmdToDoBackup).Output()
 				if errBck != nil {
 					fmt.Sprintf("Failed to execute command: %s", string(cmdOutputForBackup))
@@ -76,7 +76,7 @@ func CreateSnapshot(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Backup Success : ", string(cmdOutputForBackup))
 
 				fmt.Println("---------------------SnapShots---------------------")
-				cmd := exec.Command("restic", "snapshots" )
+				cmd := exec.Command("restic", "snapshots")
 				cmd.Stderr = os.Stdout
 				cmd.Stdout = os.Stdout
 
