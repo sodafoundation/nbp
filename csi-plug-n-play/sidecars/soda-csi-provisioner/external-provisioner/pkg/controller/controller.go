@@ -145,8 +145,8 @@ const (
 
 	operationTimeout = 10 * time.Second
 
-	sodaProfileEndpoint        = "soda-proxy:50029/getprofile/"
-	sodaSnapShotEnableEndpoint = "soda-proxy:50029/getprofile/"
+	sodaProfileEndpoint        = "soda-proxy.default.svc.cluster.local:50029/getprofile/"
+	sodaSnapShotEnableEndpoint = "soda-proxy.default.svc.cluster.local:50029/snapshot/"
 )
 
 var (
