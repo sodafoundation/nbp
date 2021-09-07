@@ -34,7 +34,7 @@ require (
 	k8s.io/component-helpers v0.20.0
 	k8s.io/csi-translation-lib v0.20.0
 	k8s.io/klog/v2 v2.4.0
-	k8s.io/kubernetes v1.20.0
+	k8s.io/kubernetes v1.20.7
 	sigs.k8s.io/controller-runtime v0.7.0
 	sigs.k8s.io/sig-storage-lib-external-provisioner/v6 v6.3.0
 )
